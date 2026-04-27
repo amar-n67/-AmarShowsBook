@@ -1,0 +1,132 @@
+﻿@model AmarShowsBook.Models.ViewModels.HomeViewModel
+
+<div class="container">
+
+    <h2 class="text-center mb-4">🍿 Discover Your Next Experience</h2>
+
+    <!-- LOCATION SELECT -->
+    <div class="card p-3 mb-4">
+        <div class="row">
+
+            <!-- COUNTRY -->
+            <div class="col-md-4">
+                <label>Country</label>
+                <select id="country" class="form-control" onchange="loadStates()">
+                    <option>Select Country</option>
+                </select>
+            </div>
+
+            <!-- STATE -->
+            <div class="col-md-4">
+                <label>State</label>
+                <select id="state" class="form-control">
+                    <option>Select State</option>
+                </select>
+            </div>
+
+            <!-- DISTRICT -->
+            <div class="col-md-4">
+                <label>District</label>
+                <select id="district" class="form-control">
+                    <option>Select District</option>
+                </select>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- CATEGORY SWITCH -->
+    <div class="text-center mb-3">
+        <a href="/Home/Index?type=Movie" class="btn btn-primary m-2">🎬 Movies</a>
+        <a href="/Home/Index?type=Standup" class="btn btn-warning m-2">🎤 Standup</a>
+        <a href="/Home/Index?type=Live" class="btn btn-success m-2">📡 Live</a>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="row mt-4">
+
+        @foreach (var item in Model.Schedules)
+        {
+            <div class="col-md-3 mb-3">
+                <div class="card p-3 text-center shadow-sm">
+
+                    <h5>
+                        @(
+                            item.Type == "Movie" ? item.Movie?.Title :
+                            item.Type == "Standup" ? item.StandupShow?.Title :
+                            item.LiveStream?.Title
+                        )
+                    </h5>
+
+                    <p class="text-muted">
+                        ⏱ @item.StartTime.ToString("hh:mm tt")
+                    </p>
+
+                    <button class="btn btn-primary">Book Now</button>
+
+                </div>
+            </div>
+        }
+
+    </div>
+
+</div>
+
+<script>
+
+// ================= LOAD COUNTRIES (WORKING API) =================
+fetch('https://restcountries.com/v3.1/all')
+.then(res => res.json())
+.then(data => {
+    let countryDropdown = document.getElementById("country");
+
+    countryDropdown.innerHTML = "<option>Select Country</option>";
+
+    data.sort((a,b)=>a.name.common.localeCompare(b.name.common));
+
+    data.forEach(c => {
+        countryDropdown.innerHTML += `<option value="${c.name.common}">${c.name.common}</option>`;
+    });
+});
+
+
+// ================= LOAD STATES (FIXED API CALL) =================
+function loadStates() {
+    let country = document.getElementById("country").value;
+
+    let stateDropdown = document.getElementById("state");
+    let districtDropdown = document.getElementById("district");
+
+    // RESET DROPDOWNS
+    stateDropdown.innerHTML = "<option>Loading...</option>";
+    districtDropdown.innerHTML = "<option>Select District</option>";
+
+    if (!country || country === "Select Country") return;
+
+    fetch('https://countriesnow.space/api/v0.1/countries/states', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: country })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        stateDropdown.innerHTML = "<option>Select State</option>";
+
+        // ✅ IMPORTANT CHECK
+        if (data && data.data && data.data.states) {
+            data.data.states.forEach(s => {
+                stateDropdown.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+            });
+        } else {
+            stateDropdown.innerHTML = "<option>No states available</option>";
+        }
+
+    })
+    .catch(err => {
+        console.error("State API Error:", err);
+        stateDropdown.innerHTML = "<option>Error loading states</option>";
+    });
+}
+
+</script>

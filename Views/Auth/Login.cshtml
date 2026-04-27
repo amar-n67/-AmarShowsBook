@@ -1,0 +1,45 @@
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card p-4 shadow-lg">
+
+            <h3 class="text-center mb-3">🎬 Welcome Back to AmarShows</h3>
+            <p class="text-center text-muted">Lights. Camera. Action.</p>
+
+            <form method="post" novalidate>
+
+                <div class="mb-3">
+                    <input name="email" class="form-control" placeholder="Email" required />
+                </div>
+
+                <div class="mb-3">
+                    <label>Password</label>
+
+                    <div class="input-group">
+                        <input id="loginPassword" name="password" type="password" class="form-control" required />
+
+                        <button type="button" class="btn btn-outline-light"
+                                onclick="togglePassword('loginPassword')">
+                            👁
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-dark w-100">🎬 Enter Cinema</button>
+
+            </form>
+
+            <div class="text-center mt-3">
+                <a href="/Auth/Signup">🎟 Create your stage</a><br/>
+                <a href="/Auth/ForgotPassword">🔐 Forgot the script?</a>
+            </div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger text-center mt-3">
+                    @ViewBag.Error
+                </div>
+            }
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,235 @@
+@model AmarShowsBook.Models.User
+
+<div class="container" style="max-width:650px;">
+    <div class="card p-4 shadow">
+
+        <h4 class="mb-4 text-center">🎬 Edit Your Identity</h4>
+
+        <!-- SUCCESS / ERROR -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+
+        <form method="post" enctype="multipart/form-data">
+
+            <!-- 🔥 ORIGINAL VALUES -->
+            <input type="hidden" id="originalEmail" value="@Model.Email" />
+            <input type="hidden" id="originalMobile" value="@Model.Mobile" />
+            <input type="hidden" id="originalAddress" value="@Model.Address" />
+            <input type="hidden" id="originalGenre" value="@Model.Genre" />
+            <input type="hidden" id="originalLanguage" value="@Model.Language" />
+
+            <!-- ================= EMAIL ================= -->
+            <div class="mb-3">
+                <label>Email</label>
+
+                <div class="input-group input-group-sm">
+
+                    <input name="Email" id="emailField"
+                           class="form-control clean-input"
+                           value="@Model.Email" readonly />
+
+                    <span id="emailVerifiedIcon" class="text-success d-none ms-2">✔</span>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="editEmail('@Model.Email')">Change</button>
+
+                    <button id="emailCancel" type="button"
+                            class="btn btn-secondary btn-sm d-none"
+                            onclick="cancelEmail('@Model.Email')">Cancel</button>
+                </div>
+
+                <div id="emailOtpSection" class="mt-2 d-none">
+                    <button type="button" class="btn btn-info btn-sm"
+                            onclick="sendEmailOtp('@Model.Email')">
+                        Send OTP
+                    </button>
+                </div>
+
+                <div id="emailVerifyBox" class="mt-2 d-none">
+                    <input id="emailOtpInput"
+                           class="form-control clean-input mb-2"
+                           placeholder="Enter OTP" />
+
+                    <button type="button"
+                            class="btn btn-success btn-sm"
+                            onclick="verifyEmailOtp()">
+                        Verify OTP
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= MOBILE ================= -->
+            <div class="mb-3">
+                <label>Mobile</label>
+
+                <div class="input-group input-group-sm">
+
+                    <input name="Mobile" id="mobileField"
+                           class="form-control clean-input"
+                           value="@Model.Mobile" readonly />
+
+                    <span id="mobileVerifiedIcon" class="text-success d-none ms-2">✔</span>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="editMobile('@Model.Mobile')">Change</button>
+
+                    <button id="mobileCancel" type="button"
+                            class="btn btn-secondary btn-sm d-none"
+                            onclick="cancelMobile('@Model.Mobile')">Cancel</button>
+                </div>
+
+                <div id="mobileOtpSection" class="mt-2 d-none">
+                    <button type="button" class="btn btn-info btn-sm"
+                            onclick="sendMobileOtp('@Model.Mobile')">
+                        Send OTP
+                    </button>
+                </div>
+
+                <div id="mobileVerifyBox" class="mt-2 d-none">
+                    <input id="mobileOtpInput"
+                           class="form-control clean-input mb-2"
+                           placeholder="Enter OTP" />
+
+                    <button type="button"
+                            class="btn btn-success btn-sm"
+                            onclick="verifyMobileOtp()">
+                        Verify OTP
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= ADDRESS ================= -->
+            <div class="mb-3">
+                <label>Address</label>
+
+                <div class="input-group input-group-sm">
+                    <input name="Address" id="addressField"
+                           class="form-control clean-input"
+                           value="@Model.Address" readonly />
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="editAddress('@Model.Address')">Change</button>
+
+                    <button id="addressCancel" type="button"
+                            class="btn btn-secondary btn-sm d-none"
+                            onclick="cancelAddress('@Model.Address')">Cancel</button>
+                </div>
+
+                <div id="addressDropdown" class="mt-2 d-none">
+                    <select class="form-control clean-input mb-1">
+                        <option>▼ Country</option>
+                        <option>India</option>
+                    </select>
+
+                    <select class="form-control clean-input mb-1">
+                        <option>▼ State</option>
+                        <option>Maharashtra</option>
+                        <option>Karnataka</option>
+                    </select>
+
+                    <select class="form-control clean-input mb-1">
+                        <option>▼ District</option>
+                        <option>Mumbai</option>
+                        <option>Pune</option>
+                    </select>
+
+                    <input class="form-control clean-input" placeholder="Pincode" />
+                </div>
+            </div>
+
+            <!-- ================= GENRE ================= -->
+            <div class="mb-3">
+                <label>Genre 🎬</label>
+
+                <div class="input-group input-group-sm">
+                    <select name="Genre" id="genreField"
+                            class="form-control clean-input" disabled>
+                        <option>@Model.Genre</option>
+                        <option>Action</option>
+                        <option>Comedy</option>
+                        <option>Romance</option>
+                        <option>Thriller</option>
+                    </select>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="enableSelect('genreField')">Change</button>
+                </div>
+            </div>
+
+            <!-- ================= LANGUAGE ================= -->
+            <div class="mb-3">
+                <label>Language 🌍</label>
+
+                <div class="input-group input-group-sm">
+                    <select name="Language" id="languageField"
+                            class="form-control clean-input" disabled>
+                        <option>@Model.Language</option>
+                        <option>Hindi</option>
+                        <option>English</option>
+                        <option>Tamil</option>
+                    </select>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="enableSelect('languageField')">Change</button>
+                </div>
+            </div>
+
+            <!-- ================= PROFILE IMAGE ================= -->
+            <div class="mb-3">
+                <label>Profile Image</label>
+
+                <div class="d-flex align-items-center gap-2">
+
+                    <img id="profilePreview"
+                         src="@(!string.IsNullOrEmpty(Model.ProfileImagePath) ? Model.ProfileImagePath : "/uploads/default.png")"
+                         style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:1px solid #ccc;" />
+
+                    <input type="file" name="profileImage"
+                           id="profileImage" class="d-none" />
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="changeImage()">Change</button>
+
+                    <button type="button" id="imageCancel"
+                            class="btn btn-secondary btn-sm d-none"
+                            onclick="cancelImage()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- ================= ACTION ================= -->
+            <div class="d-flex justify-content-between mt-4">
+                <button type="submit"
+                        class="btn btn-success btn-sm"
+                        onclick="return validateProfileForm()">
+                    Save Changes
+                </button>
+
+                <a href="/Home/Index" class="btn btn-secondary btn-sm">⬅ Back</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<style>
+.clean-input {
+    background: #fff;
+    color: #000;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+.clean-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 3px #6366f1;
+}
+</style>
+
+@section Scripts {
+    <script src="~/js/profile.js"></script>
+}

@@ -1,0 +1,12 @@
+﻿{
+  "profiles": {
+    "AmarShowsBook": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5241",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

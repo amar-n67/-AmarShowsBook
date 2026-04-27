@@ -1,0 +1,14 @@
+<h3 class="text-center mb-4">🔢 Enter OTP</h3>
+
+<form method="post" action="/Auth/VerifyOTP">
+
+    <input name="otp" class="form-control mb-3" placeholder="Enter OTP" required />
+
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-primary">Verify</button>
+        <a href="/Auth/Login" class="btn btn-secondary">Cancel</a>
+    </div>
+
+</form>
+
+<p class="text-danger text-center">@ViewBag.Error</p>

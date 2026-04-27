@@ -1,0 +1,261 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        <div id="customPopup" style="
+display:none;
+position:fixed;
+top:20px;
+right:20px;
+background:#1e293b;
+color:#fff;
+padding:15px 20px;
+border-radius:8px;
+box-shadow:0 0 10px rgba(0,0,0,0.5);
+z-index:9999;">
+</div>
+body {
+    background: #0f172a;
+    color: #e5e7eb;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.card {
+    background: #1e293b;
+    border-radius: 16px;
+    color: #f1f5f9;
+}
+
+.form-control {
+    background: #334155;
+    color: #fff;
+    border: none;
+}
+
+.form-control::placeholder {
+    color: #cbd5f5;
+}
+
+.btn-primary {
+    background: #6366f1;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #4f46e5;
+}
+
+a {
+    color: #93c5fd;
+}
+</style>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>@ViewData["Title"] - AmarShowsBook</title>
+
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" />
+
+</head>
+
+<body>
+
+<!-- ================= SESSION POPUP ================= -->
+<div id="sessionPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999;">
+    <div style="
+        position:absolute;
+        top:50%; left:50%;
+        transform:translate(-50%, -50%);
+        background:#1e293b;
+        padding:30px;
+        border-radius:12px;
+        text-align:center;
+        color:white;
+        width:300px;
+        box-shadow:0 0 20px rgba(0,0,0,0.5);
+    ">
+        <h4>🎬 Still Watching?</h4>
+        <p>Your session is about to end</p>
+        <h2 id="countdown" style="color:#f87171;">-60</h2>
+
+        <button onclick="stayActive()" class="btn btn-success mt-2">
+            Continue Watching
+        </button>
+    </div>
+</div>
+
+<!-- ================= NAVBAR ================= -->
+<header>
+<nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+<div class="container-fluid">
+
+    <a class="navbar-brand" asp-controller="Home" asp-action="Index">AmarShowsBook</a>
+
+    <div class="d-flex align-items-center ms-auto">
+
+        @if (Context.Session.GetString("UserEmail") != null)
+        {
+            <!-- USER INFO -->
+            <div class="text-end me-3">
+                <div id="liveDateTime" style="font-size:12px;"></div>
+                <div style="font-weight:bold;">
+                    @Context.Session.GetString("UserEmail")
+                </div>
+            </div>
+
+            <!-- PROFILE IMAGE -->
+            <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage")) 
+    ? Context.Session.GetString("ProfileImage") 
+    : "/uploads/default.png")"
+     style="width:40px;height:40px;border-radius:50%;" />
+     
+            <!-- PROFILE BUTTON -->
+            <a class="btn btn-warning me-2" href="/Profile/Index">Profile</a>
+
+            <!-- LOGOUT -->
+            <a class="btn btn-danger"
+               href="/Auth/Logout"
+               onclick="return confirmLogout()">Logout</a>
+        }
+
+    </div>
+
+</div>
+</nav>
+</header>
+
+<!-- ================= BODY ================= -->
+<div class="container mt-5">
+    @RenderBody()
+</div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="border-top footer text-muted">
+<div class="container">
+    &copy; 2026 - AmarShowsBook
+</div>
+</footer>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function togglePassword(fieldId) {
+    var input = document.getElementById(fieldId);
+    input.type = input.type === "password" ? "text" : "password";
+}
+</script>
+
+<!-- ✅ DATE + TIME -->
+<script>
+function updateDateTime() {
+    let now = new Date();
+
+    let date = now.toLocaleDateString('en-IN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+
+    let time = now.toLocaleTimeString();
+
+    document.getElementById("liveDateTime").innerHTML =
+        date + " | " + time;
+}
+setInterval(updateDateTime, 1000);
+updateDateTime();
+</script>
+
+<!-- LOGOUT CONFIRM -->
+<script>
+function confirmLogout() {
+    return confirm("🎬 Are you sure you want to exit the show?");
+}
+</script>
+
+<!-- ================= SESSION TIMER ================= -->
+<script>
+
+let inactivityTimer;
+let countdownTimer;
+let timeLeft = 60;
+let popupVisible = false;
+
+const INACTIVITY_TIME = 2 * 60 * 1000;
+
+function resetTimer() {
+    clearTimeout(inactivityTimer);
+
+    if (popupVisible) {
+        hidePopup();
+    }
+
+    inactivityTimer = setTimeout(showPopup, INACTIVITY_TIME);
+}
+
+function showPopup() {
+    popupVisible = true;
+    document.getElementById("sessionPopup").style.display = "block";
+
+    timeLeft = 60;
+    updateCountdown();
+
+    clearInterval(countdownTimer);
+
+    countdownTimer = setInterval(() => {
+        timeLeft--;
+        updateCountdown();
+
+        if (timeLeft <= 0) {
+            clearInterval(countdownTimer);
+            autoLogout();
+        }
+
+    }, 1000);
+}
+
+function updateCountdown() {
+    document.getElementById("countdown").innerText = "-" + timeLeft;
+}
+
+function hidePopup() {
+    popupVisible = false;
+    document.getElementById("sessionPopup").style.display = "none";
+    clearInterval(countdownTimer);
+}
+
+function stayActive() {
+    hidePopup();
+    resetTimer();
+}
+
+function autoLogout() {
+    window.location.href = "/Auth/Logout";
+}
+
+["click","mousemove","keypress","scroll"].forEach(event => {
+    document.addEventListener(event, resetTimer);
+});
+
+resetTimer();
+
+</script>
+@RenderSection("Scripts", required: false)
+
+<script>
+function showPopup(message) {
+    let popup = document.getElementById("customPopup");
+
+    popup.innerText = message;
+    popup.style.display = "block";
+
+    setTimeout(() => {
+        popup.style.display = "none";
+    }, 2500);
+}
+</script>
+</body>
+</html>

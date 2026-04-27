@@ -1,0 +1,28 @@
+<h2>🎬 Schedule Show</h2>
+
+<form method="post">
+
+    <label>Type</label>
+    <select name="type" class="form-control">
+        <option>Movie</option>
+        <option>Standup</option>
+        <option>Live</option>
+    </select>
+
+    <label>Item ID</label>
+    <input name="itemId" class="form-control" />
+
+    <label>Location ID</label>
+    <input name="locationId" class="form-control" />
+
+    <label>Start Time</label>
+    <input name="startTime" type="datetime-local" class="form-control" />
+
+    <br/>
+
+    <button class="btn btn-primary">Create Schedule</button>
+
+</form>
+
+<p style="color:red">@ViewBag.Error</p>
+<p style="color:green">@ViewBag.Success</p>
