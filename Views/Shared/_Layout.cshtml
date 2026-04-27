@@ -2,18 +2,6 @@
 <html lang="en">
 <head>
     <style>
-        <div id="customPopup" style="
-display:none;
-position:fixed;
-top:20px;
-right:20px;
-background:#1e293b;
-color:#fff;
-padding:15px 20px;
-border-radius:8px;
-box-shadow:0 0 10px rgba(0,0,0,0.5);
-z-index:9999;">
-</div>
 body {
     background: #0f172a;
     color: #e5e7eb;
@@ -60,7 +48,18 @@ a {
 </head>
 
 <body>
-
+    <div id="customPopup" style="
+display:none;
+position:fixed;
+top:20px;
+right:20px;
+background:#1e293b;
+color:#fff;
+padding:15px 20px;
+border-radius:8px;
+box-shadow:0 0 10px rgba(0,0,0,0.5);
+z-index:9999;">
+</div>
 <!-- ================= SESSION POPUP ================= -->
 <div id="sessionPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999;">
     <div style="
@@ -76,7 +75,7 @@ a {
         box-shadow:0 0 20px rgba(0,0,0,0.5);
     ">
         <h4>🎬 Still Watching?</h4>
-        <p>Your session is about to end</p>
+        <p id="cinemaText">Your session is about to end</p>
         <h2 id="countdown" style="color:#f87171;">-60</h2>
 
         <button onclick="stayActive()" class="btn btn-success mt-2">
@@ -179,68 +178,87 @@ function confirmLogout() {
 <!-- ================= SESSION TIMER ================= -->
 <script>
 
-let inactivityTimer;
-let countdownTimer;
-let timeLeft = 60;
-let popupVisible = false;
+document.addEventListener("DOMContentLoaded", function () {
 
-const INACTIVITY_TIME = 2 * 60 * 1000;
+    let inactivityTimer;
+    let countdownTimer;
+    let timeLeft = 30;
+    let popupVisible = false;
 
-function resetTimer() {
-    clearTimeout(inactivityTimer);
+    const INACTIVITY_TIME = 5 * 60  * 1000;
 
-    if (popupVisible) {
-        hidePopup();
-    }
+    const cinemaMessages = [
+        "🍿 Audience gone missing...",
+        "🎥 Projector waiting for you...",
+        "🎬 Interval chal raha hai...",
+        "📽 Scene ruk gaya hai boss...",
+        "🎞 Reel freeze ho gaya...",
+        "🛑 Show paused... hero kidhar hai?"
+    ];
 
-    inactivityTimer = setTimeout(showPopup, INACTIVITY_TIME);
-}
+    function resetTimer() {
+        clearTimeout(inactivityTimer);
 
-function showPopup() {
-    popupVisible = true;
-    document.getElementById("sessionPopup").style.display = "block";
-
-    timeLeft = 60;
-    updateCountdown();
-
-    clearInterval(countdownTimer);
-
-    countdownTimer = setInterval(() => {
-        timeLeft--;
-        updateCountdown();
-
-        if (timeLeft <= 0) {
-            clearInterval(countdownTimer);
-            autoLogout();
+        if (popupVisible) {
+            hidePopup();
         }
 
-    }, 1000);
-}
+        inactivityTimer = setTimeout(showSessionPopup, INACTIVITY_TIME);
+    }
 
-function updateCountdown() {
-    document.getElementById("countdown").innerText = "-" + timeLeft;
-}
+    function showSessionPopup() {
+        popupVisible = true;
 
-function hidePopup() {
-    popupVisible = false;
-    document.getElementById("sessionPopup").style.display = "none";
-    clearInterval(countdownTimer);
-}
+        let popup = document.getElementById("sessionPopup");
+        if (!popup) return;
 
-function stayActive() {
-    hidePopup();
+        popup.style.display = "block";
+
+        let msg = cinemaMessages[Math.floor(Math.random() * cinemaMessages.length)];
+        document.getElementById("cinemaText").innerText = msg;
+
+        timeLeft = 30;
+        updateCountdown();
+
+        clearInterval(countdownTimer);
+
+        countdownTimer = setInterval(() => {
+            timeLeft--;
+            updateCountdown();
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownTimer);
+                autoLogout();
+            }
+        }, 1000);
+    }
+
+    function updateCountdown() {
+        document.getElementById("countdown").innerText = "-" + timeLeft;
+    }
+
+    function hidePopup() {
+        popupVisible = false;
+        document.getElementById("sessionPopup").style.display = "none";
+        clearInterval(countdownTimer);
+    }
+
+    window.stayActive = function () {
+        hidePopup();
+        resetTimer();
+    };
+
+    function autoLogout() {
+        window.location.href = "/Auth/Logout";
+    }
+
+    ["click","mousemove","keypress","scroll","touchstart"].forEach(event => {
+        document.addEventListener(event, resetTimer);
+    });
+
     resetTimer();
-}
 
-function autoLogout() {
-    window.location.href = "/Auth/Logout";
-}
-
-["click","mousemove","keypress","scroll"].forEach(event => {
-    document.addEventListener(event, resetTimer);
 });
-
-resetTimer();
 
 </script>
 @RenderSection("Scripts", required: false)
