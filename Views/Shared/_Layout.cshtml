@@ -36,6 +36,28 @@ body {
 a {
     color: #93c5fd;
 }
+/* ✅ ADD THIS (animation for popup) */
+
+@@keyframes popupFade {
+
+    from {
+
+        opacity: 0;
+
+        transform: translate(-50%, -60%) scale(0.8);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translate(-50%, -50%) scale(1);
+
+    }
+
+}
+
 </style>
 
 <meta charset="utf-8" />
@@ -61,26 +83,48 @@ box-shadow:0 0 10px rgba(0,0,0,0.5);
 z-index:9999;">
 </div>
 <!-- ================= SESSION POPUP ================= -->
-<div id="sessionPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999;">
+<div id="sessionPopup" style="
+display:none;
+position:fixed;
+top:0; left:0;
+width:100%; height:100%;
+background:rgba(0,0,0,0.75);
+backdrop-filter: blur(6px);
+z-index:9999;">
+
     <div style="
         position:absolute;
         top:50%; left:50%;
-        transform:translate(-50%, -50%);
+        transform:translate(-50%, -50%) scale(0.9);
         background:#1e293b;
         padding:30px;
-        border-radius:12px;
+        border-radius:14px;
         text-align:center;
         color:white;
-        width:300px;
-        box-shadow:0 0 20px rgba(0,0,0,0.5);
+        width:320px;
+        box-shadow:0 0 30px rgba(0,0,0,0.8);
+        animation: popupFade 0.35s ease forwards;
     ">
-        <h4>🎬 Still Watching?</h4>
-        <p id="cinemaText">Your session is about to end</p>
-        <h2 id="countdown" style="color:#f87171;">-60</h2>
 
-        <button onclick="stayActive()" class="btn btn-success mt-2">
-            Continue Watching
+        <h4 style="color:#facc15;">🎬 Still Watching?</h4>
+
+        <p id="cinemaText" style="color:#cbd5f5;">
+            Your show is paused... audience missing 🍿
+        </p>
+
+        <h2 id="countdown"
+            style="color:#f87171;
+                   font-size:42px;
+                   margin:10px 0;
+                   text-shadow:0 0 10px #f87171;">
+            -30
+        </h2>
+
+        <button onclick="stayActive()"
+                class="btn btn-success mt-2">
+            ▶ Continue Watching
         </button>
+
     </div>
 </div>
 
@@ -175,7 +219,6 @@ function confirmLogout() {
 }
 </script>
 
-<!-- ================= SESSION TIMER ================= -->
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -185,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let timeLeft = 30;
     let popupVisible = false;
 
-    const INACTIVITY_TIME = 5 * 60  * 1000;
+    const INACTIVITY_TIME = 3 * 60 * 1000; // ✅ 3 minutes (change if needed)
 
     const cinemaMessages = [
         "🍿 Audience gone missing...",
@@ -210,12 +253,14 @@ document.addEventListener("DOMContentLoaded", function () {
         popupVisible = true;
 
         let popup = document.getElementById("sessionPopup");
-        if (!popup) return;
+        let text = document.getElementById("cinemaText");
+
+        if (!popup || !text) return; // ✅ safety
 
         popup.style.display = "block";
 
-        let msg = cinemaMessages[Math.floor(Math.random() * cinemaMessages.length)];
-        document.getElementById("cinemaText").innerText = msg;
+        // random message
+        text.innerText = cinemaMessages[Math.floor(Math.random() * cinemaMessages.length)];
 
         timeLeft = 30;
         updateCountdown();
@@ -230,16 +275,29 @@ document.addEventListener("DOMContentLoaded", function () {
                 clearInterval(countdownTimer);
                 autoLogout();
             }
+
         }, 1000);
     }
 
     function updateCountdown() {
-        document.getElementById("countdown").innerText = "-" + timeLeft;
+        let el = document.getElementById("countdown");
+        if (!el) return;
+
+        el.innerText = "-" + timeLeft;
+
+        // subtle animation
+        el.style.transform = "scale(1.1)";
+        setTimeout(() => {
+            el.style.transform = "scale(1)";
+        }, 150);
     }
 
     function hidePopup() {
         popupVisible = false;
-        document.getElementById("sessionPopup").style.display = "none";
+
+        let popup = document.getElementById("sessionPopup");
+        if (popup) popup.style.display = "none";
+
         clearInterval(countdownTimer);
     }
 
@@ -252,16 +310,17 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = "/Auth/Logout";
     }
 
+    // USER ACTIVITY TRACK
     ["click","mousemove","keypress","scroll","touchstart"].forEach(event => {
         document.addEventListener(event, resetTimer);
     });
 
+    // START
     resetTimer();
 
 });
 
-</script>
-@RenderSection("Scripts", required: false)
+</script>@RenderSection("Scripts", required: false)
 
 <script>
 function showPopup(message) {
