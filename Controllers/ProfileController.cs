@@ -17,6 +17,11 @@ public class ProfileController : Controller
     // LOAD PROFILE
     public IActionResult Index()
     {
+        return RedirectToAction("MyProfile");
+    }
+
+    public IActionResult MyProfile()
+    {
         var email = HttpContext.Session.GetString("UserEmail");
 
         var user = _context.Users.FirstOrDefault(u => u.Email == email);
@@ -32,6 +37,12 @@ public class ProfileController : Controller
     // SAVE PROFILE
     [HttpPost]
     public IActionResult Index(User model, IFormFile profileImage)
+    {
+        return MyProfile(model, profileImage);
+    }
+
+    [HttpPost]
+    public IActionResult MyProfile(User model, IFormFile profileImage)
     {
         var email = HttpContext.Session.GetString("UserEmail");
 
@@ -52,13 +63,13 @@ public class ProfileController : Controller
         if (string.IsNullOrWhiteSpace(newEmail) || string.IsNullOrWhiteSpace(newMobile))
         {
             TempData["Error"] = "Email and mobile are required.";
-            return View(user);
+            return View("MyProfile", user);
         }
 
         if (!Regex.IsMatch(newEmail, @"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$"))
         {
             TempData["Error"] = "Only Gmail or Outlook email is allowed.";
-            return View(user);
+            return View("MyProfile", user);
         }
 
         var emailChanged = !string.Equals(newEmail, user.Email, StringComparison.Ordinal);
@@ -78,33 +89,33 @@ public class ProfileController : Controller
         if (!isChanged)
         {
             TempData["Error"] = "There is nothing to update.";
-            return View(user);
+            return View("MyProfile", user);
         }
 
         if (emailChanged && HttpContext.Session.GetString("VerifiedEmailForProfile") != newEmail)
         {
             TempData["Error"] = "Please verify the new email OTP before saving.";
-            return View(user);
+            return View("MyProfile", user);
         }
 
         if (mobileChanged && HttpContext.Session.GetString("VerifiedMobileForProfile") != newMobile)
         {
             TempData["Error"] = "Please verify the new mobile OTP before saving.";
-            return View(user);
+            return View("MyProfile", user);
         }
 
         // ================= EMAIL UNIQUE CHECK =================
         if (_context.Users.Any(u => u.Email == newEmail && u.Id != user.Id))
         {
             TempData["Error"] = "Email already exists";
-            return View(user);
+            return View("MyProfile", user);
         }
 
         // ================= MOBILE UNIQUE CHECK =================
         if (_context.Users.Any(u => u.Mobile == newMobile && u.Id != user.Id))
         {
             TempData["Error"] = "Mobile already exists";
-            return View(user);
+            return View("MyProfile", user);
         }
 
         // ================= UPDATE FIELDS =================
@@ -167,6 +178,6 @@ user.UpdatedBy = currentUser ?? "System";
 
         TempData["Success"] = "Profile updated successfully";
 
-        return RedirectToAction("Index");
+        return RedirectToAction("MyProfile");
     }
 }

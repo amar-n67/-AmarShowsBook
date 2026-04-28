@@ -136,6 +136,120 @@ a {
     background: linear-gradient(135deg, #14532d, #0f766e);
 }
 
+.film-navbar {
+    margin: 14px;
+    border: 1px solid rgba(247, 215, 116, 0.28);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #231f20, #8f1d3f 52%, #0f766e);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+}
+
+.film-navbar .container-fluid {
+    gap: 14px;
+}
+
+.film-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #fffdf8 !important;
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+.film-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px dashed rgba(247, 215, 116, 0.7);
+    border-radius: 10px;
+    color: #f7d774;
+    background: rgba(255,255,255,0.08);
+}
+
+.film-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.film-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.film-user-meta {
+    text-align: right;
+    line-height: 1.2;
+}
+
+.film-time {
+    color: rgba(255,255,255,0.72);
+    font-size: 11px;
+}
+
+.film-email {
+    max-width: 220px;
+    overflow: hidden;
+    color: #fffdf8;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.film-avatar {
+    width: 42px;
+    height: 42px;
+    border: 2px solid #f7d774;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+}
+
+.film-nav-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.film-profile-btn {
+    background: #f7d774;
+    color: #231f20 !important;
+}
+
+.film-logout-btn {
+    background: #991b1b;
+    color: #fff !important;
+}
+
+@@media (max-width: 760px) {
+    .film-navbar {
+        margin: 8px;
+    }
+
+    .film-menu {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .film-user-card {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
 </style>
 
 <meta charset="utf-8" />
@@ -212,36 +326,41 @@ z-index:9999;">
 
 <!-- ================= NAVBAR ================= -->
 <header>
-<nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+<nav class="navbar navbar-expand-sm film-navbar mb-3">
 <div class="container-fluid">
 
-    <a class="navbar-brand" asp-controller="Home" asp-action="Index">AmarShowsBook</a>
+    <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
+        <span class="film-brand-badge">🎬</span>
+        <span>AmarShowsBook</span>
+    </a>
 
-    <div class="d-flex align-items-center ms-auto">
+    <div class="film-menu">
 
         @if (Context.Session.GetString("UserEmail") != null)
         {
             <!-- USER INFO -->
-            <div class="text-end me-3">
-                <div id="liveDateTime" style="font-size:12px;"></div>
-                <div style="font-weight:bold;">
-                    @Context.Session.GetString("UserEmail")
+            <div class="film-user-card">
+                <div class="film-user-meta">
+                    <div id="liveDateTime" class="film-time"></div>
+                    <div class="film-email">
+                        @Context.Session.GetString("UserEmail")
+                    </div>
                 </div>
-            </div>
 
-            <!-- PROFILE IMAGE -->
-            <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage")) 
-    ? Context.Session.GetString("ProfileImage") 
-    : "/uploads/default.png")"
-     style="width:40px;height:40px;border-radius:50%;" />
+                <!-- PROFILE IMAGE -->
+                <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage")) 
+        ? Context.Session.GetString("ProfileImage") 
+        : "/uploads/default.png")"
+         class="film-avatar" />
+            </div>
      
             <!-- PROFILE BUTTON -->
-            <a class="btn btn-warning me-2" href="/Profile/Index">Profile</a>
+            <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile">My Profile</a>
 
             <!-- LOGOUT -->
-            <a class="btn btn-danger"
+            <a class="film-nav-btn film-logout-btn"
                href="/Auth/Logout"
-               onclick="return confirmLogout()">Logout</a>
+               onclick="return confirmLogout()">Exit Show</a>
         }
 
     </div>
