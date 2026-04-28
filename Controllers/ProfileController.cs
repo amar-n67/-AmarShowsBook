@@ -21,6 +21,11 @@ public class ProfileController : Controller
 
         var user = _context.Users.FirstOrDefault(u => u.Email == email);
 
+        if (user != null)
+        {
+            HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
+        }
+
         return View(user);
     }
 
@@ -114,6 +119,8 @@ user.Pincode = newPincode;
         user.Genre = newGenre;
         user.Language = newLanguage;
 
+        var imageChanged = false;
+
         // ================= IMAGE UPLOAD =================
        if (profileImage != null && profileImage.Length > 0)
 {
@@ -132,6 +139,7 @@ user.Pincode = newPincode;
     }
 
     user.ProfileImagePath = "/uploads/" + fileName;
+    imageChanged = true;
 }
         // ================= AUDIT =================
 var currentUser = HttpContext.Session.GetString("UserEmail");
@@ -150,6 +158,11 @@ user.UpdatedBy = currentUser ?? "System";
         if (mobileChanged)
         {
             HttpContext.Session.Remove("VerifiedMobileForProfile");
+        }
+
+        if (imageChanged)
+        {
+            HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
         }
 
         TempData["Success"] = "Profile updated successfully";
