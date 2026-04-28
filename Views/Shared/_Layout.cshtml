@@ -36,26 +36,104 @@ body {
 a {
     color: #93c5fd;
 }
-/* ✅ ADD THIS (animation for popup) */
-
 @@keyframes popupFade {
-
     from {
-
         opacity: 0;
-
-        transform: translate(-50%, -60%) scale(0.8);
-
+        transform: translate(-50%, -58%) scale(0.92);
     }
 
     to {
-
         opacity: 1;
-
         transform: translate(-50%, -50%) scale(1);
-
     }
+}
 
+.cinema-popup-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background:
+        linear-gradient(135deg, rgba(18, 24, 38, 0.78), rgba(122, 24, 46, 0.72)),
+        rgba(0, 0, 0, 0.54);
+    backdrop-filter: blur(7px);
+    z-index: 10000;
+}
+
+.cinema-popup-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(420px, calc(100vw - 32px));
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 18px;
+    background: #fffdf8;
+    color: #231f20;
+    box-shadow: 0 28px 80px rgba(0,0,0,0.46);
+    animation: popupFade 0.25s ease forwards;
+}
+
+.cinema-popup-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #231f20, #8f1d3f, #0f766e);
+    color: #f7d774;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.cinema-popup-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.cinema-popup-title {
+    margin: 0 0 8px;
+    color: #231f20;
+    font-weight: 850;
+}
+
+.cinema-popup-message {
+    margin: 0;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.cinema-popup-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 24px 24px;
+}
+
+.cinema-popup-btn {
+    min-width: 110px;
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-weight: 800;
+}
+
+.cinema-popup-ok {
+    background: #0f766e;
+    color: #fff;
+}
+
+.cinema-popup-cancel {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.cinema-popup-backdrop.error .cinema-popup-strip {
+    background: linear-gradient(135deg, #231f20, #991b1b, #b45309);
+}
+
+.cinema-popup-backdrop.success .cinema-popup-strip {
+    background: linear-gradient(135deg, #14532d, #0f766e);
 }
 
 </style>
@@ -70,17 +148,21 @@ a {
 </head>
 
 <body>
-    <div id="customPopup" style="
-display:none;
-position:fixed;
-top:20px;
-right:20px;
-background:#1e293b;
-color:#fff;
-padding:15px 20px;
-border-radius:8px;
-box-shadow:0 0 10px rgba(0,0,0,0.5);
-z-index:9999;">
+    <div id="cinemaPopup" class="cinema-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="cinemaPopupTitle">
+        <div class="cinema-popup-card">
+            <div class="cinema-popup-strip">
+                <span id="cinemaPopupReel">AmarShowsBook</span>
+                <span>Final Take</span>
+            </div>
+            <div class="cinema-popup-body">
+                <h5 id="cinemaPopupTitle" class="cinema-popup-title">Director's Note</h5>
+                <p id="cinemaPopupMessage" class="cinema-popup-message"></p>
+            </div>
+            <div class="cinema-popup-actions">
+                <button type="button" id="cinemaPopupCancel" class="cinema-popup-btn cinema-popup-cancel d-none">Retake</button>
+                <button type="button" id="cinemaPopupOk" class="cinema-popup-btn cinema-popup-ok">Continue</button>
+            </div>
+        </div>
 </div>
 <!-- ================= SESSION POPUP ================= -->
 <div id="sessionPopup" style="
@@ -215,7 +297,16 @@ updateDateTime();
 <!-- LOGOUT CONFIRM -->
 <script>
 function confirmLogout() {
-    return confirm("🎬 Are you sure you want to exit the show?");
+    showCinemaPopup("Interval or exit? Your show will close and you will be logged out.", "confirm", {
+        title: "Exit The Show?",
+        okText: "Exit Show",
+        cancelText: "Stay Seated",
+        onOk: function () {
+            window.location.href = "/Auth/Logout";
+        }
+    });
+
+    return false;
 }
 </script>
 
@@ -320,18 +411,88 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
-</script>@RenderSection("Scripts", required: false)
+</script>
+
+<script>
+(function () {
+    const nativeAlert = window.alert.bind(window);
+
+    function popupTypeFromMessage(message) {
+        const text = String(message || "").toLowerCase();
+
+        if (text.includes("success") || text.includes("verified") || text.includes("sent")) {
+            return "success";
+        }
+
+        if (
+            text.includes("error") ||
+            text.includes("invalid") ||
+            text.includes("required") ||
+            text.includes("not") ||
+            text.includes("fail") ||
+            text.includes("already") ||
+            text.includes("nothing")
+        ) {
+            return "error";
+        }
+
+        return "info";
+    }
+
+    window.showCinemaPopup = function (message, type, options) {
+        const popup = document.getElementById("cinemaPopup");
+        const title = document.getElementById("cinemaPopupTitle");
+        const body = document.getElementById("cinemaPopupMessage");
+        const ok = document.getElementById("cinemaPopupOk");
+        const cancel = document.getElementById("cinemaPopupCancel");
+
+        if (!popup || !title || !body || !ok || !cancel) {
+            nativeAlert(message);
+            return;
+        }
+
+        const settings = options || {};
+        const popupType = type || popupTypeFromMessage(message);
+
+        popup.className = "cinema-popup-backdrop " + popupType;
+        title.innerText = settings.title || (
+            popupType === "success" ? "Housefull Applause" :
+            popupType === "error" ? "Scene Cut" :
+            popupType === "confirm" ? "Director's Call" :
+            "Director's Note"
+        );
+        body.innerText = message;
+        ok.innerText = settings.okText || "Continue";
+        cancel.innerText = settings.cancelText || "Cancel";
+        cancel.classList.toggle("d-none", popupType !== "confirm");
+        popup.style.display = "block";
+
+        ok.onclick = function () {
+            popup.style.display = "none";
+            if (typeof settings.onOk === "function") settings.onOk();
+        };
+
+        cancel.onclick = function () {
+            popup.style.display = "none";
+            if (typeof settings.onCancel === "function") settings.onCancel();
+        };
+    };
+
+    window.showPopup = function (message, type) {
+        window.showCinemaPopup(message, type);
+    };
+
+    window.alert = function (message) {
+        window.showCinemaPopup(message);
+    };
+})();
+</script>
+
+@RenderSection("Scripts", required: false)
 
 <script>
 function showPopup(message) {
-    let popup = document.getElementById("customPopup");
-
-    popup.innerText = message;
-    popup.style.display = "block";
-
-    setTimeout(() => {
-        popup.style.display = "none";
-    }, 2500);
+    window.showCinemaPopup(message);
 }
 </script>
 </body>
