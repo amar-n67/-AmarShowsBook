@@ -9,6 +9,9 @@
     --app-card-text: #f1f5f9;
     --app-input: #334155;
     --app-input-text: #fff;
+    --app-input-border: #475569;
+    --app-input-disabled: #243244;
+    --app-input-disabled-text: #a8b3c7;
     --app-muted: #cbd5f5;
     --app-link: #93c5fd;
     --app-primary: #6366f1;
@@ -23,6 +26,30 @@
     --app-profile-bg: linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86));
 }
 
+html[data-theme="system"] {
+    --app-bg: #e8edf5;
+    --app-text: #1f2937;
+    --app-card: #f9fbff;
+    --app-card-text: #1f2937;
+    --app-input: #ffffff;
+    --app-input-text: #111827;
+    --app-input-border: #bac4d4;
+    --app-input-disabled: #e3e8f0;
+    --app-input-disabled-text: #667085;
+    --app-muted: #64748b;
+    --app-link: #315f9f;
+    --app-primary: #315f9f;
+    --app-primary-hover: #244a7e;
+    --app-nav: linear-gradient(135deg, #233142, #455d7a 58%, #a37c40);
+    --app-nav-text: #fffdf8;
+    --app-accent: #f2c46d;
+    --app-accent-strong: #315f9f;
+    --app-danger: #9f3a3a;
+    --app-page-surface: #f9fbff;
+    --app-page-text: #1f2937;
+    --app-profile-bg: linear-gradient(135deg, #dfe7f1, #f8fafc, #fff7e6);
+}
+
 html[data-theme="white"] {
     --app-bg: #f7f7fb;
     --app-text: #1f2937;
@@ -30,6 +57,9 @@ html[data-theme="white"] {
     --app-card-text: #1f2937;
     --app-input: #ffffff;
     --app-input-text: #111827;
+    --app-input-border: #d1d5db;
+    --app-input-disabled: #eef2f7;
+    --app-input-disabled-text: #6b7280;
     --app-muted: #6b7280;
     --app-link: #2563eb;
     --app-primary: #2563eb;
@@ -51,6 +81,9 @@ html[data-theme="dark"] {
     --app-card-text: #f9fafb;
     --app-input: #1f2937;
     --app-input-text: #ffffff;
+    --app-input-border: #374151;
+    --app-input-disabled: #111827;
+    --app-input-disabled-text: #9ca3af;
     --app-muted: #9ca3af;
     --app-link: #93c5fd;
     --app-primary: #4f46e5;
@@ -72,6 +105,9 @@ html[data-theme="cinema"] {
     --app-card-text: #f1f5f9;
     --app-input: #334155;
     --app-input-text: #fff;
+    --app-input-border: #475569;
+    --app-input-disabled: #243244;
+    --app-input-disabled-text: #a8b3c7;
     --app-muted: #cbd5f5;
     --app-link: #93c5fd;
     --app-primary: #6366f1;
@@ -90,22 +126,78 @@ body {
     background: var(--app-bg);
     color: var(--app-text);
     font-family: 'Segoe UI', sans-serif;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .card {
-    background: var(--app-card);
+    background: var(--app-card) !important;
     border-radius: 16px;
-    color: var(--app-card-text);
+    color: var(--app-card-text) !important;
+    border-color: var(--app-input-border) !important;
 }
 
-.form-control {
-    background: var(--app-input);
-    color: var(--app-input-text);
-    border: none;
+.form-control,
+.form-select,
+input,
+select,
+textarea {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
 }
 
-.form-control::placeholder {
-    color: var(--app-muted);
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+input:disabled,
+input[readonly],
+select:disabled,
+textarea:disabled,
+textarea[readonly] {
+    background-color: var(--app-input-disabled) !important;
+    color: var(--app-input-disabled-text) !important;
+    border-color: var(--app-input-border) !important;
+    opacity: 1;
+}
+
+label,
+.form-label,
+h1, h2, h3, h4, h5, h6,
+p,
+li,
+td,
+th {
+    color: inherit;
+}
+
+.text-muted {
+    color: var(--app-muted) !important;
+}
+
+.table {
+    color: var(--app-text);
+}
+
+.alert {
+    border-radius: 12px;
+}
+
+.alert-danger {
+    background: color-mix(in srgb, var(--app-danger) 14%, var(--app-card)) !important;
+    color: var(--app-card-text) !important;
+    border-color: color-mix(in srgb, var(--app-danger) 44%, var(--app-input-border)) !important;
+}
+
+.alert-success {
+    background: color-mix(in srgb, var(--app-accent-strong) 15%, var(--app-card)) !important;
+    color: var(--app-card-text) !important;
+    border-color: color-mix(in srgb, var(--app-accent-strong) 45%, var(--app-input-border)) !important;
 }
 
 .btn-primary {
@@ -268,7 +360,7 @@ a {
     border: 1px solid rgba(255,255,255,0.18);
     border-radius: 14px;
     background: rgba(255,255,255,0.1);
-    color: #fff;
+    color: var(--app-nav-text);
 }
 
 .film-user-meta {
@@ -277,7 +369,7 @@ a {
 }
 
 .film-time {
-    color: rgba(255,255,255,0.72);
+    color: color-mix(in srgb, var(--app-nav-text) 72%, transparent);
     font-size: 11px;
 }
 
@@ -349,7 +441,7 @@ a {
 
 .profile-shell {
     background: var(--app-page-surface) !important;
-    color: var(--app-page-text);
+    color: var(--app-page-text) !important;
 }
 
 .profile-hero,
@@ -358,24 +450,52 @@ a {
 }
 
 html[data-theme="dark"] .profile-scene,
-html[data-theme="dark"] .scene-title h5,
-html[data-theme="dark"] .field-block label {
+.profile-scene,
+.scene-title h5,
+.field-block label {
     color: var(--app-page-text) !important;
 }
 
-html[data-theme="dark"] .profile-scene {
-    border-bottom-color: rgba(255,255,255,0.12) !important;
+.scene-title span,
+.dropdown-icon {
+    color: var(--app-accent-strong) !important;
+}
+
+.profile-scene {
+    border-bottom-color: var(--app-input-border) !important;
+}
+
+.clean-input {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+input.clean-input[readonly],
+.clean-input:disabled {
+    background-color: var(--app-input-disabled) !important;
+    color: var(--app-input-disabled-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+.profile-hero h2,
+.profile-hero p,
+.poster-panel,
+.poster-panel * {
+    color: var(--app-nav-text) !important;
+}
+
+.poster-label,
+.profile-ticket {
+    color: var(--app-accent) !important;
 }
 
 html[data-theme="white"] .film-user-card,
-html[data-theme="white"] .theme-switcher {
+html[data-theme="white"] .theme-switcher,
+html[data-theme="system"] .film-user-card,
+html[data-theme="system"] .theme-switcher {
     border-color: rgba(17,24,39,0.12);
     background: rgba(17,24,39,0.05);
-}
-
-html[data-theme="white"] .film-time,
-html[data-theme="white"] .film-email {
-    color: #111827;
 }
 
 @@media (max-width: 760px) {
@@ -404,9 +524,8 @@ html[data-theme="white"] .film-email {
 </style>
 <script>
 (function () {
-    const storedTheme = localStorage.getItem("amarShowsTheme") || "system";
-    const systemTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "white" : "dark";
-    document.documentElement.dataset.theme = storedTheme === "system" ? systemTheme : storedTheme;
+    const storedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
+    document.documentElement.dataset.theme = storedTheme;
     document.documentElement.dataset.themeChoice = storedTheme;
 })();
 </script>
@@ -582,12 +701,6 @@ updateDateTime();
 
 <script>
 (function () {
-    const media = window.matchMedia("(prefers-color-scheme: light)");
-
-    function resolveTheme(choice) {
-        return choice === "system" ? (media.matches ? "white" : "dark") : choice;
-    }
-
     function markThemeButton(choice) {
         document.querySelectorAll(".theme-toggle-btn").forEach(btn => {
             btn.classList.toggle("active", btn.dataset.themeChoice === choice);
@@ -595,23 +708,16 @@ updateDateTime();
     }
 
     window.setAppTheme = function (choice) {
-        const themeChoice = choice || "system";
+        const themeChoice = choice || "cinema";
         localStorage.setItem("amarShowsTheme", themeChoice);
         document.documentElement.dataset.themeChoice = themeChoice;
-        document.documentElement.dataset.theme = resolveTheme(themeChoice);
+        document.documentElement.dataset.theme = themeChoice;
         markThemeButton(themeChoice);
     };
 
     document.addEventListener("DOMContentLoaded", function () {
-        const saved = localStorage.getItem("amarShowsTheme") || "system";
+        const saved = localStorage.getItem("amarShowsTheme") || "cinema";
         window.setAppTheme(saved);
-    });
-
-    media.addEventListener("change", function () {
-        const currentChoice = localStorage.getItem("amarShowsTheme") || "system";
-        if (currentChoice === "system") {
-            window.setAppTheme("system");
-        }
     });
 })();
 </script>
