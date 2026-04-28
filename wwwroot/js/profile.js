@@ -274,31 +274,39 @@ function cancelSelect(id, value, cancelBtn) {
 
 let oldImageSrc = "";
 
-function changeImage() {
-    let fileInput = document.getElementById("profileImage");
-
-    oldImageSrc = document.getElementById("profilePreview").src;
-
-    fileInput.classList.remove("d-none");
-    fileInput.click();
+function prepareImageChange() {
+    if (!oldImageSrc) {
+        oldImageSrc = document.getElementById("profilePreview").src;
+    }
 
     document.getElementById("imageCancel").classList.remove("d-none");
+}
 
-    fileInput.onchange = function () {
-        let file = fileInput.files[0];
-        if (file) {
-            let reader = new FileReader();
-            reader.onload = function (e) {
-                document.getElementById("profilePreview").src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
+function changeImage() {
+    prepareImageChange();
+    document.getElementById("profileImage").click();
+}
+
+function previewProfileImage() {
+    let fileInput = document.getElementById("profileImage");
+    let file = fileInput.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.onload = function (e) {
+        document.getElementById("profilePreview").src = e.target.result;
     };
+    reader.readAsDataURL(file);
 }
 
 function cancelImage() {
     document.getElementById("profilePreview").src = oldImageSrc;
+    document.getElementById("profileImage").value = "";
     document.getElementById("imageCancel").classList.add("d-none");
+    oldImageSrc = "";
 }
 
 function validateProfileForm() {

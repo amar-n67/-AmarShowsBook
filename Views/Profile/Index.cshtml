@@ -42,11 +42,17 @@
                          class="profile-poster" />
 
                     <input type="file" name="profileImage"
-                           id="profileImage" class="d-none" />
+                           id="profileImage"
+                           class="poster-file-input"
+                           accept="image/*"
+                           onchange="previewProfileImage()" />
 
                     <div class="poster-actions">
-                        <button type="button" class="btn btn-warning btn-sm action-btn"
-                                onclick="changeImage()">Change Poster</button>
+                        <label for="profileImage"
+                               class="btn btn-warning btn-sm action-btn poster-upload-btn"
+                               onclick="prepareImageChange()">
+                            Change Poster
+                        </label>
 
                         <button type="button" id="imageCancel"
                                 class="btn btn-secondary btn-sm action-btn d-none"
@@ -362,6 +368,17 @@
     display: grid;
     gap: 8px;
     margin-top: 14px;
+}
+.poster-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.poster-upload-btn {
+    margin-bottom: 0;
+    cursor: pointer;
 }
 .profile-scene {
     padding: 16px 0;
