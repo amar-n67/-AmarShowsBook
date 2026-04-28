@@ -171,6 +171,7 @@
                 <label>Genre 🎬</label>
 
                 <div class="input-group input-group-sm">
+                    <div class="position-relative flex-grow-1">
                     <select name="Genre" id="genreField"
                             class="form-control clean-input" disabled>
                         <option value="@Model.Genre">@Model.Genre</option>
@@ -179,6 +180,8 @@
                         <option>Romance</option>
                         <option>Thriller</option>
                     </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
                             onclick="enableProfileSelect('genreField')">Change</button>
@@ -190,6 +193,7 @@
                 <label>Language 🌍</label>
 
                 <div class="input-group input-group-sm">
+                    <div class="position-relative flex-grow-1">
                     <select name="Language" id="languageField"
                             class="form-control clean-input" disabled>
                         <option value="@Model.Language">@Model.Language</option>
@@ -197,6 +201,8 @@
                         <option>English</option>
                         <option>Tamil</option>
                     </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
                             onclick="enableProfileSelect('languageField')">Change</button>

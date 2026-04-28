@@ -249,11 +249,13 @@ function cancelAddress(oldVal) {
 
 function enableProfileSelect(id) {
     let el = document.getElementById(id);
+    let wrapper = el.closest(".position-relative");
 
     el.removeAttribute("disabled");
     el.style.backgroundColor = "#fff";
     el.style.color = "#000";
     el.style.borderColor = "#ccc";
+    wrapper?.querySelector(".dropdown-icon")?.classList.remove("d-none");
     el.focus();
 }
 
