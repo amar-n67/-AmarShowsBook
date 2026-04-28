@@ -37,6 +37,10 @@ public class ProfileController : Controller
         var newEmail = model.Email?.Trim();
         var newMobile = model.Mobile?.Trim();
         var newAddress = model.Address?.Trim();
+        var newCountry = model.Country ?? user.Country;
+        var newState = model.State ?? user.State;
+        var newDistrict = model.District ?? user.District;
+        var newPincode = model.Pincode ?? user.Pincode;
         var newGenre = model.Genre ?? user.Genre;
         var newLanguage = model.Language ?? user.Language;
 
@@ -58,6 +62,10 @@ public class ProfileController : Controller
             emailChanged ||
             mobileChanged ||
             !string.Equals(newAddress, user.Address, StringComparison.Ordinal) ||
+            !string.Equals(newCountry, user.Country, StringComparison.Ordinal) ||
+            !string.Equals(newState, user.State, StringComparison.Ordinal) ||
+            !string.Equals(newDistrict, user.District, StringComparison.Ordinal) ||
+            !string.Equals(newPincode, user.Pincode, StringComparison.Ordinal) ||
             !string.Equals(newGenre, user.Genre, StringComparison.Ordinal) ||
             !string.Equals(newLanguage, user.Language, StringComparison.Ordinal) ||
             (profileImage != null && profileImage.Length > 0);
@@ -99,10 +107,10 @@ public class ProfileController : Controller
         user.Mobile = newMobile;
         user.Address = newAddress;
 
-user.Country = model.Country ?? user.Country;
-user.State = model.State ?? user.State;
-user.District = model.District ?? user.District;
-user.Pincode = model.Pincode ?? user.Pincode;
+user.Country = newCountry;
+user.State = newState;
+user.District = newDistrict;
+user.Pincode = newPincode;
         user.Genre = newGenre;
         user.Language = newLanguage;
 

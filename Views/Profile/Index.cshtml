@@ -21,6 +21,10 @@
             <input type="hidden" id="originalEmail" value="@Model.Email" />
             <input type="hidden" id="originalMobile" value="@Model.Mobile" />
             <input type="hidden" id="originalAddress" value="@Model.Address" />
+            <input type="hidden" id="originalCountry" value="@Model.Country" />
+            <input type="hidden" id="originalState" value="@Model.State" />
+            <input type="hidden" id="originalDistrict" value="@Model.District" />
+            <input type="hidden" id="originalPincode" value="@Model.Pincode" />
             <input type="hidden" id="originalGenre" value="@Model.Genre" />
             <input type="hidden" id="originalLanguage" value="@Model.Language" />
 
@@ -121,25 +125,44 @@
                             onclick="cancelAddress('@Model.Address')">Cancel</button>
                 </div>
 
-                <div id="addressDropdown" class="mt-2 d-none">
-                    <select class="form-control clean-input mb-1">
-                        <option>▼ Country</option>
-                        <option>India</option>
-                    </select>
+                <div id="addressDropdown" class="mt-2">
+                    <div class="position-relative mb-1">
+                        <select name="Country" id="countryField"
+                                class="form-control clean-input address-part"
+                                onchange="buildFullAddress()" disabled>
+                            <option value="">Country</option>
+                            <option selected="@(Model.Country == "India" ? "selected" : null)">India</option>
+                        </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
 
-                    <select class="form-control clean-input mb-1">
-                        <option>▼ State</option>
-                        <option>Maharashtra</option>
-                        <option>Karnataka</option>
-                    </select>
+                    <div class="position-relative mb-1">
+                        <select name="State" id="stateField"
+                                class="form-control clean-input address-part"
+                                onchange="buildFullAddress()" disabled>
+                            <option value="">State</option>
+                            <option selected="@(Model.State == "Maharashtra" ? "selected" : null)">Maharashtra</option>
+                            <option selected="@(Model.State == "Karnataka" ? "selected" : null)">Karnataka</option>
+                        </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
 
-                    <select class="form-control clean-input mb-1">
-                        <option>▼ District</option>
-                        <option>Mumbai</option>
-                        <option>Pune</option>
-                    </select>
+                    <div class="position-relative mb-1">
+                        <select name="District" id="districtField"
+                                class="form-control clean-input address-part"
+                                onchange="buildFullAddress()" disabled>
+                            <option value="">District</option>
+                            <option selected="@(Model.District == "Mumbai" ? "selected" : null)">Mumbai</option>
+                            <option selected="@(Model.District == "Pune" ? "selected" : null)">Pune</option>
+                        </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
 
-                    <input class="form-control clean-input" placeholder="Pincode" />
+                    <input name="Pincode" id="pincodeField"
+                           class="form-control clean-input address-part"
+                           value="@Model.Pincode"
+                           placeholder="Pincode"
+                           oninput="buildFullAddress()" readonly />
                 </div>
             </div>
 
@@ -234,6 +257,14 @@ input.clean-input[readonly],
 .clean-input:focus {
     border-color: #6366f1;
     box-shadow: 0 0 3px #6366f1;
+}
+.dropdown-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6366f1;
+    pointer-events: none;
 }
 </style>
 

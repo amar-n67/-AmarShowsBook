@@ -207,10 +207,16 @@ function editAddress(oldVal) {
     let field = document.getElementById("addressField");
 
     field.removeAttribute("readonly");
-    field.value = "";
+    document.querySelectorAll(".address-part").forEach(el => {
+        el.removeAttribute("disabled");
+        el.removeAttribute("readonly");
+        el.style.backgroundColor = "#fff";
+        el.style.color = "#000";
+        el.style.borderColor = "#ccc";
+    });
 
     document.getElementById("addressCancel").classList.remove("d-none");
-    document.getElementById("addressDropdown").classList.remove("d-none");
+    document.querySelectorAll(".dropdown-icon").forEach(icon => icon.classList.remove("d-none"));
 }
 
 function cancelAddress(oldVal) {
@@ -219,8 +225,22 @@ function cancelAddress(oldVal) {
     field.value = oldVal;
     field.setAttribute("readonly", true);
 
+    document.getElementById("countryField").value = document.getElementById("originalCountry").value;
+    document.getElementById("stateField").value = document.getElementById("originalState").value;
+    document.getElementById("districtField").value = document.getElementById("originalDistrict").value;
+    document.getElementById("pincodeField").value = document.getElementById("originalPincode").value;
+
+    document.querySelectorAll("#countryField, #stateField, #districtField").forEach(el => {
+        el.setAttribute("disabled", true);
+        el.removeAttribute("style");
+    });
+
+    let pincode = document.getElementById("pincodeField");
+    pincode.setAttribute("readonly", true);
+    pincode.removeAttribute("style");
+
     document.getElementById("addressCancel").classList.add("d-none");
-    document.getElementById("addressDropdown").classList.add("d-none");
+    document.querySelectorAll(".dropdown-icon").forEach(icon => icon.classList.add("d-none"));
 }
 
 // =====================================================
@@ -290,6 +310,18 @@ function validateProfileForm() {
     let address = document.getElementById("addressField").value;
     let oldAddress = document.getElementById("originalAddress").value;
 
+    let country = document.getElementById("countryField").value;
+    let oldCountry = document.getElementById("originalCountry").value;
+
+    let state = document.getElementById("stateField").value;
+    let oldState = document.getElementById("originalState").value;
+
+    let district = document.getElementById("districtField").value;
+    let oldDistrict = document.getElementById("originalDistrict").value;
+
+    let pincode = document.getElementById("pincodeField").value;
+    let oldPincode = document.getElementById("originalPincode").value;
+
     let genre = document.getElementById("genreField").value;
     let oldGenre = document.getElementById("originalGenre").value;
 
@@ -329,6 +361,10 @@ function validateProfileForm() {
         email !== oldEmail ||
         mobile !== oldMobile ||
         address !== oldAddress ||
+        country !== oldCountry ||
+        state !== oldState ||
+        district !== oldDistrict ||
+        pincode !== oldPincode ||
         genre !== oldGenre ||
         language !== oldLanguage ||
         image !== "";
@@ -340,6 +376,9 @@ function validateProfileForm() {
 
     document.getElementById("genreField").removeAttribute("disabled");
     document.getElementById("languageField").removeAttribute("disabled");
+    document.getElementById("countryField").removeAttribute("disabled");
+    document.getElementById("stateField").removeAttribute("disabled");
+    document.getElementById("districtField").removeAttribute("disabled");
 
     return true;
 }
@@ -348,12 +387,13 @@ function showPopup(message) {
 }
 function buildFullAddress() {
 
-    let country = document.querySelector('[name="Country"]').value;
-    let state = document.querySelector('[name="State"]').value;
-    let district = document.querySelector('[name="District"]').value;
-    let pincode = document.querySelector('[name="Pincode"]').value;
+    let country = document.getElementById("countryField").value;
+    let state = document.getElementById("stateField").value;
+    let district = document.getElementById("districtField").value;
+    let pincode = document.getElementById("pincodeField").value;
 
-    let fullAddress = `${district}, ${state}, ${country} - ${pincode}`;
+    let location = [district, state, country].filter(Boolean).join(", ");
+    let fullAddress = pincode ? `${location} - ${pincode}` : location;
 
     document.getElementById("addressField").value = fullAddress;
 }
