@@ -150,7 +150,7 @@
                 <div class="input-group input-group-sm">
                     <select name="Genre" id="genreField"
                             class="form-control clean-input" disabled>
-                        <option>@Model.Genre</option>
+                        <option value="@Model.Genre">@Model.Genre</option>
                         <option>Action</option>
                         <option>Comedy</option>
                         <option>Romance</option>
@@ -169,7 +169,7 @@
                 <div class="input-group input-group-sm">
                     <select name="Language" id="languageField"
                             class="form-control clean-input" disabled>
-                        <option>@Model.Language</option>
+                        <option value="@Model.Language">@Model.Language</option>
                         <option>Hindi</option>
                         <option>English</option>
                         <option>Tamil</option>
@@ -223,6 +223,11 @@
     color: #000;
     border: 1px solid #ccc;
     border-radius: 6px;
+}
+.clean-input:disabled {
+    background: #fff;
+    color: #000;
+    opacity: 1;
 }
 .clean-input:focus {
     border-color: #6366f1;

@@ -3,6 +3,7 @@ using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 public class ProfileController : Controller
 {
@@ -33,31 +34,77 @@ public class ProfileController : Controller
 
         if (user == null) return RedirectToAction("Login", "Auth");
 
+        var newEmail = model.Email?.Trim();
+        var newMobile = model.Mobile?.Trim();
+        var newAddress = model.Address?.Trim();
+        var newGenre = model.Genre ?? user.Genre;
+        var newLanguage = model.Language ?? user.Language;
+
+        if (string.IsNullOrWhiteSpace(newEmail) || string.IsNullOrWhiteSpace(newMobile))
+        {
+            TempData["Error"] = "Email and mobile are required.";
+            return View(user);
+        }
+
+        if (!Regex.IsMatch(newEmail, @"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$"))
+        {
+            TempData["Error"] = "Only Gmail or Outlook email is allowed.";
+            return View(user);
+        }
+
+        var emailChanged = !string.Equals(newEmail, user.Email, StringComparison.Ordinal);
+        var mobileChanged = !string.Equals(newMobile, user.Mobile, StringComparison.Ordinal);
+        var isChanged =
+            emailChanged ||
+            mobileChanged ||
+            !string.Equals(newAddress, user.Address, StringComparison.Ordinal) ||
+            !string.Equals(newGenre, user.Genre, StringComparison.Ordinal) ||
+            !string.Equals(newLanguage, user.Language, StringComparison.Ordinal) ||
+            (profileImage != null && profileImage.Length > 0);
+
+        if (!isChanged)
+        {
+            TempData["Error"] = "There is nothing to update.";
+            return View(user);
+        }
+
+        if (emailChanged && HttpContext.Session.GetString("VerifiedEmailForProfile") != newEmail)
+        {
+            TempData["Error"] = "Please verify the new email OTP before saving.";
+            return View(user);
+        }
+
+        if (mobileChanged && HttpContext.Session.GetString("VerifiedMobileForProfile") != newMobile)
+        {
+            TempData["Error"] = "Please verify the new mobile OTP before saving.";
+            return View(user);
+        }
+
         // ================= EMAIL UNIQUE CHECK =================
-        if (_context.Users.Any(u => u.Email == model.Email && u.Id != user.Id))
+        if (_context.Users.Any(u => u.Email == newEmail && u.Id != user.Id))
         {
             TempData["Error"] = "Email already exists";
             return View(user);
         }
 
         // ================= MOBILE UNIQUE CHECK =================
-        if (_context.Users.Any(u => u.Mobile == model.Mobile && u.Id != user.Id))
+        if (_context.Users.Any(u => u.Mobile == newMobile && u.Id != user.Id))
         {
             TempData["Error"] = "Mobile already exists";
             return View(user);
         }
 
         // ================= UPDATE FIELDS =================
-        user.Email = model.Email;
-        user.Mobile = model.Mobile;
-        user.Address = model.Address;
+        user.Email = newEmail;
+        user.Mobile = newMobile;
+        user.Address = newAddress;
 
-user.Country = model.Country;
-user.State = model.State;
-user.District = model.District;
-user.Pincode = model.Pincode;
-        user.Genre = model.Genre;
-        user.Language = model.Language;
+user.Country = model.Country ?? user.Country;
+user.State = model.State ?? user.State;
+user.District = model.District ?? user.District;
+user.Pincode = model.Pincode ?? user.Pincode;
+        user.Genre = newGenre;
+        user.Language = newLanguage;
 
         // ================= IMAGE UPLOAD =================
        if (profileImage != null && profileImage.Length > 0)
@@ -85,6 +132,17 @@ user.UpdatedAt = DateTime.UtcNow;
 user.UpdatedBy = currentUser ?? "System";
 
         _context.SaveChanges();
+
+        if (emailChanged)
+        {
+            HttpContext.Session.SetString("UserEmail", user.Email);
+            HttpContext.Session.Remove("VerifiedEmailForProfile");
+        }
+
+        if (mobileChanged)
+        {
+            HttpContext.Session.Remove("VerifiedMobileForProfile");
+        }
 
         TempData["Success"] = "Profile updated successfully";
 

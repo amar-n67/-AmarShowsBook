@@ -273,6 +273,11 @@ function validateProfileForm() {
         return false;
     }
 
+    if (!emailRegex.test(email)) {
+        showPopup("Only @gmail.com or @outlook.com email is allowed.");
+        return false;
+    }
+
     // ================= CHANGE CHECK =================
     let isChanged =
         email !== oldEmail ||
@@ -288,6 +293,9 @@ function validateProfileForm() {
     }
 
     return true;
+}
+function showPopup(message) {
+    alert(message);
 }
 function buildFullAddress() {
 
