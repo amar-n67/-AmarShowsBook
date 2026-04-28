@@ -2,39 +2,123 @@
 <html lang="en">
 <head>
     <style>
+:root {
+    --app-bg: #0f172a;
+    --app-text: #e5e7eb;
+    --app-card: #1e293b;
+    --app-card-text: #f1f5f9;
+    --app-input: #334155;
+    --app-input-text: #fff;
+    --app-muted: #cbd5f5;
+    --app-link: #93c5fd;
+    --app-primary: #6366f1;
+    --app-primary-hover: #4f46e5;
+    --app-nav: linear-gradient(135deg, #231f20, #8f1d3f 52%, #0f766e);
+    --app-nav-text: #fffdf8;
+    --app-accent: #f7d774;
+    --app-accent-strong: #0f766e;
+    --app-danger: #991b1b;
+    --app-page-surface: #fff;
+    --app-page-text: #231f20;
+    --app-profile-bg: linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86));
+}
+
+html[data-theme="white"] {
+    --app-bg: #f7f7fb;
+    --app-text: #1f2937;
+    --app-card: #ffffff;
+    --app-card-text: #1f2937;
+    --app-input: #ffffff;
+    --app-input-text: #111827;
+    --app-muted: #6b7280;
+    --app-link: #2563eb;
+    --app-primary: #2563eb;
+    --app-primary-hover: #1d4ed8;
+    --app-nav: linear-gradient(135deg, #ffffff, #eef2ff 55%, #dbeafe);
+    --app-nav-text: #111827;
+    --app-accent: #2563eb;
+    --app-accent-strong: #0f766e;
+    --app-danger: #dc2626;
+    --app-page-surface: #ffffff;
+    --app-page-text: #111827;
+    --app-profile-bg: linear-gradient(135deg, #f8fafc, #eef2ff, #ecfeff);
+}
+
+html[data-theme="dark"] {
+    --app-bg: #050816;
+    --app-text: #e5e7eb;
+    --app-card: #111827;
+    --app-card-text: #f9fafb;
+    --app-input: #1f2937;
+    --app-input-text: #ffffff;
+    --app-muted: #9ca3af;
+    --app-link: #93c5fd;
+    --app-primary: #4f46e5;
+    --app-primary-hover: #4338ca;
+    --app-nav: linear-gradient(135deg, #050816, #312e81, #164e63);
+    --app-nav-text: #f9fafb;
+    --app-accent: #a5b4fc;
+    --app-accent-strong: #22d3ee;
+    --app-danger: #b91c1c;
+    --app-page-surface: #111827;
+    --app-page-text: #f9fafb;
+    --app-profile-bg: linear-gradient(135deg, #050816, #111827, #164e63);
+}
+
+html[data-theme="cinema"] {
+    --app-bg: #0f172a;
+    --app-text: #e5e7eb;
+    --app-card: #1e293b;
+    --app-card-text: #f1f5f9;
+    --app-input: #334155;
+    --app-input-text: #fff;
+    --app-muted: #cbd5f5;
+    --app-link: #93c5fd;
+    --app-primary: #6366f1;
+    --app-primary-hover: #4f46e5;
+    --app-nav: linear-gradient(135deg, #231f20, #8f1d3f 52%, #0f766e);
+    --app-nav-text: #fffdf8;
+    --app-accent: #f7d774;
+    --app-accent-strong: #0f766e;
+    --app-danger: #991b1b;
+    --app-page-surface: #fff;
+    --app-page-text: #231f20;
+    --app-profile-bg: linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86));
+}
+
 body {
-    background: #0f172a;
-    color: #e5e7eb;
+    background: var(--app-bg);
+    color: var(--app-text);
     font-family: 'Segoe UI', sans-serif;
 }
 
 .card {
-    background: #1e293b;
+    background: var(--app-card);
     border-radius: 16px;
-    color: #f1f5f9;
+    color: var(--app-card-text);
 }
 
 .form-control {
-    background: #334155;
-    color: #fff;
+    background: var(--app-input);
+    color: var(--app-input-text);
     border: none;
 }
 
 .form-control::placeholder {
-    color: #cbd5f5;
+    color: var(--app-muted);
 }
 
 .btn-primary {
-    background: #6366f1;
+    background: var(--app-primary);
     border: none;
 }
 
 .btn-primary:hover {
-    background: #4f46e5;
+    background: var(--app-primary-hover);
 }
 
 a {
-    color: #93c5fd;
+    color: var(--app-link);
 }
 @@keyframes popupFade {
     from {
@@ -140,7 +224,7 @@ a {
     margin: 14px;
     border: 1px solid rgba(247, 215, 116, 0.28);
     border-radius: 18px;
-    background: linear-gradient(135deg, #231f20, #8f1d3f 52%, #0f766e);
+    background: var(--app-nav);
     box-shadow: 0 16px 36px rgba(0,0,0,0.28);
 }
 
@@ -152,7 +236,7 @@ a {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    color: #fffdf8 !important;
+    color: var(--app-nav-text) !important;
     font-weight: 900;
     letter-spacing: 0;
 }
@@ -165,7 +249,7 @@ a {
     height: 34px;
     border: 1px dashed rgba(247, 215, 116, 0.7);
     border-radius: 10px;
-    color: #f7d774;
+    color: var(--app-accent);
     background: rgba(255,255,255,0.08);
 }
 
@@ -200,7 +284,7 @@ a {
 .film-email {
     max-width: 220px;
     overflow: hidden;
-    color: #fffdf8;
+    color: var(--app-nav-text);
     font-weight: 800;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -209,7 +293,7 @@ a {
 .film-avatar {
     width: 42px;
     height: 42px;
-    border: 2px solid #f7d774;
+    border: 2px solid var(--app-accent);
     border-radius: 50%;
     object-fit: cover;
     box-shadow: 0 8px 18px rgba(0,0,0,0.3);
@@ -224,13 +308,74 @@ a {
 }
 
 .film-profile-btn {
-    background: #f7d774;
+    background: var(--app-accent);
     color: #231f20 !important;
 }
 
 .film-logout-btn {
-    background: #991b1b;
+    background: var(--app-danger);
     color: #fff !important;
+}
+
+.theme-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.11);
+}
+
+.theme-toggle-btn {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--app-nav-text);
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.theme-toggle-btn.active {
+    background: var(--app-accent);
+    color: #231f20;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+}
+
+.profile-page {
+    background: var(--app-profile-bg), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 12px, transparent 12px 26px) !important;
+}
+
+.profile-shell {
+    background: var(--app-page-surface) !important;
+    color: var(--app-page-text);
+}
+
+.profile-hero,
+.poster-panel {
+    background: var(--app-nav) !important;
+}
+
+html[data-theme="dark"] .profile-scene,
+html[data-theme="dark"] .scene-title h5,
+html[data-theme="dark"] .field-block label {
+    color: var(--app-page-text) !important;
+}
+
+html[data-theme="dark"] .profile-scene {
+    border-bottom-color: rgba(255,255,255,0.12) !important;
+}
+
+html[data-theme="white"] .film-user-card,
+html[data-theme="white"] .theme-switcher {
+    border-color: rgba(17,24,39,0.12);
+    background: rgba(17,24,39,0.05);
+}
+
+html[data-theme="white"] .film-time,
+html[data-theme="white"] .film-email {
+    color: #111827;
 }
 
 @@media (max-width: 760px) {
@@ -248,9 +393,23 @@ a {
         width: 100%;
         justify-content: flex-end;
     }
+
+    .theme-switcher {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+    }
 }
 
 </style>
+<script>
+(function () {
+    const storedTheme = localStorage.getItem("amarShowsTheme") || "system";
+    const systemTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "white" : "dark";
+    document.documentElement.dataset.theme = storedTheme === "system" ? systemTheme : storedTheme;
+    document.documentElement.dataset.themeChoice = storedTheme;
+})();
+</script>
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -335,6 +494,12 @@ z-index:9999;">
     </a>
 
     <div class="film-menu">
+        <div class="theme-switcher" aria-label="Theme selector">
+            <button type="button" class="theme-toggle-btn" data-theme-choice="system" onclick="setAppTheme('system')">System</button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="dark" onclick="setAppTheme('dark')">Dark</button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="white" onclick="setAppTheme('white')">White</button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')">Cinema</button>
+        </div>
 
         @if (Context.Session.GetString("UserEmail") != null)
         {
@@ -395,6 +560,9 @@ function togglePassword(fieldId) {
 <!-- ✅ DATE + TIME -->
 <script>
 function updateDateTime() {
+    let liveDateTime = document.getElementById("liveDateTime");
+    if (!liveDateTime) return;
+
     let now = new Date();
 
     let date = now.toLocaleDateString('en-IN', {
@@ -406,11 +574,46 @@ function updateDateTime() {
 
     let time = now.toLocaleTimeString();
 
-    document.getElementById("liveDateTime").innerHTML =
-        date + " | " + time;
+    liveDateTime.innerHTML = date + " | " + time;
 }
 setInterval(updateDateTime, 1000);
 updateDateTime();
+</script>
+
+<script>
+(function () {
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+
+    function resolveTheme(choice) {
+        return choice === "system" ? (media.matches ? "white" : "dark") : choice;
+    }
+
+    function markThemeButton(choice) {
+        document.querySelectorAll(".theme-toggle-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.themeChoice === choice);
+        });
+    }
+
+    window.setAppTheme = function (choice) {
+        const themeChoice = choice || "system";
+        localStorage.setItem("amarShowsTheme", themeChoice);
+        document.documentElement.dataset.themeChoice = themeChoice;
+        document.documentElement.dataset.theme = resolveTheme(themeChoice);
+        markThemeButton(themeChoice);
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const saved = localStorage.getItem("amarShowsTheme") || "system";
+        window.setAppTheme(saved);
+    });
+
+    media.addEventListener("change", function () {
+        const currentChoice = localStorage.getItem("amarShowsTheme") || "system";
+        if (currentChoice === "system") {
+            window.setAppTheme("system");
+        }
+    });
+})();
 </script>
 
 <!-- LOGOUT CONFIRM -->
