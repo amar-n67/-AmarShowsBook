@@ -23,6 +23,10 @@
     --app-danger: #991b1b;
     --app-page-surface: #fff;
     --app-page-text: #231f20;
+    --app-popup-surface: #fffdf8;
+    --app-popup-text: #231f20;
+    --app-popup-muted: #4b5563;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(18, 24, 38, 0.78), rgba(122, 24, 46, 0.72)), rgba(0, 0, 0, 0.54);
     --app-profile-bg: linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86));
 }
 
@@ -47,6 +51,10 @@ html[data-theme="system"] {
     --app-danger: #9f3a3a;
     --app-page-surface: #f9fbff;
     --app-page-text: #1f2937;
+    --app-popup-surface: #f9fbff;
+    --app-popup-text: #1f2937;
+    --app-popup-muted: #64748b;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(35, 49, 66, 0.62), rgba(163, 124, 64, 0.42)), rgba(248, 250, 252, 0.58);
     --app-profile-bg: linear-gradient(135deg, #dfe7f1, #f8fafc, #fff7e6);
 }
 
@@ -71,6 +79,10 @@ html[data-theme="white"] {
     --app-danger: #dc2626;
     --app-page-surface: #ffffff;
     --app-page-text: #111827;
+    --app-popup-surface: #ffffff;
+    --app-popup-text: #111827;
+    --app-popup-muted: #4b5563;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(219, 234, 254, 0.82)), rgba(15, 23, 42, 0.28);
     --app-profile-bg: linear-gradient(135deg, #f8fafc, #eef2ff, #ecfeff);
 }
 
@@ -95,6 +107,10 @@ html[data-theme="dark"] {
     --app-danger: #b91c1c;
     --app-page-surface: #111827;
     --app-page-text: #f9fafb;
+    --app-popup-surface: #111827;
+    --app-popup-text: #f9fafb;
+    --app-popup-muted: #cbd5e1;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(5, 8, 22, 0.86), rgba(49, 46, 129, 0.72)), rgba(0, 0, 0, 0.68);
     --app-profile-bg: linear-gradient(135deg, #050816, #111827, #164e63);
 }
 
@@ -119,6 +135,10 @@ html[data-theme="cinema"] {
     --app-danger: #991b1b;
     --app-page-surface: #fff;
     --app-page-text: #231f20;
+    --app-popup-surface: #fffdf8;
+    --app-popup-text: #231f20;
+    --app-popup-muted: #4b5563;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(18, 24, 38, 0.78), rgba(122, 24, 46, 0.72)), rgba(0, 0, 0, 0.54);
     --app-profile-bg: linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86));
 }
 
@@ -136,6 +156,18 @@ body {
     border-color: var(--app-input-border) !important;
 }
 
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6,
+.card p,
+.card label,
+.card small {
+    color: inherit;
+}
+
 .form-control,
 .form-select,
 input,
@@ -144,6 +176,11 @@ textarea {
     background-color: var(--app-input) !important;
     color: var(--app-input-text) !important;
     border-color: var(--app-input-border) !important;
+}
+
+select option {
+    background: var(--app-input);
+    color: var(--app-input-text);
 }
 
 .form-control::placeholder,
@@ -201,12 +238,39 @@ th {
 }
 
 .btn-primary {
-    background: var(--app-primary);
-    border: none;
+    background: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+    color: #fff !important;
 }
 
 .btn-primary:hover {
-    background: var(--app-primary-hover);
+    background: var(--app-primary-hover) !important;
+}
+
+.btn-dark,
+.btn-secondary,
+.btn-outline-light {
+    background: var(--app-input-disabled) !important;
+    border-color: var(--app-input-border) !important;
+    color: var(--app-input-text) !important;
+}
+
+.btn-warning {
+    background: var(--app-accent) !important;
+    border-color: var(--app-accent) !important;
+    color: #231f20 !important;
+}
+
+.btn-success {
+    background: var(--app-accent-strong) !important;
+    border-color: var(--app-accent-strong) !important;
+    color: #fff !important;
+}
+
+.btn-danger {
+    background: var(--app-danger) !important;
+    border-color: var(--app-danger) !important;
+    color: #fff !important;
 }
 
 a {
@@ -228,9 +292,7 @@ a {
     display: none;
     position: fixed;
     inset: 0;
-    background:
-        linear-gradient(135deg, rgba(18, 24, 38, 0.78), rgba(122, 24, 46, 0.72)),
-        rgba(0, 0, 0, 0.54);
+    background: var(--app-popup-backdrop);
     backdrop-filter: blur(7px);
     z-index: 10000;
 }
@@ -243,8 +305,8 @@ a {
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.18);
     border-radius: 18px;
-    background: #fffdf8;
-    color: #231f20;
+    background: var(--app-popup-surface);
+    color: var(--app-popup-text);
     box-shadow: 0 28px 80px rgba(0,0,0,0.46);
     animation: popupFade 0.25s ease forwards;
 }
@@ -254,8 +316,8 @@ a {
     justify-content: space-between;
     align-items: center;
     padding: 12px 18px;
-    background: linear-gradient(135deg, #231f20, #8f1d3f, #0f766e);
-    color: #f7d774;
+    background: var(--app-nav);
+    color: var(--app-accent);
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.1em;
@@ -269,13 +331,13 @@ a {
 
 .cinema-popup-title {
     margin: 0 0 8px;
-    color: #231f20;
+    color: var(--app-popup-text);
     font-weight: 850;
 }
 
 .cinema-popup-message {
     margin: 0;
-    color: #4b5563;
+    color: var(--app-popup-muted);
     line-height: 1.5;
 }
 
@@ -295,21 +357,23 @@ a {
 }
 
 .cinema-popup-ok {
-    background: #0f766e;
+    background: var(--app-accent-strong);
     color: #fff;
 }
 
 .cinema-popup-cancel {
-    background: #e5e7eb;
-    color: #374151;
+    background: var(--app-input-disabled);
+    color: var(--app-input-text);
 }
 
 .cinema-popup-backdrop.error .cinema-popup-strip {
-    background: linear-gradient(135deg, #231f20, #991b1b, #b45309);
+    background: linear-gradient(135deg, var(--app-danger), color-mix(in srgb, var(--app-danger) 45%, var(--app-accent)));
+    color: #fff;
 }
 
 .cinema-popup-backdrop.success .cinema-popup-strip {
-    background: linear-gradient(135deg, #14532d, #0f766e);
+    background: linear-gradient(135deg, var(--app-accent-strong), color-mix(in srgb, var(--app-accent-strong) 50%, var(--app-primary)));
+    color: #fff;
 }
 
 .film-navbar {
@@ -439,6 +503,15 @@ a {
     background: var(--app-profile-bg), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 12px, transparent 12px 26px) !important;
 }
 
+html[data-theme="cinema"] .profile-page {
+    --app-input: #ffffff;
+    --app-input-text: #231f20;
+    --app-input-border: #d5d8df;
+    --app-input-disabled: #eef1f5;
+    --app-input-disabled-text: #717986;
+    --app-muted: #6b7280;
+}
+
 .profile-shell {
     background: var(--app-page-surface) !important;
     color: var(--app-page-text) !important;
@@ -490,6 +563,29 @@ input.clean-input[readonly],
     color: var(--app-accent) !important;
 }
 
+#sessionPopup {
+    background: var(--app-popup-backdrop) !important;
+}
+
+#sessionPopup > div {
+    background: var(--app-popup-surface) !important;
+    color: var(--app-popup-text) !important;
+    border: 1px solid var(--app-input-border);
+}
+
+#sessionPopup h4 {
+    color: var(--app-accent) !important;
+}
+
+#cinemaText {
+    color: var(--app-popup-muted) !important;
+}
+
+#countdown {
+    color: var(--app-danger) !important;
+    text-shadow: none !important;
+}
+
 html[data-theme="white"] .film-user-card,
 html[data-theme="white"] .theme-switcher,
 html[data-theme="system"] .film-user-card,
@@ -524,6 +620,11 @@ html[data-theme="system"] .theme-switcher {
 </style>
 <script>
 (function () {
+    if (localStorage.getItem("amarShowsThemeVersion") !== "2") {
+        localStorage.setItem("amarShowsTheme", "cinema");
+        localStorage.setItem("amarShowsThemeVersion", "2");
+    }
+
     const storedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
     document.documentElement.dataset.theme = storedTheme;
     document.documentElement.dataset.themeChoice = storedTheme;
@@ -536,6 +637,159 @@ html[data-theme="system"] .theme-switcher {
 
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="~/css/site.css" />
+<style>
+/* Final theme pass after Bootstrap/site.css so every page obeys the active theme. */
+html,
+body {
+    background: var(--app-bg) !important;
+    color: var(--app-text) !important;
+}
+
+main,
+.container,
+.container-fluid {
+    color: inherit;
+}
+
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group-item {
+    background: var(--app-card) !important;
+    color: var(--app-card-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6,
+.card p,
+.card label,
+.card small,
+.card span,
+.card div {
+    color: inherit;
+}
+
+label,
+.form-label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+small,
+span,
+li,
+td,
+th {
+    color: inherit;
+}
+
+.text-muted {
+    color: var(--app-muted) !important;
+}
+
+.form-control,
+.form-select,
+.input-group-text,
+input,
+select,
+textarea {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-accent-strong) !important;
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--app-accent-strong) 24%, transparent) !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+input:disabled,
+input[readonly],
+select:disabled,
+textarea:disabled,
+textarea[readonly] {
+    background-color: var(--app-input-disabled) !important;
+    color: var(--app-input-disabled-text) !important;
+    border-color: var(--app-input-border) !important;
+    opacity: 1;
+}
+
+select option {
+    background: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+}
+
+.btn-primary {
+    background: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover {
+    background: var(--app-primary-hover) !important;
+    border-color: var(--app-primary-hover) !important;
+}
+
+.btn-dark,
+.btn-secondary,
+.btn-outline-light {
+    background: var(--app-input-disabled) !important;
+    border-color: var(--app-input-border) !important;
+    color: var(--app-input-text) !important;
+}
+
+.btn-warning {
+    background: var(--app-accent) !important;
+    border-color: var(--app-accent) !important;
+    color: #231f20 !important;
+}
+
+.btn-success {
+    background: var(--app-accent-strong) !important;
+    border-color: var(--app-accent-strong) !important;
+    color: #fff !important;
+}
+
+.btn-danger {
+    background: var(--app-danger) !important;
+    border-color: var(--app-danger) !important;
+    color: #fff !important;
+}
+
+.table,
+.table td,
+.table th {
+    color: var(--app-text) !important;
+}
+
+.footer,
+footer {
+    color: var(--app-muted) !important;
+}
+</style>
 
 </head>
 
@@ -710,6 +964,7 @@ updateDateTime();
     window.setAppTheme = function (choice) {
         const themeChoice = choice || "cinema";
         localStorage.setItem("amarShowsTheme", themeChoice);
+        localStorage.setItem("amarShowsThemeVersion", "2");
         document.documentElement.dataset.themeChoice = themeChoice;
         document.documentElement.dataset.theme = themeChoice;
         markThemeButton(themeChoice);

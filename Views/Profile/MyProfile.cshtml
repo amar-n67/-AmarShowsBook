@@ -422,21 +422,21 @@
 }
 .clean-input {
     min-height: 38px;
-    background: #fffdf8;
-    color: #231f20;
-    border: 1px solid #d5d8df;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    border: 1px solid var(--app-input-border);
     border-radius: 8px;
 }
 input.clean-input[readonly],
 .clean-input:disabled {
-    background: #eef1f5;
-    color: #717986;
-    border-color: #d7dce3;
+    background: var(--app-input-disabled);
+    color: var(--app-input-disabled-text);
+    border-color: var(--app-input-border);
     opacity: 1;
 }
 .clean-input:focus {
-    border-color: #0f766e;
-    box-shadow: 0 0 0 0.18rem rgba(15, 118, 110, 0.18);
+    border-color: var(--app-accent-strong);
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--app-accent-strong) 24%, transparent);
 }
 .dropdown-icon {
     position: absolute;
