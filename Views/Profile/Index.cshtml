@@ -1,21 +1,27 @@
 @model AmarShowsBook.Models.User
 
-<div class="container" style="max-width:650px;">
-    <div class="card p-4 shadow">
-
-        <h4 class="mb-4 text-center">🎬 Edit Your Identity</h4>
+<div class="profile-page">
+    <div class="profile-shell">
+        <div class="profile-hero">
+            <div>
+                <span class="profile-kicker">Now Editing</span>
+                <h2>Star Profile Cut</h2>
+                <p>Refresh your contact credits, preferred genre, language track, and poster shot.</p>
+            </div>
+            <div class="profile-ticket">Admit One</div>
+        </div>
 
         <!-- SUCCESS / ERROR -->
         @if (TempData["Success"] != null)
         {
-            <div class="alert alert-success">@TempData["Success"]</div>
+            <div class="alert alert-success profile-alert">@TempData["Success"]</div>
         }
         @if (TempData["Error"] != null)
         {
-            <div class="alert alert-danger">@TempData["Error"]</div>
+            <div class="alert alert-danger profile-alert">@TempData["Error"]</div>
         }
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" class="profile-form">
 
             <!-- 🔥 ORIGINAL VALUES -->
             <input type="hidden" id="originalEmail" value="@Model.Email" />
@@ -28,9 +34,36 @@
             <input type="hidden" id="originalGenre" value="@Model.Genre" />
             <input type="hidden" id="originalLanguage" value="@Model.Language" />
 
+            <div class="profile-grid">
+                <aside class="poster-panel">
+                    <span class="poster-label">Profile Poster</span>
+                    <img id="profilePreview"
+                         src="@(!string.IsNullOrEmpty(Model.ProfileImagePath) ? Model.ProfileImagePath : "/uploads/default.png")"
+                         class="profile-poster" />
+
+                    <input type="file" name="profileImage"
+                           id="profileImage" class="d-none" />
+
+                    <div class="poster-actions">
+                        <button type="button" class="btn btn-warning btn-sm action-btn"
+                                onclick="changeImage()">Change Poster</button>
+
+                        <button type="button" id="imageCancel"
+                                class="btn btn-secondary btn-sm action-btn d-none"
+                                onclick="cancelImage()">Cancel</button>
+                    </div>
+                </aside>
+
+                <div class="fields-panel">
             <!-- ================= EMAIL ================= -->
-            <div class="mb-3">
-                <label>Email</label>
+            <section class="profile-scene">
+                <div class="scene-title">
+                    <span>Scene 01</span>
+                    <h5>Contact Credits</h5>
+                </div>
+
+                <div class="field-block">
+                <label>Email Premiere</label>
 
                 <div class="input-group input-group-sm">
 
@@ -41,7 +74,7 @@
                     <span id="emailVerifiedIcon" class="text-success d-none ms-2">✔</span>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editEmail('@Model.Email')">Change</button>
+                            onclick="editEmail('@Model.Email')">Retake</button>
 
                     <button id="emailCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -51,7 +84,7 @@
                 <div id="emailOtpSection" class="mt-2 d-none">
                     <button type="button" class="btn btn-info btn-sm"
                             onclick="sendEmailOtp('@Model.Email')">
-                        Send OTP
+                        Send Secret Code
                     </button>
                 </div>
 
@@ -63,14 +96,14 @@
                     <button type="button"
                             class="btn btn-success btn-sm"
                             onclick="verifyEmailOtp()">
-                        Verify OTP
+                        Lock Scene
                     </button>
                 </div>
-            </div>
+                </div>
 
             <!-- ================= MOBILE ================= -->
-            <div class="mb-3">
-                <label>Mobile</label>
+                <div class="field-block">
+                <label>Mobile Hotline</label>
 
                 <div class="input-group input-group-sm">
 
@@ -81,7 +114,7 @@
                     <span id="mobileVerifiedIcon" class="text-success d-none ms-2">✔</span>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editMobile('@Model.Mobile')">Change</button>
+                            onclick="editMobile('@Model.Mobile')">Retake</button>
 
                     <button id="mobileCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -91,7 +124,7 @@
                 <div id="mobileOtpSection" class="mt-2 d-none">
                     <button type="button" class="btn btn-info btn-sm"
                             onclick="sendMobileOtp('@Model.Mobile')">
-                        Send OTP
+                        Send Secret Code
                     </button>
                 </div>
 
@@ -103,14 +136,21 @@
                     <button type="button"
                             class="btn btn-success btn-sm"
                             onclick="verifyMobileOtp()">
-                        Verify OTP
+                        Lock Scene
                     </button>
                 </div>
-            </div>
+                </div>
+            </section>
 
             <!-- ================= ADDRESS ================= -->
-            <div class="mb-3">
-                <label>Address</label>
+            <section class="profile-scene">
+                <div class="scene-title">
+                    <span>Scene 02</span>
+                    <h5>Shooting Location</h5>
+                </div>
+
+                <div class="field-block">
+                <label>Full Address</label>
 
                 <div class="input-group input-group-sm">
                     <input name="Address" id="addressField"
@@ -118,15 +158,15 @@
                            value="@Model.Address" readonly />
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editAddress('@Model.Address')">Change</button>
+                            onclick="editAddress('@Model.Address')">Retake</button>
 
                     <button id="addressCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
                             onclick="cancelAddress('@Model.Address')">Cancel</button>
                 </div>
 
-                <div id="addressDropdown" class="mt-2">
-                    <div class="position-relative mb-1">
+                <div id="addressDropdown" class="location-grid mt-2">
+                    <div class="position-relative">
                         <select name="Country" id="countryField"
                                 class="form-control clean-input address-part"
                                 onchange="buildFullAddress()" disabled>
@@ -136,7 +176,7 @@
                         <span class="dropdown-icon d-none">⌄</span>
                     </div>
 
-                    <div class="position-relative mb-1">
+                    <div class="position-relative">
                         <select name="State" id="stateField"
                                 class="form-control clean-input address-part"
                                 onchange="buildFullAddress()" disabled>
@@ -147,7 +187,7 @@
                         <span class="dropdown-icon d-none">⌄</span>
                     </div>
 
-                    <div class="position-relative mb-1">
+                    <div class="position-relative">
                         <select name="District" id="districtField"
                                 class="form-control clean-input address-part"
                                 onchange="buildFullAddress()" disabled>
@@ -164,11 +204,19 @@
                            placeholder="Pincode"
                            oninput="buildFullAddress()" readonly />
                 </div>
-            </div>
+                </div>
+            </section>
 
             <!-- ================= GENRE ================= -->
-            <div class="mb-3">
-                <label>Genre 🎬</label>
+            <section class="profile-scene">
+                <div class="scene-title">
+                    <span>Scene 03</span>
+                    <h5>Show Taste</h5>
+                </div>
+
+                <div class="field-split">
+            <div class="field-block">
+                <label>Favourite Genre</label>
 
                 <div class="input-group input-group-sm">
                     <div class="position-relative flex-grow-1">
@@ -184,13 +232,13 @@
                     </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="enableProfileSelect('genreField')">Change</button>
+                            onclick="enableProfileSelect('genreField')">Retake</button>
                 </div>
             </div>
 
             <!-- ================= LANGUAGE ================= -->
-            <div class="mb-3">
-                <label>Language 🌍</label>
+            <div class="field-block">
+                <label>Dialogue Track</label>
 
                 <div class="input-group input-group-sm">
                     <div class="position-relative flex-grow-1">
@@ -205,41 +253,23 @@
                     </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="enableProfileSelect('languageField')">Change</button>
+                            onclick="enableProfileSelect('languageField')">Retake</button>
                 </div>
             </div>
-
-            <!-- ================= PROFILE IMAGE ================= -->
-            <div class="mb-3">
-                <label>Profile Image</label>
-
-                <div class="d-flex align-items-center gap-2">
-
-                    <img id="profilePreview"
-                         src="@(!string.IsNullOrEmpty(Model.ProfileImagePath) ? Model.ProfileImagePath : "/uploads/default.png")"
-                         style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:1px solid #ccc;" />
-
-                    <input type="file" name="profileImage"
-                           id="profileImage" class="d-none" />
-
-                    <button type="button" class="btn btn-warning btn-sm"
-                            onclick="changeImage()">Change</button>
-
-                    <button type="button" id="imageCancel"
-                            class="btn btn-secondary btn-sm d-none"
-                            onclick="cancelImage()">Cancel</button>
                 </div>
-            </div>
+            </section>
 
             <!-- ================= ACTION ================= -->
-            <div class="d-flex justify-content-between mt-4">
+            <div class="profile-actions">
                 <button type="submit"
-                        class="btn btn-success btn-sm"
+                        class="btn btn-success btn-sm save-btn"
                         onclick="return validateProfileForm()">
-                    Save Changes
+                    Release Final Cut
                 </button>
 
-                <a href="/Home/Index" class="btn btn-secondary btn-sm">⬅ Back</a>
+                <a href="/Home/Index" class="btn btn-secondary btn-sm back-btn">Back to Lobby</a>
+            </div>
+                </div>
             </div>
 
         </form>
@@ -247,30 +277,190 @@
 </div>
 
 <style>
-.clean-input {
+.profile-page {
+    min-height: calc(100vh - 90px);
+    padding: 30px 12px;
+    background:
+        linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 12px, transparent 12px 26px);
+}
+.profile-shell {
+    max-width: 980px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 18px;
     background: #fff;
-    color: #000;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+}
+.profile-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 26px 30px;
+    background: linear-gradient(135deg, #231f20, #8f1d3f 54%, #0f766e);
+    color: #fff;
+}
+.profile-hero h2 {
+    margin: 4px 0 6px;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+.profile-hero p {
+    margin: 0;
+    max-width: 560px;
+    color: rgba(255,255,255,0.82);
+}
+.profile-kicker,
+.poster-label,
+.scene-title span {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+.profile-ticket {
+    align-self: center;
+    padding: 10px 14px;
+    border: 1px dashed rgba(255,255,255,0.72);
+    border-radius: 8px;
+    color: #f7d774;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.profile-alert {
+    margin: 18px 24px 0;
+}
+.profile-form {
+    padding: 24px;
+}
+.profile-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
+}
+.poster-panel {
+    padding: 18px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #231f20, #4a1f2f 58%, #0f4f4a);
+    color: #fff;
+}
+.poster-label {
+    display: block;
+    margin-bottom: 12px;
+    color: #f7d774;
+}
+.profile-poster {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border: 4px solid rgba(255,255,255,0.18);
+    border-radius: 16px;
+    box-shadow: 0 16px 34px rgba(0,0,0,0.35);
+}
+.poster-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+.profile-scene {
+    padding: 16px 0;
+    border-bottom: 1px solid #edf0f3;
+}
+.profile-scene:first-child {
+    padding-top: 0;
+}
+.profile-scene:last-of-type {
+    border-bottom: 0;
+}
+.scene-title {
+    margin-bottom: 12px;
+}
+.scene-title span {
+    color: #8f1d3f;
+}
+.scene-title h5 {
+    margin: 2px 0 0;
+    color: #231f20;
+    font-weight: 800;
+}
+.field-block {
+    margin-bottom: 14px;
+}
+.field-block:last-child {
+    margin-bottom: 0;
+}
+.field-block label {
+    display: block;
+    margin-bottom: 6px;
+    color: #3f3a3c;
+    font-size: 0.86rem;
+    font-weight: 750;
+}
+.field-split,
+.location-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.clean-input {
+    min-height: 38px;
+    background: #fffdf8;
+    color: #231f20;
+    border: 1px solid #d5d8df;
+    border-radius: 8px;
 }
 input.clean-input[readonly],
 .clean-input:disabled {
-    background: #f1f3f5;
-    color: #6c757d;
-    border-color: #d6d8db;
+    background: #eef1f5;
+    color: #717986;
+    border-color: #d7dce3;
     opacity: 1;
 }
 .clean-input:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 3px #6366f1;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 0.18rem rgba(15, 118, 110, 0.18);
 }
 .dropdown-icon {
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #6366f1;
+    color: #0f766e;
+    font-size: 1.1rem;
+    font-weight: 900;
     pointer-events: none;
+}
+.input-group .btn,
+.action-btn,
+.save-btn,
+.back-btn {
+    border-radius: 8px;
+    font-weight: 750;
+}
+.profile-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+}
+.save-btn {
+    min-width: 160px;
+}
+@@media (max-width: 760px) {
+    .profile-hero,
+    .profile-actions {
+        flex-direction: column;
+    }
+    .profile-grid,
+    .field-split,
+    .location-grid {
+        grid-template-columns: 1fr;
+    }
+    .profile-form,
+    .profile-hero {
+        padding: 20px;
+    }
 }
 </style>
 
