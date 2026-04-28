@@ -11,9 +11,11 @@ const mobileRegex = /^[0-9]{10}$/;
 function editEmail(oldVal) {
     let field = document.getElementById("emailField");
 
+    isEmailVerified = false;
     field.removeAttribute("readonly");
     field.value = "";
 
+    document.getElementById("emailVerifiedIcon").classList.add("d-none");
     document.getElementById("emailCancel").classList.remove("d-none");
     document.getElementById("emailOtpSection").classList.remove("d-none");
 
@@ -24,6 +26,7 @@ function editEmail(oldVal) {
 function cancelEmail(oldVal) {
     let field = document.getElementById("emailField");
 
+    isEmailVerified = false;
     field.value = oldVal;
     field.setAttribute("readonly", true);
 
@@ -32,13 +35,15 @@ function cancelEmail(oldVal) {
     document.getElementById("emailVerifyBox").classList.add("d-none");
 
     document.getElementById("emailOtpInput").value = "";
+    document.getElementById("emailOtpInput").removeAttribute("readonly");
+    document.getElementById("emailVerifiedIcon").classList.add("d-none");
 }
 
 function sendEmailOtp(oldEmail) {
-    let newEmail = document.getElementById("emailField").value;
+    let newEmail = document.getElementById("emailField").value.trim();
 
     if (!emailRegex.test(newEmail)) {
-        alert("Invalid email ❌");
+        alert("Only @gmail.com or @outlook.com email is allowed.");
         return;
     }
 
@@ -56,8 +61,13 @@ function sendEmailOtp(oldEmail) {
     .then(res => {
         if (res.success) {
             document.getElementById("emailVerifyBox").classList.remove("d-none");
-            alert("OTP sent to email 📩");
+            alert(res.devOtp ? `OTP sent. Development OTP: ${res.devOtp}` : "OTP sent to email 📩");
+        } else {
+            alert(res.message || "Email OTP could not be sent.");
         }
+    })
+    .catch(() => {
+        alert("Email OTP could not be sent. Please try again.");
     });
 }
 
@@ -73,6 +83,7 @@ function verifyEmailOtp() {
     .then(res => res.json())
     .then(res => {
         if (res.success) {
+            isEmailVerified = true;
             alert("Email verified ✅");
 
             document.getElementById("emailField").setAttribute("readonly", true);
@@ -82,7 +93,12 @@ function verifyEmailOtp() {
             document.getElementById("emailVerifyBox").classList.add("d-none");
 
             document.getElementById("emailVerifiedIcon").classList.remove("d-none");
+        } else {
+            alert("Invalid email OTP.");
         }
+    })
+    .catch(() => {
+        alert("Email OTP verification failed. Please try again.");
     });
 }
 
@@ -93,9 +109,11 @@ function verifyEmailOtp() {
 function editMobile(oldVal) {
     let field = document.getElementById("mobileField");
 
+    isMobileVerified = false;
     field.removeAttribute("readonly");
     field.value = "";
 
+    document.getElementById("mobileVerifiedIcon").classList.add("d-none");
     document.getElementById("mobileCancel").classList.remove("d-none");
     document.getElementById("mobileOtpSection").classList.remove("d-none");
 
@@ -105,6 +123,7 @@ function editMobile(oldVal) {
 function cancelMobile(oldVal) {
     let field = document.getElementById("mobileField");
 
+    isMobileVerified = false;
     field.value = oldVal;
     field.setAttribute("readonly", true);
 
@@ -113,10 +132,12 @@ function cancelMobile(oldVal) {
     document.getElementById("mobileVerifyBox").classList.add("d-none");
 
     document.getElementById("mobileOtpInput").value = "";
+    document.getElementById("mobileOtpInput").removeAttribute("readonly");
+    document.getElementById("mobileVerifiedIcon").classList.add("d-none");
 }
 
 function sendMobileOtp(oldMobile) {
-    let newMobile = document.getElementById("mobileField").value;
+    let newMobile = document.getElementById("mobileField").value.trim();
 
     if (!mobileRegex.test(newMobile)) {
         alert("Invalid mobile ❌");
@@ -137,8 +158,13 @@ function sendMobileOtp(oldMobile) {
     .then(res => {
         if (res.success) {
             document.getElementById("mobileVerifyBox").classList.remove("d-none");
-            alert("OTP sent to mobile 📱");
+            alert(res.devOtp ? `OTP sent. Development OTP: ${res.devOtp}` : "OTP sent to mobile 📱");
+        } else {
+            alert(res.message || "Mobile OTP could not be sent.");
         }
+    })
+    .catch(() => {
+        alert("Mobile OTP could not be sent. Please try again.");
     });
 }
 
@@ -154,6 +180,7 @@ function verifyMobileOtp() {
     .then(res => res.json())
     .then(res => {
         if (res.success) {
+            isMobileVerified = true;
             alert("Mobile verified ✅");
 
             document.getElementById("mobileField").setAttribute("readonly", true);
@@ -163,7 +190,12 @@ function verifyMobileOtp() {
             document.getElementById("mobileVerifyBox").classList.add("d-none");
 
             document.getElementById("mobileVerifiedIcon").classList.remove("d-none");
+        } else {
+            alert("Invalid mobile OTP.");
         }
+    })
+    .catch(() => {
+        alert("Mobile OTP verification failed. Please try again.");
     });
 }
 
@@ -195,8 +227,23 @@ function cancelAddress(oldVal) {
 // 🎬 DROPDOWN
 // =====================================================
 
-function enableSelect(id) {
-    document.getElementById(id).removeAttribute("disabled");
+function enableProfileSelect(id) {
+    let el = document.getElementById(id);
+
+    el.removeAttribute("disabled");
+    el.style.backgroundColor = "#fff";
+    el.style.color = "#000";
+    el.style.borderColor = "#ccc";
+    el.focus();
+}
+
+function cancelSelect(id, value, cancelBtn) {
+    let el = document.getElementById(id);
+
+    el.value = value;
+    el.setAttribute("disabled", true);
+
+    document.getElementById(cancelBtn).classList.add("d-none");
 }
 
 // =====================================================
@@ -231,23 +278,7 @@ function cancelImage() {
     document.getElementById("profilePreview").src = oldImageSrc;
     document.getElementById("imageCancel").classList.add("d-none");
 }
-function enableSelect(id, cancelBtn) {
-    let el = document.getElementById(id);
 
-    el.removeAttribute("disabled");
-    el.focus();
-
-    document.getElementById(cancelBtn).classList.remove("d-none");
-}
-
-function cancelSelect(id, value, cancelBtn) {
-    let el = document.getElementById(id);
-
-    el.value = value;
-    el.setAttribute("disabled", true);
-
-    document.getElementById(cancelBtn).classList.add("d-none");
-}
 function validateProfileForm() {
 
     let email = document.getElementById("emailField").value.trim();
@@ -278,6 +309,21 @@ function validateProfileForm() {
         return false;
     }
 
+    if (!mobileRegex.test(mobile)) {
+        showPopup("Invalid mobile. Mobile must be exactly 10 digits.");
+        return false;
+    }
+
+    if (email !== oldEmail && !isEmailVerified) {
+        showPopup("Please verify the new email OTP before saving.");
+        return false;
+    }
+
+    if (mobile !== oldMobile && !isMobileVerified) {
+        showPopup("Please verify the new mobile OTP before saving.");
+        return false;
+    }
+
     // ================= CHANGE CHECK =================
     let isChanged =
         email !== oldEmail ||
@@ -288,9 +334,12 @@ function validateProfileForm() {
         image !== "";
 
     if (!isChanged) {
-        showPopup("🎬 Picture shuru hone se pehle hi khatam? Kuch toh change karo boss!");
+        showPopup("There is nothing to update.");
         return false;
     }
+
+    document.getElementById("genreField").removeAttribute("disabled");
+    document.getElementById("languageField").removeAttribute("disabled");
 
     return true;
 }

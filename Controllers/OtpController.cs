@@ -10,6 +10,9 @@ public class OtpController : Controller
     [HttpPost]
     public IActionResult SendEmailOtp(string email)
     {
+        if (string.IsNullOrWhiteSpace(email))
+            return Json(new { success = false, message = "Email is required." });
+
         string otp = new Random().Next(100000, 999999).ToString();
 
         emailOtps[email] = otp;
@@ -17,16 +20,25 @@ public class OtpController : Controller
 
         try
         {
+            var smtpEmail = "YOUR_EMAIL@gmail.com";
+            var smtpPassword = "YOUR_APP_PASSWORD";
+
+            if (smtpEmail == "YOUR_EMAIL@gmail.com" || smtpPassword == "YOUR_APP_PASSWORD")
+            {
+                Console.WriteLine($"Email OTP for {email}: {otp}");
+                return Json(new { success = true, devOtp = otp });
+            }
+
             var smtp = new SmtpClient("smtp.gmail.com")
             {
                 Port = 587,
-                Credentials = new NetworkCredential("YOUR_EMAIL@gmail.com", "YOUR_APP_PASSWORD"),
+                Credentials = new NetworkCredential(smtpEmail, smtpPassword),
                 EnableSsl = true
             };
 
             var mail = new MailMessage
             {
-                From = new MailAddress("YOUR_EMAIL@gmail.com"),
+                From = new MailAddress(smtpEmail),
                 Subject = "🎬 AmarShowsBook OTP Verification",
                 Body = $"Your OTP is {otp}\n\nValid for 5 minutes.\n\nEnjoy your show 🍿",
                 IsBodyHtml = false
@@ -38,9 +50,10 @@ public class OtpController : Controller
 
             return Json(new { success = true });
         }
-        catch
+        catch (Exception ex)
         {
-            return Json(new { success = false });
+            Console.WriteLine($"Email OTP failed for {email}: {ex.Message}");
+            return Json(new { success = false, message = "Unable to send email OTP." });
         }
     }
 
@@ -59,15 +72,26 @@ public class OtpController : Controller
     [HttpPost]
 public async Task<IActionResult> SendMobileOtp(string mobile)
 {
+    if (string.IsNullOrWhiteSpace(mobile))
+        return Json(new { success = false, message = "Mobile number is required." });
+
     string otp = new Random().Next(100000, 999999).ToString();
 
     emailOtps[mobile] = otp;
     HttpContext.Session.Remove("VerifiedMobileForProfile");
 
+    var fast2SmsApiKey = "YOUR_API_KEY";
+
+    if (fast2SmsApiKey == "YOUR_API_KEY")
+    {
+        Console.WriteLine($"Mobile OTP for {mobile}: {otp}");
+        return Json(new { success = true, devOtp = otp });
+    }
+
     var client = new HttpClient();
 
     var request = new HttpRequestMessage(HttpMethod.Get,
-        $"https://www.fast2sms.com/dev/bulkV2?authorization=YOUR_API_KEY&route=otp&variables_values={otp}&flash=0&numbers={mobile}");
+        $"https://www.fast2sms.com/dev/bulkV2?authorization={fast2SmsApiKey}&route=otp&variables_values={otp}&flash=0&numbers={mobile}");
 
     var response = await client.SendAsync(request);
 
