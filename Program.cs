@@ -9,8 +9,26 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddSession();
-
 var app = builder.Build();
+
+// Auto open browser
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var url = app.Urls.FirstOrDefault();
+
+    if (!string.IsNullOrEmpty(url))
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
+});
 
 app.UseStaticFiles();
 app.UseRouting();
@@ -20,18 +38,10 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");
 
-// DB INIT SAFE
-using (var scope = app.Services.CreateScope())
+    using (var scope = app.Services.CreateScope())
 {
-    try
-    {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("DB ERROR: " + ex.Message);
-    }
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    DbSeeder.Seed(db);
 }
 
 app.Run();
