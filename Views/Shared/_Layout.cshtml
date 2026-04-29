@@ -3,31 +3,31 @@
 <head>
     <style>
 :root {
-    --app-bg: #0f172a;
-    --app-text: #e5e7eb;
-    --app-card: #1e293b;
-    --app-card-text: #f1f5f9;
-    --app-input: #334155;
-    --app-input-text: #fff;
-    --app-input-border: #475569;
-    --app-input-disabled: #243244;
-    --app-input-disabled-text: #a8b3c7;
-    --app-muted: #cbd5f5;
-    --app-link: #93c5fd;
-    --app-primary: #6366f1;
-    --app-primary-hover: #4f46e5;
-    --app-nav: linear-gradient(135deg, #231f20, #8f1d3f 52%, #0f766e);
-    --app-nav-text: #fffdf8;
-    --app-accent: #f7d774;
+    --app-bg: #f6f2ee;
+    --app-text: #231f20;
+    --app-card: #fffdf8;
+    --app-card-text: #231f20;
+    --app-input: #ffffff;
+    --app-input-text: #231f20;
+    --app-input-border: #d7dce3;
+    --app-input-disabled: #edf1f5;
+    --app-input-disabled-text: #6b7280;
+    --app-muted: #64748b;
+    --app-link: #8f1d3f;
+    --app-primary: #9f2f50;
+    --app-primary-hover: #7f213d;
+    --app-nav: linear-gradient(135deg, #fff7ed, #f7d4df 52%, #b7ece6);
+    --app-nav-text: #231f20;
+    --app-accent: #b7791f;
     --app-accent-strong: #0f766e;
-    --app-danger: #991b1b;
-    --app-page-surface: #fff;
+    --app-danger: #b42318;
+    --app-page-surface: #fffdf8;
     --app-page-text: #231f20;
     --app-popup-surface: #fffdf8;
     --app-popup-text: #231f20;
-    --app-popup-muted: #4b5563;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(18, 24, 38, 0.78), rgba(122, 24, 46, 0.72)), rgba(0, 0, 0, 0.54);
-    --app-profile-bg: linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86));
+    --app-popup-muted: #64748b;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 247, 237, 0.74), rgba(247, 212, 223, 0.68), rgba(183, 236, 230, 0.58)), rgba(35, 31, 32, 0.28);
+    --app-profile-bg: linear-gradient(135deg, #fff7ed, #f7d4df, #d3f5ef);
 }
 
 html[data-theme="system"] {
@@ -115,31 +115,31 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="cinema"] {
-    --app-bg: #0f172a;
-    --app-text: #e5e7eb;
-    --app-card: #1e293b;
-    --app-card-text: #f1f5f9;
-    --app-input: #334155;
-    --app-input-text: #fff;
-    --app-input-border: #475569;
-    --app-input-disabled: #243244;
-    --app-input-disabled-text: #a8b3c7;
-    --app-muted: #cbd5f5;
-    --app-link: #93c5fd;
-    --app-primary: #6366f1;
-    --app-primary-hover: #4f46e5;
-    --app-nav: linear-gradient(135deg, #231f20, #8f1d3f 52%, #0f766e);
-    --app-nav-text: #fffdf8;
-    --app-accent: #f7d774;
+    --app-bg: #f6f2ee;
+    --app-text: #231f20;
+    --app-card: #fffdf8;
+    --app-card-text: #231f20;
+    --app-input: #ffffff;
+    --app-input-text: #231f20;
+    --app-input-border: #d7dce3;
+    --app-input-disabled: #edf1f5;
+    --app-input-disabled-text: #6b7280;
+    --app-muted: #64748b;
+    --app-link: #8f1d3f;
+    --app-primary: #9f2f50;
+    --app-primary-hover: #7f213d;
+    --app-nav: linear-gradient(135deg, #fff7ed, #f7d4df 52%, #b7ece6);
+    --app-nav-text: #231f20;
+    --app-accent: #b7791f;
     --app-accent-strong: #0f766e;
-    --app-danger: #991b1b;
-    --app-page-surface: #fff;
+    --app-danger: #b42318;
+    --app-page-surface: #fffdf8;
     --app-page-text: #231f20;
     --app-popup-surface: #fffdf8;
     --app-popup-text: #231f20;
-    --app-popup-muted: #4b5563;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(18, 24, 38, 0.78), rgba(122, 24, 46, 0.72)), rgba(0, 0, 0, 0.54);
-    --app-profile-bg: linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86));
+    --app-popup-muted: #64748b;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 247, 237, 0.74), rgba(247, 212, 223, 0.68), rgba(183, 236, 230, 0.58)), rgba(35, 31, 32, 0.28);
+    --app-profile-bg: linear-gradient(135deg, #fff7ed, #f7d4df, #d3f5ef);
 }
 
 body {
@@ -478,9 +478,9 @@ a {
     align-items: center;
     gap: 4px;
     padding: 4px;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 22%, transparent);
     border-radius: 999px;
-    background: rgba(255,255,255,0.11);
+    background: color-mix(in srgb, var(--app-nav-text) 10%, transparent);
 }
 
 .theme-toggle-btn {
@@ -620,9 +620,9 @@ html[data-theme="system"] .theme-switcher {
 </style>
 <script>
 (function () {
-    if (localStorage.getItem("amarShowsThemeVersion") !== "2") {
+    if (localStorage.getItem("amarShowsThemeVersion") !== "3") {
         localStorage.setItem("amarShowsTheme", "cinema");
-        localStorage.setItem("amarShowsThemeVersion", "2");
+        localStorage.setItem("amarShowsThemeVersion", "3");
     }
 
     const storedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
@@ -964,7 +964,7 @@ updateDateTime();
     window.setAppTheme = function (choice) {
         const themeChoice = choice || "cinema";
         localStorage.setItem("amarShowsTheme", themeChoice);
-        localStorage.setItem("amarShowsThemeVersion", "2");
+        localStorage.setItem("amarShowsThemeVersion", "3");
         document.documentElement.dataset.themeChoice = themeChoice;
         document.documentElement.dataset.theme = themeChoice;
         markThemeButton(themeChoice);
