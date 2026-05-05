@@ -1,5 +1,6 @@
 let isEmailVerified = false;
 let isMobileVerified = false;
+let isPasswordEmailVerified = false;
 // ================= REGEX =================
 const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$/;
 const mobileRegex = /^[0-9]{10}$/;
@@ -99,6 +100,59 @@ function verifyEmailOtp() {
     })
     .catch(() => {
         alert("Email OTP verification failed. Please try again.");
+    });
+}
+
+function sendPasswordEmailOtp() {
+    let email = document.getElementById("passwordEmailField").value.trim();
+
+    if (!emailRegex.test(email)) {
+        showPopup("Only @gmail.com or @outlook.com email is allowed.");
+        return;
+    }
+
+    fetch('/Otp/SendEmailOtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `email=${encodeURIComponent(email)}`
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.success) {
+            document.getElementById("passwordEmailVerifyBox").classList.remove("d-none");
+            showPopup(res.devOtp ? `OTP sent. Development OTP: ${res.devOtp}` : "OTP sent to your email.");
+        } else {
+            showPopup(res.message || "Email OTP could not be sent.");
+        }
+    })
+    .catch(() => {
+        showPopup("Email OTP could not be sent. Please try again.");
+    });
+}
+
+function verifyPasswordEmailOtp() {
+    let email = document.getElementById("passwordEmailField").value.trim();
+    let otp = document.getElementById("passwordEmailOtpInput").value.trim();
+
+    fetch('/Otp/VerifyEmailOtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.success) {
+            isPasswordEmailVerified = true;
+            document.getElementById("verifiedPasswordEmail").value = email;
+            document.getElementById("passwordEmailOtpInput").setAttribute("readonly", true);
+            document.getElementById("passwordEmailVerifyBox").classList.add("d-none");
+            showPopup("Email verified. Password retake is ready.");
+        } else {
+            showPopup("Invalid email OTP.");
+        }
+    })
+    .catch(() => {
+        showPopup("Email OTP verification failed. Please try again.");
     });
 }
 
@@ -259,6 +313,20 @@ function enableProfileSelect(id) {
     el.focus();
 }
 
+function editSimpleField(fieldId, cancelId) {
+    let field = document.getElementById(fieldId);
+    field.removeAttribute("readonly");
+    field.focus();
+    document.getElementById(cancelId).classList.remove("d-none");
+}
+
+function cancelSimpleField(fieldId, originalId, cancelId) {
+    let field = document.getElementById(fieldId);
+    field.value = document.getElementById(originalId).value;
+    field.setAttribute("readonly", true);
+    document.getElementById(cancelId).classList.add("d-none");
+}
+
 function cancelSelect(id, value, cancelBtn) {
     let el = document.getElementById(id);
 
@@ -316,6 +384,8 @@ function validateProfileForm() {
 
     let oldEmail = document.getElementById("originalEmail").value;
     let oldMobile = document.getElementById("originalMobile").value;
+    let name = document.getElementById("nameField").value.trim();
+    let oldName = document.getElementById("originalName").value;
 
     let address = document.getElementById("addressField").value;
     let oldAddress = document.getElementById("originalAddress").value;
@@ -341,8 +411,8 @@ function validateProfileForm() {
     let image = document.getElementById("profileImage").value;
 
     // ================= EMPTY CHECK =================
-    if (!email || !mobile) {
-        showPopup("🚫 Hero bina identity ke nahi chalta... Email & Mobile zaroori hai!");
+    if (!name || !email || !mobile) {
+        showPopup("Stage name, email, and mobile are required.");
         return false;
     }
 
@@ -370,6 +440,7 @@ function validateProfileForm() {
     let isChanged =
         email !== oldEmail ||
         mobile !== oldMobile ||
+        name !== oldName ||
         address !== oldAddress ||
         country !== oldCountry ||
         state !== oldState ||
@@ -389,6 +460,29 @@ function validateProfileForm() {
     document.getElementById("countryField").removeAttribute("disabled");
     document.getElementById("stateField").removeAttribute("disabled");
     document.getElementById("districtField").removeAttribute("disabled");
+
+    return true;
+}
+function validateChangePasswordForm() {
+    let verifiedEmail = document.getElementById("verifiedPasswordEmail").value.trim();
+    let currentEmail = document.getElementById("passwordEmailField").value.trim();
+    let newPassword = document.getElementById("newPassword").value;
+    let confirmPassword = document.getElementById("confirmPassword").value;
+
+    if (!isPasswordEmailVerified || verifiedEmail !== currentEmail) {
+        showPopup("Verify your current email first.");
+        return false;
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+        showPopup("New password must be minimum 8 characters.");
+        return false;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showPopup("Both new password fields must match.");
+        return false;
+    }
 
     return true;
 }

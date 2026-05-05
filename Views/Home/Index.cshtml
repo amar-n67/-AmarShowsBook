@@ -1,107 +1,307 @@
 ﻿@model AmarShowsBook.Models.ViewModels.HomeViewModel
 
-<div class="container">
+@{
+    ViewData["Title"] = "showTime";
+    var selectedType = Context.Request.Query["type"].ToString();
+    if (string.IsNullOrWhiteSpace(selectedType))
+    {
+        selectedType = "Movie";
+    }
+    var userName = Context.Session.GetString("UserName") ?? "Artist";
+    var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
+    var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
+}
 
-    <h2 class="text-center mb-4">🍿 Discover Your Next Experience</h2>
+<section class="showtime-page">
+    <div class="showtime-hero">
+        <div>
+            <span class="showtime-kicker">Now Rolling</span>
+            <h1>showTime</h1>
+            <p>@userName, your @userLanguage track and @userGenre mood are on the board.</p>
+        </div>
+        <div class="showtime-ticket">
+            <span>@userLanguage</span>
+            <strong>@userGenre</strong>
+        </div>
+    </div>
 
-    <!-- LOCATION SELECT -->
-    <div class="card p-3 mb-4">
-        <div class="row">
-
-            <!-- COUNTRY -->
-            <div class="col-md-4">
+    <div class="showtime-controls">
+        <div class="location-strip">
+            <div>
                 <label>Country</label>
                 <select id="country" class="form-control" onchange="loadStates()">
                     <option>Select Country</option>
                 </select>
             </div>
 
-            <!-- STATE -->
-            <div class="col-md-4">
+            <div>
                 <label>State</label>
-                <select id="state" class="form-control">
+                <select id="state" class="form-control" onchange="loadDistricts()">
                     <option>Select State</option>
                 </select>
             </div>
 
-            <!-- DISTRICT -->
-            <div class="col-md-4">
+            <div>
                 <label>District</label>
                 <select id="district" class="form-control">
                     <option>Select District</option>
                 </select>
             </div>
-
         </div>
+
+        <nav class="showtime-tabs" aria-label="Show category">
+            <a href="/Home/Index?type=Movie" class="@(selectedType == "Movie" ? "active" : "")">Movies</a>
+            <a href="/Home/Index?type=Standup" class="@(selectedType == "Standup" ? "active" : "")">Standup</a>
+            <a href="/Home/Index?type=Live" class="@(selectedType == "Live" ? "active" : "")">Live</a>
+        </nav>
     </div>
 
-    <!-- CATEGORY SWITCH -->
-    <div class="text-center mb-3">
-        <a href="/Home/Index?type=Movie" class="btn btn-primary m-2">🎬 Movies</a>
-        <a href="/Home/Index?type=Standup" class="btn btn-warning m-2">🎤 Standup</a>
-        <a href="/Home/Index?type=Live" class="btn btn-success m-2">📡 Live</a>
-    </div>
-
-    <!-- CONTENT -->
-    <div class="row mt-4">
-
-        @foreach (var item in Model.Schedules)
+    <div class="schedule-board">
+        @if (!Model.Schedules.Any())
         {
-            <div class="col-md-3 mb-3">
-                <div class="card p-3 text-center shadow-sm">
-
-                    <h5>
-                        @(
-                            item.Type == "Movie" ? item.Movie?.Title :
-                            item.Type == "Standup" ? item.StandupShow?.Title :
-                            item.LiveStream?.Title
-                        )
-                    </h5>
-
-                    <p class="text-muted">
-                        ⏱ @item.StartTime.ToString("hh:mm tt")
-                    </p>
-
-                    <button class="btn btn-primary">Book Now</button>
-
-                </div>
+            <div class="empty-slate">
+                <span>No Shot Scheduled</span>
+                <h2>The reel is quiet for this category.</h2>
+                <p>Try another tab or schedule a new show when the next scene is ready.</p>
             </div>
         }
+        else
+        {
+            @foreach (var item in Model.Schedules)
+            {
+                var title = item.Type == "Movie" ? item.Movie?.Title :
+                            item.Type == "Standup" ? item.StandupShow?.Title :
+                            item.LiveStream?.Title;
 
+                <article class="show-card">
+                    <div class="show-card-top">
+                        <span>@item.Type</span>
+                        <strong>@item.StartTime.ToString("hh:mm tt")</strong>
+                    </div>
+                    <h2>@(title ?? "Untitled Show")</h2>
+                    <p>Camera opens at @item.StartTime.ToString("dd MMM yyyy, hh:mm tt")</p>
+                    <button class="btn btn-primary">Book The Seat</button>
+                </article>
+            }
+        }
     </div>
+</section>
 
-</div>
+<style>
+.showtime-page {
+    padding-bottom: 44px;
+}
+.showtime-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-end;
+    min-height: 260px;
+    padding: 34px;
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(255, 242, 199, 0.94), rgba(245, 178, 196, 0.86), rgba(146, 229, 221, 0.86)),
+        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
+    color: #231f20;
+    box-shadow: 0 22px 64px rgba(35,31,32,0.22);
+}
+.showtime-kicker,
+.showtime-ticket span,
+.show-card-top span,
+.empty-slate span {
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+}
+.showtime-hero h1 {
+    margin: 8px 0;
+    color: #231f20;
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 900;
+}
+.showtime-hero p {
+    margin: 0;
+    max-width: 620px;
+    color: #34303a;
+    font-size: 1.08rem;
+}
+.showtime-ticket {
+    min-width: 180px;
+    padding: 14px;
+    border: 1px dashed rgba(35,31,32,0.44);
+    border-radius: 8px;
+    text-align: right;
+    background: rgba(255,255,255,0.38);
+}
+.showtime-ticket strong {
+    display: block;
+    color: #231f20;
+    font-size: 1.2rem;
+}
+.showtime-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: end;
+    margin: 24px 0;
+}
+.location-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+}
+.location-strip label {
+    margin-bottom: 6px;
+    font-weight: 800;
+}
+.showtime-tabs {
+    display: inline-flex;
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 999px;
+    background: var(--app-card);
+}
+.showtime-tabs a {
+    min-width: 90px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    color: var(--app-text);
+    text-align: center;
+    text-decoration: none;
+    font-weight: 850;
+}
+.showtime-tabs a.active {
+    background: var(--app-primary);
+    color: #fff;
+}
+.schedule-board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+.show-card,
+.empty-slate {
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.13);
+}
+.show-card {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+}
+.show-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--app-muted);
+}
+.show-card h2 {
+    min-height: 58px;
+    margin: 0;
+    color: inherit;
+    font-size: 1.22rem;
+    font-weight: 900;
+}
+.show-card p {
+    margin: 0;
+    color: var(--app-muted);
+}
+.show-card .btn {
+    align-self: end;
+    font-weight: 850;
+}
+.empty-slate {
+    grid-column: 1 / -1;
+    padding: 34px;
+    text-align: center;
+}
+.empty-slate h2 {
+    margin: 8px 0;
+    color: inherit;
+}
+.empty-slate p {
+    margin: 0;
+    color: var(--app-muted);
+}
+@@media (max-width: 980px) {
+    .showtime-controls,
+    .schedule-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .showtime-tabs {
+        grid-column: 1 / -1;
+        justify-content: center;
+    }
+}
+@@media (max-width: 760px) {
+    .showtime-hero,
+    .showtime-controls,
+    .location-strip,
+    .schedule-board {
+        grid-template-columns: 1fr;
+    }
+    .showtime-hero {
+        padding: 24px;
+    }
+    .showtime-ticket {
+        width: 100%;
+        text-align: left;
+    }
+    .showtime-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+    }
+    .showtime-tabs a {
+        min-width: 0;
+    }
+}
+</style>
 
 <script>
-
-// ================= LOAD COUNTRIES (WORKING API) =================
-fetch('https://restcountries.com/v3.1/all')
-.then(res => res.json())
-.then(data => {
-    let countryDropdown = document.getElementById("country");
-
-    countryDropdown.innerHTML = "<option>Select Country</option>";
-
-    data.sort((a,b)=>a.name.common.localeCompare(b.name.common));
-
-    data.forEach(c => {
-        countryDropdown.innerHTML += `<option value="${c.name.common}">${c.name.common}</option>`;
+function setSelectOptions(selectId, options, placeholder) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = `<option>${placeholder}</option>`;
+    options.forEach(item => {
+        select.innerHTML += `<option value="${item.name || item}">${item.name || item}</option>`;
     });
-});
+}
 
+fetch('https://restcountries.com/v3.1/all')
+    .then(res => res.json())
+    .then(data => {
+        const countries = data
+            .map(c => c.name && c.name.common)
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b));
+        setSelectOptions("country", countries, "Select Country");
+    })
+    .catch(() => {
+        setSelectOptions("country", ["India"], "Select Country");
+        showCinemaPopup("Location reel could not load from network. India is ready as fallback.", "info");
+    });
 
-// ================= LOAD STATES (FIXED API CALL) =================
 function loadStates() {
     let country = document.getElementById("country").value;
-
     let stateDropdown = document.getElementById("state");
-    let districtDropdown = document.getElementById("district");
 
-    // RESET DROPDOWNS
+    setSelectOptions("district", [], "Select District");
     stateDropdown.innerHTML = "<option>Loading...</option>";
-    districtDropdown.innerHTML = "<option>Select District</option>";
 
-    if (!country || country === "Select Country") return;
+    if (!country || country === "Select Country") {
+        setSelectOptions("state", [], "Select State");
+        return;
+    }
 
     fetch('https://countriesnow.space/api/v0.1/countries/states', {
         method: 'POST',
@@ -110,23 +310,22 @@ function loadStates() {
     })
     .then(res => res.json())
     .then(data => {
-
-        stateDropdown.innerHTML = "<option>Select State</option>";
-
-        // ✅ IMPORTANT CHECK
-        if (data && data.data && data.data.states) {
-            data.data.states.forEach(s => {
-                stateDropdown.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-            });
+        const states = data && data.data && data.data.states ? data.data.states : [];
+        if (states.length) {
+            setSelectOptions("state", states, "Select State");
         } else {
-            stateDropdown.innerHTML = "<option>No states available</option>";
+            setSelectOptions("state", [], "No states available");
         }
-
     })
-    .catch(err => {
-        console.error("State API Error:", err);
-        stateDropdown.innerHTML = "<option>Error loading states</option>";
+    .catch(() => {
+        setSelectOptions("state", ["Maharashtra", "Karnataka"], "Select State");
+        showCinemaPopup("State list paused. Fallback choices are loaded.", "info");
     });
 }
 
+function loadDistricts() {
+    const state = document.getElementById("state").value;
+    const fallback = state === "Karnataka" ? ["Bengaluru", "Mysuru"] : ["Mumbai", "Pune"];
+    setSelectOptions("district", fallback, "Select District");
+}
 </script>

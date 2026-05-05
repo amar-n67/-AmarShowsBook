@@ -2,20 +2,26 @@ using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace AmarShowsBook.Controllers
 {
     public class AuthController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHostApplicationLifetime _applicationLifetime;
+
+        private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
+        private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
 
         // OTP temporary storage (dev only)
         private static string generatedOTP;
         private static string resetEmail;
 
-        public AuthController(ApplicationDbContext context)
+        public AuthController(ApplicationDbContext context, IHostApplicationLifetime applicationLifetime)
         {
             _context = context;
+            _applicationLifetime = applicationLifetime;
         }
 
         // ================= LOGIN =================
@@ -28,9 +34,11 @@ namespace AmarShowsBook.Controllers
        [HttpPost]
 public IActionResult Login(string email, string password)
 {
-    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+    try
     {
-        ViewBag.Error = "🎭 Missing credentials. The show can't start!";
+    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+    {
+        ViewBag.Error = "Missing credentials. The show cannot start without email and password.";
         return View();
     }
 
@@ -41,7 +49,7 @@ public IActionResult Login(string email, string password)
 
     if (user == null)
     {
-        ViewBag.Error = "🎭 No performer found with this email.";
+        ViewBag.Error = "No performer found with this email.";
         return View();
     }
 
@@ -50,16 +58,74 @@ public IActionResult Login(string email, string password)
     if (isValid)
     {
         HttpContext.Session.SetString("UserEmail", user.Email);
+        HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
+        HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
+        HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
 
-        // ✅ ADD THIS LINE RIGHT HERE
         HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
 
         return RedirectToAction("Index", "Home");
     }
 
-    ViewBag.Error = "🎭 Wrong script! Password didn't match.";
+    ViewBag.Error = "Wrong script. Password did not match.";
     return View();
+    }
+    catch
+    {
+        ViewBag.Error = "The projector had a technical pause. Please try login again.";
+        return View();
+    }
 }
+
+        [HttpPost]
+        public IActionResult CloseApplication()
+        {
+            Task.Run(async () =>
+            {
+                await Task.Delay(500);
+                _applicationLifetime.StopApplication();
+            });
+
+            return Json(new { success = true, message = "Application closing." });
+        }
+
+        [NonAction]
+        private void PrepareSignupDefaults(User user)
+        {
+            user.Email = user.Email?.Trim().ToLower();
+            user.Mobile = user.Mobile?.Trim();
+            user.Name = user.Name?.Trim();
+        }
+
+        [NonAction]
+        private bool ValidateSignup(User user)
+        {
+            PrepareSignupDefaults(user);
+
+            if (string.IsNullOrWhiteSpace(user.Email) || !EmailRegex.IsMatch(user.Email))
+            {
+                ModelState.AddModelError("Email", "Only Gmail or Outlook email is allowed.");
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Mobile) || !MobileRegex.IsMatch(user.Mobile))
+            {
+                ModelState.AddModelError("Mobile", "Mobile must be exactly 10 digits.");
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Password) || user.Password.Length < 8)
+            {
+                ModelState.AddModelError("Password", "Password must be minimum 8 characters.");
+            }
+
+            return ModelState.IsValid;
+        }
+
+        [NonAction]
+        private IActionResult SignupError(User user, string message)
+        {
+            ViewBag.Error = message;
+            return View("Signup", user);
+        }
 
         // ================= SIGNUP =================
 
@@ -71,21 +137,21 @@ public IActionResult Login(string email, string password)
         [HttpPost]
         public IActionResult Signup(User user)
         {
-            if (!ModelState.IsValid)
+            try
+            {
+            if (!ValidateSignup(user))
             {
                 return View(user);
             }
 
             if (_context.Users.Any(u => u.Mobile == user.Mobile))
             {
-                ViewBag.Error = "Mobile number already exists";
-                return View(user);
+                return SignupError(user, "This mobile number already has a ticket in our records.");
             }
 
-            if (_context.Users.Any(u => u.Email == user.Email))
+            if (_context.Users.Any(u => u.Email.ToLower() == user.Email.ToLower()))
             {
-                ViewBag.Error = "Email already registered";
-                return View(user);
+                return SignupError(user, "This email is already registered. Try login or use another email.");
             }
 
             // Hash password
@@ -102,6 +168,11 @@ if (string.IsNullOrEmpty(user.Language))
             _context.SaveChanges();
 
             return RedirectToAction("Login");
+            }
+            catch
+            {
+                return SignupError(user, "The signup scene could not be saved. Please try again.");
+            }
         }
 
         // ================= FORGOT PASSWORD =================
@@ -115,11 +186,19 @@ if (string.IsNullOrEmpty(user.Language))
         [HttpPost]
         public IActionResult SendOTP(string email)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Email == email);
+            email = email?.Trim().ToLower();
+
+            if (string.IsNullOrWhiteSpace(email) || !EmailRegex.IsMatch(email))
+            {
+                ViewBag.Error = "Enter a valid Gmail or Outlook email.";
+                return View("ForgotPassword");
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == email);
 
             if (user == null)
             {
-                ViewBag.Error = "No account found with this email";
+                ViewBag.Error = "No account found with this email.";
                 return View("ForgotPassword");
             }
 
@@ -151,6 +230,12 @@ if (string.IsNullOrEmpty(user.Language))
         [HttpPost]
         public IActionResult ResetPassword(string password)
         {
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+            {
+                ViewBag.Error = "Password must be minimum 8 characters.";
+                return View("ResetPassword");
+            }
+
             var user = _context.Users.FirstOrDefault(u => u.Email == resetEmail);
 
             if (user != null)

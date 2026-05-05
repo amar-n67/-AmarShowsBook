@@ -87,59 +87,59 @@ html[data-theme="white"] {
 }
 
 html[data-theme="dark"] {
-    --app-bg: #050816;
-    --app-text: #e5e7eb;
-    --app-card: #111827;
-    --app-card-text: #f9fafb;
-    --app-input: #1f2937;
+    --app-bg: #20212a;
+    --app-text: #f8fafc;
+    --app-card: #2a2c38;
+    --app-card-text: #ffffff;
+    --app-input: #343746;
     --app-input-text: #ffffff;
-    --app-input-border: #374151;
-    --app-input-disabled: #111827;
-    --app-input-disabled-text: #9ca3af;
-    --app-muted: #9ca3af;
-    --app-link: #93c5fd;
-    --app-primary: #4f46e5;
-    --app-primary-hover: #4338ca;
-    --app-nav: linear-gradient(135deg, #050816, #312e81, #164e63);
+    --app-input-border: #6b7280;
+    --app-input-disabled: #292c36;
+    --app-input-disabled-text: #d1d5db;
+    --app-muted: #cbd5e1;
+    --app-link: #bfdbfe;
+    --app-primary: #5b5bd6;
+    --app-primary-hover: #4b4dbf;
+    --app-nav: linear-gradient(135deg, #262737, #7a3153 58%, #2f7c82);
     --app-nav-text: #f9fafb;
-    --app-accent: #a5b4fc;
-    --app-accent-strong: #22d3ee;
-    --app-danger: #b91c1c;
-    --app-page-surface: #111827;
+    --app-accent: #ffd166;
+    --app-accent-strong: #2dd4bf;
+    --app-danger: #dc4c64;
+    --app-page-surface: #2a2c38;
     --app-page-text: #f9fafb;
-    --app-popup-surface: #111827;
+    --app-popup-surface: #2a2c38;
     --app-popup-text: #f9fafb;
     --app-popup-muted: #cbd5e1;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(5, 8, 22, 0.86), rgba(49, 46, 129, 0.72)), rgba(0, 0, 0, 0.68);
-    --app-profile-bg: linear-gradient(135deg, #050816, #111827, #164e63);
+    --app-popup-backdrop: linear-gradient(135deg, rgba(38, 39, 55, 0.82), rgba(122, 49, 83, 0.64)), rgba(0, 0, 0, 0.52);
+    --app-profile-bg: linear-gradient(135deg, #252637, #4c2d45, #2f7c82);
 }
 
 html[data-theme="cinema"] {
-    --app-bg: #f6f2ee;
+    --app-bg: #fff8ee;
     --app-text: #231f20;
-    --app-card: #fffdf8;
+    --app-card: #fffef8;
     --app-card-text: #231f20;
     --app-input: #ffffff;
     --app-input-text: #231f20;
-    --app-input-border: #d7dce3;
-    --app-input-disabled: #edf1f5;
-    --app-input-disabled-text: #6b7280;
-    --app-muted: #64748b;
-    --app-link: #8f1d3f;
-    --app-primary: #9f2f50;
-    --app-primary-hover: #7f213d;
-    --app-nav: linear-gradient(135deg, #fff7ed, #f7d4df 52%, #b7ece6);
+    --app-input-border: #c9ced8;
+    --app-input-disabled: #f0f4f8;
+    --app-input-disabled-text: #4b5563;
+    --app-muted: #526071;
+    --app-link: #7c2d53;
+    --app-primary: #b23a5b;
+    --app-primary-hover: #922b49;
+    --app-nav: linear-gradient(135deg, #fff2c7, #f5b2c4 48%, #92e5dd);
     --app-nav-text: #231f20;
-    --app-accent: #b7791f;
-    --app-accent-strong: #0f766e;
-    --app-danger: #b42318;
-    --app-page-surface: #fffdf8;
+    --app-accent: #f0b429;
+    --app-accent-strong: #0f8f86;
+    --app-danger: #c2415c;
+    --app-page-surface: #fffef8;
     --app-page-text: #231f20;
-    --app-popup-surface: #fffdf8;
+    --app-popup-surface: #fffef8;
     --app-popup-text: #231f20;
-    --app-popup-muted: #64748b;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 247, 237, 0.74), rgba(247, 212, 223, 0.68), rgba(183, 236, 230, 0.58)), rgba(35, 31, 32, 0.28);
-    --app-profile-bg: linear-gradient(135deg, #fff7ed, #f7d4df, #d3f5ef);
+    --app-popup-muted: #526071;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 242, 199, 0.76), rgba(245, 178, 196, 0.7), rgba(146, 229, 221, 0.62)), rgba(35, 31, 32, 0.24);
+    --app-profile-bg: linear-gradient(135deg, #fff2c7, #f8c4d1, #d7fbf5);
 }
 
 body {
@@ -151,7 +151,7 @@ body {
 
 .card {
     background: var(--app-card) !important;
-    border-radius: 16px;
+    border-radius: 8px;
     color: var(--app-card-text) !important;
     border-color: var(--app-input-border) !important;
 }
@@ -304,7 +304,7 @@ a {
     width: min(420px, calc(100vw - 32px));
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 18px;
+    border-radius: 8px;
     background: var(--app-popup-surface);
     color: var(--app-popup-text);
     box-shadow: 0 28px 80px rgba(0,0,0,0.46);
@@ -379,7 +379,7 @@ a {
 .film-navbar {
     margin: 14px;
     border: 1px solid rgba(247, 215, 116, 0.28);
-    border-radius: 18px;
+    border-radius: 8px;
     background: var(--app-nav);
     box-shadow: 0 16px 36px rgba(0,0,0,0.28);
 }
@@ -633,7 +633,7 @@ html[data-theme="system"] .theme-switcher {
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>@ViewData["Title"] - AmarShowsBook</title>
+<title>@ViewData["Title"] - showTime</title>
 
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="~/css/site.css" />
@@ -863,7 +863,7 @@ z-index:9999;">
 
     <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
         <span class="film-brand-badge">🎬</span>
-        <span>AmarShowsBook</span>
+        <span>showTime</span>
     </a>
 
     <div class="film-menu">
@@ -881,7 +881,10 @@ z-index:9999;">
                 <div class="film-user-meta">
                     <div id="liveDateTime" class="film-time"></div>
                     <div class="film-email">
-                        @Context.Session.GetString("UserEmail")
+                        @(Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail"))
+                    </div>
+                    <div class="film-time">
+                        @(Context.Session.GetString("UserLanguage") ?? "English") / @(Context.Session.GetString("UserGenre") ?? "Dramatic")
                     </div>
                 </div>
 
@@ -915,7 +918,7 @@ z-index:9999;">
 <!-- ================= FOOTER ================= -->
 <footer class="border-top footer text-muted">
 <div class="container">
-    &copy; 2026 - AmarShowsBook
+    &copy; 2026 - showTime
 </div>
 </footer>
 

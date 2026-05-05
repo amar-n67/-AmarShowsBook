@@ -1,65 +1,142 @@
 @model AmarShowsBook.Models.User
 
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-lg p-4">
+@{
+    ViewData["Title"] = "Signup";
+}
 
-            <h3 class="text-center mb-4">🎟 Join AmarShows Universe</h3>
-            <p class="text-center text-muted">Your ticket to entertainment starts here</p>
+<section class="signup-stage">
+    <div class="signup-card">
+        <div class="signup-header">
+            <span>Shot 02 / Casting Desk</span>
+            <h1>Create Opening Credit</h1>
+            <p>Your showTime ticket starts with clean contact details and a strong password.</p>
+        </div>
 
-            <form method="post" novalidate>
-
+        <form method="post" novalidate>
+            <div class="signup-grid">
                 <div class="mb-3">
-                    <label>Name <span class="text-danger">*</span></label>
-                    <input name="Name" class="form-control" value="@Model?.Name" />
+                    <label>Display Name <span class="text-danger">*</span></label>
+                    <input name="Name" class="form-control" value="@Model?.Name" placeholder="Name shown in menu" required />
                     <span class="text-danger">@Html.ValidationMessage("Name")</span>
                 </div>
 
                 <div class="mb-3">
                     <label>Email <span class="text-danger">*</span></label>
-                    <input name="Email" type="email" class="form-control" value="@Model?.Email" />
+                    <input name="Email" type="email" class="form-control" value="@Model?.Email" placeholder="artist@gmail.com" required />
                     <span class="text-danger">@Html.ValidationMessage("Email")</span>
                 </div>
 
                 <div class="mb-3">
                     <label>Mobile <span class="text-danger">*</span></label>
-                    <input name="Mobile" class="form-control" value="@Model?.Mobile" />
+                    <input name="Mobile" class="form-control" value="@Model?.Mobile" placeholder="10 digit mobile" maxlength="10" required />
                     <span class="text-danger">@Html.ValidationMessage("Mobile")</span>
                 </div>
 
                 <div class="mb-3">
                     <label>Password <span class="text-danger">*</span></label>
-
                     <div class="input-group">
-                        <input id="signupPassword" name="Password" type="password" class="form-control" required />
-
-                        <button type="button" class="btn btn-outline-light"
-                                onclick="togglePassword('signupPassword')">
-                            👁
+                        <input id="signupPassword" name="Password" type="password" class="form-control" minlength="8" required />
+                        <button type="button" class="btn btn-outline-light" onclick="togglePassword('signupPassword')">
+                            View
                         </button>
                     </div>
-
-                    <small class="text-muted">
-                        Must contain uppercase, lowercase, number & special character
-                    </small>
-
+                    <small class="text-muted">Minimum 8 characters.</small>
                     <span class="text-danger">@Html.ValidationMessage("Password")</span>
                 </div>
+            </div>
 
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-primary">🎟 Register</button>
-                    <a href="/Auth/Login" class="btn btn-secondary">Cancel</a>
-                </div>
-
-            </form>
-
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger mt-3">
-                    Please fix the errors above.
-                </div>
-            }
-
-        </div>
+            <div class="signup-actions">
+                <button class="btn btn-primary">Roll My Account</button>
+                <a href="/Auth/Login" class="btn btn-secondary">Back To Gate</a>
+            </div>
+        </form>
     </div>
-</div>
+</section>
+
+<style>
+.signup-stage {
+    min-height: calc(100vh - 190px);
+    display: grid;
+    align-items: center;
+    padding: 24px 0 44px;
+}
+.signup-card {
+    max-width: 900px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 24px 70px rgba(35,31,32,0.22);
+}
+.signup-header {
+    padding: 28px 30px;
+    background:
+        linear-gradient(135deg, rgba(255, 242, 199, 0.94), rgba(245, 178, 196, 0.86), rgba(146, 229, 221, 0.86)),
+        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
+    color: #231f20;
+}
+.signup-header span {
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+}
+.signup-header h1 {
+    margin: 8px 0 8px;
+    font-weight: 900;
+    color: #231f20;
+}
+.signup-header p {
+    margin: 0;
+    max-width: 620px;
+    color: #34303a;
+}
+.signup-card form {
+    padding: 26px 30px 30px;
+}
+.signup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 18px;
+}
+.signup-card label {
+    margin-bottom: 6px;
+    font-weight: 800;
+}
+.signup-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+}
+.signup-actions .btn {
+    min-width: 160px;
+    font-weight: 850;
+}
+@@media (max-width: 760px) {
+    .signup-grid {
+        grid-template-columns: 1fr;
+    }
+    .signup-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const serverError = "@ViewBag.Error";
+            const modelError = "@(!ViewData.ModelState.IsValid ? "Please fix the highlighted signup details." : "")";
+
+            if (serverError) {
+                showCinemaPopup(serverError, "error");
+            } else if (modelError) {
+                showCinemaPopup(modelError, "error");
+            }
+        });
+    </script>
+}

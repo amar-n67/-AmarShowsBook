@@ -5,30 +5,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
+if (!connectionString.Contains("Timeout=", StringComparison.OrdinalIgnoreCase))
+{
+    connectionString += ";Timeout=3;Command Timeout=5";
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddSession();
 var app = builder.Build();
 
-// Auto open browser
-app.Lifetime.ApplicationStarted.Register(() =>
+if (!app.Environment.IsDevelopment())
 {
-    var url = app.Urls.FirstOrDefault();
-
-    if (!string.IsNullOrEmpty(url))
-    {
-        try
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = url,
-                UseShellExecute = true
-            });
-        }
-        catch { }
-    }
-});
+    app.UseExceptionHandler("/Home/Error");
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+}
 
 app.UseStaticFiles();
 app.UseRouting();
@@ -38,10 +34,21 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");
 
-    using (var scope = app.Services.CreateScope())
+app.Lifetime.ApplicationStarted.Register(() =>
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    DbSeeder.Seed(db);
-}
+    Task.Run(() =>
+    {
+        using var scope = app.Services.CreateScope();
+        try
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            DbSeeder.Seed(db);
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "Database seed skipped. The app will still start and show friendly errors if the database is unavailable.");
+        }
+    });
+});
 
 app.Run();
