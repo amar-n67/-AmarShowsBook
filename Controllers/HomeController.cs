@@ -34,6 +34,7 @@ namespace AmarShowsBook.Controllers
                 .Include(s => s.Movie)
                 .Include(s => s.StandupShow)
                 .Include(s => s.LiveStream)
+                .Include(s => s.Location)
                 .Where(s => s.Type == type)
                 .OrderBy(s => s.StartTime)
                 .ToList();

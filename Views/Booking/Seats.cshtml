@@ -1,0 +1,171 @@
+@model AmarShowsBook.Models.ShowSchedule
+
+@{
+    ViewData["Title"] = "Seat Booking";
+    var title = Model.Type == "Movie" ? Model.Movie?.Title :
+                Model.Type == "Standup" ? Model.StandupShow?.Title :
+                Model.LiveStream?.Title;
+    var location = Model.Location == null
+        ? "Location to be announced"
+        : $"{Model.Location.Area}, {Model.Location.State}, {Model.Location.Country}";
+}
+
+<section class="booking-page">
+    <div class="booking-hero">
+        <div>
+            <span class="booking-kicker">Seat Shot</span>
+            <h1>@(title ?? "Untitled Show")</h1>
+            <p>@Model.Type / @Model.StartTime.ToString("dd MMM yyyy, hh:mm tt") / @location</p>
+        </div>
+        <a href="/Home/Index?type=@Model.Type" class="btn btn-secondary">Back To showTime</a>
+    </div>
+
+    <div class="screen-line">
+        <span>Screen</span>
+    </div>
+
+    <div class="seat-board" aria-label="100 theater seats">
+        @for (var i = 1; i <= 100; i++)
+        {
+            var row = (char)('A' + ((i - 1) / 10));
+            var seatNo = ((i - 1) % 10) + 1;
+            <button type="button" class="seat-btn" onclick="toggleSeat(this)">
+                @row@seatNo
+            </button>
+        }
+    </div>
+
+    <div class="booking-summary">
+        <div>
+            <span>Selected Seats</span>
+            <strong id="selectedSeats">None</strong>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="confirmSeats()">Confirm Dummy Booking</button>
+    </div>
+</section>
+
+<style>
+.booking-page {
+    padding-bottom: 44px;
+}
+.booking-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: end;
+    padding: 30px;
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(255, 242, 199, 0.94), rgba(245, 178, 196, 0.86), rgba(146, 229, 221, 0.86)),
+        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
+    color: #231f20;
+    box-shadow: 0 22px 64px rgba(35,31,32,0.22);
+}
+.booking-kicker,
+.booking-summary span {
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+}
+.booking-hero h1 {
+    margin: 8px 0;
+    color: #231f20;
+    font-weight: 900;
+}
+.booking-hero p {
+    margin: 0;
+    color: #34303a;
+}
+.screen-line {
+    max-width: 720px;
+    margin: 28px auto 18px;
+    border-top: 6px solid var(--app-accent);
+    border-radius: 999px;
+    text-align: center;
+}
+.screen-line span {
+    display: inline-block;
+    transform: translateY(-50%);
+    padding: 4px 18px;
+    border-radius: 999px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    font-weight: 850;
+}
+.seat-board {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(38px, 1fr));
+    gap: 8px;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+}
+.seat-btn {
+    min-height: 40px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    font-weight: 850;
+}
+.seat-btn.selected {
+    background: var(--app-accent-strong);
+    border-color: var(--app-accent-strong);
+    color: #fff;
+}
+.booking-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+    max-width: 760px;
+    margin: 18px auto 0;
+    padding: 16px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+}
+.booking-summary strong {
+    display: block;
+    margin-top: 4px;
+}
+@@media (max-width: 760px) {
+    .booking-hero,
+    .booking-summary {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .seat-board {
+        grid-template-columns: repeat(5, minmax(38px, 1fr));
+    }
+}
+</style>
+
+<script>
+function selectedSeatNames() {
+    return Array.from(document.querySelectorAll(".seat-btn.selected")).map(btn => btn.innerText.trim());
+}
+
+function toggleSeat(button) {
+    button.classList.toggle("selected");
+    const seats = selectedSeatNames();
+    document.getElementById("selectedSeats").innerText = seats.length ? seats.join(", ") : "None";
+}
+
+function confirmSeats() {
+    const seats = selectedSeatNames();
+    if (!seats.length) {
+        showCinemaPopup("Select at least one seat before confirming.", "error");
+        return;
+    }
+
+    showCinemaPopup(`Dummy booking ready for seats: ${seats.join(", ")}`, "success", {
+        title: "Seats Locked"
+    });
+}
+</script>

@@ -927,9 +927,19 @@ z-index:9999;">
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-function togglePassword(fieldId) {
+function togglePassword(fieldId, button) {
     var input = document.getElementById(fieldId);
-    input.type = input.type === "password" ? "text" : "password";
+    if (!input) return;
+
+    var shouldShow = input.type === "password";
+    input.type = shouldShow ? "text" : "password";
+
+    var toggleButton = button || document.querySelector('[data-password-toggle="' + fieldId + '"]');
+    if (toggleButton) {
+        toggleButton.innerText = shouldShow ? "😊👁" : "🙈";
+        toggleButton.setAttribute("aria-label", shouldShow ? "Hide password" : "Show password");
+        toggleButton.title = shouldShow ? "Hide password" : "Show password";
+    }
 }
 </script>
 

@@ -203,6 +203,7 @@
                                 onchange="buildFullAddress()" disabled>
                             <option value="">Country</option>
                             <option selected="@(Model.Country == "India" ? "selected" : null)">India</option>
+                            <option selected="@(Model.Country == "United States" ? "selected" : null)">United States</option>
                         </select>
                         <span class="dropdown-icon d-none">⌄</span>
                     </div>
@@ -212,8 +213,10 @@
                                 class="form-control clean-input address-part"
                                 onchange="buildFullAddress()" disabled>
                             <option value="">State</option>
+                            <option selected="@(Model.State == "Delhi" ? "selected" : null)">Delhi</option>
                             <option selected="@(Model.State == "Maharashtra" ? "selected" : null)">Maharashtra</option>
                             <option selected="@(Model.State == "Karnataka" ? "selected" : null)">Karnataka</option>
+                            <option selected="@(Model.State == "California" ? "selected" : null)">California</option>
                         </select>
                         <span class="dropdown-icon d-none">⌄</span>
                     </div>
@@ -222,9 +225,13 @@
                         <select name="District" id="districtField"
                                 class="form-control clean-input address-part"
                                 onchange="buildFullAddress()" disabled>
-                            <option value="">District</option>
+                            <option value="">Region</option>
+                            <option selected="@(Model.District == "New Delhi" ? "selected" : null)">New Delhi</option>
+                            <option selected="@(Model.District == "Dwarka" ? "selected" : null)">Dwarka</option>
                             <option selected="@(Model.District == "Mumbai" ? "selected" : null)">Mumbai</option>
                             <option selected="@(Model.District == "Pune" ? "selected" : null)">Pune</option>
+                            <option selected="@(Model.District == "Bengaluru" ? "selected" : null)">Bengaluru</option>
+                            <option selected="@(Model.District == "Los Angeles" ? "selected" : null)">Los Angeles</option>
                         </select>
                         <span class="dropdown-icon d-none">⌄</span>
                     </div>
@@ -332,8 +339,8 @@
                                            class="form-control clean-input"
                                            minlength="8"
                                            placeholder="Minimum 8 characters" />
-                                    <button type="button" class="btn btn-outline-light"
-                                            onclick="togglePassword('newPassword')">View</button>
+                                    <button type="button" class="btn btn-outline-light" data-password-toggle="newPassword" title="Show password"
+                                            onclick="togglePassword('newPassword', this)">🙈</button>
                                 </div>
                             </div>
 
@@ -344,8 +351,8 @@
                                            class="form-control clean-input"
                                            minlength="8"
                                            placeholder="Repeat new password" />
-                                    <button type="button" class="btn btn-outline-light"
-                                            onclick="togglePassword('confirmPassword')">View</button>
+                                    <button type="button" class="btn btn-outline-light" data-password-toggle="confirmPassword" title="Show password"
+                                            onclick="togglePassword('confirmPassword', this)">🙈</button>
                                 </div>
                             </div>
                         </div>

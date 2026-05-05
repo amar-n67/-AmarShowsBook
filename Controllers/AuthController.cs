@@ -42,6 +42,18 @@ public IActionResult Login(string email, string password)
         return View();
     }
 
+    if (!EmailRegex.IsMatch(email.Trim().ToLower()))
+    {
+        ViewBag.Error = "Only Gmail or Outlook email is allowed.";
+        return View();
+    }
+
+    if (password.Length < 8)
+    {
+        ViewBag.Error = "Password must be minimum 8 characters.";
+        return View();
+    }
+
     // normalize email
     email = email.Trim().ToLower();
 
@@ -228,11 +240,17 @@ if (string.IsNullOrEmpty(user.Language))
 
         // STEP 3: Reset Password
         [HttpPost]
-        public IActionResult ResetPassword(string password)
+        public IActionResult ResetPassword(string password, string confirmPassword)
         {
             if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
             {
                 ViewBag.Error = "Password must be minimum 8 characters.";
+                return View("ResetPassword");
+            }
+
+            if (!string.Equals(password, confirmPassword, StringComparison.Ordinal))
+            {
+                ViewBag.Error = "Both password fields must match.";
                 return View("ResetPassword");
             }
 

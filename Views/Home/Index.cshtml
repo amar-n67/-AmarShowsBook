@@ -42,9 +42,9 @@
             </div>
 
             <div>
-                <label>District</label>
+                <label>Region</label>
                 <select id="district" class="form-control">
-                    <option>Select District</option>
+                    <option>Select Region</option>
                 </select>
             </div>
         </div>
@@ -72,6 +72,9 @@
                 var title = item.Type == "Movie" ? item.Movie?.Title :
                             item.Type == "Standup" ? item.StandupShow?.Title :
                             item.LiveStream?.Title;
+                var showRegion = item.Location == null
+                    ? "Region to be announced"
+                    : $"{item.Location.Area}, {item.Location.State}, {item.Location.Country}";
 
                 <article class="show-card">
                     <div class="show-card-top">
@@ -80,7 +83,8 @@
                     </div>
                     <h2>@(title ?? "Untitled Show")</h2>
                     <p>Camera opens at @item.StartTime.ToString("dd MMM yyyy, hh:mm tt")</p>
-                    <button class="btn btn-primary">Book The Seat</button>
+                    <p class="show-region">@showRegion</p>
+                    <a class="btn btn-primary" href="/Booking/Seats/@item.Id">Book The Seat</a>
                 </article>
             }
         }
@@ -216,6 +220,10 @@
     margin: 0;
     color: var(--app-muted);
 }
+.show-region {
+    min-height: 42px;
+    font-weight: 750;
+}
 .show-card .btn {
     align-self: end;
     font-weight: 850;
@@ -295,7 +303,7 @@ function loadStates() {
     let country = document.getElementById("country").value;
     let stateDropdown = document.getElementById("state");
 
-    setSelectOptions("district", [], "Select District");
+    setSelectOptions("district", [], "Select Region");
     stateDropdown.innerHTML = "<option>Loading...</option>";
 
     if (!country || country === "Select Country") {
@@ -326,6 +334,6 @@ function loadStates() {
 function loadDistricts() {
     const state = document.getElementById("state").value;
     const fallback = state === "Karnataka" ? ["Bengaluru", "Mysuru"] : ["Mumbai", "Pune"];
-    setSelectOptions("district", fallback, "Select District");
+    setSelectOptions("district", fallback, "Select Region");
 }
 </script>
