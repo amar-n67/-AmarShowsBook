@@ -1,66 +1,157 @@
-using Microsoft.AspNetCore.Mvc;
-using AmarShowsBook.Data;
-using AmarShowsBook.Models;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
+using AmarShowsBook.Services; // Added for activity logging
+using Npgsql;                 // Added for PostgreSQL exception handling
+using Microsoft.AspNetCore.Mvc;             
+using AmarShowsBook.Data;               
+using AmarShowsBook.Models;                             
+using System.IO;        // Added for file handling
+using System.Linq;      // Added for LINQ queries
+using System.Text.RegularExpressions;                   
 
 public class ProfileController : Controller
 {
     private readonly ApplicationDbContext _context;
+    // ====================== added logger + activity logger ======================
+    private readonly ILogger<ProfileController> _logger;
+    private readonly IActivityLogger _activityLogger;
+    // ====================== End of added logger + activity logger ======================
     private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
     private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
     private static readonly Regex PasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", RegexOptions.Compiled);
     private const string PasswordRuleMessage = "New password must be at least 8 characters and include uppercase, lowercase, and special character.";
 
-    public ProfileController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
+    // ====================== commented out old constructor ======================
+    // public ProfileController(ApplicationDbContext context)
+    // {
+    //     _context = context;
+    // }
+    // ====================== Updated constructor to include activity logger ======================
+    public ProfileController(
+        ILogger<ProfileController> logger,
+        ApplicationDbContext context,
+        IActivityLogger activityLogger)
+        {
+            _logger = logger;
+            _context = context;
+            _activityLogger = activityLogger;
+        }
+    // ====================== End of updated constructor ======================
     // LOAD PROFILE
-    public IActionResult Index()
+    //public IActionResult Index() //==== commented out old Index action to reuse for saving profile
+    public async Task<IActionResult> Index() // Updated to async for future activity logging
     {
         return RedirectToAction("MyProfile");
     }
 
-    public IActionResult MyProfile()
+    //public IActionResult MyProfile() //commented out old MyProfile action to reuse for saving profile
+    public async Task<IActionResult> MyProfile()
+{
+    try
     {
-        var email = HttpContext.Session.GetString("UserEmail");
+        var userEmail = HttpContext.Session.GetString("UserEmail");
 
-        if (string.IsNullOrWhiteSpace(email))
+        // ====================== Unauthorized access logging ======================
+        if (string.IsNullOrWhiteSpace(userEmail))
         {
+            await _activityLogger.LogAsync(
+                action: "UNAUTHORIZED_PROFILE_ACCESS",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Unauthorized access attempt to profile page",
+                status: "FAILURE",
+                isError: 4
+            );
+
             return RedirectToAction("Login", "Auth");
         }
 
-        var user = _context.Users.FirstOrDefault(u => u.Email == email);
+        var user = _context.Users
+            .FirstOrDefault(u => u.Email == userEmail);
 
         if (user == null)
         {
+            await _activityLogger.LogAsync(
+                action: "PROFILE_USER_NOT_FOUND",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Profile user not found in database",
+                status: "FAILURE",
+                isError: 1
+            );
+
             HttpContext.Session.Clear();
+
             return RedirectToAction("Login", "Auth");
         }
 
-        if (user != null)
-        {
-            HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
-            HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
-            HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
-            HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
-        }
+        HttpContext.Session.SetString("ProfileImage",
+            user.ProfileImagePath ?? "");
+
+        HttpContext.Session.SetString("UserName",
+            user.Name ?? user.Email);
+
+        HttpContext.Session.SetString("UserGenre",
+            user.Genre ?? "Dramatic");
+
+        HttpContext.Session.SetString("UserLanguage",
+            user.Language ?? "English");
+
+        // ====================== Success activity log ======================
+        await _activityLogger.LogAsync(
+            userId: user.Id,
+            action: "VIEW_PROFILE",
+            module: "PROFILE",
+            entityType: "USER",
+            entityId: user.Id,
+            description: "User viewed profile page",
+            status: "SUCCESS",
+            isError: 0
+        );
 
         return View(user);
     }
-
-    // SAVE PROFILE
-    [HttpPost]
-    public IActionResult Index(User model, IFormFile profileImage)
+    catch (PostgresException ex)
     {
-        return MyProfile(model, profileImage);
+        await _activityLogger.LogAsync(
+            action: "VIEW_PROFILE",
+            module: "PROFILE",
+            entityType: "USER",
+            description: "Database error while loading profile",
+            status: "FAILURE",
+            errorCode: ex.SqlState,
+            errorMessage: ex.Message,
+            errorSource: "PostgreSQL",
+            stackTrace: ex.StackTrace,
+            isError: 2
+        );
+
+        throw;
     }
+    catch (Exception ex)
+    {
+        await _activityLogger.LogAsync(
+            action: "VIEW_PROFILE",
+            module: "PROFILE",
+            entityType: "USER",
+            description: "Unexpected error while loading profile",
+            status: "FAILURE",
+            errorCode: "APP500",
+            errorMessage: ex.Message,
+            errorSource: "Application",
+            stackTrace: ex.StackTrace,
+            isError: 1
+        );
+
+        throw;
+    }
+}
+//update above profile action
+    // SAVE PROFILE
+    //[HttpPost]
+    //public IActionResult MyProfile(User model, IFormFile profileImage) //commented out old MyProfile action to reuse for saving profile
 
     [HttpPost]
-    public IActionResult MyProfile(User model, IFormFile profileImage)
+    //public IActionResult MyProfile(User model, IFormFile profileImage) //commented out old MyProfile action to reuse for saving profile
+    public async Task<IActionResult> MyProfile(User model, IFormFile profileImage) //added async for future activity logging
     {
         try
         {
@@ -188,6 +279,25 @@ user.UpdatedAt = DateTime.UtcNow;
 user.UpdatedBy = currentUser ?? "System";
 
         _context.SaveChanges();
+        // ============ added activity log for profile update ============
+        await _activityLogger.LogAsync(
+    userId: user.Id,
+    action: "UPDATE_PROFILE",
+    module: "PROFILE",
+    entityType: "USER",
+    entityId: user.Id,
+    description: "User updated profile successfully",
+    status: "SUCCESS",
+    isError: 0,
+    metadata: new
+    {
+        user.Name,
+        user.Email,
+        user.Mobile,
+        ImageUpdated = imageChanged
+    }
+);
+        //==========end of added activity log for profile update ===========
 
         if (emailChanged)
         {
@@ -213,15 +323,40 @@ user.UpdatedBy = currentUser ?? "System";
 
         return RedirectToAction("MyProfile");
         }
-        catch
-        {
-            TempData["Error"] = "The profile scene could not be saved. Please try again.";
-            return RedirectToAction("MyProfile");
-        }
+        //==============commented out old catch block to reuse for saving profile with activity logging =================
+        // catch
+        // {
+        //     TempData["Error"] = "The profile scene could not be saved. Please try again.";
+        //     return RedirectToAction("MyProfile");
+        // }
+        //==================================updated catch blocks to log profile update failure =================
+        catch (Exception ex)
+{
+    await _activityLogger.LogAsync(
+        action: "UPDATE_PROFILE",
+        module: "PROFILE",
+        entityType: "USER",
+        description: "Profile update failed",
+        status: "FAILURE",
+        errorCode: "APP500",
+        errorMessage: ex.Message,
+        errorSource: "Application",
+        stackTrace: ex.StackTrace,
+        isError: 1
+    );
+
+    TempData["Error"] =
+        "The profile scene could not be saved. Please try again.";
+
+    return RedirectToAction("MyProfile");
+}
+    //=======================================end of added activity log for profile update failure ===
     }
 
     [HttpPost]
-    public IActionResult ChangePassword(string verifiedEmail, string newPassword, string confirmPassword)
+    //public IActionResult ChangePassword(string verifiedEmail, string newPassword, string confirmPassword)//commented out old ChangePassword action to reuse for password change with activity logging
+   
+   public async Task<IActionResult> ChangePassword(string verifiedEmail, string newPassword, string confirmPassword) //added async for future activity logging
     {
         try
         {
@@ -268,15 +403,49 @@ user.UpdatedBy = currentUser ?? "System";
             user.UpdatedAt = DateTime.UtcNow;
             user.UpdatedBy = sessionEmail;
             _context.SaveChanges();
+            // ============ added activity log for password change ============
+            await _activityLogger.LogAsync(
+    userId: user.Id,
+    action: "CHANGE_PASSWORD",
+    module: "PROFILE",
+    entityType: "USER",
+    entityId: user.Id,
+    description: "User changed password successfully",
+    status: "SUCCESS",
+    isError: 0
+);
+//==========end of added activity log for password change ===========
 
             HttpContext.Session.Remove("VerifiedEmailForProfile");
             TempData["Success"] = "Password changed. Your next login has a fresh script.";
             return RedirectToAction("MyProfile");
         }
-        catch
-        {
-            TempData["Error"] = "Password change could not be completed. Please try again.";
-            return RedirectToAction("MyProfile");
-        }
+        // catch
+        // {
+        //     TempData["Error"] = "Password change could not be completed. Please try again.";
+        //     return RedirectToAction("MyProfile");
+        // }
+        //===================updated catch block to log password change failure =================
+        catch (Exception ex)
+{
+    await _activityLogger.LogAsync(
+        action: "CHANGE_PASSWORD",
+        module: "PROFILE",
+        entityType: "USER",
+        description: "Password change failed",
+        status: "FAILURE",
+        errorCode: "APP500",
+        errorMessage: ex.Message,
+        errorSource: "Application",
+        stackTrace: ex.StackTrace,
+        isError: 1
+    );
+
+    TempData["Error"] =
+        "Password change could not be completed. Please try again.";
+
+    return RedirectToAction("MyProfile");
+}
+//=======================================end of added activity log for password change failure =================
     }
 }
