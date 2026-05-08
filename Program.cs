@@ -19,6 +19,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddSession();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

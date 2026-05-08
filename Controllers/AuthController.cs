@@ -15,7 +15,7 @@ namespace AmarShowsBook.Controllers
         private readonly OtpDeliveryService _otpDeliveryService;
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _environment;
-
+        private readonly IActivityLogger _activityLogger;
         private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
         private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
         private static readonly Regex PasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", RegexOptions.Compiled);
@@ -26,18 +26,26 @@ namespace AmarShowsBook.Controllers
         private static DateTime resetOtpExpiresAtUtc;
         private static string resetEmail;
 
+        // public AuthController(
+        //     ApplicationDbContext context,
+        //     IHostApplicationLifetime applicationLifetime,
+        //     OtpDeliveryService otpDeliveryService,
+        //     IConfiguration configuration,
+        //     IWebHostEnvironment environment)
         public AuthController(
-            ApplicationDbContext context,
-            IHostApplicationLifetime applicationLifetime,
-            OtpDeliveryService otpDeliveryService,
-            IConfiguration configuration,
-            IWebHostEnvironment environment)
+    ApplicationDbContext context,
+    IHostApplicationLifetime applicationLifetime,
+    OtpDeliveryService otpDeliveryService,
+    IConfiguration configuration,
+    IWebHostEnvironment environment,
+    IActivityLogger activityLogger)
         {
             _context = context;
             _applicationLifetime = applicationLifetime;
             _otpDeliveryService = otpDeliveryService;
             _configuration = configuration;
             _environment = environment;
+            _activityLogger = activityLogger;
         }
 
         // ================= LOGIN =================
@@ -48,58 +56,176 @@ namespace AmarShowsBook.Controllers
         }
 
        [HttpPost]
-public IActionResult Login(string email, string password)
+// public async Task<IActionResult> Login(string email, string password)
+// {
+//     try
+//     {
+//     if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+//     {
+//         ViewBag.Error = "Missing credentials. The show cannot start without email and password.";
+//         return View();
+//     }
+
+//     if (!EmailRegex.IsMatch(email.Trim().ToLower()))
+//     {
+//         ViewBag.Error = "Only Gmail or Outlook email is allowed.";
+//         return View();
+//     }
+
+//     if (!PasswordRegex.IsMatch(password))
+//     {
+//         ViewBag.Error = PasswordRuleMessage;
+//         return View();
+//     }
+
+//     // normalize email
+//     email = email.Trim().ToLower();
+
+//     var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == email);
+
+//     if (user == null)
+//     {
+//         ViewBag.Error = "No performer found with this email.";
+//         return View();
+//     }
+
+//     bool isValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
+
+//     // if (isValid)
+//     // {
+//     //     HttpContext.Session.SetString("UserEmail", user.Email);
+//     //     HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
+//     //     HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
+//     //     HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
+
+//     //     HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
+
+//     //     return RedirectToAction("Index", "Home");
+//     // }
+//     if (isValid)
+// {
+//     HttpContext.Session.SetString("UserEmail", user.Email);
+//     HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
+//     HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
+//     HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
+
+//     HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
+
+//     // _activityLogger.LogAsync(
+//     //     userId: user.Id,
+//     //     action: "LOGIN",
+//     //     module: "AUTH",
+//     //     entityType: "USER",
+//     //     entityId: user.Id,
+//     //     description: "User logged in successfully"
+//     // );
+//     await _activityLogger.LogAsync(
+//     userId: user.Id,
+//     action: "LOGIN",
+//     module: "AUTH",
+//     entityType: "USER",
+//     entityId: user.Id,
+//     description: "User logged in successfully"
+// );
+
+//     return RedirectToAction("Index", "Home");
+// }
+//     else
+//     {
+//         _activityLogger.LogAsync(
+//             userId: user.Id,
+//             action: "FAILED_LOGIN",
+//             module: "AUTH",
+//             entityType: "USER",
+//             entityId: user.Id,
+//             description: "User failed to log in with incorrect password",
+//             status: "FAILURE"
+//         );
+
+//     ViewBag.Error = "Wrong script. Password did not match.";
+//     return View();
+//     }
+//     catch
+//     {
+//         ViewBag.Error = "The projector had a technical pause. Please try login again.";
+//         return View();
+//     }
+// }
+public async Task<IActionResult> Login(string email, string password)
 {
     try
     {
-    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-    {
-        ViewBag.Error = "Missing credentials. The show cannot start without email and password.";
-        return View();
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            ViewBag.Error = "Missing credentials. The show cannot start without email and password.";
+            return View();
+        }
+
+        if (!EmailRegex.IsMatch(email.Trim().ToLower()))
+        {
+            ViewBag.Error = "Only Gmail or Outlook email is allowed.";
+            return View();
+        }
+
+        if (!PasswordRegex.IsMatch(password))
+        {
+            ViewBag.Error = PasswordRuleMessage;
+            return View();
+        }
+
+        email = email.Trim().ToLower();
+
+        var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == email);
+
+        if (user == null)
+        {
+            ViewBag.Error = "No performer found with this email.";
+            return View();
+        }
+
+        bool isValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
+
+        if (isValid)
+        {
+            HttpContext.Session.SetString("UserEmail", user.Email);
+            HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
+            HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
+            HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
+            HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
+
+            await _activityLogger.LogAsync(
+                userId: user.Id,
+                action: "LOGIN",
+                module: "AUTH",
+                entityType: "USER",
+                entityId: user.Id,
+                description: "User logged in successfully",
+                status: "SUCCESS",
+                isError: 0
+            );
+
+            return RedirectToAction("Index", "Home");
+        }
+        else
+        {
+            await _activityLogger.LogAsync(
+                userId: user.Id,
+                action: "FAILED_LOGIN",
+                module: "AUTH",
+                entityType: "USER",
+                entityId: user.Id,
+                description: "User failed to log in with incorrect password",
+                status: "FAILURE"
+            );
+
+            ViewBag.Error = "Wrong script. Password did not match.";
+            return View();
+        }
     }
-
-    if (!EmailRegex.IsMatch(email.Trim().ToLower()))
+    catch (Exception ex)
     {
-        ViewBag.Error = "Only Gmail or Outlook email is allowed.";
-        return View();
-    }
+        Console.WriteLine(ex);
 
-    if (!PasswordRegex.IsMatch(password))
-    {
-        ViewBag.Error = PasswordRuleMessage;
-        return View();
-    }
-
-    // normalize email
-    email = email.Trim().ToLower();
-
-    var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == email);
-
-    if (user == null)
-    {
-        ViewBag.Error = "No performer found with this email.";
-        return View();
-    }
-
-    bool isValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
-
-    if (isValid)
-    {
-        HttpContext.Session.SetString("UserEmail", user.Email);
-        HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
-        HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
-        HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
-
-        HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
-
-        return RedirectToAction("Index", "Home");
-    }
-
-    ViewBag.Error = "Wrong script. Password did not match.";
-    return View();
-    }
-    catch
-    {
         ViewBag.Error = "The projector had a technical pause. Please try login again.";
         return View();
     }
@@ -163,7 +289,8 @@ public IActionResult Login(string email, string password)
         }
 
         [HttpPost]
-        public IActionResult Signup(User user)
+        // public IActionResult Signup(User user)
+        public async Task<IActionResult> Signup(User user)
         {
             try
             {
@@ -192,10 +319,55 @@ if (string.IsNullOrEmpty(user.Genre))
 if (string.IsNullOrEmpty(user.Language))
     user.Language = "English";
 
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            // _context.Users.Add(user);
+            // _context.SaveChanges();
 
-            return RedirectToAction("Login");
+            // return RedirectToAction("Login");
+            _context.Users.Add(user);
+
+_context.SaveChanges();
+
+//  _activityLogger.LogAsync(
+//     userId: user.Id,
+//     action: "SIGNUP",
+//     module: "AUTH",
+//     entityType: "USER",
+//     entityId: user.Id,
+//     description: "New user account created",
+//     newValue: user
+// );
+// await _activityLogger.LogAsync(
+//     userId: user.Id,
+//     action: "SIGNUP",
+//     module: "AUTH",
+//     entityType: "USER",
+//     entityId: user.Id,
+//     description: "New user account created",
+//     //newValue: user
+//     newValue: new
+// {
+//     user.Id,
+//     user.Name,
+//     user.Email
+// }
+// );
+await _activityLogger.LogAsync(
+    userId: user.Id,
+    action: "SIGNUP",
+    module: "AUTH",
+    entityType: "USER",
+    entityId: user.Id,
+    description: "New user account created",
+    newValue: new
+    {
+        user.Id,
+        user.Name,
+        user.Email,
+        user.Mobile
+    }
+);
+
+return RedirectToAction("Login");
             }
             catch
             {
@@ -269,7 +441,7 @@ if (string.IsNullOrEmpty(user.Language))
 
         // STEP 3: Reset Password
         [HttpPost]
-        public IActionResult ResetPassword(string password, string confirmPassword)
+        public async Task<IActionResult> ResetPassword(string password, string confirmPassword)
         {
             if (string.IsNullOrWhiteSpace(password) || !PasswordRegex.IsMatch(password))
             {
@@ -285,21 +457,59 @@ if (string.IsNullOrEmpty(user.Language))
 
             var user = _context.Users.FirstOrDefault(u => u.Email == resetEmail);
 
+            // if (user != null)
+            // {
+            //     user.Password = BCrypt.Net.BCrypt.HashPassword(password);
+            //     _context.SaveChanges();
+            // }
             if (user != null)
-            {
-                user.Password = BCrypt.Net.BCrypt.HashPassword(password);
-                _context.SaveChanges();
-            }
+{
+    user.Password = BCrypt.Net.BCrypt.HashPassword(password);
+
+    _context.SaveChanges();
+
+    await _activityLogger.LogAsync(
+        userId: user.Id,
+        action: "RESET_PASSWORD",
+        module: "AUTH",
+        entityType: "USER",
+        entityId: user.Id,
+        description: "User password reset successfully"
+    );
+}
 
             return RedirectToAction("Login");
         }
 
         // ================= LOGOUT =================
 
-        public IActionResult Logout()
-        {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login");
-        }
+        // public IActionResult Logout()
+        // {
+        //     HttpContext.Session.Clear();
+        //     return RedirectToAction("Login");
+        // }
+        public async Task<IActionResult> Logout()
+{
+    var email = HttpContext.Session.GetString("UserEmail");
+
+    var user = _context.Users.FirstOrDefault(u => u.Email == email);
+
+    if (user != null)
+    {
+        await _activityLogger.LogAsync(
+            userId: user.Id,
+            action: "LOGOUT",
+            module: "AUTH",
+            entityType: "USER",
+            entityId: user.Id,
+            description: "User logged out successfully"
+        );
+    }
+
+    HttpContext.Session.Clear();
+
+    return RedirectToAction("Login");
+}
+        
     }
 }

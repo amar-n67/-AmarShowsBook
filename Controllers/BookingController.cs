@@ -1,6 +1,7 @@
 using AmarShowsBook.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AmarShowsBook.Services;
 
 namespace AmarShowsBook.Controllers
 {
@@ -35,5 +36,14 @@ namespace AmarShowsBook.Controllers
 
             return View(schedule);
         }
+        private readonly IActivityLogger _activityLogger;
+
+        public BookingController(
+            ApplicationDbContext context,
+            IActivityLogger activityLogger)
+            {
+                _context = context;
+                _activityLogger = activityLogger;
+            }
     }
 }
