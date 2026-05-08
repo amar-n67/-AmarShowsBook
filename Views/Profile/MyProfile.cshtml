@@ -391,26 +391,25 @@
 .profile-page {
     min-height: calc(100vh - 90px);
     padding: 30px 12px;
-    background:
-        linear-gradient(135deg, rgba(35, 31, 32, 0.96), rgba(122, 24, 46, 0.9), rgba(15, 118, 110, 0.86)),
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 12px, transparent 12px 26px);
+    background: var(--app-profile-bg);
 }
 .profile-shell {
     max-width: 980px;
     margin: 0 auto;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid var(--app-input-border);
     border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 24px 60px rgba(34,37,47,0.16);
 }
 .profile-hero {
     display: flex;
     justify-content: space-between;
     gap: 18px;
     padding: 26px 30px;
-    background: linear-gradient(135deg, #231f20, #8f1d3f 54%, #0f766e);
-    color: #fff;
+    background: var(--app-nav);
+    color: var(--app-nav-text);
 }
 .profile-hero h2 {
     margin: 4px 0 6px;
@@ -420,7 +419,7 @@
 .profile-hero p {
     margin: 0;
     max-width: 560px;
-    color: rgba(255,255,255,0.82);
+    color: color-mix(in srgb, var(--app-nav-text) 78%, transparent);
 }
 .profile-kicker,
 .poster-label,
@@ -433,9 +432,9 @@
 .profile-ticket {
     align-self: center;
     padding: 10px 14px;
-    border: 1px dashed rgba(255,255,255,0.72);
+    border: 1px dashed color-mix(in srgb, var(--app-nav-text) 54%, transparent);
     border-radius: 8px;
-    color: #f7d774;
+    color: #7d4b00;
     font-weight: 800;
     white-space: nowrap;
 }
@@ -453,21 +452,22 @@
 .poster-panel {
     padding: 18px;
     border-radius: 8px;
-    background: linear-gradient(180deg, #231f20, #4a1f2f 58%, #0f4f4a);
-    color: #fff;
+    background: linear-gradient(180deg, #fff4c8, #ffd1da 58%, #c8f7ef);
+    color: #22252f;
+    border: 1px solid var(--app-input-border);
 }
 .poster-label {
     display: block;
     margin-bottom: 12px;
-    color: #f7d774;
+    color: #8b2f4b;
 }
 .profile-poster {
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
-    border: 4px solid rgba(255,255,255,0.18);
+    border: 4px solid rgba(255,255,255,0.72);
     border-radius: 8px;
-    box-shadow: 0 16px 34px rgba(0,0,0,0.35);
+    box-shadow: 0 16px 34px rgba(34,37,47,0.16);
 }
 .poster-actions {
     display: grid;
@@ -499,11 +499,11 @@
     margin-bottom: 12px;
 }
 .scene-title span {
-    color: #8f1d3f;
+    color: var(--app-primary);
 }
 .scene-title h5 {
     margin: 2px 0 0;
-    color: #231f20;
+    color: var(--app-card-text);
     font-weight: 800;
 }
 .field-block {
@@ -515,7 +515,7 @@
 .field-block label {
     display: block;
     margin-bottom: 6px;
-    color: #3f3a3c;
+    color: var(--app-card-text);
     font-size: 0.86rem;
     font-weight: 750;
 }

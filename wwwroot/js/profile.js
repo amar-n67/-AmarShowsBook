@@ -56,7 +56,7 @@ function sendEmailOtp(oldEmail) {
     fetch('/Otp/SendEmailOtp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `email=${encodeURIComponent(newEmail)}`
+        body: `email=${encodeURIComponent(newEmail)}&purpose=${encodeURIComponent("email change verification")}`
     })
     .then(res => res.json())
     .then(res => {
@@ -114,7 +114,7 @@ function sendPasswordEmailOtp() {
     fetch('/Otp/SendEmailOtp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `email=${encodeURIComponent(email)}`
+        body: `email=${encodeURIComponent(email)}&purpose=${encodeURIComponent("password change verification")}`
     })
     .then(res => res.json())
     .then(res => {
@@ -206,7 +206,7 @@ function sendMobileOtp(oldMobile) {
     fetch('/Otp/SendMobileOtp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `mobile=${encodeURIComponent(newMobile)}`
+        body: `mobile=${encodeURIComponent(newMobile)}&purpose=${encodeURIComponent("mobile number verification")}`
     })
     .then(res => res.json())
     .then(res => {

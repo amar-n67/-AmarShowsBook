@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
+using AmarShowsBook.Services;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace AmarShowsBook.Controllers
@@ -10,6 +12,9 @@ namespace AmarShowsBook.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IHostApplicationLifetime _applicationLifetime;
+        private readonly OtpDeliveryService _otpDeliveryService;
+        private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _environment;
 
         private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
         private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
@@ -18,12 +23,21 @@ namespace AmarShowsBook.Controllers
 
         // OTP temporary storage (dev only)
         private static string generatedOTP;
+        private static DateTime resetOtpExpiresAtUtc;
         private static string resetEmail;
 
-        public AuthController(ApplicationDbContext context, IHostApplicationLifetime applicationLifetime)
+        public AuthController(
+            ApplicationDbContext context,
+            IHostApplicationLifetime applicationLifetime,
+            OtpDeliveryService otpDeliveryService,
+            IConfiguration configuration,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _applicationLifetime = applicationLifetime;
+            _otpDeliveryService = otpDeliveryService;
+            _configuration = configuration;
+            _environment = environment;
         }
 
         // ================= LOGIN =================
@@ -198,7 +212,7 @@ if (string.IsNullOrEmpty(user.Language))
 
         // STEP 1: Send OTP
         [HttpPost]
-        public IActionResult SendOTP(string email)
+        public async Task<IActionResult> SendOTP(string email)
         {
             email = email?.Trim().ToLower();
 
@@ -216,14 +230,25 @@ if (string.IsNullOrEmpty(user.Language))
                 return View("ForgotPassword");
             }
 
-            var rand = new Random();
-            generatedOTP = rand.Next(100000, 999999).ToString();
+            generatedOTP = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            resetOtpExpiresAtUtc = DateTime.UtcNow.AddMinutes(Math.Max(1, _configuration.GetValue("Otp:ExpiryMinutes", 5)));
             resetEmail = email;
 
-            // DEV ONLY (prints in terminal)
-            Console.WriteLine("OTP: " + generatedOTP);
+            var result = await _otpDeliveryService.SendEmailOtpAsync(email, generatedOTP, "reset password");
+            if (!result.Success)
+            {
+                if (!result.IsConfigured && _environment.IsDevelopment() && _configuration.GetValue("Otp:ExposeDevOtp", true))
+                {
+                    Console.WriteLine($"Reset password OTP for {email}: {generatedOTP}");
+                    ViewBag.Message = $"OTP sent. Development OTP: {generatedOTP}";
+                    return View("VerifyOTP");
+                }
 
-            ViewBag.Message = "OTP sent (check terminal)";
+                ViewBag.Error = result.Message;
+                return View("ForgotPassword");
+            }
+
+            ViewBag.Message = "OTP sent to your email for reset password.";
             return View("VerifyOTP");
         }
 
@@ -231,12 +256,14 @@ if (string.IsNullOrEmpty(user.Language))
         [HttpPost]
         public IActionResult VerifyOTP(string otp)
         {
-            if (otp == generatedOTP)
+            if (!string.IsNullOrWhiteSpace(generatedOTP) &&
+                resetOtpExpiresAtUtc >= DateTime.UtcNow &&
+                otp == generatedOTP)
             {
                 return View("ResetPassword");
             }
 
-            ViewBag.Error = "Invalid OTP";
+            ViewBag.Error = resetOtpExpiresAtUtc < DateTime.UtcNow ? "OTP expired. Send a new code." : "Invalid OTP";
             return View("VerifyOTP");
         }
 

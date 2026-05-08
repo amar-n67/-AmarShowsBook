@@ -1,4 +1,5 @@
 using AmarShowsBook.Data;
+using AmarShowsBook.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -6,6 +7,7 @@ using System.Runtime.InteropServices;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<OtpDeliveryService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
 if (!connectionString.Contains("Timeout=", StringComparison.OrdinalIgnoreCase))
