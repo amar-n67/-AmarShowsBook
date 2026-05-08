@@ -31,7 +31,9 @@ public string Email { get; set; }
 
 
 [Required(ErrorMessage = "Password is required")]
-[MinLength(8, ErrorMessage = "Password must be minimum 8 characters")]
+[MinLength(8, ErrorMessage = "Password must be at least 8 characters")]
+[RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$",
+ ErrorMessage = "Password must be at least 8 characters and include uppercase, lowercase, and special character")]
 public string Password { get; set; }
 
         [Required(ErrorMessage = "Mobile is required")]

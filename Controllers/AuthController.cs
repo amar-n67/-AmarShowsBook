@@ -13,6 +13,8 @@ namespace AmarShowsBook.Controllers
 
         private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
         private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
+        private static readonly Regex PasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", RegexOptions.Compiled);
+        private const string PasswordRuleMessage = "Password must be at least 8 characters and include uppercase, lowercase, and special character.";
 
         // OTP temporary storage (dev only)
         private static string generatedOTP;
@@ -48,9 +50,9 @@ public IActionResult Login(string email, string password)
         return View();
     }
 
-    if (password.Length < 8)
+    if (!PasswordRegex.IsMatch(password))
     {
-        ViewBag.Error = "Password must be minimum 8 characters.";
+        ViewBag.Error = PasswordRuleMessage;
         return View();
     }
 
@@ -124,9 +126,9 @@ public IActionResult Login(string email, string password)
                 ModelState.AddModelError("Mobile", "Mobile must be exactly 10 digits.");
             }
 
-            if (string.IsNullOrWhiteSpace(user.Password) || user.Password.Length < 8)
+            if (string.IsNullOrWhiteSpace(user.Password) || !PasswordRegex.IsMatch(user.Password))
             {
-                ModelState.AddModelError("Password", "Password must be minimum 8 characters.");
+                ModelState.AddModelError("Password", PasswordRuleMessage);
             }
 
             return ModelState.IsValid;
@@ -242,9 +244,9 @@ if (string.IsNullOrEmpty(user.Language))
         [HttpPost]
         public IActionResult ResetPassword(string password, string confirmPassword)
         {
-            if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+            if (string.IsNullOrWhiteSpace(password) || !PasswordRegex.IsMatch(password))
             {
-                ViewBag.Error = "Password must be minimum 8 characters.";
+                ViewBag.Error = PasswordRuleMessage;
                 return View("ResetPassword");
             }
 

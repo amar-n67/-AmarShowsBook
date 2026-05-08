@@ -186,6 +186,80 @@ select option {
 .form-control::placeholder,
 input::placeholder,
 textarea::placeholder {
+    color: color-mix(in srgb, var(--app-input-text) 58%, transparent);
+}
+
+.btn[data-password-toggle] {
+    min-width: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-cat {
+    position: relative;
+    width: 25px;
+    height: 20px;
+    display: inline-block;
+}
+
+.password-cat::before,
+.password-cat::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 8px solid currentColor;
+}
+
+.password-cat::before {
+    left: 2px;
+    transform: rotate(-18deg);
+}
+
+.password-cat::after {
+    right: 2px;
+    transform: rotate(18deg);
+}
+
+.password-cat-face {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 0;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-radius: 50% 50% 45% 45%;
+}
+
+.password-cat-eye {
+    position: absolute;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.password-cat-eye:first-child {
+    left: 7px;
+}
+
+.password-cat-eye:last-child {
+    right: 7px;
+}
+
+.password-cat.closed .password-cat-eye {
+    top: 9px;
+    height: 2px;
+    border-radius: 999px;
+}
+
+input::placeholder,
+textarea::placeholder {
     color: var(--app-muted) !important;
     opacity: 1;
 }
@@ -927,6 +1001,31 @@ z-index:9999;">
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+function getPasswordCatMarkup(isOpen) {
+    return '<span class="password-cat ' + (isOpen ? 'open' : 'closed') + '" aria-hidden="true">' +
+        '<span class="password-cat-face">' +
+        '<span class="password-cat-eye"></span>' +
+        '<span class="password-cat-eye"></span>' +
+        '</span>' +
+        '</span>';
+}
+
+function setPasswordToggleState(button, isOpen) {
+    if (!button) return;
+
+    button.innerHTML = getPasswordCatMarkup(isOpen);
+    button.setAttribute("aria-label", isOpen ? "Hide password" : "Show password");
+    button.title = isOpen ? "Hide password" : "Show password";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+        var fieldId = button.getAttribute("data-password-toggle");
+        var input = document.getElementById(fieldId);
+        setPasswordToggleState(button, input && input.type === "text");
+    });
+});
+
 function togglePassword(fieldId, button) {
     var input = document.getElementById(fieldId);
     if (!input) return;
@@ -935,11 +1034,7 @@ function togglePassword(fieldId, button) {
     input.type = shouldShow ? "text" : "password";
 
     var toggleButton = button || document.querySelector('[data-password-toggle="' + fieldId + '"]');
-    if (toggleButton) {
-        toggleButton.innerText = shouldShow ? "😊👁" : "🙈";
-        toggleButton.setAttribute("aria-label", shouldShow ? "Hide password" : "Show password");
-        toggleButton.title = shouldShow ? "Hide password" : "Show password";
-    }
+    setPasswordToggleState(toggleButton, shouldShow);
 }
 </script>
 

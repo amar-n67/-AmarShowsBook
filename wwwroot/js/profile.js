@@ -474,8 +474,10 @@ function validateChangePasswordForm() {
         return false;
     }
 
-    if (!newPassword || newPassword.length < 8) {
-        showPopup("New password must be minimum 8 characters.");
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+        showPopup("New password must be at least 8 characters and include uppercase, lowercase, and special character.");
         return false;
     }
 

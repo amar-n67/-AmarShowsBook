@@ -35,12 +35,12 @@
                 <div class="mb-3">
                     <label>Password <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <input id="signupPassword" name="Password" type="password" class="form-control" minlength="8" required />
+                        <input id="signupPassword" name="Password" type="password" class="form-control" minlength="8"
+                               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$" required />
                         <button type="button" class="btn btn-outline-light" data-password-toggle="signupPassword" title="Show password" onclick="togglePassword('signupPassword', this)">
-                            🙈
                         </button>
                     </div>
-                    <small class="text-muted">Minimum 8 characters.</small>
+                    <small class="text-muted">Minimum 8 characters with uppercase, lowercase, and special character.</small>
                     <span class="text-danger">@Html.ValidationMessage("Password")</span>
                 </div>
             </div>
@@ -147,6 +147,7 @@
             const emailMark = String.fromCharCode(64);
             const emailRegex = new RegExp("^[a-zA-Z0-9._%+-]+" + emailMark + "(gmail[.]com|outlook[.]com)$");
             const mobileRegex = /^[0-9]{10}$/;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
 
             if (!name) {
                 showCinemaPopup("Display name is required.", "error");
@@ -163,8 +164,8 @@
                 return false;
             }
 
-            if (!password || password.length < 8) {
-                showCinemaPopup("Password must be minimum 8 characters.", "error");
+            if (!passwordRegex.test(password)) {
+                showCinemaPopup("Password must be at least 8 characters and include uppercase, lowercase, and special character.", "error");
                 return false;
             }
 

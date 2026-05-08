@@ -1,5 +1,7 @@
 using AmarShowsBook.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +51,36 @@ app.Lifetime.ApplicationStarted.Register(() =>
             app.Logger.LogWarning(ex, "Database seed skipped. The app will still start and show friendly errors if the database is unavailable.");
         }
     });
+
+    if (app.Environment.IsDevelopment())
+    {
+        Task.Run(() =>
+        {
+            try
+            {
+                var url = app.Urls.FirstOrDefault(u => u.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                    ?? app.Urls.FirstOrDefault()
+                    ?? "http://localhost:5089";
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start("open", url);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                }
+                else
+                {
+                    Process.Start("xdg-open", url);
+                }
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogWarning(ex, "Browser launch skipped.");
+            }
+        });
+    }
 });
 
 app.Run();

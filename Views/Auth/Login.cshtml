@@ -25,9 +25,9 @@
                 <div class="mb-3">
                     <label>Password</label>
                     <div class="input-group">
-                        <input id="loginPassword" name="password" type="password" class="form-control" minlength="8" required />
+                        <input id="loginPassword" name="password" type="password" class="form-control" minlength="8"
+                               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$" required />
                         <button type="button" class="btn btn-outline-light" data-password-toggle="loginPassword" title="Show password" onclick="togglePassword('loginPassword', this)">
-                            🙈
                         </button>
                     </div>
                 </div>
@@ -174,14 +174,15 @@
             const password = document.getElementById("loginPassword").value;
             const emailMark = String.fromCharCode(64);
             const emailRegex = new RegExp("^[a-zA-Z0-9._%+-]+" + emailMark + "(gmail[.]com|outlook[.]com)$");
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
 
             if (!emailRegex.test(email)) {
                 showCinemaPopup("Only Gmail or Outlook email is allowed.", "error");
                 return false;
             }
 
-            if (!password || password.length < 8) {
-                showCinemaPopup("Password must be minimum 8 characters.", "error");
+            if (!passwordRegex.test(password)) {
+                showCinemaPopup("Password must be at least 8 characters and include uppercase, lowercase, and special character.", "error");
                 return false;
             }
 

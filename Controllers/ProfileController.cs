@@ -10,6 +10,8 @@ public class ProfileController : Controller
     private readonly ApplicationDbContext _context;
     private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
     private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
+    private static readonly Regex PasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", RegexOptions.Compiled);
+    private const string PasswordRuleMessage = "New password must be at least 8 characters and include uppercase, lowercase, and special character.";
 
     public ProfileController(ApplicationDbContext context)
     {
@@ -244,9 +246,9 @@ user.UpdatedBy = currentUser ?? "System";
                 return RedirectToAction("MyProfile");
             }
 
-            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+            if (string.IsNullOrWhiteSpace(newPassword) || !PasswordRegex.IsMatch(newPassword))
             {
-                TempData["Error"] = "New password must be minimum 8 characters.";
+                TempData["Error"] = PasswordRuleMessage;
                 return RedirectToAction("MyProfile");
             }
 

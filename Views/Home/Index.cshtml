@@ -285,6 +285,16 @@ function setSelectOptions(selectId, options, placeholder) {
     });
 }
 
+function selectDefaultCountry() {
+    const country = document.getElementById("country");
+    if (!country) return;
+
+    country.value = "India";
+    if (country.value === "India") {
+        loadStates();
+    }
+}
+
 fetch('https://restcountries.com/v3.1/all')
     .then(res => res.json())
     .then(data => {
@@ -293,9 +303,11 @@ fetch('https://restcountries.com/v3.1/all')
             .filter(Boolean)
             .sort((a, b) => a.localeCompare(b));
         setSelectOptions("country", countries, "Select Country");
+        selectDefaultCountry();
     })
     .catch(() => {
         setSelectOptions("country", ["India"], "Select Country");
+        selectDefaultCountry();
         showCinemaPopup("Location reel could not load from network. India is ready as fallback.", "info");
     });
 
