@@ -50,6 +50,8 @@
         </div>
 
         <nav class="showtime-tabs" aria-label="Show category">
+            <!-- Added 'All Shows' tab and dynamic 'active' class assignment based on selectedType -->
+            <a href="/Home/Index?type=All" class="@(selectedType == "All" ? "active" : "")">All Shows</a> 
             <a href="/Home/Index?type=Movie" class="@(selectedType == "Movie" ? "active" : "")">Movies</a>
             <a href="/Home/Index?type=Standup" class="@(selectedType == "Standup" ? "active" : "")">Standup</a>
             <a href="/Home/Index?type=Live" class="@(selectedType == "Live" ? "active" : "")">Live</a>
@@ -69,7 +71,9 @@
         {
             @foreach (var item in Model.Schedules)
             {
-                var title = item.Type == "Movie" ? item.Movie?.Title :
+                //========== added all shows logic in the view to avoid multiple DB calls in controller ==========
+                var title = item.Type == "All" ? item.Movie?.Title : 
+                            item.Type == "Movie" ? item.Movie?.Title : 
                             item.Type == "Standup" ? item.StandupShow?.Title :
                             item.LiveStream?.Title;
                 var showRegion = item.Location == null
