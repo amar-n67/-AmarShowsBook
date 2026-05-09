@@ -8,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<OtpDeliveryService>();
+// Register the background service for seat lock expiry
+builder.Services.AddHostedService<SeatLockExpiryService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
 if (!connectionString.Contains("Timeout=", StringComparison.OrdinalIgnoreCase))
