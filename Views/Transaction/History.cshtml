@@ -59,7 +59,13 @@
                         </td>
 
                         <td>@item.GatewayName</td>
-
+                        <!-- Show payment gateway failure reason -->
+                        @if (!string.IsNullOrWhiteSpace(item.FailureReason))
+                            {
+                                 <div class="text-danger small">
+                          @item.FailureReason
+                         </div>
+                            }
                         <td>
                             @(item.CompletedAt?.ToString("dd MMM yyyy hh:mm tt")
                                 ?? "Pending")
