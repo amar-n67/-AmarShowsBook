@@ -22,9 +22,11 @@ namespace AmarShowsBook.Controllers
         private const string PasswordRuleMessage = "Password must be at least 8 characters and include uppercase, lowercase, and special character.";
 
         // OTP temporary storage (dev only)
-        private static string generatedOTP;
+        //private static string generatedOTP; //comment to handle nullability in the database
+        private static string? generatedOTP;
         private static DateTime resetOtpExpiresAtUtc;
-        private static string resetEmail;
+        //private static string resetEmail; //comment to handle nullability in the database
+        private static string? resetEmail;
 
         // public AuthController(
         //     ApplicationDbContext context,
