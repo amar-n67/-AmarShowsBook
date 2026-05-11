@@ -2,6 +2,7 @@ using AmarShowsBook.Data;
 using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.Mvc;
+using AmarShowsBook.Helpers;
 
 namespace AmarShowsBook.Controllers
 {
@@ -10,20 +11,33 @@ namespace AmarShowsBook.Controllers
         private readonly ApplicationDbContext _context;
 
         private readonly IActivityLogger _activityLogger;
+        private readonly RbacService _rbacService;
 
         // Inject database + activity logger
         public AdminController(
             ApplicationDbContext context,
-            IActivityLogger activityLogger)
+            //IActivityLogger activityLogger)
+            IActivityLogger activityLogger,
+RbacService rbacService)
         {
             _context = context;
             _activityLogger = activityLogger;
+            _rbacService = rbacService;
         }
 
         // ================= ADMIN DASHBOARD =================
 
         public async Task<IActionResult> Dashboard()
         {
+            // Validate admin dashboard permission
+if (!RbacAuthorizationHelper.CanAccess(
+    HttpContext,
+    _rbacService,
+    "ADMIN",
+    "VIEW"))
+{
+    return RedirectToAction("Index", "Home");
+}
             var vm = new AdminDashboardViewModel
             {
                 // ================= BOOKINGS =================
