@@ -1,5 +1,4 @@
-// Human Comment:
-// Model for vw_wallet_summary database view
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models.Admin
 {
@@ -13,8 +12,6 @@ namespace AmarShowsBook.Models.Admin
 
         public string UserEmail { get; set; }
 
-        public decimal WalletBalance { get; set; }
-
         public decimal BlockedBalance { get; set; }
 
         public int LoyaltyPoints { get; set; }
@@ -25,8 +22,38 @@ namespace AmarShowsBook.Models.Admin
 
         public int TotalWalletTransactions { get; set; }
 
+        
+
+
+        // Human Comment:
+
+        // PostgreSQL column:
+
+        // wallet_balance
+
+        [Column("wallet_balance")]
+
+        public decimal WalletBalance { get; set; }
+
+        // Human Comment:
+
+        // PostgreSQL column:
+
+        // total_credits
+
+        [Column("total_credits")]
+
         public decimal TotalCredits { get; set; }
 
+        // Human Comment:
+
+        // PostgreSQL column:
+
+        // total_debits
+
+        [Column("total_debits")]
+
         public decimal TotalDebits { get; set; }
+
     }
 }

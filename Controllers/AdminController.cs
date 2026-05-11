@@ -101,10 +101,13 @@ namespace AmarShowsBook.Controllers
 
                 TotalRefunds =
                     _context.VwRefundSummaries.Count(),
+// Using mapped C# property name.
+// EF Core automatically maps this
+// to PostgreSQL column "is_refund_error".
 
-                FailedRefunds =
-                    _context.VwRefundSummaries
-                        .Count(x => x.IsRefundError == 1),
+FailedRefunds =
+    _context.VwRefundSummaries
+        .Count(x => x.IsRefundError == 1),
 
                 // ================= INVOICES =================
 
