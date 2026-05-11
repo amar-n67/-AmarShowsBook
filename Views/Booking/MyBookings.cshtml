@@ -43,7 +43,8 @@
 
                     <p>
                         Booked At:
-                        @booking.BookedAt.ToString("dd MMM yyyy hh:mm tt")
+                       
+                        @(booking.BookedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "N/A")
                     </p>
 
                 </article>
