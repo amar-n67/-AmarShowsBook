@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models
 {
@@ -13,13 +14,18 @@ namespace AmarShowsBook.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         // Admin user status management
+// Human Comment:
+// PostgreSQL uses snake_case column names.
+// Explicit mapping avoids EF Core naming mismatch.
+
+[Column("is_active")]
 public bool IsActive { get; set; } = true;
 
+[Column("is_deleted")]
 public bool IsDeleted { get; set; } = false;
 [Required(ErrorMessage = "Mobile is required")]
 [RegularExpression(@"^[0-9]{10}$",
  ErrorMessage = "Mobile must be exactly 10 digits")]
-public string Mobile { get; set; }
 
 // =====================================================
 // ADMIN CONTROL FLAGS

@@ -61,7 +61,6 @@ public DbSet<VwNotificationCenter>
 // Wallet analytics database view
 public DbSet<VwWalletSummary> VwWalletSummaries { get; set; }
 // Booking analytics SQL views
-public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
 //public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
 
