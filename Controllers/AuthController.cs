@@ -189,6 +189,11 @@ public async Task<IActionResult> Login(string email, string password)
 
         if (isValid)
         {
+            // Store logged-in user id for RBAC permission checks
+HttpContext.Session.SetString(
+    "UserId",
+    user.Id.ToString()
+);
             HttpContext.Session.SetString("UserEmail", user.Email);
             HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
             HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
