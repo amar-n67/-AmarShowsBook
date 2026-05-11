@@ -34,6 +34,8 @@ namespace AmarShowsBook.Data
         public DbSet<State> States { get; set; }
         public DbSet<District> Districts { get; set; }
         public DbSet<Region> Regions { get; set; }
+        // Wallet analytics database view
+public DbSet<VwWalletSummary> VwWalletSummary { get; set; }
         // Booking analytics view
         public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
