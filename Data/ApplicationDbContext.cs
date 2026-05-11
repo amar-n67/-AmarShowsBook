@@ -65,6 +65,10 @@ public DbSet<VwWalletSummary> VwWalletSummary { get; set; }
                 .WithMany()
                 .HasForeignKey(s => s.LiveStreamId)
                 .OnDelete(DeleteBehavior.Restrict);
+            // Map wallet summary PostgreSQL view
+modelBuilder.Entity<VwWalletSummary>()
+    .ToView("vw_wallet_summary")
+    .HasNoKey();
         }
     }
 }
