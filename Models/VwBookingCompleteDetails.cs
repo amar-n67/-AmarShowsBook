@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmarShowsBook.Models
 {
-    // Booking analytics SQL view
+    // SQL analytics view for booking dashboard
     [Keyless]
     public class VwBookingCompleteDetails
     {
@@ -20,8 +20,13 @@ namespace AmarShowsBook.Models
 
         public decimal PayableAmount { get; set; }
 
-        // Maps PostgreSQL computed column:
-        // CASE WHEN booking failed THEN 1 ELSE 0
+        // Human readable booking timestamp
+        // Used in booking history + admin analytics
+        public DateTime? BookedAt { get; set; }
+
+        // Computed SQL error flag
+        // 1 = failed booking
+        // 0 = successful booking
         public int IsError { get; set; }
     }
 }
