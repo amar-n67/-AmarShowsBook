@@ -1,16 +1,91 @@
-<section class="card p-4">
-    <h2>Wallet Dashboard</h2>
+@model AmarShowsBook.Models.VwWalletSummary
 
-    <p class="text-muted">
-        Wallet module is under construction.
-    </p>
+@{
+    ViewData["Title"] = "Wallet Dashboard";
+}
 
-    <hr />
+<section class="wallet-page">
 
-    <ul>
-        <li>Wallet Balance</li>
-        <li>Loyalty Points</li>
-        <li>Transaction History</li>
-        <li>Refund Credits</li>
-    </ul>
+    <div class="wallet-header">
+        <h1>Wallet Dashboard</h1>
+        <p>Your booking credits and loyalty balance.</p>
+    </div>
+
+    <div class="wallet-grid">
+
+        <div class="wallet-card">
+            <span>Wallet Balance</span>
+            <h2>₹ @Model.WalletBalance</h2>
+        </div>
+
+        <div class="wallet-card">
+            <span>Loyalty Points</span>
+            <h2>@Model.LoyaltyPoints</h2>
+        </div>
+
+        <div class="wallet-card">
+            <span>Total Credits</span>
+            <h2>₹ @Model.TotalCredits</h2>
+        </div>
+
+        <div class="wallet-card">
+            <span>Total Debits</span>
+            <h2>₹ @Model.TotalDebits</h2>
+        </div>
+
+    </div>
+
+    <div class="wallet-info">
+        <p>
+            Wallet Status:
+            <strong>@Model.WalletStatus</strong>
+        </p>
+
+        <p>
+            Last Transaction:
+            <strong>@Model.LastTransactionAt</strong>
+        </p>
+
+        <p>
+            Total Transactions:
+            <strong>@Model.TotalWalletTransactions</strong>
+        </p>
+    </div>
+
 </section>
+
+<style>
+.wallet-page {
+    padding: 30px;
+}
+
+.wallet-header {
+    margin-bottom: 24px;
+}
+
+.wallet-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.wallet-card {
+    padding: 20px;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.wallet-card span {
+    font-size: 14px;
+    color: gray;
+}
+
+.wallet-card h2 {
+    margin-top: 10px;
+}
+
+.wallet-info {
+    margin-top: 30px;
+}
+</style>
