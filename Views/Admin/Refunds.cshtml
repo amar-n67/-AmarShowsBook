@@ -1,0 +1,43 @@
+@model IEnumerable<AmarShowsBook.Models.Admin.VwRefundSummary>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>Refunds</h1>
+
+<table class="table admin-table">
+
+<thead>
+<tr>
+    <th>Refund Ref</th>
+    <th>User</th>
+    <th>Amount</th>
+    <th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+
+@foreach (var item in Model)
+{
+    <tr>
+        <td>@item.RefundRef</td>
+        <td>@item.UserName</td>
+        <td>@item.RefundAmount</td>
+        <td>@item.RefundStatus</td>
+    </tr>
+}
+
+</tbody>
+
+</table>
+
+<a href="/Admin/Dashboard"
+   class="btn btn-dark mt-3">
+   ← Back Dashboard
+</a>
+<a href="/Admin/Dashboard"
+   class="btn btn-dark mt-3">
+   ← Back Dashboard
+</a>

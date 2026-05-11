@@ -1,0 +1,41 @@
+@model IEnumerable<AmarShowsBook.Models.Admin.VwNotificationCenter>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>Notifications</h1>
+
+<table class="table admin-table">
+
+<thead>
+<tr>
+    <th>User</th>
+    <th>Title</th>
+    <th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+
+@foreach (var item in Model)
+{
+    <tr>
+        <td>@item.UserName</td>
+        <td>@item.Title</td>
+        <td>@item.Status</td>
+    </tr>
+}
+
+</tbody>
+
+</table>
+
+<a href="/Admin/Dashboard"
+   class="btn btn-dark mt-3">
+   ← Back Dashboard
+</a>
+<a href="/Admin/Dashboard"
+   class="btn btn-dark mt-3">
+   ← Back Dashboard
+</a>

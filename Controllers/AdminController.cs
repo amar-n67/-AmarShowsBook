@@ -117,29 +117,22 @@ if (!RbacAuthorizationHelper.CanAccess(
 // ROLES
 // =====================================================
 
-// Human Comment:
 // Admin can manage roles
-
-public IActionResult Roles()
+public async Task<IActionResult> Roles()
 {
-    var roles = _context.Roles.ToList();
-
-    return View(roles);
+    return View();
 }
 
-// =====================================================
-// PERMISSIONS
-// =====================================================
-
-// Human Comment:
-// Admin can manage permissions
-
-public IActionResult Permissions()
+public async Task<IActionResult> Permissions()
 {
-    var permissions = _context.Permissions.ToList();
-
-    return View(permissions);
+    return View();
 }
+
+public async Task<IActionResult> UserAccess()
+{
+    return View();
+}
+
         // ================= USERS =================
 
 public IActionResult Users()
@@ -242,24 +235,71 @@ public IActionResult Menus()
 
     return View(menus);
 }
-
-
-// Admin can view all registered users
-
-// =====================================================
-// USER ACCESS MATRIX
-// =====================================================
-
-
-// Admin can view RBAC access matrix
-
-public IActionResult UserAccess()
+public async Task<IActionResult> Refunds()
 {
-    var accessList = _context.VwUserAccessMatrices.ToList();
+    try
+    {
+        var refunds =
+            await _context.VwRefundSummary
+                .ToListAsync();
 
-    return View(accessList);
+        return View(refunds);
+    }
+    catch
+    {
+        return View(new List<VwRefundSummary>());
+    }
 }
 
+public async Task<IActionResult> Wallets()
+{
+    try
+    {
+        var wallets =
+            await _context.VwWalletSummary
+                .ToListAsync();
+
+        return View(wallets);
+    }
+    catch
+    {
+        return View(new List<VwWalletSummary>());
+    }
+}
+
+public async Task<IActionResult> Notifications()
+{
+    try
+    {
+        var notifications =
+            await _context.VwNotificationCenter
+                .ToListAsync();
+
+        return View(notifications);
+    }
+    catch
+    {
+        return View(new List<VwNotificationCenter>());
+    }
+}
+
+public async Task<IActionResult> ActivityLogs()
+{
+    try
+    {
+        var logs =
+            await _context.ActivityLogs
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(100)
+                .ToListAsync();
+
+        return View(logs);
+    }
+    catch
+    {
+        return View(new List<ActivityLog>());
+    }
+}
 
 // =====================================================
 // ACTIVITY LOGS
