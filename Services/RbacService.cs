@@ -35,7 +35,7 @@ namespace AmarShowsBook.Services
             }
 
             // Real RBAC validation
-            return _context.VwUserAccessMatrix.Any(x =>
+            return _context.VwUserAccessMatrices.Any(x =>
                 x.UserId == userId &&
                 x.ModuleCode == moduleCode &&
                 x.ActionType == actionType &&
