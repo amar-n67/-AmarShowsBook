@@ -747,10 +747,7 @@ html[data-theme="system"] .theme-switcher {
 
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="~/css/site.css" />
-<!-- Customer transaction history navigation -->
-<a href="/Transaction/History">
-    Transactions
-</a>
+
 <style>
 /* Final theme pass after Bootstrap/site.css so every page obeys the active theme. */
 html,
@@ -987,31 +984,6 @@ z-index:9999;">
             <button type="button" class="theme-toggle-btn" data-theme-choice="white" onclick="setAppTheme('white')">White</button>
             <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')">Cinema</button>
         </div>
-        <!-- Main navigation links -->
-    @* <div class="film-navigation-links">
-
-    <a class="film-nav-btn"
-       href="/Home/Index">
-        Home
-    </a>
-
-    <!-- Opens logged-in user booking history -->
-<a asp-controller="Booking" asp-action="MyBookings">
-    My Bookings
-</a>
-<a class="film-nav-btn"
-   asp-controller="Wallet"
-   asp-action="Index">
-    Wallet
-</a>
-    @if (Context.Session.GetString("UserEmail")?.ToLower() == "admin@gmail.com")
-    {
-        <!-- Admin dashboard visible only for admin -->
-        <a class="film-nav-btn"
-           href="/Admin/Index">
-            Admin
-        </a>
-    } *@
     <!-- ================= DYNAMIC RBAC NAVIGATION ================= -->
 <div class="film-navigation-links">
 
@@ -1027,50 +999,7 @@ z-index:9999;">
     var menus =
         RbacService.GetMenus(currentUserId);
 }
-
-<!-- Dynamic RBAC menu rendering -->
-@* @foreach (var menu in menus)
-{
-    <a class="film-nav-btn"
-       href="@menu.RoutePath">
-
-        @menu.MenuName
-
-    </a>
-} *@
-
-@* <!-- ================= FIXED CORE NAVIGATION BUTTONS ================= -->
-
-<div class="app-nav-buttons">
-
-    <!-- Home dashboard button -->
-    <a class="app-nav-btn" href="/Home/Index">
-        Home
-    </a>
-
-    <!-- Wallet dashboard button -->
-    <a class="app-nav-btn" href="/Wallet/Index">
-        Wallet
-    </a>
-
-    <!-- Admin analytics dashboard button -->
-    <a class="app-nav-btn" href="/Admin/Dashboard">
-        Admin Dashboard
-    </a>
-
-    <!-- User profile button -->
-    <a class="app-nav-btn" href="/Profile/MyProfile">
-        Profile
-    </a>
-
-    <!-- Logout button -->
-    <a class="app-nav-btn logout-btn" href="/Auth/Logout">
-        Logout
-    </a>
-
-</div> *@
-
-<!-- ================= MAIN APPLICATION NAVIGATION ================= -->
+  <!-- ================= MAIN APPLICATION NAVIGATION ================= -->
 
 <div class="app-nav-buttons">
 
@@ -1088,7 +1017,7 @@ z-index:9999;">
 
     <!-- User transaction history button -->
     <a class="app-nav-btn"
-       href="/Transaction/MyTransactions">
+       href="/Transaction/History">
         MyTransactions
     </a>
 
@@ -1103,39 +1032,11 @@ z-index:9999;">
        href="/Admin/Dashboard">
         Admin Dashboard
     </a>
-
+</div>
 </div>
 
-@* <!-- ================= DYNAMIC RBAC MENU BUTTONS ================= -->
-
-<div class="app-nav-buttons">
-
-@foreach (var menu in menus)
-{
-    <!-- Dynamic menu button from RBAC database -->
-    <a class="app-nav-btn"
-       href="@menu.RoutePath">
-
-        @menu.MenuName
-    </a>
-}
-
-</div> *@
-
-<!-- Customer transaction history navigation -->
-@* <a href="/Transaction/History">
-    Transactions
-</a> *@
-<a href="/Transaction/History">
-    Transactions
-</a>
-
 </div>
-    <!-- Admin analytics dashboard navigation -->
-<a href="/Admin/Dashboard">Admin Dashboard</a>
-
     </div>
-
         @if (Context.Session.GetString("UserEmail") != null)
         {
             <!-- USER INFO -->
