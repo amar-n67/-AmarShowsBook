@@ -7,7 +7,8 @@ namespace AmarShowsBook.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "Name is required")]
-        public string Name { get; set; }
+        // public string Name { get; set; } // commeent to handle nullability in the database
+        public string Name { get; set; } = string.Empty;
         public string? Address { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
@@ -27,17 +28,20 @@ public string? UpdatedBy { get; set; }
 [Required]
 [RegularExpression(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$",
  ErrorMessage = "Only Gmail or Outlook allowed")]
-public string Email { get; set; }
+//public string Email { get; set; } //comment to handle nullability in the database
+public string Email { get; set; } = string.Empty;
 
 
 [Required(ErrorMessage = "Password is required")]
 [MinLength(8, ErrorMessage = "Password must be at least 8 characters")]
 [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$",
  ErrorMessage = "Password must be at least 8 characters and include uppercase, lowercase, and special character")]
-public string Password { get; set; }
+//public string Password { get; set; } //comment to handle nullability in the database
+public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mobile is required")]
 [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Mobile must be exactly 10 digits")]
-public string Mobile { get; set; }
+//public string Mobile { get; set; }//comment to handle nullability in the database
+public string Mobile { get; set; } = string.Empty;
     }
 }
