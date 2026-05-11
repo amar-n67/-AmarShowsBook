@@ -1,43 +1,81 @@
 using AmarShowsBook.Data;
+using AmarShowsBook.Models.Admin;
 using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
-using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Helpers;
-using AmarShowsBook.Models.Admin;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
 namespace AmarShowsBook.Controllers
 {
     public class AdminController : Controller
     {
+        // =====================================================
+        // DATABASE CONTEXT
+        // =====================================================
+
         private readonly ApplicationDbContext _context;
 
+        // =====================================================
+        // ACTIVITY LOGGER
+        // =====================================================
+
         private readonly IActivityLogger _activityLogger;
+
+        // =====================================================
+        // ROLE BASED ACCESS SERVICE
+        // =====================================================
+
         private readonly RbacService _rbacService;
 
-        // Inject database + activity logger
+        // =====================================================
+        // CONSTRUCTOR
+        // =====================================================
+
+        // Human Comment:
+        // Injecting:
+        // 1. Database access
+        // 2. Activity logging service
+        // 3. RBAC permission validation service
+
         public AdminController(
             ApplicationDbContext context,
-            //IActivityLogger activityLogger)
             IActivityLogger activityLogger,
-RbacService rbacService)
+            RbacService rbacService)
         {
             _context = context;
             _activityLogger = activityLogger;
             _rbacService = rbacService;
         }
 
-        // ================= ADMIN DASHBOARD =================
+        // =====================================================
+        // ADMIN DASHBOARD
+        // =====================================================
 
         public async Task<IActionResult> Dashboard()
         {
-            // Validate admin dashboard permission
-if (!RbacAuthorizationHelper.CanAccess(
-    HttpContext,
-    _rbacService,
-    "ADMIN",
-    "VIEW"))
-{
-    return RedirectToAction("Index", "Home");
-}
+            // =====================================================
+            // ROLE ACCESS VALIDATION
+            // =====================================================
+
+            // Human Comment:
+            // Only users with ADMIN VIEW permission
+            // can access admin dashboard
+
+            if (!RbacAuthorizationHelper.CanAccess(
+                HttpContext,
+                _rbacService,
+                "ADMIN",
+                "VIEW"))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            // =====================================================
+            // LOAD DASHBOARD COUNTS
+            // =====================================================
+
             var vm = new AdminDashboardViewModel
             {
                 // ================= BOOKINGS =================
@@ -101,7 +139,10 @@ if (!RbacAuthorizationHelper.CanAccess(
                         .Sum(x => x.TotalDebits)
             };
 
-            // Log admin dashboard access
+            // =====================================================
+            // ACTIVITY LOG
+            // =====================================================
+
             await _activityLogger.LogAsync(
                 action: "VIEW_ADMIN_DASHBOARD",
                 module: "ADMIN",
@@ -113,210 +154,211 @@ if (!RbacAuthorizationHelper.CanAccess(
 
             return View(vm);
         }
+
         // =====================================================
-// ROLES
-// =====================================================
+        // ROLES PAGE
+        // =====================================================
 
-// Admin can manage roles
-public async Task<IActionResult> Roles()
-{
-    return View();
-}
+        // Human Comment:
+        // Admin role management screen
 
-public async Task<IActionResult> Permissions()
-{
-    return View();
-}
+        public async Task<IActionResult> Roles()
+        {
+            return View();
+        }
 
-public async Task<IActionResult> UserAccess()
-{
-    return View();
-}
+        // =====================================================
+        // PERMISSIONS PAGE
+        // =====================================================
 
-        // ================= USERS =================
+        // Human Comment:
+        // Permission master screen
 
-public IActionResult Users()
-{
-    
-    // Load all users for admin management page
+        public async Task<IActionResult> Permissions()
+        {
+            return View();
+        }
 
-    var users = _context.Users.ToList();
+        // =====================================================
+        // USER ACCESS PAGE
+        // =====================================================
 
-    return View(users);
-}
+        // Human Comment:
+        // Shows role + permission matrix
 
-// ================= BOOKINGS =================
+        public async Task<IActionResult> UserAccess()
+        {
+            return View();
+        }
 
-public IActionResult Bookings()
-{
-    
-    // Load booking summary data from database view
+        // =====================================================
+        // USERS PAGE
+        // =====================================================
 
-    var bookings =
-        _context.VwBookingCompleteDetails.ToList();
+        public IActionResult Users()
+        {
+            // Human Comment:
+            // Load all users for admin management
 
-    return View(bookings);
-}
+            var users = _context.Users.ToList();
 
-// ================= TRANSACTIONS =================
+            return View(users);
+        }
 
-public IActionResult Transactions()
-{
-    
-    // Load payment transaction summaries
+        // =====================================================
+        // BOOKINGS PAGE
+        // =====================================================
 
-    var transactions =
-        _context.VwBookingTransactionSummaries.ToList();
+        public IActionResult Bookings()
+        {
+            // Human Comment:
+            // Load booking summary data
 
-    return View(transactions);
-}
+            var bookings =
+                _context.VwBookingCompleteDetails.ToList();
 
-// ================= REFUNDS =================
+            return View(bookings);
+        }
 
-public IActionResult Refunds()
-{
-    
-    // Load refund analytics data
+        // =====================================================
+        // TRANSACTIONS PAGE
+        // =====================================================
 
-    var refunds =
-        _context.VwRefundSummaries.ToList();
+        public IActionResult Transactions()
+        {
+            // Human Comment:
+            // Load payment transaction summaries
 
-    return View(refunds);
-}
+            var transactions =
+                _context.VwBookingTransactionSummaries.ToList();
 
-// ================= WALLETS =================
+            return View(transactions);
+        }
 
-public IActionResult Wallets()
-{
-    
-    // Load wallet summaries
+        // =====================================================
+        // ACCESS MANAGEMENT PAGE
+        // =====================================================
 
-    var wallets =
-        _context.VwWalletSummaries.ToList();
+        public IActionResult AccessManagement()
+        {
+            // Human Comment:
+            // Load user access matrix
 
-    return View(wallets);
-}
+            var access =
+                _context.VwUserAccessMatrices.ToList();
 
-// ================= NOTIFICATIONS =================
+            return View(access);
+        }
 
-public IActionResult Notifications()
-{
-    
-    // Load notification delivery status
+        // =====================================================
+        // MENUS PAGE
+        // =====================================================
 
-    var notifications =
-        _context.VwNotificationCenters.ToList();
+        public IActionResult Menus()
+        {
+            // Human Comment:
+            // Load role based menus
 
-    return View(notifications);
-}
+            var menus =
+                _context.VwUserApplicationMenus.ToList();
 
-// ================= ACCESS MANAGEMENT =================
+            return View(menus);
+        }
 
-public IActionResult AccessManagement()
-{
-    
-    // Load user role + permission matrix
+        // =====================================================
+        // REFUNDS PAGE
+        // =====================================================
 
-    var access =
-        _context.VwUserAccessMatrices.ToList();
+        public async Task<IActionResult> Refunds()
+        {
+            try
+            {
+                var refunds =
+                    await _context.VwRefundSummaries
+                        .ToListAsync();
 
-    return View(access);
-}
+                return View(refunds);
+            }
+            catch
+            {
+                // Human Comment:
+                // Return empty list if database fails
 
-// ================= MENUS =================
+                return View(new List<VwRefundSummary>());
+            }
+        }
 
-public IActionResult Menus()
-{
-    
-    // Load role based menu access
+        // =====================================================
+        // WALLETS PAGE
+        // =====================================================
 
-    var menus =
-        _context.VwUserApplicationMenus.ToList();
+        public async Task<IActionResult> Wallets()
+        {
+            try
+            {
+                var wallets =
+                    await _context.VwWalletSummaries
+                        .ToListAsync();
 
-    return View(menus);
-}
-public async Task<IActionResult> Refunds()
-{
-    try
-    {
-        var refunds =
-            await _context.VwRefundSummary
-                .ToListAsync();
+                return View(wallets);
+            }
+            catch
+            {
+                // Human Comment:
+                // Return empty list if wallet query fails
 
-        return View(refunds);
-    }
-    catch
-    {
-        return View(new List<VwRefundSummary>());
-    }
-}
+                return View(new List<VwWalletSummary>());
+            }
+        }
 
-public async Task<IActionResult> Wallets()
-{
-    try
-    {
-        var wallets =
-            await _context.VwWalletSummary
-                .ToListAsync();
+        // =====================================================
+        // NOTIFICATIONS PAGE
+        // =====================================================
 
-        return View(wallets);
-    }
-    catch
-    {
-        return View(new List<VwWalletSummary>());
-    }
-}
+        public async Task<IActionResult> Notifications()
+        {
+            try
+            {
+                var notifications =
+                    await _context.VwNotificationCenters
+                        .ToListAsync();
 
-public async Task<IActionResult> Notifications()
-{
-    try
-    {
-        var notifications =
-            await _context.VwNotificationCenter
-                .ToListAsync();
+                return View(notifications);
+            }
+            catch
+            {
+                // IMPORTANT FIX:
+                // Your previous code used:
+                // List<VwNotificationCenters>()
+                // That class DOES NOT exist
 
-        return View(notifications);
-    }
-    catch
-    {
-        return View(new List<VwNotificationCenter>());
-    }
-}
+                return View(new List<VwNotificationCenter>());
+            }
+        }
 
-public async Task<IActionResult> ActivityLogs()
-{
-    try
-    {
-        var logs =
-            await _context.ActivityLogs
-                .OrderByDescending(x => x.CreatedAt)
-                .Take(100)
-                .ToListAsync();
+        // =====================================================
+        // ACTIVITY LOGS PAGE
+        // =====================================================
 
-        return View(logs);
-    }
-    catch
-    {
-        return View(new List<ActivityLog>());
-    }
-}
+        public async Task<IActionResult> ActivityLogs()
+        {
+            try
+            {
+                // Human Comment:
+                // Load latest 100 logs
 
-// =====================================================
-// ACTIVITY LOGS
-// =====================================================
+                var logs =
+                    await _context.ActivityLogs
+                        .OrderByDescending(x => x.CreatedAt)
+                        .Take(100)
+                        .ToListAsync();
 
-
-// Admin activity audit logs
-
-public IActionResult ActivityLogs()
-{
-    var logs = _context.ActivityLogs
-        .OrderByDescending(x => x.CreatedAt)
-        .ToList();
-
-    return View(logs);
-}
-
-
+                return View(logs);
+            }
+            catch
+            {
+                return View(new List<ActivityLog>());
+            }
+        }
     }
 }

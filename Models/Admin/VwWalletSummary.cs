@@ -1,12 +1,11 @@
-using Microsoft.EntityFrameworkCore;
+// Human Comment:
+// Model for vw_wallet_summary database view
 
-namespace AmarShowsBook.Models
+namespace AmarShowsBook.Models.Admin
 {
-    // Represents PostgreSQL wallet analytics view
-    [Keyless]
     public class VwWalletSummary
     {
-        public int WalletId { get; set; }
+        public long WalletId { get; set; }
 
         public int UserId { get; set; }
 
