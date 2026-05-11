@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models
 {
@@ -27,6 +28,9 @@ namespace AmarShowsBook.Models
         // Computed SQL error flag
         // 1 = failed booking
         // 0 = successful booking
-        public int IsError { get; set; }
+       // public int IsError { get; set; }
+        // Maps SQL snake_case column to C# PascalCase property
+[Column("is_error")]
+public int IsError { get; set; }
     }
 }
