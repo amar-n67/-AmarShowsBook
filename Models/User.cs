@@ -12,6 +12,10 @@ namespace AmarShowsBook.Models
         public string? Address { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        // Admin user status management
+public bool IsActive { get; set; } = true;
+
+public bool IsDeleted { get; set; } = false;
 public string? Genre { get; set; } = "Dramatic";
 public string? Language { get; set; } = "English";
         public string? ProfileImagePath { get; set; }
