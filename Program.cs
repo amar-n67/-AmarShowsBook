@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<OtpDeliveryService>();
+// Register RBAC permission service
+builder.Services.AddScoped<RbacService>();
+
 // Register custom activity logger service
 builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 // Allow ActivityLogger to access HttpContext
@@ -26,6 +29,7 @@ if (!connectionString.Contains("Timeout=", StringComparison.OrdinalIgnoreCase))
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
 var app = builder.Build();
 
