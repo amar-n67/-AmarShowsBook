@@ -60,6 +60,10 @@ public DbSet<VwNotificationCenter>
         // Wallet analytics database view
 // Wallet analytics database view
 public DbSet<VwWalletSummary> VwWalletSummaries { get; set; }
+// Human Comment:
+// Added access matrix database view support for admin RBAC page
+
+public DbSet<VwUserAccessMatrix> VwUserAccessMatrices { get; set; }
 // Booking analytics SQL views
 
 //public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
@@ -74,6 +78,12 @@ public DbSet<VwTicketValidationSummary> VwTicketValidationSummaries { get; set; 
 // RBAC analytics SQL views
 public DbSet<VwUserAccessMatrix> VwUserAccessMatrix { get; set; }
 public DbSet<VwUserApplicationMenu> VwUserApplicationMenus { get; set; }
+// Human Comment:
+// RBAC tables
+
+public DbSet<Role> Roles { get; set; }
+
+public DbSet<Permission> Permissions { get; set; }
 // Admin operational user management view
 public DbSet<VwAdminUserManagement>
     VwAdminUserManagement { get; set; }
@@ -83,6 +93,12 @@ public DbSet<VwAdminUserManagement>
         // OPTIONAL (good practice)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Human Comment:
+// Mapping SQL view for user role access matrix
+
+modelBuilder.Entity<VwUserAccessMatrix>()
+    .HasNoKey()
+    .ToView("vw_user_access_matrix");
 
 // =====================================================
 // DATABASE VIEW MAPPINGS

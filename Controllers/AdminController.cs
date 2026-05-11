@@ -113,6 +113,170 @@ if (!RbacAuthorizationHelper.CanAccess(
 
             return View(vm);
         }
-        
+        // =====================================================
+// ROLES
+// =====================================================
+
+// Human Comment:
+// Admin can manage roles
+
+public IActionResult Roles()
+{
+    var roles = _context.Roles.ToList();
+
+    return View(roles);
+}
+
+// =====================================================
+// PERMISSIONS
+// =====================================================
+
+// Human Comment:
+// Admin can manage permissions
+
+public IActionResult Permissions()
+{
+    var permissions = _context.Permissions.ToList();
+
+    return View(permissions);
+}
+        // ================= USERS =================
+
+public IActionResult Users()
+{
+    
+    // Load all users for admin management page
+
+    var users = _context.Users.ToList();
+
+    return View(users);
+}
+
+// ================= BOOKINGS =================
+
+public IActionResult Bookings()
+{
+    
+    // Load booking summary data from database view
+
+    var bookings =
+        _context.VwBookingCompleteDetails.ToList();
+
+    return View(bookings);
+}
+
+// ================= TRANSACTIONS =================
+
+public IActionResult Transactions()
+{
+    
+    // Load payment transaction summaries
+
+    var transactions =
+        _context.VwBookingTransactionSummaries.ToList();
+
+    return View(transactions);
+}
+
+// ================= REFUNDS =================
+
+public IActionResult Refunds()
+{
+    
+    // Load refund analytics data
+
+    var refunds =
+        _context.VwRefundSummaries.ToList();
+
+    return View(refunds);
+}
+
+// ================= WALLETS =================
+
+public IActionResult Wallets()
+{
+    
+    // Load wallet summaries
+
+    var wallets =
+        _context.VwWalletSummaries.ToList();
+
+    return View(wallets);
+}
+
+// ================= NOTIFICATIONS =================
+
+public IActionResult Notifications()
+{
+    
+    // Load notification delivery status
+
+    var notifications =
+        _context.VwNotificationCenters.ToList();
+
+    return View(notifications);
+}
+
+// ================= ACCESS MANAGEMENT =================
+
+public IActionResult AccessManagement()
+{
+    
+    // Load user role + permission matrix
+
+    var access =
+        _context.VwUserAccessMatrices.ToList();
+
+    return View(access);
+}
+
+// ================= MENUS =================
+
+public IActionResult Menus()
+{
+    
+    // Load role based menu access
+
+    var menus =
+        _context.VwUserApplicationMenus.ToList();
+
+    return View(menus);
+}
+
+
+// Admin can view all registered users
+
+// =====================================================
+// USER ACCESS MATRIX
+// =====================================================
+
+
+// Admin can view RBAC access matrix
+
+public IActionResult UserAccess()
+{
+    var accessList = _context.VwUserAccessMatrices.ToList();
+
+    return View(accessList);
+}
+
+
+// =====================================================
+// ACTIVITY LOGS
+// =====================================================
+
+
+// Admin activity audit logs
+
+public IActionResult ActivityLogs()
+{
+    var logs = _context.ActivityLogs
+        .OrderByDescending(x => x.CreatedAt)
+        .ToList();
+
+    return View(logs);
+}
+
+
     }
 }
