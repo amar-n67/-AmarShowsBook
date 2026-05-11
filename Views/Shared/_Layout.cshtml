@@ -489,6 +489,33 @@ a {
     gap: 12px;
     margin-left: auto;
 }
+/* Main navigation links section */
+.film-navigation-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Navigation button styling */
+.film-navigation-links .film-nav-btn {
+    background: rgba(255,255,255,0.12);
+
+    color: var(--app-nav-text) !important;
+
+    border: 1px solid rgba(255,255,255,0.14);
+
+    transition: 0.2s ease;
+}
+
+/* Navigation hover effect */
+.film-navigation-links .film-nav-btn:hover {
+    background: var(--app-accent);
+
+    color: #231f20 !important;
+
+    transform: translateY(-2px);
+}
+//end of nav links
 
 .film-user-card {
     display: flex;
@@ -671,6 +698,14 @@ html[data-theme="system"] .theme-switcher {
 @@media (max-width: 760px) {
     .film-navbar {
         margin: 8px;
+        <!--adding some breathing room on smaller screens-->
+        .film-navigation-links {
+    width: 100%;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+}
     }
 
     .film-menu {
@@ -947,6 +982,36 @@ z-index:9999;">
             <button type="button" class="theme-toggle-btn" data-theme-choice="white" onclick="setAppTheme('white')">White</button>
             <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')">Cinema</button>
         </div>
+        //adding nav
+        <!-- Main navigation links -->
+<div class="film-navigation-links">
+
+    <a class="film-nav-btn"
+       href="/Home/Index">
+        Home
+    </a>
+
+    <a class="film-nav-btn"
+       href="/Booking/MyBookings">
+        My Bookings
+    </a>
+
+    <a class="film-nav-btn"
+       href="/Wallet/Index">
+        Wallet
+    </a>
+
+    @if (Context.Session.GetString("UserEmail")?.ToLower() == "admin@gmail.com")
+    {
+        <!-- Admin dashboard visible only for admin -->
+        <a class="film-nav-btn"
+           href="/Admin/Index">
+            Admin
+        </a>
+    }
+
+</div>
+// end of nav links
 
         @if (Context.Session.GetString("UserEmail") != null)
         {
