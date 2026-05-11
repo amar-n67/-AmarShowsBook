@@ -8,7 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<OtpDeliveryService>();
-
+// Register custom activity logger service
+builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
+// Allow ActivityLogger to access HttpContext
+builder.Services.AddHttpContextAccessor();
 //=== Add HttpContextAccessor for logging purposes
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
