@@ -3,7 +3,7 @@ using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Helpers;
-
+using AmarShowsBook.Models.Admin;
 namespace AmarShowsBook.Controllers
 {
     public class AdminController : Controller

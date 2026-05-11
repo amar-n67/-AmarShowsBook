@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using AmarShowsBook.Models;
-
+using AmarShowsBook.Models.Admin;
 namespace AmarShowsBook.Data
 {
     public class ApplicationDbContext : DbContext
@@ -34,6 +34,29 @@ namespace AmarShowsBook.Data
         public DbSet<State> States { get; set; }
         public DbSet<District> Districts { get; set; }
         public DbSet<Region> Regions { get; set; }
+        // =====================================================
+// ADMIN DASHBOARD TABLES & DATABASE VIEWS
+// Human Comment:
+// These models connect PostgreSQL views
+// directly into Entity Framework Core.
+// =====================================================
+
+public DbSet<ActivityLog> ActivityLogs { get; set; }
+
+public DbSet<VwBookingCompleteDetails>
+    VwBookingCompleteDetails { get; set; }
+
+public DbSet<VwBookingTransactionSummary>
+    VwBookingTransactionSummary { get; set; }
+
+public DbSet<VwRefundSummary>
+    VwRefundSummary { get; set; }
+
+public DbSet<VwWalletSummary>
+    VwWalletSummary { get; set; }
+
+public DbSet<VwNotificationCenter>
+    VwNotificationCenter { get; set; }
         // Wallet analytics database view
 // Wallet analytics database view
 public DbSet<VwWalletSummary> VwWalletSummaries { get; set; }
@@ -61,6 +84,34 @@ public DbSet<VwAdminUserManagement>
         // OPTIONAL (good practice)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+// =====================================================
+// DATABASE VIEW MAPPINGS
+// Human Comment:
+// PostgreSQL views must be registered
+// using HasNoKey + ToView.
+// =====================================================
+
+modelBuilder.Entity<VwBookingCompleteDetails>()
+    .HasNoKey()
+    .ToView("vw_booking_complete_details");
+
+modelBuilder.Entity<VwBookingTransactionSummary>()
+    .HasNoKey()
+    .ToView("vw_booking_transaction_summary");
+
+modelBuilder.Entity<VwRefundSummary>()
+    .HasNoKey()
+    .ToView("vw_refund_summary");
+
+modelBuilder.Entity<VwWalletSummary>()
+    .HasNoKey()
+    .ToView("vw_wallet_summary");
+
+modelBuilder.Entity<VwNotificationCenter>()
+    .HasNoKey()
+    .ToView("vw_notification_center");
+
 //             // Map wallet analytics SQL view
 // modelBuilder.Entity<VwWalletSummary>()
 //     .ToView("vw_wallet_summary")
@@ -114,6 +165,8 @@ modelBuilder.Entity<VwWalletSummary>(entity =>
 
     entity.Property(e => e.TotalDebits)
         .HasColumnName("total_debits");
+        modelBuilder.Entity<ActivityLog>()
+    .ToTable("activity_logs");
 });
 // Map booking analytics SQL view
 modelBuilder.Entity<VwBookingCompleteDetails>()

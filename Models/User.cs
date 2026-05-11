@@ -16,6 +16,18 @@ namespace AmarShowsBook.Models
 public bool IsActive { get; set; } = true;
 
 public bool IsDeleted { get; set; } = false;
+[Required(ErrorMessage = "Mobile is required")]
+[RegularExpression(@"^[0-9]{10}$",
+ ErrorMessage = "Mobile must be exactly 10 digits")]
+public string Mobile { get; set; }
+
+// =====================================================
+// ADMIN CONTROL FLAGS
+// Human Comment:
+// These flags are used by admin dashboard
+// to enable/disable/delete users safely.
+// =====================================================
+
 public string? Genre { get; set; } = "Dramatic";
 public string? Language { get; set; } = "English";
         public string? ProfileImagePath { get; set; }
