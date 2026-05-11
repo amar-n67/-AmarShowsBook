@@ -1,0 +1,72 @@
+@model List<AmarShowsBook.Models.VwBookingTransactionSummary>
+
+@{
+    ViewData["Title"] = "Transaction History";
+}
+
+<section class="card p-4">
+    <h2>Transaction History</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-3">
+            No transactions available.
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Booking Ref</th>
+                    <th>Show</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Gateway</th>
+                    <th>Completed</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.BookingRef</td>
+
+                        <td>@item.ShowTitle</td>
+
+                        <td>
+                            @item.Currency
+                            @item.TransactionAmount
+                        </td>
+
+                        <td>@item.PaymentMethod</td>
+
+                        <td>
+                            @if (item.TransactionStatus == "SUCCESS")
+                            {
+                                <span class="badge bg-success">
+                                    SUCCESS
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    FAILED
+                                </span>
+                            }
+                        </td>
+
+                        <td>@item.GatewayName</td>
+
+                        <td>
+                            @(item.CompletedAt?.ToString("dd MMM yyyy hh:mm tt")
+                                ?? "Pending")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
