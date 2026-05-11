@@ -9,11 +9,6 @@ namespace AmarShowsBook.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public BookingController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
-
         public IActionResult Seats(int id)
         {
             if (HttpContext.Session.GetString("UserEmail") == null)
