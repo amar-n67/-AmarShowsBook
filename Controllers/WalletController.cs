@@ -1,13 +1,13 @@
+using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Services;
-using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace AmarShowsBook.Controllers
 {
     public class WalletController : Controller
     {
         private readonly ApplicationDbContext _context;
-
         private readonly IActivityLogger _activityLogger;
 
         // Inject database context and activity logger
@@ -32,27 +32,27 @@ namespace AmarShowsBook.Controllers
             {
                 return RedirectToAction("Login", "Auth");
             }
+// Read wallet data from PostgreSQL wallet summary VIEW
+var wallet = _context
+    .VwWalletSummaries
+    .FirstOrDefault(x => x.UserEmail == userEmail);
 
-            // Load wallet summary from database view
-            var wallet = _context.VwWalletSummaries
-                .FirstOrDefault(x => x.UserEmail == userEmail);
-
-            // Handle wallet not found
+            // Wallet not found
             if (wallet == null)
             {
                 TempData["Error"] =
-                    "Wallet details are not available.";
+                    "Wallet information could not be found.";
 
                 return RedirectToAction("Index", "Home");
             }
 
-            // Log successful wallet access
+            // Store wallet activity log
             await _activityLogger.LogAsync(
                 userId: wallet.UserId,
                 action: "VIEW_WALLET",
                 module: "WALLET",
                 entityType: "WALLET",
-                entityId: wallet.WalletId,
+                entityId: (int)wallet.WalletId,
                 description: "User viewed wallet dashboard",
                 status: "SUCCESS",
                 isError: 0

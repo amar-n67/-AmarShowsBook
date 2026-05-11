@@ -1,91 +1,148 @@
 @model AmarShowsBook.Models.VwWalletSummary
 
 @{
-    ViewData["Title"] = "Wallet Dashboard";
+    ViewData["Title"] = "Wallet";
 }
 
 <section class="wallet-page">
 
     <div class="wallet-header">
-        <h1>Wallet Dashboard</h1>
-        <p>Your booking credits and loyalty balance.</p>
+        <div>
+            <span class="wallet-kicker">Digital Wallet</span>
+
+            <h1>Wallet Dashboard</h1>
+
+            <p>
+                Track balance, credits, debits,
+                and loyalty points.
+            </p>
+        </div>
     </div>
 
     <div class="wallet-grid">
 
         <div class="wallet-card">
             <span>Wallet Balance</span>
-            <h2>₹ @Model.WalletBalance</h2>
+            <strong>₹ @Model.WalletBalance</strong>
+        </div>
+
+        <div class="wallet-card">
+            <span>Blocked Balance</span>
+            <strong>₹ @Model.BlockedBalance</strong>
         </div>
 
         <div class="wallet-card">
             <span>Loyalty Points</span>
-            <h2>@Model.LoyaltyPoints</h2>
+            <strong>@Model.LoyaltyPoints</strong>
         </div>
 
         <div class="wallet-card">
             <span>Total Credits</span>
-            <h2>₹ @Model.TotalCredits</h2>
+            <strong>₹ @Model.TotalCredits</strong>
         </div>
 
         <div class="wallet-card">
             <span>Total Debits</span>
-            <h2>₹ @Model.TotalDebits</h2>
+            <strong>₹ @Model.TotalDebits</strong>
         </div>
 
-    </div>
-
-    <div class="wallet-info">
-        <p>
-            Wallet Status:
-            <strong>@Model.WalletStatus</strong>
-        </p>
-
-        <p>
-            Last Transaction:
-            <strong>@Model.LastTransactionAt</strong>
-        </p>
-
-        <p>
-            Total Transactions:
+        <div class="wallet-card">
+            <span>Total Transactions</span>
             <strong>@Model.TotalWalletTransactions</strong>
-        </p>
+        </div>
+
     </div>
 
 </section>
 
 <style>
-.wallet-page {
-    padding: 30px;
+
+.wallet-page
+{
+    padding-bottom: 40px;
 }
 
-.wallet-header {
+.wallet-header
+{
+    padding: 30px;
+
+    border-radius: 8px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,242,199,0.94),
+            rgba(245,178,196,0.86),
+            rgba(146,229,221,0.86)
+        );
+
+    color: #231f20;
+
     margin-bottom: 24px;
 }
 
-.wallet-grid {
+.wallet-kicker
+{
+    text-transform: uppercase;
+
+    font-size: 0.75rem;
+
+    font-weight: 900;
+
+    letter-spacing: 0.08em;
+}
+
+.wallet-grid
+{
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
     gap: 16px;
 }
 
-.wallet-card {
-    padding: 20px;
-    border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+.wallet-card
+{
+    padding: 24px;
+
+    border-radius: 8px;
+
+    border: 1px solid var(--app-input-border);
+
+    background: var(--app-card);
+
+    color: var(--app-card-text);
+
+    box-shadow: 0 12px 24px rgba(0,0,0,0.12);
 }
 
-.wallet-card span {
-    font-size: 14px;
-    color: gray;
+.wallet-card span
+{
+    display: block;
+
+    margin-bottom: 12px;
+
+    font-size: 0.85rem;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
 }
 
-.wallet-card h2 {
-    margin-top: 10px;
+.wallet-card strong
+{
+    font-size: 1.8rem;
+
+    font-weight: 900;
 }
 
-.wallet-info {
-    margin-top: 30px;
+@@media (max-width: 760px)
+{
+    .wallet-grid
+    {
+        grid-template-columns: 1fr;
+    }
 }
+
 </style>

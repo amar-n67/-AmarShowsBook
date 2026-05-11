@@ -998,14 +998,9 @@ z-index:9999;">
 <a asp-controller="Booking" asp-action="MyBookings">
     My Bookings
 </a>
-
-    <a class="film-nav-btn"
-       href="/Wallet/Index">
-        Wallet
-    </a>
-    <!-- Wallet dashboard navigation link -->
-        <!-- Wallet page navigation -->
-<a asp-controller="Wallet" asp-action="Index">
+<a class="film-nav-btn"
+   asp-controller="Wallet"
+   asp-action="Index">
     Wallet
 </a>
     @if (Context.Session.GetString("UserEmail")?.ToLower() == "admin@gmail.com")

@@ -35,17 +35,68 @@ namespace AmarShowsBook.Data
         public DbSet<District> Districts { get; set; }
         public DbSet<Region> Regions { get; set; }
         // Wallet analytics database view
-public DbSet<VwWalletSummary> VwWalletSummary { get; set; }
+// Wallet analytics database view
+public DbSet<VwWalletSummary> VwWalletSummaries { get; set; }
         // Booking analytics view
         public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
         // OPTIONAL (good practice)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Map wallet analytics SQL view
-modelBuilder.Entity<VwWalletSummary>()
-    .ToView("vw_wallet_summary")
-    .HasNoKey();
+//             // Map wallet analytics SQL view
+// modelBuilder.Entity<VwWalletSummary>()
+//     .ToView("vw_wallet_summary")
+//     .HasNoKey();
+// Wallet analytics database view
+modelBuilder.Entity<VwWalletSummary>(entity =>
+{
+    // Human comment:
+    // This model comes from PostgreSQL VIEW not physical table
+    entity.HasNoKey();
+
+    // Human comment:
+    // PostgreSQL view name
+    entity.ToView("vw_wallet_summary");
+
+    // Human comment:
+    // C# property -> PostgreSQL column mapping
+
+    entity.Property(e => e.WalletId)
+        .HasColumnName("wallet_id");
+
+    entity.Property(e => e.UserId)
+        .HasColumnName("user_id");
+
+    entity.Property(e => e.UserName)
+        .HasColumnName("user_name");
+
+    entity.Property(e => e.UserEmail)
+        .HasColumnName("user_email");
+
+    entity.Property(e => e.WalletBalance)
+        .HasColumnName("wallet_balance");
+
+    entity.Property(e => e.BlockedBalance)
+        .HasColumnName("blocked_balance");
+
+    entity.Property(e => e.LoyaltyPoints)
+        .HasColumnName("loyalty_points");
+
+    entity.Property(e => e.WalletStatus)
+        .HasColumnName("wallet_status");
+
+    entity.Property(e => e.LastTransactionAt)
+        .HasColumnName("last_transaction_at");
+
+    entity.Property(e => e.TotalWalletTransactions)
+        .HasColumnName("total_wallet_transactions");
+
+    entity.Property(e => e.TotalCredits)
+        .HasColumnName("total_credits");
+
+    entity.Property(e => e.TotalDebits)
+        .HasColumnName("total_debits");
+});
             base.OnModelCreating(modelBuilder);
             // Map transaction summary SQL view
             modelBuilder.Entity<VwBookingTransactionSummary>()
