@@ -1029,7 +1029,7 @@ z-index:9999;">
 }
 
 <!-- Dynamic RBAC menu rendering -->
-@foreach (var menu in menus)
+@* @foreach (var menu in menus)
 {
     <a class="film-nav-btn"
        href="@menu.RoutePath">
@@ -1037,7 +1037,91 @@ z-index:9999;">
         @menu.MenuName
 
     </a>
+} *@
+
+@* <!-- ================= FIXED CORE NAVIGATION BUTTONS ================= -->
+
+<div class="app-nav-buttons">
+
+    <!-- Home dashboard button -->
+    <a class="app-nav-btn" href="/Home/Index">
+        Home
+    </a>
+
+    <!-- Wallet dashboard button -->
+    <a class="app-nav-btn" href="/Wallet/Index">
+        Wallet
+    </a>
+
+    <!-- Admin analytics dashboard button -->
+    <a class="app-nav-btn" href="/Admin/Dashboard">
+        Admin Dashboard
+    </a>
+
+    <!-- User profile button -->
+    <a class="app-nav-btn" href="/Profile/MyProfile">
+        Profile
+    </a>
+
+    <!-- Logout button -->
+    <a class="app-nav-btn logout-btn" href="/Auth/Logout">
+        Logout
+    </a>
+
+</div> *@
+
+<!-- ================= MAIN APPLICATION NAVIGATION ================= -->
+
+<div class="app-nav-buttons">
+
+    <!-- Home page button -->
+    <a class="app-nav-btn"
+       href="/Home/Index">
+        Home
+    </a>
+
+    <!-- User booking history button -->
+    <a class="app-nav-btn"
+       href="/Booking/MyBookings">
+        MyBooking
+    </a>
+
+    <!-- User transaction history button -->
+    <a class="app-nav-btn"
+       href="/Transaction/MyTransactions">
+        MyTransactions
+    </a>
+
+    <!-- Wallet dashboard button -->
+    <a class="app-nav-btn"
+       href="/Wallet/Index">
+        Wallet
+    </a>
+
+    <!-- Admin analytics dashboard button -->
+    <a class="app-nav-btn"
+       href="/Admin/Dashboard">
+        Admin Dashboard
+    </a>
+
+</div>
+
+@* <!-- ================= DYNAMIC RBAC MENU BUTTONS ================= -->
+
+<div class="app-nav-buttons">
+
+@foreach (var menu in menus)
+{
+    <!-- Dynamic menu button from RBAC database -->
+    <a class="app-nav-btn"
+       href="@menu.RoutePath">
+
+        @menu.MenuName
+    </a>
 }
+
+</div> *@
+
 <!-- Customer transaction history navigation -->
 @* <a href="/Transaction/History">
     Transactions
