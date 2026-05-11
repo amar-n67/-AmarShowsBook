@@ -42,6 +42,10 @@ public DbSet<VwWalletSummary> VwWalletSummary { get; set; }
         // OPTIONAL (good practice)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Map wallet analytics SQL view
+modelBuilder.Entity<VwWalletSummary>()
+    .ToView("vw_wallet_summary")
+    .HasNoKey();
             base.OnModelCreating(modelBuilder);
             // Map transaction summary SQL view
             modelBuilder.Entity<VwBookingTransactionSummary>()
@@ -104,10 +108,6 @@ modelBuilder.Entity<VwBookingCompleteDetails>(entity =>
                 .WithMany()
                 .HasForeignKey(s => s.LiveStreamId)
                 .OnDelete(DeleteBehavior.Restrict);
-            // Map wallet summary PostgreSQL view
-            modelBuilder.Entity<VwWalletSummary>()
-                .ToView("vw_wallet_summary")
-                .HasNoKey();
         }
     }
 }
