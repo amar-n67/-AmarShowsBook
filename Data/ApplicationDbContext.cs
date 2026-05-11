@@ -28,7 +28,8 @@ namespace AmarShowsBook.Data
         // 🕒 Schedule
         public DbSet<ShowSchedule> ShowSchedules { get; set; }
         // Transaction reporting SQL view
-public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
+// Transaction reporting SQL view
+        public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
         public DbSet<Country> Countries { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<District> Districts { get; set; }
@@ -40,7 +41,10 @@ public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; s
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
+            // Map transaction summary SQL view
+            modelBuilder.Entity<VwBookingTransactionSummary>()
+            .ToView("vw_booking_transaction_summary")
+            .HasNoKey();
             // Prevent cascade issues for optional relationships
             modelBuilder.Entity<ShowSchedule>()
                 .HasOne(s => s.Movie)
