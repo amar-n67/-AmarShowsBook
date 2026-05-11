@@ -52,6 +52,9 @@ public DbSet<VwTicketValidationSummary> VwTicketValidationSummaries { get; set; 
 // RBAC analytics SQL views
 public DbSet<VwUserAccessMatrix> VwUserAccessMatrix { get; set; }
 public DbSet<VwUserApplicationMenu> VwUserApplicationMenus { get; set; }
+// Admin operational user management view
+public DbSet<VwAdminUserManagement>
+    VwAdminUserManagement { get; set; }
         // Booking analytics view
        // public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
@@ -167,6 +170,10 @@ modelBuilder.Entity<VwUserAccessMatrix>()
 modelBuilder.Entity<VwUserApplicationMenu>()
     .ToView("vw_user_application_menus")
     .HasNoKey();
+    // Map admin user management SQL view
+modelBuilder.Entity<VwAdminUserManagement>()
+    .ToView("vw_admin_user_management")
+    .HasNoKey();
             // // Map PostgreSQL booking details view
             // modelBuilder.Entity<VwBookingCompleteDetails>()
             //     .ToView("vw_booking_complete_details")
@@ -212,5 +219,6 @@ modelBuilder.Entity<VwBookingCompleteDetails>(entity =>
                 .HasForeignKey(s => s.LiveStreamId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
+        
     }
 }
