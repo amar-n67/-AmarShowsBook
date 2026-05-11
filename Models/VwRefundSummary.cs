@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-
+using System.ComponentModel.DataAnnotations.Schema;
 namespace AmarShowsBook.Models
 {
     // Refund analytics SQL view
@@ -12,6 +12,7 @@ namespace AmarShowsBook.Models
 
         public decimal RefundAmount { get; set; }
 
+        [Column("is_refund_error")]
         public int IsRefundError { get; set; }
     }
 }

@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-
+using System.ComponentModel.DataAnnotations.Schema;
 namespace AmarShowsBook.Models
 {
     // Notification analytics SQL view
@@ -10,6 +10,7 @@ namespace AmarShowsBook.Models
 
         public string Status { get; set; }
 
+        [Column("is_error")]
         public int IsError { get; set; }
     }
 }
