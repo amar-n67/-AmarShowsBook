@@ -994,17 +994,20 @@ z-index:9999;">
         Home
     </a>
 
-    <a class="film-nav-btn"
-       href="/Booking/MyBookings">
-        My Bookings
-    </a>
+    <!-- Opens logged-in user booking history -->
+<a asp-controller="Booking" asp-action="MyBookings">
+    My Bookings
+</a>
 
     <a class="film-nav-btn"
        href="/Wallet/Index">
         Wallet
     </a>
     <!-- Wallet dashboard navigation link -->
-        <a href="/Wallet/Index">Wallet</a>
+        <!-- Wallet page navigation -->
+<a asp-controller="Wallet" asp-action="Index">
+    Wallet
+</a>
     @if (Context.Session.GetString("UserEmail")?.ToLower() == "admin@gmail.com")
     {
         <!-- Admin dashboard visible only for admin -->

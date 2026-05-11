@@ -1,0 +1,153 @@
+@model List<AmarShowsBook.Models.VwBookingCompleteDetails>
+
+@{
+    ViewData["Title"] = "My Bookings";
+}
+
+<section class="my-bookings-page">
+
+    <div class="booking-header">
+        <div>
+            <span class="booking-kicker">Booking History</span>
+            <h1>My Bookings</h1>
+            <p>Your booked shows and payment history.</p>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-booking">
+            <h2>No bookings found</h2>
+            <p>You have not booked any shows yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="booking-grid">
+
+            @foreach (var booking in Model)
+            {
+                <article class="booking-card">
+
+                    <div class="booking-top">
+                        <span>@booking.BookingStatus</span>
+                        <strong>@booking.BookingRef</strong>
+                    </div>
+
+                    <h2>@booking.ShowTitle</h2>
+
+                    <p>
+                        Amount Paid:
+                        ₹@booking.PayableAmount
+                    </p>
+
+                    <p>
+                        Booked At:
+                        @booking.BookedAt.ToString("dd MMM yyyy hh:mm tt")
+                    </p>
+
+                </article>
+            }
+
+        </div>
+    }
+
+</section>
+
+<style>
+
+.my-bookings-page {
+    padding-bottom: 40px;
+}
+
+.booking-header {
+    padding: 28px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,242,199,0.94),
+            rgba(245,178,196,0.86),
+            rgba(146,229,221,0.86)
+        );
+
+    color: #231f20;
+}
+
+.booking-kicker {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.booking-header h1 {
+    margin: 8px 0;
+    font-size: 2.5rem;
+    font-weight: 900;
+}
+
+.booking-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 18px;
+}
+
+.booking-card {
+    padding: 18px;
+    border-radius: 8px;
+    border: 1px solid var(--app-input-border);
+
+    background: var(--app-card);
+    color: var(--app-card-text);
+
+    box-shadow: 0 14px 28px rgba(0,0,0,0.12);
+}
+
+.booking-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.booking-top span {
+    font-size: 0.74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.booking-card h2 {
+    margin-bottom: 14px;
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+
+.booking-card p {
+    margin-bottom: 8px;
+}
+
+.empty-booking {
+    padding: 34px;
+    border-radius: 8px;
+    text-align: center;
+
+    background: var(--app-card);
+}
+
+@@media (max-width: 900px) {
+
+    .booking-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+}
+
+@@media (max-width: 640px) {
+
+    .booking-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>

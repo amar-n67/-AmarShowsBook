@@ -60,10 +60,44 @@ public DbSet<VwWalletSummary> VwWalletSummary { get; set; }
                 .HasForeignKey(s => s.StandupShowId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Map PostgreSQL booking details view
-            modelBuilder.Entity<VwBookingCompleteDetails>()
-                .ToView("vw_booking_complete_details")
-                .HasNoKey();
+            // // Map PostgreSQL booking details view
+            // modelBuilder.Entity<VwBookingCompleteDetails>()
+            //     .ToView("vw_booking_complete_details")
+            //     .HasNoKey();
+            // Booking complete details database view
+modelBuilder.Entity<VwBookingCompleteDetails>(entity =>
+{
+    // Human comment:
+    // This model comes from PostgreSQL VIEW, not a table.
+    entity.HasNoKey();
+
+    // Human comment:
+    // PostgreSQL view name
+    entity.ToView("vw_booking_complete_details");
+
+    // Human comment:
+    // C# PascalCase property -> PostgreSQL snake_case column mapping
+    entity.Property(e => e.BookingId)
+        .HasColumnName("booking_id");
+
+    entity.Property(e => e.BookingRef)
+        .HasColumnName("booking_ref");
+
+    entity.Property(e => e.UserEmail)
+        .HasColumnName("user_email");
+
+    entity.Property(e => e.ShowTitle)
+        .HasColumnName("show_title");
+
+    entity.Property(e => e.BookingStatus)
+        .HasColumnName("booking_status");
+
+    entity.Property(e => e.PayableAmount)
+        .HasColumnName("payable_amount");
+
+    entity.Property(e => e.BookedAt)
+        .HasColumnName("booked_at");
+});
 
             modelBuilder.Entity<ShowSchedule>()
                 .HasOne(s => s.LiveStream)

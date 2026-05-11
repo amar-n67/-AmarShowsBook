@@ -9,7 +9,10 @@ namespace AmarShowsBook.Models
         [Required]
         //public string Title { get; set; } //comment to handle nullability in the database
         public string Title { get; set; } = string.Empty;
-        public string Director { get; set; }
+        //public string Director { get; set; }
+
+        // Director can be empty initially
+        public string? Director { get; set; }
         public string Producer { get; set; }
         public string Cast { get; set; }
 
