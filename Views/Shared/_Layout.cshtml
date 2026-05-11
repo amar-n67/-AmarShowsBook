@@ -988,7 +988,7 @@ z-index:9999;">
             <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')">Cinema</button>
         </div>
         <!-- Main navigation links -->
-    <div class="film-navigation-links">
+    @* <div class="film-navigation-links">
 
     <a class="film-nav-btn"
        href="/Home/Index">
@@ -1011,7 +1011,42 @@ z-index:9999;">
            href="/Admin/Index">
             Admin
         </a>
-    }
+    } *@
+    <!-- ================= DYNAMIC RBAC NAVIGATION ================= -->
+<div class="film-navigation-links">
+
+@{
+    // Read logged-in user id from session
+    var userIdText =
+        Context.Session.GetString("UserId");
+
+    // Convert session value into integer
+    int.TryParse(userIdText, out int currentUserId);
+
+    // Load menus dynamically using RBAC service
+    var menus =
+        RbacService.GetMenus(currentUserId);
+}
+
+<!-- Dynamic RBAC menu rendering -->
+@foreach (var menu in menus)
+{
+    <a class="film-nav-btn"
+       href="@menu.RoutePath">
+
+        @menu.MenuName
+
+    </a>
+}
+<!-- Customer transaction history navigation -->
+@* <a href="/Transaction/History">
+    Transactions
+</a> *@
+<a href="/Transaction/History">
+    Transactions
+</a>
+
+</div>
     <!-- Admin analytics dashboard navigation -->
 <a href="/Admin/Dashboard">Admin Dashboard</a>
 
