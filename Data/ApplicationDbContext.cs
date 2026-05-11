@@ -40,7 +40,7 @@ public DbSet<VwWalletSummary> VwWalletSummaries { get; set; }
 // Booking analytics SQL views
 public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
-public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
+//public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
 
 public DbSet<VwRefundSummary> VwRefundSummaries { get; set; }
 
@@ -50,7 +50,7 @@ public DbSet<VwNotificationCenter> VwNotificationCenters { get; set; }
 
 public DbSet<VwTicketValidationSummary> VwTicketValidationSummaries { get; set; }
         // Booking analytics view
-        public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
+       // public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
         // OPTIONAL (good practice)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
