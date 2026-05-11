@@ -37,6 +37,18 @@ namespace AmarShowsBook.Data
         // Wallet analytics database view
 // Wallet analytics database view
 public DbSet<VwWalletSummary> VwWalletSummaries { get; set; }
+// Booking analytics SQL views
+public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
+
+public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
+
+public DbSet<VwRefundSummary> VwRefundSummaries { get; set; }
+
+public DbSet<VwInvoiceSummary> VwInvoiceSummaries { get; set; }
+
+public DbSet<VwNotificationCenter> VwNotificationCenters { get; set; }
+
+public DbSet<VwTicketValidationSummary> VwTicketValidationSummaries { get; set; }
         // Booking analytics view
         public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
@@ -97,6 +109,36 @@ modelBuilder.Entity<VwWalletSummary>(entity =>
     entity.Property(e => e.TotalDebits)
         .HasColumnName("total_debits");
 });
+// Map booking analytics SQL view
+modelBuilder.Entity<VwBookingCompleteDetails>()
+    .ToView("vw_booking_complete_details")
+    .HasNoKey();
+
+// Map payment analytics SQL view
+modelBuilder.Entity<VwBookingTransactionSummary>()
+    .ToView("vw_booking_transaction_summary")
+    .HasNoKey();
+
+// Map refund analytics SQL view
+modelBuilder.Entity<VwRefundSummary>()
+    .ToView("vw_refund_summary")
+    .HasNoKey();
+
+// Map invoice analytics SQL view
+modelBuilder.Entity<VwInvoiceSummary>()
+    .ToView("vw_invoice_summary")
+    .HasNoKey();
+
+// Map notification analytics SQL view
+modelBuilder.Entity<VwNotificationCenter>()
+    .ToView("vw_notification_center")
+    .HasNoKey();
+
+// Map ticket validation analytics SQL view
+modelBuilder.Entity<VwTicketValidationSummary>()
+    .ToView("vw_ticket_validation_summary")
+    .HasNoKey();
+
             base.OnModelCreating(modelBuilder);
             // Map transaction summary SQL view
             modelBuilder.Entity<VwBookingTransactionSummary>()
