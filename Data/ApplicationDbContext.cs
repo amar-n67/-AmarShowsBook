@@ -58,6 +58,5 @@ namespace AmarShowsBook.Data
                 .HasForeignKey(s => s.LiveStreamId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
-        
     }
 }

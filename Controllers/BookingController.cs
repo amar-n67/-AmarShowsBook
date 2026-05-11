@@ -8,9 +8,26 @@ namespace AmarShowsBook.Controllers
     public class BookingController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IActivityLogger _activityLogger;
 
+        // ======================
+        // Constructor
+        // Inject DB + Activity Logger
+        // ======================
+        public BookingController(
+            ApplicationDbContext context,
+            IActivityLogger activityLogger)
+        {
+            _context = context;
+            _activityLogger = activityLogger;
+        }
+
+        // ======================
+        // Seat Selection Page
+        // ======================
         public IActionResult Seats(int id)
         {
+            // Redirect guest users
             if (HttpContext.Session.GetString("UserEmail") == null)
             {
                 return RedirectToAction("Login", "Auth");
@@ -23,40 +40,37 @@ namespace AmarShowsBook.Controllers
                 .Include(s => s.Location)
                 .FirstOrDefault(s => s.Id == id);
 
+            // Schedule not found
             if (schedule == null)
             {
                 TempData["Error"] = "Selected show was not found.";
+
                 return RedirectToAction("Index", "Home");
             }
 
             return View(schedule);
         }
-        private readonly IActivityLogger _activityLogger;
 
-        public BookingController(
-            ApplicationDbContext context,
-            IActivityLogger activityLogger)
+        // ======================
+        // My Bookings Page
+        // ======================
+        public IActionResult MyBookings()
+        {
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+
+            // Redirect guest users
+            if (string.IsNullOrWhiteSpace(userEmail))
             {
-                _context = context;
-                _activityLogger = activityLogger;
+                return RedirectToAction("Login", "Auth");
             }
+
+            var bookings = _context
+                .VwBookingCompleteDetails
+                .Where(x => x.UserEmail == userEmail)
+                .OrderByDescending(x => x.BookedAt)
+                .ToList();
+
+            return View(bookings);
+        }
     }
-    public IActionResult MyBookings()
-{
-    var userEmail = HttpContext.Session.GetString("UserEmail");
-
-    // Redirect guest users to login
-    if (string.IsNullOrWhiteSpace(userEmail))
-    {
-        return RedirectToAction("Login", "Auth");
-    }
-
-    var bookings = _context
-        .VwBookingCompleteDetails
-        .Where(x => x.UserEmail == userEmail)
-        .OrderByDescending(x => x.BookedAt)
-        .ToList();
-
-    return View(bookings);
-}
 }
