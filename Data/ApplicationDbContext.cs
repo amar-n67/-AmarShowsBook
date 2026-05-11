@@ -60,15 +60,20 @@ public DbSet<VwWalletSummary> VwWalletSummary { get; set; }
                 .HasForeignKey(s => s.StandupShowId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Map PostgreSQL booking details view
+            modelBuilder.Entity<VwBookingCompleteDetails>()
+                .ToView("vw_booking_complete_details")
+                .HasNoKey();
+
             modelBuilder.Entity<ShowSchedule>()
                 .HasOne(s => s.LiveStream)
                 .WithMany()
                 .HasForeignKey(s => s.LiveStreamId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Map wallet summary PostgreSQL view
-modelBuilder.Entity<VwWalletSummary>()
-    .ToView("vw_wallet_summary")
-    .HasNoKey();
+            modelBuilder.Entity<VwWalletSummary>()
+                .ToView("vw_wallet_summary")
+                .HasNoKey();
         }
     }
 }
