@@ -8,8 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<OtpDeliveryService>();
-// Register the background service for seat lock expiry
-builder.Services.AddHostedService<SeatLockExpiryService>();
+
+//=== Add HttpContextAccessor for logging purposes
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
+//=== End HttpContextAccessor
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
 if (!connectionString.Contains("Timeout=", StringComparison.OrdinalIgnoreCase))
@@ -21,9 +24,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddSession();
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

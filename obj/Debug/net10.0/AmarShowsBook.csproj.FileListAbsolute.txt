@@ -29,6 +29,8 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Newtonsoft.Json.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Npgsql.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/SendGrid.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/StarkbankEcdsa.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.CodeDom.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Composition.AttributedModel.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Composition.Convention.dll
@@ -126,6 +128,7 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/scopedcss/projectbundle/AmarShowsBook.bundle.scp.css
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/9xbbb7jbrn-{0}-b9sayid5wm-b9sayid5wm.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/weluyfgci1-{0}-61n19gt1b8-61n19gt1b8.gz
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/x4gb0n58n7-{0}-d3dorr1pku-d3dorr1pku.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/m2hw9nk6nd-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/b9qc1eur9u-{0}-bqjiyaj88i-bqjiyaj88i.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/z4sawbtvxk-{0}-c2jlpeoesf-c2jlpeoesf.gz
@@ -199,6 +202,3 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.pdb
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.genruntimeconfig.cache
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/ref/AmarShowsBook.dll
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/SendGrid.dll
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/StarkbankEcdsa.dll
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/x4gb0n58n7-{0}-d3dorr1pku-d3dorr1pku.gz
