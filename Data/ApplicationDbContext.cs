@@ -28,9 +28,11 @@ namespace AmarShowsBook.Data
         // 🕒 Schedule
         public DbSet<ShowSchedule> ShowSchedules { get; set; }
         public DbSet<Country> Countries { get; set; }
-public DbSet<State> States { get; set; }
-public DbSet<District> Districts { get; set; }
-public DbSet<Region> Regions { get; set; }
+        public DbSet<State> States { get; set; }
+        public DbSet<District> Districts { get; set; }
+        public DbSet<Region> Regions { get; set; }
+        // Booking analytics view
+        public DbSet<VwBookingCompleteDetails> VwBookingCompleteDetails { get; set; }
 
         // OPTIONAL (good practice)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -56,5 +58,6 @@ public DbSet<Region> Regions { get; set; }
                 .HasForeignKey(s => s.LiveStreamId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
+        
     }
 }

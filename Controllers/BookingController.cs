@@ -41,4 +41,22 @@ namespace AmarShowsBook.Controllers
                 _activityLogger = activityLogger;
             }
     }
+    public IActionResult MyBookings()
+{
+    var userEmail = HttpContext.Session.GetString("UserEmail");
+
+    // Redirect guest users to login
+    if (string.IsNullOrWhiteSpace(userEmail))
+    {
+        return RedirectToAction("Login", "Auth");
+    }
+
+    var bookings = _context
+        .VwBookingCompleteDetails
+        .Where(x => x.UserEmail == userEmail)
+        .OrderByDescending(x => x.BookedAt)
+        .ToList();
+
+    return View(bookings);
+}
 }
