@@ -27,6 +27,8 @@ namespace AmarShowsBook.Data
 
         // 🕒 Schedule
         public DbSet<ShowSchedule> ShowSchedules { get; set; }
+        // Transaction reporting SQL view
+public DbSet<VwBookingTransactionSummary> VwBookingTransactionSummaries { get; set; }
         public DbSet<Country> Countries { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<District> Districts { get; set; }
