@@ -1,0 +1,42 @@
+@model IEnumerable<dynamic>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>Transactions</h1>
+
+<table class="table admin-table">
+
+<thead>
+<tr>
+    <th>Transaction Ref</th>
+    <th>User</th>
+    <th>Amount</th>
+    <th>Method</th>
+    <th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+
+@foreach (var item in Model)
+{
+    <tr>
+
+        <td>@item.transaction_ref</td>
+
+        <td>@item.user_name</td>
+
+        <td>@item.transaction_amount</td>
+
+        <td>@item.payment_method</td>
+
+        <td>@item.transaction_status</td>
+
+    </tr>
+}
+
+</tbody>
+
+</table>

@@ -1,0 +1,56 @@
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>User Access Management</h1>
+
+<div class="card p-4">
+
+    <table class="table">
+
+        <thead>
+
+            <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Permissions</th>
+                <th>Actions</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr>
+
+                <td>Demo User</td>
+
+                <td>STANDARD USER</td>
+
+                <td>
+                    VIEW BOOKINGS
+                </td>
+
+                <td>
+
+                    <button class="btn btn-primary">
+                        Grant Access
+                    </button>
+
+                    <button class="btn btn-warning">
+                        Edit Access
+                    </button>
+
+                    <button class="btn btn-danger">
+                        Remove Access
+                    </button>
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>

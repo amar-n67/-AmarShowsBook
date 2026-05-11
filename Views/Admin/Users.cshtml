@@ -1,0 +1,109 @@
+@model List<AmarShowsBook.Models.User>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>User Management</h1>
+
+<br />
+
+<table class="table admin-table">
+
+    <thead>
+
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+@foreach (var user in Model)
+{
+    <tr>
+
+        <td>@user.Name</td>
+
+        <td>@user.Email</td>
+
+        <td>@user.Mobile</td>
+
+        <td>
+
+            @if (user.IsActive)
+            {
+                <span class="badge-active">
+                    Active
+                </span>
+            }
+            else
+            {
+                <span class="badge-disabled">
+                    Disabled
+                </span>
+            }
+
+        </td>
+
+        <td>
+
+            <div class="admin-actions">
+
+                <a href="/Admin/UserDetails/@user.Id"
+                   class="btn btn-primary">
+                    Details
+                </a>
+
+                <a href="/Admin/UserAccess?id=@user.Id"
+                   class="btn btn-warning">
+                    Access
+                </a>
+
+                @if (user.IsActive)
+                {
+                    <form method="post"
+                          action="/Admin/DisableUser/@user.Id">
+
+                        <button class="btn btn-danger">
+                            Disable
+                        </button>
+
+                    </form>
+                }
+                else
+                {
+                    <form method="post"
+                          action="/Admin/EnableUser/@user.Id">
+
+                        <button class="btn btn-success">
+                            Enable
+                        </button>
+
+                    </form>
+                }
+
+                <form method="post"
+                      action="/Admin/DeleteUser/@user.Id">
+
+                    <button class="btn btn-dark">
+                        Delete
+                    </button>
+
+                </form>
+
+            </div>
+
+        </td>
+
+    </tr>
+}
+
+    </tbody>
+
+</table>

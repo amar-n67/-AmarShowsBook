@@ -1,0 +1,104 @@
+body {
+    margin: 0;
+    background: #f4f7fb;
+    font-family: Arial, sans-serif;
+}
+
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 260px;
+    background: #111827;
+    color: white;
+    padding: 24px;
+}
+
+.admin-logo {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 32px;
+}
+
+.admin-sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-sidebar nav a {
+    color: white;
+    text-decoration: none;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.admin-sidebar nav a:hover {
+    background: #1f2937;
+}
+
+.admin-main {
+    flex: 1;
+    padding: 30px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+.dashboard-card h2 {
+    margin: 0;
+    font-size: 34px;
+}
+
+.dashboard-card p {
+    margin-top: 10px;
+    color: gray;
+}
+
+.admin-table {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.admin-table th {
+    background: #111827;
+    color: white;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 14px;
+}
+
+.badge-active {
+    background: green;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.badge-disabled {
+    background: red;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 8px;
+}

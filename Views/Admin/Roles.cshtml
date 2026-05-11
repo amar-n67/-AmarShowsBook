@@ -1,0 +1,45 @@
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>Roles Management</h1>
+
+<div class="card p-4">
+
+    <button class="btn btn-primary">
+        Add Role
+    </button>
+
+    <hr />
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>Role</th>
+                <th>Code</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td>Admin</td>
+                <td>ADMIN</td>
+                <td>
+                    <button class="btn btn-warning">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>

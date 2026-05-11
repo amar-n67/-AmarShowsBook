@@ -152,5 +152,42 @@
         grid-template-columns: 1fr;
     }
 }
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
 
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h1>Admin Dashboard</h1>
+
+<br />
+
+<div class="dashboard-grid">
+
+    <div class="dashboard-card">
+        <h2>@ViewBag.TotalUsers</h2>
+        <p>Total Users</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h2>@ViewBag.ActiveUsers</h2>
+        <p>Active Users</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h2>@ViewBag.DisabledUsers</h2>
+        <p>Disabled Users</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h2>@ViewBag.TotalMovies</h2>
+        <p>Total Movies</p>
+    </div>
+
+    <div class="dashboard-card">
+        <h2>@ViewBag.TotalBookings</h2>
+        <p>Total Bookings</p>
+    </div>
+
+</div>
 </style>

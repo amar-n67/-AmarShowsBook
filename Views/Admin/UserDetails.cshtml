@@ -1,0 +1,44 @@
+@model AmarShowsBook.Models.User
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>User Details</h1>
+
+<div class="card p-4">
+
+    <div class="row">
+
+        <div class="col-md-4">
+
+            <img src="@Model.ProfileImagePath"
+                 class="img-fluid rounded" />
+
+        </div>
+
+        <div class="col-md-8">
+
+            <h3>@Model.Name</h3>
+
+            <p>Email: @Model.Email</p>
+
+            <p>Mobile: @Model.Mobile</p>
+
+            <p>Genre: @Model.Genre</p>
+
+            <p>Language: @Model.Language</p>
+
+            <p>Country: @Model.Country</p>
+
+            <p>State: @Model.State</p>
+
+            <p>District: @Model.District</p>
+
+            <p>Created: @Model.CreatedAt</p>
+
+        </div>
+
+    </div>
+
+</div>
