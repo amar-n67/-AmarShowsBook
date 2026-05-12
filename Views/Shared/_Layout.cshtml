@@ -461,6 +461,7 @@ a {
 
 .film-navbar .container-fluid {
     gap: 14px;
+    align-items: center;
 }
 
 .film-brand {
@@ -489,34 +490,26 @@ a {
     align-items: center;
     gap: 12px;
     margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
+
+.film-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 /* Main navigation links section */
 .film-navigation-links {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
-
-/* Navigation button styling */
-.film-navigation-links .film-nav-btn {
-    background: rgba(255,255,255,0.12);
-
-    color: var(--app-nav-text) !important;
-
-    border: 1px solid rgba(255,255,255,0.14);
-
-    transition: 0.2s ease;
-}
-
-/* Navigation hover effect */
-.film-navigation-links .film-nav-btn:hover {
-    background: var(--app-accent);
-
-    color: #231f20 !important;
-
-    transform: translateY(-2px);
-}
-//end of nav links
 
 .film-user-card {
     display: flex;
@@ -527,6 +520,7 @@ a {
     border-radius: 14px;
     background: rgba(255,255,255,0.1);
     color: var(--app-nav-text);
+    min-height: 58px;
 }
 
 .film-user-meta {
@@ -558,11 +552,27 @@ a {
 }
 
 .film-nav-btn {
-    border: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border: 1px solid rgba(255,255,255,0.14);
     border-radius: 999px;
     padding: 8px 14px;
     font-weight: 850;
     text-decoration: none;
+    color: var(--app-nav-text) !important;
+    background: rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 20px rgba(0,0,0,0.12);
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    white-space: nowrap;
+}
+
+.film-nav-btn:hover {
+    background: var(--app-accent);
+    color: #231f20 !important;
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 12px 24px rgba(0,0,0,0.18);
 }
 
 .film-profile-btn {
@@ -690,8 +700,10 @@ input.clean-input[readonly],
 
 html[data-theme="white"] .film-user-card,
 html[data-theme="white"] .theme-switcher,
+html[data-theme="white"] .film-nav-btn,
 html[data-theme="system"] .film-user-card,
-html[data-theme="system"] .theme-switcher {
+html[data-theme="system"] .theme-switcher,
+html[data-theme="system"] .film-nav-btn {
     border-color: rgba(17,24,39,0.12);
     background: rgba(17,24,39,0.05);
 }
@@ -699,25 +711,27 @@ html[data-theme="system"] .theme-switcher {
 @@media (max-width: 760px) {
     .film-navbar {
         margin: 8px;
-        <!--adding some breathing room on smaller screens-->
-        .film-navigation-links {
-    width: 100%;
-
-    justify-content: center;
-
-    flex-wrap: wrap;
-}
     }
 
     .film-menu {
         width: 100%;
         flex-wrap: wrap;
-        justify-content: flex-end;
+        justify-content: center;
+    }
+
+    .film-actions,
+    .film-navigation-links {
+        width: 100%;
+        justify-content: center;
     }
 
     .film-user-card {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: center;
+    }
+
+    .film-user-meta {
+        text-align: left;
     }
 
     .theme-switcher {
@@ -977,6 +991,10 @@ z-index:9999;">
         <span>showTime</span>
     </a>
 
+@{
+    var isLoggedIn = Context.Session.GetString("UserEmail") != null;
+}
+
     <div class="film-menu">
         <div class="theme-switcher" aria-label="Theme selector">
             <button type="button" class="theme-toggle-btn" data-theme-choice="system" onclick="setAppTheme('system')">System</button>
@@ -984,91 +1002,44 @@ z-index:9999;">
             <button type="button" class="theme-toggle-btn" data-theme-choice="white" onclick="setAppTheme('white')">White</button>
             <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')">Cinema</button>
         </div>
-    <!-- ================= DYNAMIC RBAC NAVIGATION ================= -->
-<div class="film-navigation-links">
 
-@{
-    // Read logged-in user id from session
-    var userIdText =
-        Context.Session.GetString("UserId");
-
-    // Convert session value into integer
-    int.TryParse(userIdText, out int currentUserId);
-
-    // Load menus dynamically using RBAC service
-    var menus =
-        RbacService.GetMenus(currentUserId);
-}
-  <!-- ================= MAIN APPLICATION NAVIGATION ================= -->
-
-<div class="app-nav-buttons">
-
-    <!-- Home page button -->
-    <a class="app-nav-btn"
-       href="/Home/Index">
-        Home
-    </a>
-
-    <!-- User booking history button -->
-    <a class="app-nav-btn"
-       href="/Booking/MyBookings">
-        MyBooking
-    </a>
-
-    <!-- User transaction history button -->
-    <a class="app-nav-btn"
-       href="/Transaction/History">
-        MyTransactions
-    </a>
-
-    <!-- Wallet dashboard button -->
-    <a class="app-nav-btn"
-       href="/Wallet/Index">
-        Wallet
-    </a>
-
-    <!-- Admin analytics dashboard button -->
-    <a class="app-nav-btn"
-       href="/Admin/Dashboard">
-        Admin Dashboard
-    </a>
-</div>
-</div>
-
-</div>
-    </div>
-        @if (Context.Session.GetString("UserEmail") != null)
+        @if (isLoggedIn)
         {
-            <!-- USER INFO -->
-            <div class="film-user-card">
-                <div class="film-user-meta">
-                    <div id="liveDateTime" class="film-time"></div>
-                    <div class="film-email">
-                        @(Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail"))
-                    </div>
-                    <div class="film-time">
-                        @(Context.Session.GetString("UserLanguage") ?? "English") / @(Context.Session.GetString("UserGenre") ?? "Dramatic")
-                    </div>
+            <div class="film-actions">
+                <div class="film-navigation-links" aria-label="Main navigation">
+                    <a class="film-nav-btn" href="/Home/Index">Home</a>
+                    <a class="film-nav-btn" href="/Booking/MyBookings">My Bookings</a>
+                    <a class="film-nav-btn" href="/Transaction/History">My Transactions</a>
+                    <a class="film-nav-btn" href="/Wallet/Index">Wallet</a>
+                    <a class="film-nav-btn" href="/Admin/Dashboard">Admin Dashboard</a>
                 </div>
 
-                <!-- PROFILE IMAGE -->
-                <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage")) 
-        ? Context.Session.GetString("ProfileImage") 
-        : "/uploads/default.png")"
-         class="film-avatar" />
+                <div class="film-user-card">
+                    <div class="film-user-meta">
+                        <div id="liveDateTime" class="film-time"></div>
+                        <div class="film-email">
+                            @(Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail"))
+                        </div>
+                        <div class="film-time">
+                            @(Context.Session.GetString("UserLanguage") ?? "English") / @(Context.Session.GetString("UserGenre") ?? "Dramatic")
+                        </div>
+                    </div>
+
+                    <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage"))
+                        ? Context.Session.GetString("ProfileImage")
+                        : "/uploads/default.png")"
+                         class="film-avatar"
+                         alt="Profile image" />
+                </div>
+
+                <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile">My Profile</a>
+
+                <a class="film-nav-btn film-logout-btn"
+                   href="/Auth/Logout"
+                   onclick="return confirmLogout()">Exit Show</a>
             </div>
-     
-            <!-- PROFILE BUTTON -->
-            <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile">My Profile</a>
-
-            <!-- LOGOUT -->
-            <a class="film-nav-btn film-logout-btn"
-               href="/Auth/Logout"
-               onclick="return confirmLogout()">Exit Show</a>
         }
-
     </div>
-
 </div>
 </nav>
 </header>

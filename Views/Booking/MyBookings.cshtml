@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "My Bookings";
+    var totalSpend = Model.Sum(x => x.PayableAmount);
+    var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" || x.PaymentStatus == "SUCCESS");
 }
 
 <section class="my-bookings-page">
@@ -10,7 +12,12 @@
         <div>
             <span class="booking-kicker">Booking History</span>
             <h1>My Bookings</h1>
-            <p>Your booked shows and payment history.</p>
+            <p>Your booked shows, payment status, and ticket references are arranged like a clean show reel.</p>
+        </div>
+        <div class="booking-summary">
+            <span>Total Spend</span>
+            <strong>₹ @totalSpend.ToString("N2")</strong>
+            <small>@confirmedCount confirmed</small>
         </div>
     </div>
 
@@ -30,20 +37,26 @@
                 <article class="booking-card">
 
                     <div class="booking-top">
-                        <span>@booking.BookingStatus</span>
+                        <span class="booking-status @(booking.IsError == 1 ? "failed" : "success")">
+                            @booking.BookingStatus
+                        </span>
                         <strong>@booking.BookingRef</strong>
                     </div>
 
                     <h2>@booking.ShowTitle</h2>
 
-                    <p>
-                        Amount Paid:
-                        ₹@booking.PayableAmount
-                    </p>
+                    <div class="booking-meta">
+                        <div>
+                            <span>Amount Paid</span>
+                            <strong>₹@booking.PayableAmount.ToString("N2")</strong>
+                        </div>
+                        <div>
+                            <span>Payment</span>
+                            <strong>@booking.PaymentStatus</strong>
+                        </div>
+                    </div>
 
-                    <p>
-                        Booked At:
-                       
+                    <p class="booking-date">
                         @(booking.BookedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "N/A")
                     </p>
 
@@ -62,11 +75,17 @@
 }
 
 .booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 18px;
+    min-height: 240px;
     padding: 28px;
     border-radius: 8px;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 
     background:
+        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px),
         linear-gradient(
             135deg,
             rgba(255,242,199,0.94),
@@ -75,6 +94,7 @@
         );
 
     color: #231f20;
+    box-shadow: 0 22px 64px rgba(35,31,32,0.22);
 }
 
 .booking-kicker {
@@ -86,8 +106,53 @@
 
 .booking-header h1 {
     margin: 8px 0;
-    font-size: 2.5rem;
+    color: #231f20;
+    font-size: clamp(2.8rem, 7vw, 5.8rem);
     font-weight: 900;
+}
+
+.booking-header p {
+    max-width: 640px;
+    margin: 0;
+    color: #34303a;
+    font-size: 1.05rem;
+}
+
+.booking-summary {
+    min-width: 190px;
+    padding: 14px;
+    border: 1px dashed rgba(35,31,32,0.44);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.38);
+    text-align: right;
+}
+
+.booking-summary span,
+.booking-summary small,
+.booking-meta span,
+.booking-date {
+    color: var(--app-muted);
+}
+
+.booking-summary span {
+    display: block;
+    color: #34303a;
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.booking-summary strong {
+    display: block;
+    color: #231f20;
+    font-size: 1.3rem;
+    font-weight: 900;
+}
+
+.booking-summary small {
+    color: #34303a;
+    font-weight: 800;
 }
 
 .booking-grid {
@@ -97,6 +162,10 @@
 }
 
 .booking-card {
+    display: grid;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
     padding: 18px;
     border-radius: 8px;
     border: 1px solid var(--app-input-border);
@@ -107,26 +176,75 @@
     box-shadow: 0 14px 28px rgba(0,0,0,0.12);
 }
 
+.booking-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--app-accent), var(--app-accent-strong), var(--app-primary));
+}
+
 .booking-top {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 14px;
+    gap: 12px;
 }
 
-.booking-top span {
+.booking-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    border-radius: 999px;
+    padding: 4px 10px;
+    color: #fff !important;
     font-size: 0.74rem;
     font-weight: 900;
     text-transform: uppercase;
 }
 
+.booking-status.success {
+    background: var(--app-accent-strong);
+}
+
+.booking-status.failed {
+    background: var(--app-danger);
+}
+
 .booking-card h2 {
-    margin-bottom: 14px;
+    min-height: 58px;
+    margin: 0;
     font-size: 1.2rem;
     font-weight: 900;
 }
 
-.booking-card p {
-    margin-bottom: 8px;
+.booking-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.booking-meta div {
+    padding: 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-input-disabled) 72%, transparent);
+}
+
+.booking-meta span {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.booking-meta strong {
+    font-weight: 900;
+}
+
+.booking-date {
+    margin: 0;
+    font-weight: 800;
 }
 
 .empty-booking {
@@ -145,6 +263,16 @@
 }
 
 @@media (max-width: 640px) {
+
+    .booking-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .booking-summary {
+        width: 100%;
+        text-align: left;
+    }
 
     .booking-grid {
         grid-template-columns: 1fr;
