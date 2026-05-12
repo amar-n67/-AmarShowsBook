@@ -1,4 +1,4 @@
-@model List<AmarShowsBook.Models.ViewModels.AdminTransactionViewModel>
+@model List<AmarShowsBook.Models.VwBookingTransactionSummary>
 
 @{
     ViewData["Title"] = "Admin Transactions";
@@ -172,13 +172,15 @@
                         <td>
 
                             <strong>
-                                ₹@item.Amount
+                                ₹@item.TransactionAmount
                             </strong>
 
                             <div class="sub-text">
 
-                                Discount:
-                                ₹@item.DiscountAmount
+                                Currency:
+                                @(string.IsNullOrWhiteSpace(item.Currency)
+                                    ? "INR"
+                                    : item.Currency)
 
                             </div>
 
@@ -198,9 +200,11 @@
 
                         <td>
 
-                            @(string.IsNullOrWhiteSpace(item.CouponCode)
-                                ? "-"
-                                : item.CouponCode)
+                            <!-- HUMAN COMMENT:
+                                 Coupon module not added yet
+                            -->
+
+                            -
 
                         </td>
 
@@ -232,28 +236,21 @@
 
                         <td>
 
-                            @if (string.IsNullOrWhiteSpace(item.RefundStatus))
-                            {
-                                <span>-</span>
-                            }
-                            else
-                            {
-                                <span class="badge warning">
+                            <!-- HUMAN COMMENT:
+                                 Refund system not added yet
+                            -->
 
-                                    @item.RefundStatus
-
-                                </span>
-                            }
+                            <span>-</span>
 
                         </td>
 
                         <td>
 
-                            @item.CreatedAt.ToString("dd MMM yyyy")
+                            @item.BookingCreatedAt.ToString("dd MMM yyyy")
 
                             <div class="sub-text">
 
-                                @item.CreatedAt.ToString("hh:mm tt")
+                                @item.BookingCreatedAt.ToString("hh:mm tt")
 
                             </div>
 
@@ -339,6 +336,7 @@
     background:#111827;
     padding:20px;
     border-radius:12px;
+    color:white;
 }
 
 .stat-card span{
@@ -381,6 +379,7 @@
     width:100%;
     border-collapse:collapse;
     background:#111827;
+    color:white;
 }
 
 .admin-table thead{
