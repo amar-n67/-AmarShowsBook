@@ -14,14 +14,13 @@
 
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
-    var isDashboard = string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase);
 }
 
 <body>
 
 <div class="admin-wrapper" id="adminShell">
 
-    <!-- Human Comment: Cinematic admin navigation shared by every admin page. -->
+    <!-- Human Comment: Shared readable admin navigation with a hide/show top button. -->
     <aside class="admin-sidebar" id="adminSidebar">
 
         <div class="admin-logo">
@@ -29,19 +28,19 @@
             <span>AmarShowsBook</span>
         </div>
 
-        <nav class="admin-nav">
+        <nav class="admin-nav" aria-label="Admin navigation">
 
-            <a class="@(currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard"><span>⌂</span>Dashboard</a>
-            <a class="@(currentAction == "Users" ? "active" : "")" href="/Admin/Users"><span>◎</span>Users</a>
-            <a class="@(currentAction == "UserAccess" ? "active" : "")" href="/Admin/UserAccess"><span>◫</span>User Access</a>
-            <a class="@(currentAction == "Roles" ? "active" : "")" href="/Admin/Roles"><span>◆</span>Roles</a>
-            <a class="@(currentAction == "Permissions" ? "active" : "")" href="/Admin/Permissions"><span>✓</span>Permissions</a>
-            <a class="@(currentAction == "Bookings" ? "active" : "")" href="/Admin/Bookings"><span>▣</span>Bookings</a>
-            <a class="@(currentAction == "Transactions" ? "active" : "")" href="/Admin/Transactions"><span>₹</span>Transactions</a>
-            <a class="@(currentAction == "Refunds" ? "active" : "")" href="/Admin/Refunds"><span>↺</span>Refunds</a>
-            <a class="@(currentAction == "Wallets" ? "active" : "")" href="/Admin/Wallets"><span>▤</span>Wallets</a>
-            <a class="@(currentAction == "Notifications" ? "active" : "")" href="/Admin/Notifications"><span>✉</span>Notifications</a>
-            <a class="@(currentAction == "ActivityLogs" ? "active" : "")" href="/Admin/ActivityLogs"><span>◷</span>Activity Logs</a>
+            <a class="@(currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">Dashboard</a>
+            <a class="@(currentAction == "Users" ? "active" : "")" href="/Admin/Users">Users</a>
+            <a class="@(currentAction == "UserAccess" ? "active" : "")" href="/Admin/UserAccess">User Access</a>
+            <a class="@(currentAction == "Roles" ? "active" : "")" href="/Admin/Roles">Roles</a>
+            <a class="@(currentAction == "Permissions" ? "active" : "")" href="/Admin/Permissions">Permissions</a>
+            <a class="@(currentAction == "Bookings" ? "active" : "")" href="/Admin/Bookings">Bookings</a>
+            <a class="@(currentAction == "Transactions" ? "active" : "")" href="/Admin/Transactions">Transactions</a>
+            <a class="@(currentAction == "Refunds" ? "active" : "")" href="/Admin/Refunds">Refunds</a>
+            <a class="@(currentAction == "Wallets" ? "active" : "")" href="/Admin/Wallets">Wallets</a>
+            <a class="@(currentAction == "Notifications" ? "active" : "")" href="/Admin/Notifications">Notifications</a>
+            <a class="@(currentAction == "ActivityLogs" ? "active" : "")" href="/Admin/ActivityLogs">Activity Logs</a>
 
         </nav>
 
@@ -56,17 +55,8 @@
                     aria-controls="adminSidebar"
                     aria-expanded="true"
                     title="Hide or show navigation">
-                ☰
+                ☰ Menu
             </button>
-
-            @if (!isDashboard)
-            {
-                <a class="admin-back-btn"
-                   href="/Admin/Dashboard"
-                   title="Back to dashboard">
-                    ← Dashboard
-                </a>
-            }
 
             <!-- Human Comment: Shared admin search filters visible tables and dashboard cards on the current page. -->
             <form class="admin-search" role="search" onsubmit="return false;">

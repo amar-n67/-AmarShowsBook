@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
         toggle.addEventListener("click", () => {
             const isCollapsed = shell.classList.toggle("nav-collapsed");
             toggle.setAttribute("aria-expanded", String(!isCollapsed));
+            toggle.textContent = isCollapsed ? "☰ Show Menu" : "☰ Menu";
         });
     }
 
