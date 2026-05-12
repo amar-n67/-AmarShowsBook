@@ -2,10 +2,18 @@
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Wallets";
 }
 
-<h1>Wallets</h1>
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Wallets</h1>
+            <p>Wallet balances, blocked balances, and loyalty points by user.</p>
+        </div>
+    </div>
 
+<div class="table-wrapper">
 <table class="table admin-table">
 
 <thead>
@@ -32,8 +40,5 @@
 </tbody>
 
 </table>
-
-<a href="/Admin/Dashboard"
-   class="btn btn-dark mt-3">
-   ← Back Dashboard
-</a>
+</div>
+</section>

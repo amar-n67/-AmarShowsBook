@@ -1,10 +1,14 @@
 @model List<AmarShowsBook.Models.VwBookingTransactionSummary>
 
 @{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Admin Transactions";
 
-    var currentPage = ViewBag.CurrentPage ?? 1;
-    var totalPages = ViewBag.TotalPages ?? 1;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count;
+    int successCount = ViewBag.SuccessCount ?? Model.Count(x => x.TransactionStatus == "SUCCESS");
+    int failedCount = ViewBag.FailedCount ?? Model.Count(x => x.TransactionStatus != "SUCCESS");
 
     int rowNo = ((currentPage - 1) * 50) + 1;
 }
@@ -29,7 +33,7 @@
 
         <div class="admin-actions">
 
-            <a href="/Admin/Index"
+            <a href="/Admin/Dashboard"
                class="btn btn-secondary">
 
                 ← Back Dashboard
@@ -50,20 +54,20 @@
 
         <div class="stat-card">
             <span>Total Transactions</span>
-            <strong>@Model.Count</strong>
+            <strong>@totalRecords</strong>
         </div>
 
         <div class="stat-card success-card">
             <span>Success</span>
             <strong>
-                @Model.Count(x => x.TransactionStatus == "SUCCESS")
+                @successCount
             </strong>
         </div>
 
         <div class="stat-card danger-card">
             <span>Failed</span>
             <strong>
-                @Model.Count(x => x.TransactionStatus != "SUCCESS")
+                @failedCount
             </strong>
         </div>
 

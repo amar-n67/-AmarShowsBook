@@ -2,12 +2,18 @@
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Users";
 }
 
-<h1>User Management</h1>
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>User Management</h1>
+            <p>Manage account status, profile details, and user access.</p>
+        </div>
+    </div>
 
-<br />
-
+<div class="table-wrapper">
 <table class="table admin-table">
 
     <thead>
@@ -107,3 +113,5 @@
     </tbody>
 
 </table>
+</div>
+</section>

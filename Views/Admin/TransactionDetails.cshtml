@@ -1,0 +1,39 @@
+@model AmarShowsBook.Models.VwBookingTransactionSummary
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Transaction Details";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Transaction Details</h1>
+            <p>Payment, booking, gateway, and user details for the selected transaction.</p>
+        </div>
+    </div>
+
+    <div class="admin-detail-panel" data-admin-searchable>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h2 class="h5">Payment</h2>
+                <p><strong>Transaction Ref:</strong> @Model.TransactionRef</p>
+                <p><strong>Status:</strong> @Model.TransactionStatus</p>
+                <p><strong>Amount:</strong> ₹@Model.TransactionAmount</p>
+                <p><strong>Method:</strong> @Model.PaymentMethod</p>
+                <p><strong>Gateway:</strong> @Model.GatewayName</p>
+                <p><strong>Failure Reason:</strong> @(string.IsNullOrWhiteSpace(Model.FailureReason) ? "-" : Model.FailureReason)</p>
+            </div>
+
+            <div class="col-md-6">
+                <h2 class="h5">Booking</h2>
+                <p><strong>Booking Ref:</strong> @Model.BookingRef</p>
+                <p><strong>Show:</strong> @Model.ShowTitle</p>
+                <p><strong>Booking Status:</strong> @Model.BookingStatus</p>
+                <p><strong>User:</strong> @Model.UserName</p>
+                <p><strong>Email:</strong> @Model.UserEmail</p>
+                <p><strong>Created:</strong> @Model.BookingCreatedAt.ToString("dd MMM yyyy hh:mm tt")</p>
+            </div>
+        </div>
+    </div>
+</section>

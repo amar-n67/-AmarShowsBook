@@ -12,75 +12,85 @@
           href="~/css/admin/admin-dashboard.css" />
 </head>
 
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var isDashboard = string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase);
+}
+
 <body>
 
-<div class="admin-wrapper">
+<div class="admin-wrapper" id="adminShell">
 
-    <!-- SIDEBAR -->
-    <aside class="admin-sidebar">
+    <!-- Human Comment: Cinematic admin navigation shared by every admin page. -->
+    <aside class="admin-sidebar" id="adminSidebar">
 
         <div class="admin-logo">
-            🎬 AmarShowsBook
+            <span class="admin-logo-mark">AS</span>
+            <span>AmarShowsBook</span>
         </div>
 
-        <nav>
+        <nav class="admin-nav">
 
-            <a href="/Admin/Dashboard">
-                Dashboard
-            </a>
-
-            <a href="/Admin/Users">
-                Users
-            </a>
-
-            <a href="/Admin/UserAccess">
-                User Access
-            </a>
-
-            <a href="/Admin/Roles">
-                Roles
-            </a>
-
-            <a href="/Admin/Permissions">
-                Permissions
-            </a>
-
-            <a href="/Admin/Bookings">
-                Bookings
-            </a>
-
-           <a href="/Admin/Transactions">
-    Transactions
-</a>
-
-            <a href="/Admin/Refunds">
-                Refunds
-            </a>
-
-            <a href="/Admin/Wallets">
-                Wallets
-            </a>
-
-            <a href="/Admin/Notifications">
-                Notifications
-            </a>
-
-            <a href="/Admin/ActivityLogs">
-                Activity Logs
-            </a>
+            <a class="@(currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard"><span>⌂</span>Dashboard</a>
+            <a class="@(currentAction == "Users" ? "active" : "")" href="/Admin/Users"><span>◎</span>Users</a>
+            <a class="@(currentAction == "UserAccess" ? "active" : "")" href="/Admin/UserAccess"><span>◫</span>User Access</a>
+            <a class="@(currentAction == "Roles" ? "active" : "")" href="/Admin/Roles"><span>◆</span>Roles</a>
+            <a class="@(currentAction == "Permissions" ? "active" : "")" href="/Admin/Permissions"><span>✓</span>Permissions</a>
+            <a class="@(currentAction == "Bookings" ? "active" : "")" href="/Admin/Bookings"><span>▣</span>Bookings</a>
+            <a class="@(currentAction == "Transactions" ? "active" : "")" href="/Admin/Transactions"><span>₹</span>Transactions</a>
+            <a class="@(currentAction == "Refunds" ? "active" : "")" href="/Admin/Refunds"><span>↺</span>Refunds</a>
+            <a class="@(currentAction == "Wallets" ? "active" : "")" href="/Admin/Wallets"><span>▤</span>Wallets</a>
+            <a class="@(currentAction == "Notifications" ? "active" : "")" href="/Admin/Notifications"><span>✉</span>Notifications</a>
+            <a class="@(currentAction == "ActivityLogs" ? "active" : "")" href="/Admin/ActivityLogs"><span>◷</span>Activity Logs</a>
 
         </nav>
 
     </aside>
 
-    <!-- MAIN -->
     <main class="admin-main">
+
+        <header class="admin-topbar">
+            <button class="admin-icon-btn"
+                    type="button"
+                    id="adminNavToggle"
+                    aria-controls="adminSidebar"
+                    aria-expanded="true"
+                    title="Hide or show navigation">
+                ☰
+            </button>
+
+            @if (!isDashboard)
+            {
+                <a class="admin-back-btn"
+                   href="/Admin/Dashboard"
+                   title="Back to dashboard">
+                    ← Dashboard
+                </a>
+            }
+
+            <!-- Human Comment: Shared admin search filters visible tables and dashboard cards on the current page. -->
+            <form class="admin-search" role="search" onsubmit="return false;">
+                <label for="adminPageSearch" class="visually-hidden">Search this page</label>
+                <span aria-hidden="true">⌕</span>
+                <input id="adminPageSearch"
+                       type="search"
+                       placeholder="Search this page" />
+                <button type="button"
+                        id="adminSearchClear"
+                        title="Clear search">
+                    ×
+                </button>
+            </form>
+        </header>
 
         @RenderBody()
 
     </main>
 
 </div>
+
+<script src="~/js/admin/admin-dashboard.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
 
 </body>
 </html>

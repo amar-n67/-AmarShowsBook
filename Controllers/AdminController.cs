@@ -1,4 +1,5 @@
 using AmarShowsBook.Data;
+using AmarShowsBook.Models;
 using AmarShowsBook.Models.Admin;
 using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
@@ -232,11 +233,90 @@ FailedRefunds =
         public IActionResult Users()
         {
             // Human Comment:
-            // Load all users for admin management
+            // Load non-deleted users for admin management
 
-            var users = _context.Users.ToList();
+            var users = _context.Users
+                .Where(x => !x.IsDeleted)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToList();
 
             return View(users);
+        }
+
+        // =====================================================
+        // USER DETAILS PAGE
+        // =====================================================
+
+        public async Task<IActionResult> UserDetails(int id)
+        {
+            // Human Comment:
+            // Opens the user details button from admin user management.
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
+        }
+
+        // =====================================================
+        // ADMIN USER STATUS ACTIONS
+        // =====================================================
+
+        [HttpPost]
+        public async Task<IActionResult> DisableUser(int id)
+        {
+            // Human Comment:
+            // Soft-disable keeps the user record while blocking account use.
+
+            var user = await _context.Users.FindAsync(id);
+
+            if (user != null)
+            {
+                user.IsActive = false;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EnableUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+
+            if (user != null && !user.IsDeleted)
+            {
+                user.IsActive = true;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            // Human Comment:
+            // Soft delete prevents broken historical booking and audit references.
+
+            var user = await _context.Users.FindAsync(id);
+
+            if (user != null)
+            {
+                user.IsDeleted = true;
+                user.IsActive = false;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Users));
         }
 
         // =====================================================
@@ -258,15 +338,54 @@ FailedRefunds =
         // TRANSACTIONS PAGE
         // =====================================================
 
-        public IActionResult Transactions()
+        public async Task<IActionResult> Transactions(int page = 1)
         {
             // Human Comment:
-            // Load payment transaction summaries
+            // Show 50 transaction rows per page for admin readability.
 
-            var transactions =
-                _context.VwBookingTransactionSummaries.ToList();
+            const int pageSize = 50;
+
+            page = Math.Max(page, 1);
+
+            var query = _context.VwBookingTransactionSummaries
+                .OrderByDescending(x => x.BookingCreatedAt);
+
+            var totalCount = await query.CountAsync();
+
+            var transactions = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalRecords = totalCount;
+            ViewBag.SuccessCount = await _context.VwBookingTransactionSummaries
+                .CountAsync(x => x.TransactionStatus == "SUCCESS");
+            ViewBag.FailedCount = await _context.VwBookingTransactionSummaries
+                .CountAsync(x => x.TransactionStatus != "SUCCESS");
 
             return View(transactions);
+        }
+
+        // =====================================================
+        // TRANSACTION DETAILS PAGE
+        // =====================================================
+
+        public async Task<IActionResult> TransactionDetails(int id)
+        {
+            // Human Comment:
+            // Opens the transaction View button from the admin transaction table.
+
+            var transaction = await _context.VwBookingTransactionSummaries
+                .FirstOrDefaultAsync(x => x.TransactionId == id);
+
+            if (transaction == null)
+            {
+                return NotFound();
+            }
+
+            return View(transaction);
         }
 
         // =====================================================

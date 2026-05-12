@@ -2,10 +2,18 @@
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Notifications";
 }
 
-<h1>Notifications</h1>
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Notifications</h1>
+            <p>Delivery status for user notification activity.</p>
+        </div>
+    </div>
 
+<div class="table-wrapper">
 <table class="table admin-table">
 
 <thead>
@@ -30,8 +38,5 @@
 </tbody>
 
 </table>
-
-<a href="/Admin/Dashboard"
-   class="btn btn-dark mt-3">
-   ← Back Dashboard
-</a>
+</div>
+</section>
