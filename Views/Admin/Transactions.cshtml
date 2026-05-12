@@ -1,42 +1,510 @@
-@model IEnumerable<dynamic>
+@model List<AmarShowsBook.Models.ViewModels.AdminTransactionViewModel>
 
 @{
-    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Admin Transactions";
+
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+
+    int rowNo = ((currentPage - 1) * 50) + 1;
 }
 
-<h1>Transactions</h1>
+<section class="admin-page">
 
-<table class="table admin-table">
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         ADMIN PAGE HEADER
+    -->
+    <!-- ===================================================== -->
 
-<thead>
-<tr>
-    <th>Transaction Ref</th>
-    <th>User</th>
-    <th>Amount</th>
-    <th>Method</th>
-    <th>Status</th>
-</tr>
-</thead>
+    <div class="admin-header">
 
-<tbody>
+        <div>
+            <h1>Transaction Center</h1>
 
-@foreach (var item in Model)
-{
-    <tr>
+            <p>
+                Enterprise payment monitoring dashboard
+            </p>
+        </div>
 
-        <td>@item.transaction_ref</td>
+        <div class="admin-actions">
 
-        <td>@item.user_name</td>
+            <a href="/Admin/Index"
+               class="btn btn-secondary">
 
-        <td>@item.transaction_amount</td>
+                ← Back Dashboard
 
-        <td>@item.payment_method</td>
+            </a>
 
-        <td>@item.transaction_status</td>
+        </div>
 
-    </tr>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         QUICK STATS
+    -->
+    <!-- ===================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <span>Total Transactions</span>
+            <strong>@Model.Count</strong>
+        </div>
+
+        <div class="stat-card success-card">
+            <span>Success</span>
+            <strong>
+                @Model.Count(x => x.TransactionStatus == "SUCCESS")
+            </strong>
+        </div>
+
+        <div class="stat-card danger-card">
+            <span>Failed</span>
+            <strong>
+                @Model.Count(x => x.TransactionStatus != "SUCCESS")
+            </strong>
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         SEARCH BAR
+    -->
+    <!-- ===================================================== -->
+
+    <div class="search-bar">
+
+        <input
+            type="text"
+            id="transactionSearch"
+            placeholder="Search transaction, booking, user..."
+            onkeyup="searchTransactions()" />
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         TABLE SECTION
+    -->
+    <!-- ===================================================== -->
+
+    <div class="table-wrapper">
+
+        <table class="admin-table" id="transactionTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>#</th>
+
+                    <th>Transaction</th>
+
+                    <th>User</th>
+
+                    <th>Amount</th>
+
+                    <th>Payment</th>
+
+                    <th>Coupon</th>
+
+                    <th>Booking</th>
+
+                    <th>Status</th>
+
+                    <th>Refund</th>
+
+                    <th>Created</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="11" class="empty-state">
+
+                        No transactions found
+
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Model)
+                {
+                    <tr>
+
+                        <td>@rowNo</td>
+
+                        <td>
+
+                            <strong>
+                                @item.TransactionRef
+                            </strong>
+
+                            <div class="sub-text">
+                                @item.ShowTitle
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            <strong>
+                                @item.UserName
+                            </strong>
+
+                            <div class="sub-text">
+                                @item.UserEmail
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            <strong>
+                                ₹@item.Amount
+                            </strong>
+
+                            <div class="sub-text">
+
+                                Discount:
+                                ₹@item.DiscountAmount
+
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            <strong>
+                                @item.PaymentMethod
+                            </strong>
+
+                            <div class="sub-text">
+                                @item.GatewayName
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            @(string.IsNullOrWhiteSpace(item.CouponCode)
+                                ? "-"
+                                : item.CouponCode)
+
+                        </td>
+
+                        <td>
+
+                            <strong>
+                                @item.BookingRef
+                            </strong>
+
+                            <div class="sub-text">
+                                @item.BookingStatus
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            <span class="
+                                badge
+                                @(item.TransactionStatus == "SUCCESS"
+                                    ? "success"
+                                    : "danger")">
+
+                                @item.TransactionStatus
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            @if (string.IsNullOrWhiteSpace(item.RefundStatus))
+                            {
+                                <span>-</span>
+                            }
+                            else
+                            {
+                                <span class="badge warning">
+
+                                    @item.RefundStatus
+
+                                </span>
+                            }
+
+                        </td>
+
+                        <td>
+
+                            @item.CreatedAt.ToString("dd MMM yyyy")
+
+                            <div class="sub-text">
+
+                                @item.CreatedAt.ToString("hh:mm tt")
+
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            <a class="view-btn"
+                               href="/Admin/TransactionDetails/@item.TransactionId">
+
+                                View
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    rowNo++;
+                }
+            }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         PAGINATION
+    -->
+    <!-- ===================================================== -->
+
+    <div class="pagination-area">
+
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a
+                class="page-btn @(i == currentPage ? "active" : "")"
+                href="/Admin/Transactions?page=@i">
+
+                @i
+
+            </a>
+        }
+
+    </div>
+
+</section>
+
+<!-- ===================================================== -->
+<!-- HUMAN COMMENT:
+     PAGE STYLES
+-->
+<!-- ===================================================== -->
+
+<style>
+
+.admin-page{
+    padding:24px;
 }
 
-</tbody>
+.admin-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+}
 
-</table>
+.admin-header h1{
+    margin-bottom:6px;
+}
+
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-bottom:24px;
+}
+
+.stat-card{
+    background:#111827;
+    padding:20px;
+    border-radius:12px;
+}
+
+.stat-card span{
+    display:block;
+    margin-bottom:8px;
+    color:#94a3b8;
+}
+
+.stat-card strong{
+    font-size:28px;
+}
+
+.success-card{
+    border-left:4px solid #22c55e;
+}
+
+.danger-card{
+    border-left:4px solid #ef4444;
+}
+
+.search-bar{
+    margin-bottom:18px;
+}
+
+.search-bar input{
+    width:100%;
+    padding:14px;
+    border-radius:10px;
+    border:none;
+    background:#0f172a;
+    color:white;
+}
+
+.table-wrapper{
+    overflow:auto;
+    border-radius:12px;
+}
+
+.admin-table{
+    width:100%;
+    border-collapse:collapse;
+    background:#111827;
+}
+
+.admin-table thead{
+    position:sticky;
+    top:0;
+    background:#1e293b;
+}
+
+.admin-table th{
+    padding:16px;
+    text-align:left;
+    font-size:14px;
+}
+
+.admin-table td{
+    padding:16px;
+    border-top:1px solid #1e293b;
+    vertical-align:top;
+}
+
+.sub-text{
+    margin-top:4px;
+    font-size:12px;
+    color:#94a3b8;
+}
+
+.badge{
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.success{
+    background:#14532d;
+    color:white;
+}
+
+.danger{
+    background:#7f1d1d;
+    color:white;
+}
+
+.warning{
+    background:#78350f;
+    color:white;
+}
+
+.view-btn{
+    padding:8px 12px;
+    border-radius:8px;
+    background:#2563eb;
+    color:white;
+    text-decoration:none;
+    font-size:13px;
+}
+
+.pagination-area{
+    margin-top:24px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.page-btn{
+    padding:10px 14px;
+    border-radius:8px;
+    background:#1e293b;
+    color:white;
+    text-decoration:none;
+}
+
+.page-btn.active{
+    background:#2563eb;
+}
+
+.empty-state{
+    text-align:center;
+    padding:40px;
+    color:#94a3b8;
+}
+
+@@media(max-width:900px){
+
+    .stats-grid{
+        grid-template-columns:1fr;
+    }
+
+}
+
+</style>
+
+<!-- ===================================================== -->
+<!-- HUMAN COMMENT:
+     SEARCH FILTER SCRIPT
+-->
+<!-- ===================================================== -->
+
+<script>
+
+function searchTransactions() {
+
+    let input =
+        document.getElementById("transactionSearch");
+
+    let filter =
+        input.value.toLowerCase();
+
+    let table =
+        document.getElementById("transactionTable");
+
+    let tr =
+        table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+
+        let rowText =
+            tr[i].innerText.toLowerCase();
+
+        tr[i].style.display =
+            rowText.includes(filter)
+                ? ""
+                : "none";
+    }
+}
+
+</script>

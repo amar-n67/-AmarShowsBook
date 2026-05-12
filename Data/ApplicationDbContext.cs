@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-
+using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.Admin;
 
@@ -88,6 +88,11 @@ namespace AmarShowsBook.Data
 
         public DbSet<VwAdminUserManagement>
             VwAdminUserManagement { get; set; }
+            // =========================================================
+// HUMAN COMMENT:
+// Admin transaction monitoring view
+// =========================================================
+public DbSet<AdminTransactionViewModel> AdminTransactions { get; set; }
 
         // =====================================================
         // MODEL CONFIGURATION
@@ -97,6 +102,13 @@ namespace AmarShowsBook.Data
             ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+// =========================================================
+
+// PostgreSQL admin transaction reporting view
+// =========================================================
+modelBuilder.Entity<AdminTransactionViewModel>()
+    .HasNoKey()
+    .ToView("vw_admin_transaction_complete");
 
             // =====================================================
             // SHOW SCHEDULE RELATIONSHIPS
@@ -177,6 +189,7 @@ namespace AmarShowsBook.Data
             modelBuilder.Entity<VwAdminUserManagement>()
                 .HasNoKey()
                 .ToView("vw_admin_user_management");
+                
         }
     }
 }

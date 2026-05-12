@@ -11,6 +11,37 @@ namespace AmarShowsBook.Controllers
 {
     public class AdminController : Controller
     {
+        // =========================================================
+// ADMIN TRANSACTION PAGE
+// Enterprise Transaction Monitoring
+// =========================================================
+
+public IActionResult Transactions(int page = 1)
+{
+    const int pageSize = 50;
+
+    var query = _context
+        .Set<AdminTransactionViewModel>()
+        .FromSqlRaw(@"
+            SELECT *
+            FROM vw_admin_transaction_complete
+            ORDER BY created_at DESC
+        ");
+
+    var totalCount = query.Count();
+
+    var transactions = query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    ViewBag.CurrentPage = page;
+
+    ViewBag.TotalPages =
+        (int)Math.Ceiling(totalCount / (double)pageSize);
+
+    return View(transactions);
+}
         // =====================================================
         // DATABASE CONTEXT
         // =====================================================
