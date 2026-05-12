@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.ViewModels;
+using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
@@ -176,12 +177,33 @@ public async Task<IActionResult> Index(string type = "Movie")
             try
             {
                 // Human Comment:
-                // Home location dropdowns must use application data, not external APIs.
-                var countries = await _context.Countries
+                // Return all country names, while preserving local DB ids for countries
+                // that have state/region data in the application.
+                var dataCountries = await _context.Countries
                     .AsNoTracking()
                     .OrderBy(c => c.Name)
                     .Select(c => new { id = c.Id, name = c.Name })
                     .ToListAsync();
+
+                var countriesByName = dataCountries
+                    .GroupBy(c => c.name.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => (int?)g.First().id, StringComparer.OrdinalIgnoreCase);
+
+                var cultureCountries = CultureInfo
+                    .GetCultures(CultureTypes.SpecificCultures)
+                    .Select(c => new RegionInfo(c.Name).EnglishName)
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var countryName in cultureCountries)
+                {
+                    countriesByName.TryAdd(countryName.Trim(), null);
+                }
+
+                var countries = countriesByName
+                    .OrderBy(c => c.Key)
+                    .Select(c => new { id = c.Value, name = c.Key })
+                    .ToList();
 
                 return Json(countries);
             }

@@ -286,16 +286,21 @@ function showLocationError(message) {
     alert(message);
 }
 
-function setSelectOptions(selectId, options, placeholder, selectedId) {
+function setSelectOptions(selectId, options, placeholder, selectedName) {
     const select = document.getElementById(selectId);
     select.innerHTML = `<option value="">${placeholder}</option>`;
 
     options.forEach(item => {
         const option = document.createElement("option");
-        option.value = item.id || item.name || item;
+        const optionName = item.name || item;
+
+        option.value = optionName;
+        option.dataset.id = item.id || "";
+        option.dataset.hasData = item.id ? "true" : "false";
+        option.dataset.name = optionName;
         option.textContent = item.name || item;
 
-        if (selectedId && String(option.value) === String(selectedId)) {
+        if (selectedName && optionName.toLowerCase() === selectedName.toLowerCase()) {
             option.selected = true;
         }
 
@@ -313,11 +318,11 @@ async function loadCountries() {
 
         const countries = await response.json();
         const india = countries.find(country => country.name && country.name.toLowerCase() === "india");
-        const selectedCountryId = india ? india.id : "";
+        const selectedCountryName = india ? india.name : "";
 
-        setSelectOptions("country", countries, "Select Country", selectedCountryId);
+        setSelectOptions("country", countries, "Select Country", selectedCountryName);
 
-        if (selectedCountryId) {
+        if (india && india.id) {
             await loadStates();
         }
     } catch {
@@ -329,12 +334,14 @@ async function loadCountries() {
 }
 
 async function loadStates() {
-    const countryId = document.getElementById("country").value;
+    const countrySelect = document.getElementById("country");
+    const selectedCountry = countrySelect.options[countrySelect.selectedIndex];
+    const countryId = selectedCountry ? selectedCountry.dataset.id : "";
 
     setSelectOptions("district", [], "Select Region");
 
     if (!countryId) {
-        setSelectOptions("state", [], "Select State");
+        setSelectOptions("state", [], selectedCountry && selectedCountry.value ? "No states available" : "Select State");
         return;
     }
 
@@ -356,7 +363,9 @@ async function loadStates() {
 }
 
 async function loadDistricts() {
-    const stateId = document.getElementById("state").value;
+    const stateSelect = document.getElementById("state");
+    const selectedState = stateSelect.options[stateSelect.selectedIndex];
+    const stateId = selectedState ? selectedState.dataset.id : "";
 
     if (!stateId) {
         setSelectOptions("district", [], "Select Region");
