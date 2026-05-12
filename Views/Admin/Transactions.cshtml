@@ -85,7 +85,7 @@
             type="text"
             id="transactionSearch"
             placeholder="Search transaction, booking, user..."
-            onkeyup="searchTransactions()" />
+            oninput="searchTransactions()" />
 
     </div>
 
@@ -484,30 +484,40 @@
 
 <script>
 
+let transactionSearchTimer;
+let transactionRowsCache;
+
 function searchTransactions() {
 
-    let input =
+    window.clearTimeout(transactionSearchTimer);
+
+    transactionSearchTimer = window.setTimeout(() => {
+        let input =
         document.getElementById("transactionSearch");
 
-    let filter =
-        input.value.toLowerCase();
+        let filter =
+            input.value.trim().toLowerCase();
 
-    let table =
-        document.getElementById("transactionTable");
+        if (!transactionRowsCache) {
+            let table =
+                document.getElementById("transactionTable");
 
-    let tr =
-        table.getElementsByTagName("tr");
+            transactionRowsCache =
+                Array.from(table.querySelectorAll("tbody tr"))
+                    .map(row => ({
+                        row,
+                        text: row.innerText.toLowerCase()
+                    }));
+        }
 
-    for (let i = 1; i < tr.length; i++) {
+        transactionRowsCache.forEach(({ row, text }) => {
 
-        let rowText =
-            tr[i].innerText.toLowerCase();
-
-        tr[i].style.display =
-            rowText.includes(filter)
+            row.style.display =
+                filter.length === 0 || text.includes(filter)
                 ? ""
                 : "none";
-    }
+        });
+    }, 120);
 }
 
 </script>

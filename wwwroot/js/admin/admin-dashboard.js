@@ -13,12 +13,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const searchableItems = () => [
+    const searchableItems = [
         ...document.querySelectorAll(".admin-table tbody tr"),
         ...document.querySelectorAll(".dashboard-card"),
         ...document.querySelectorAll(".stat-card"),
         ...document.querySelectorAll("[data-admin-searchable]")
-    ];
+    ].map((item) => ({
+        item,
+        text: item.textContent?.toLowerCase() ?? ""
+    }));
+
+    let searchTimer;
 
     const filterPage = () => {
         if (!search) {
@@ -27,13 +32,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const query = search.value.trim().toLowerCase();
 
-        searchableItems().forEach((item) => {
-            const text = item.textContent?.toLowerCase() ?? "";
+        searchableItems.forEach(({ item, text }) => {
             item.hidden = query.length > 0 && !text.includes(query);
         });
     };
 
-    search?.addEventListener("input", filterPage);
+    search?.addEventListener("input", () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(filterPage, 120);
+    });
 
     clear?.addEventListener("click", () => {
         if (!search) {

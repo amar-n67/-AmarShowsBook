@@ -236,6 +236,7 @@ FailedRefunds =
             // Load non-deleted users for admin management
 
             var users = _context.Users
+                .AsNoTracking()
                 .Where(x => !x.IsDeleted)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToList();
@@ -253,6 +254,7 @@ FailedRefunds =
             // Opens the user details button from admin user management.
 
             var user = await _context.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
 
             if (user == null)
@@ -329,7 +331,9 @@ FailedRefunds =
             // Load booking summary data
 
             var bookings =
-                _context.VwBookingCompleteDetails.ToList();
+                _context.VwBookingCompleteDetails
+                    .AsNoTracking()
+                    .ToList();
 
             return View(bookings);
         }
@@ -348,9 +352,23 @@ FailedRefunds =
             page = Math.Max(page, 1);
 
             var query = _context.VwBookingTransactionSummaries
+                .AsNoTracking()
                 .OrderByDescending(x => x.BookingCreatedAt);
 
-            var totalCount = await query.CountAsync();
+            // Human Comment:
+            // One aggregate query replaces three separate full scans of the transaction view.
+            var summary = await _context.VwBookingTransactionSummaries
+                .AsNoTracking()
+                .GroupBy(x => 1)
+                .Select(g => new
+                {
+                    Total = g.Count(),
+                    Success = g.Count(x => x.TransactionStatus == "SUCCESS"),
+                    Failed = g.Count(x => x.TransactionStatus != "SUCCESS")
+                })
+                .FirstOrDefaultAsync();
+
+            var totalCount = summary?.Total ?? 0;
 
             var transactions = await query
                 .Skip((page - 1) * pageSize)
@@ -360,10 +378,8 @@ FailedRefunds =
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
             ViewBag.TotalRecords = totalCount;
-            ViewBag.SuccessCount = await _context.VwBookingTransactionSummaries
-                .CountAsync(x => x.TransactionStatus == "SUCCESS");
-            ViewBag.FailedCount = await _context.VwBookingTransactionSummaries
-                .CountAsync(x => x.TransactionStatus != "SUCCESS");
+            ViewBag.SuccessCount = summary?.Success ?? 0;
+            ViewBag.FailedCount = summary?.Failed ?? 0;
 
             return View(transactions);
         }
@@ -378,6 +394,7 @@ FailedRefunds =
             // Opens the transaction View button from the admin transaction table.
 
             var transaction = await _context.VwBookingTransactionSummaries
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.TransactionId == id);
 
             if (transaction == null)
@@ -398,7 +415,9 @@ FailedRefunds =
             // Load user access matrix
 
             var access =
-                _context.VwUserAccessMatrices.ToList();
+                _context.VwUserAccessMatrices
+                    .AsNoTracking()
+                    .ToList();
 
             return View(access);
         }
@@ -413,7 +432,9 @@ FailedRefunds =
             // Load role based menus
 
             var menus =
-                _context.VwUserApplicationMenus.ToList();
+                _context.VwUserApplicationMenus
+                    .AsNoTracking()
+                    .ToList();
 
             return View(menus);
         }
@@ -428,6 +449,7 @@ FailedRefunds =
             {
                 var refunds =
                     await _context.VwRefundSummaries
+                        .AsNoTracking()
                         .ToListAsync();
 
                 return View(refunds);
@@ -451,6 +473,7 @@ FailedRefunds =
             {
                 var wallets =
                     await _context.VwWalletSummaries
+                        .AsNoTracking()
                         .ToListAsync();
 
                 return View(wallets);
@@ -474,6 +497,7 @@ FailedRefunds =
             {
                 var notifications =
                     await _context.VwNotificationCenters
+                        .AsNoTracking()
                         .ToListAsync();
 
                 return View(notifications);
@@ -502,6 +526,7 @@ FailedRefunds =
 
                 var logs =
                     await _context.ActivityLogs
+                        .AsNoTracking()
                         .OrderByDescending(x => x.CreatedAt)
                         .Take(100)
                         .ToListAsync();
