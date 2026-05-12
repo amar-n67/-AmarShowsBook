@@ -30,21 +30,21 @@
             <div>
                 <label>Country</label>
                 <select id="country" class="form-control" onchange="loadStates()">
-                    <option>Select Country</option>
+                    <option value="">Loading countries...</option>
                 </select>
             </div>
 
             <div>
                 <label>State</label>
                 <select id="state" class="form-control" onchange="loadDistricts()">
-                    <option>Select State</option>
+                    <option value="">Select State</option>
                 </select>
             </div>
 
             <div>
                 <label>Region</label>
                 <select id="district" class="form-control">
-                    <option>Select Region</option>
+                    <option value="">Select Region</option>
                 </select>
             </div>
         </div>
@@ -277,75 +277,108 @@
 </style>
 
 <script>
-function setSelectOptions(selectId, options, placeholder) {
+function showLocationError(message) {
+    if (typeof showCinemaPopup === "function") {
+        showCinemaPopup(message, "error");
+        return;
+    }
+
+    alert(message);
+}
+
+function setSelectOptions(selectId, options, placeholder, selectedId) {
     const select = document.getElementById(selectId);
-    select.innerHTML = `<option>${placeholder}</option>`;
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+
     options.forEach(item => {
-        select.innerHTML += `<option value="${item.name || item}">${item.name || item}</option>`;
+        const option = document.createElement("option");
+        option.value = item.id || item.name || item;
+        option.textContent = item.name || item;
+
+        if (selectedId && String(option.value) === String(selectedId)) {
+            option.selected = true;
+        }
+
+        select.appendChild(option);
     });
 }
 
-function selectDefaultCountry() {
-    const country = document.getElementById("country");
-    if (!country) return;
+async function loadCountries() {
+    try {
+        const response = await fetch("/Home/GetCountries");
 
-    country.value = "India";
-    if (country.value === "India") {
-        loadStates();
+        if (!response.ok) {
+            throw new Error("Country request failed");
+        }
+
+        const countries = await response.json();
+        const india = countries.find(country => country.name && country.name.toLowerCase() === "india");
+        const selectedCountryId = india ? india.id : "";
+
+        setSelectOptions("country", countries, "Select Country", selectedCountryId);
+
+        if (selectedCountryId) {
+            await loadStates();
+        }
+    } catch {
+        setSelectOptions("country", [], "Select Country");
+        setSelectOptions("state", [], "Select State");
+        setSelectOptions("district", [], "Select Region");
+        showLocationError("Could not load countries. Please try again.");
     }
 }
 
-fetch('https://restcountries.com/v3.1/all')
-    .then(res => res.json())
-    .then(data => {
-        const countries = data
-            .map(c => c.name && c.name.common)
-            .filter(Boolean)
-            .sort((a, b) => a.localeCompare(b));
-        setSelectOptions("country", countries, "Select Country");
-        selectDefaultCountry();
-    })
-    .catch(() => {
-        setSelectOptions("country", ["India"], "Select Country");
-        selectDefaultCountry();
-        showCinemaPopup("Location reel could not load from network. India is ready as fallback.", "info");
-    });
-
-function loadStates() {
-    let country = document.getElementById("country").value;
-    let stateDropdown = document.getElementById("state");
+async function loadStates() {
+    const countryId = document.getElementById("country").value;
 
     setSelectOptions("district", [], "Select Region");
-    stateDropdown.innerHTML = "<option>Loading...</option>";
 
-    if (!country || country === "Select Country") {
+    if (!countryId) {
         setSelectOptions("state", [], "Select State");
         return;
     }
 
-    fetch('https://countriesnow.space/api/v0.1/countries/states', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ country: country })
-    })
-    .then(res => res.json())
-    .then(data => {
-        const states = data && data.data && data.data.states ? data.data.states : [];
-        if (states.length) {
-            setSelectOptions("state", states, "Select State");
-        } else {
-            setSelectOptions("state", [], "No states available");
+    setSelectOptions("state", [], "Loading states...");
+
+    try {
+        const response = await fetch(`/Home/GetStates?countryId=${encodeURIComponent(countryId)}`);
+
+        if (!response.ok) {
+            throw new Error("State request failed");
         }
-    })
-    .catch(() => {
-        setSelectOptions("state", ["Maharashtra", "Karnataka"], "Select State");
-        showCinemaPopup("State list paused. Fallback choices are loaded.", "info");
-    });
+
+        const states = await response.json();
+        setSelectOptions("state", states, states.length ? "Select State" : "No states available");
+    } catch {
+        setSelectOptions("state", [], "Select State");
+        showLocationError("Could not load states. Please try again.");
+    }
 }
 
-function loadDistricts() {
-    const state = document.getElementById("state").value;
-    const fallback = state === "Karnataka" ? ["Bengaluru", "Mysuru"] : ["Mumbai", "Pune"];
-    setSelectOptions("district", fallback, "Select Region");
+async function loadDistricts() {
+    const stateId = document.getElementById("state").value;
+
+    if (!stateId) {
+        setSelectOptions("district", [], "Select Region");
+        return;
+    }
+
+    setSelectOptions("district", [], "Loading regions...");
+
+    try {
+        const response = await fetch(`/Home/GetDistricts?stateId=${encodeURIComponent(stateId)}`);
+
+        if (!response.ok) {
+            throw new Error("Region request failed");
+        }
+
+        const districts = await response.json();
+        setSelectOptions("district", districts, districts.length ? "Select Region" : "No regions available");
+    } catch {
+        setSelectOptions("district", [], "Select Region");
+        showLocationError("Could not load regions. Please try again.");
+    }
 }
+
+document.addEventListener("DOMContentLoaded", loadCountries);
 </script>
