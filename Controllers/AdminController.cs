@@ -235,34 +235,12 @@ FailedRefunds =
             // Human Comment:
             // Load non-deleted users for admin management
 
-            var users = _context.Users
-                .AsNoTracking()
-                .Where(x => !x.IsDeleted)
-                .OrderByDescending(x => x.CreatedAt)
-                .ToList();
+          var users = _context.Users
+    .AsNoTracking()
+    .OrderByDescending(x => x.CreatedAt)
+    .ToList();
 
             return View(users);
-        }
-
-        // =====================================================
-        // USER DETAILS PAGE
-        // =====================================================
-
-        public async Task<IActionResult> UserDetails(int id)
-        {
-            // Human Comment:
-            // Opens the user details button from admin user management.
-
-            var user = await _context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
-
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
         }
 
         // =====================================================
@@ -279,7 +257,7 @@ FailedRefunds =
 
             if (user != null)
             {
-                user.IsActive = false;
+                user.is_active = false;
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
@@ -292,28 +270,9 @@ FailedRefunds =
         {
             var user = await _context.Users.FindAsync(id);
 
-            if (user != null && !user.IsDeleted)
+            if (user != null && !user.is_deleted)
             {
-                user.IsActive = true;
-                user.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Users));
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            // Human Comment:
-            // Soft delete prevents broken historical booking and audit references.
-
-            var user = await _context.Users.FindAsync(id);
-
-            if (user != null)
-            {
-                user.IsDeleted = true;
-                user.IsActive = false;
+                user.is_active = true;
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
@@ -608,62 +567,76 @@ public IActionResult ToggleUserStatus(long id)
 }
 // =====================================================
 // HUMAN COMMENT:
-// MOVE USER TO DELETED TABLE
+// SOFT DELETE USER
+// USER MOVES TO deleted_users TABLE
 // =====================================================
 
-public IActionResult DeleteUser(long id)
+public IActionResult DeleteUser(int id)
 {
     var user = _context.Users.FirstOrDefault(x => x.Id == id);
 
     if (user == null)
     {
-        return NotFound();
+        return RedirectToAction("Users");
     }
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // STORE USER SNAPSHOT IN deleted_users TABLE
+    // =====================================================
 
     var deletedUser = new DeletedUser
     {
-        OriginalUserId = user.Id,
+        original_user_id = user.Id,
 
-        Name = user.Name,
+        name = user.Name,
+        email = user.Email,
+        mobile = user.Mobile,
 
-        Email = user.Email,
+        address = user.Address,
 
-        Mobile = user.Mobile,
+        country = user.Country,
+        state = user.State,
+        district = user.District,
+        pincode = user.Pincode,
 
-        Password = user.Password,
+        language = user.Language,
+        genre = user.Genre,
 
-        Language = user.Language,
+        profile_image_path = user.ProfileImagePath,
 
-        Genre = user.Genre,
+        created_at = user.CreatedAt,
+        updated_at = user.UpdatedAt,
 
-        Country = user.Country,
+        deleted_at = DateTime.UtcNow,
 
-        State = user.State,
+        deleted_by = HttpContext.Session.GetString("UserName"),
 
-        District = user.District,
-
-        Address = user.Address,
-
-        Pincode = user.Pincode,
-
-        ProfileImagePath = user.ProfileImagePath,
-
-        CreatedAt = user.CreatedAt,
-
-        UpdatedAt = user.UpdatedAt,
-
-        DeletedAt = DateTime.Now,
-
-        DeleteReason = "Deleted by admin"
+        is_revoked = false
     };
+// =====================================================
+// HUMAN COMMENT:
+// SAVE USER SNAPSHOT INTO deleted_users TABLE
+// =====================================================
 
-    _context.DeletedUsers.Add(deletedUser);
+_context.DeletedUsers.Add(deletedUser);
 
-    user.is_deleted = true;
+// =====================================================
+// HUMAN COMMENT:
+// MARK USER AS DELETED
+// =====================================================
 
-    user.is_active = false;
+user.is_deleted = true;
+user.is_active = false;
 
-    _context.SaveChanges();
+user.UpdatedAt = DateTime.UtcNow;
+
+// =====================================================
+// HUMAN COMMENT:
+// SAVE ALL CHANGES
+// =====================================================
+
+_context.SaveChanges();
 
     return RedirectToAction("Users");
 }
@@ -672,18 +645,42 @@ public IActionResult DeleteUser(long id)
 // RESTORE USER FROM DELETED STATE
 // =====================================================
 
-public IActionResult RevokeUser(long id)
+// =====================================================
+// HUMAN COMMENT:
+// REVOKE USER FROM deleted_users TABLE
+// =====================================================
+
+public IActionResult RevokeUser(int id)
 {
     var user = _context.Users.FirstOrDefault(x => x.Id == id);
 
     if (user == null)
     {
-        return NotFound();
+        return RedirectToAction("Users");
     }
 
     user.is_deleted = false;
-
     user.is_active = true;
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // UPDATE deleted_users TABLE
+    // =====================================================
+
+    var deletedRecord = _context.DeletedUsers
+        .FirstOrDefault(x =>
+            x.original_user_id == user.Id &&
+            x.is_revoked == false);
+
+    if (deletedRecord != null)
+    {
+        deletedRecord.is_revoked = true;
+
+        deletedRecord.revoke_at = DateTime.UtcNow;
+
+        deletedRecord.revoked_by =
+            HttpContext.Session.GetString("UserName");
+    }
 
     _context.SaveChanges();
 

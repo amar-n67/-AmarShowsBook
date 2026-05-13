@@ -1,48 +1,45 @@
-namespace AmarShowsBook.Models.Admin;
-
-public class DeletedUser
+namespace AmarShowsBook.Models.Admin
 {
-    public long DeletedUserId { get; set; }
+    public class DeletedUser
+    {
+        public long id { get; set; }
 
-    public long OriginalUserId { get; set; }
+        public long original_user_id { get; set; }
 
-    public string? Name { get; set; }
+        public string? name { get; set; }
 
-    public string? Email { get; set; }
+        public string? email { get; set; }
 
-    public string? Mobile { get; set; }
+        public string? mobile { get; set; }
 
-    public string? Password { get; set; }
+        public string? address { get; set; }
 
-    public string? Language { get; set; }
+        public string? country { get; set; }
 
-    public string? Genre { get; set; }
+        public string? state { get; set; }
 
-    public string? Country { get; set; }
+        public string? district { get; set; }
 
-    public string? State { get; set; }
+        public string? pincode { get; set; }
 
-    public string? District { get; set; }
+        public string? language { get; set; }
 
-    public string? Address { get; set; }
+        public string? genre { get; set; }
 
-    public string? Pincode { get; set; }
+        public string? profile_image_path { get; set; }
 
-    public string? ProfileImagePath { get; set; }
+        public DateTime? created_at { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+        public DateTime? updated_at { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+        public DateTime deleted_at { get; set; }
 
-    public DateTime? DeletedAt { get; set; }
+        public string? deleted_by { get; set; }
 
-    public long? DeletedBy { get; set; }
+        public DateTime? revoke_at { get; set; }
 
-    public string? DeleteReason { get; set; }
+        public string? revoked_by { get; set; }
 
-    public DateTime? RevokeAt { get; set; }
-
-    public long? RevokedBy { get; set; }
-
-    public bool IsRevoked { get; set; }
+        public bool is_revoked { get; set; }
+    }
 }
