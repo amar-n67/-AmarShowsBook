@@ -31,6 +31,12 @@ namespace AmarShowsBook.Data
         public DbSet<LiveStream> LiveStreams { get; set; }
 
         public DbSet<Location> Locations { get; set; }
+        // =====================================================
+// HUMAN COMMENT:
+// USER ROLE ACCESS MAPPING TABLE
+// =====================================================
+
+public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
 
         public DbSet<ShowSchedule> ShowSchedules { get; set; }
 

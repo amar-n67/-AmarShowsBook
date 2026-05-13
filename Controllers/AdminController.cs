@@ -163,7 +163,7 @@ FailedRefunds =
         // Human Comment:
         // Admin role management screen
 
-        public async Task<IActionResult> Roles()
+     public IActionResult Roles()
         {
             return View();
         }
@@ -175,26 +175,10 @@ FailedRefunds =
         // Human Comment:
         // Permission master screen
 
-        public async Task<IActionResult> Permissions()
+      public IActionResult Permissions()
         {
             return View();
         }
-
-        // =====================================================
-        // USER ACCESS PAGE
-        // =====================================================
-
-        // Human Comment:
-        // Shows role + permission matrix
-
-        public async Task<IActionResult> UserAccess()
-        {
-            return View();
-        }
-
-        // =====================================================
-        // USERS PAGE
-        // =====================================================
 
         public IActionResult Users()
         {
@@ -478,6 +462,11 @@ FailedRefunds =
 // FULL ADMIN USER DETAILS PAGE
 // =====================================================
 
+// =====================================================
+// HUMAN COMMENT:
+// FULL ADMIN USER DETAILS PAGE
+// =====================================================
+
 public IActionResult UserDetails(long id)
 {
     var user = _context.Users
@@ -487,6 +476,24 @@ public IActionResult UserDetails(long id)
     {
         return NotFound();
     }
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // LOAD USER ROLES
+    // =====================================================
+
+    var userRoles = _context.UserRoleMappings
+        .Where(x =>
+            x.UserId == id &&
+            x.IsActive)
+        .Join(
+            _context.Roles,
+            map => map.RoleId,
+            role => role.Id,
+            (map, role) => role.Name
+        )
+        .Distinct()
+        .ToList();
 
     // =====================================================
     // HUMAN COMMENT:
@@ -516,12 +523,12 @@ public IActionResult UserDetails(long id)
         transactions.Count(x =>
             x.TransactionStatus == "PENDING");
 
-var totalSpent =
-    transactions
-        .Where(x =>
-            x.TransactionStatus == "SUCCESS")
-        .Sum(x =>
-            x.TransactionAmount ?? 0);
+    var totalSpent =
+        transactions
+            .Where(x =>
+                x.TransactionStatus == "SUCCESS")
+            .Sum(x =>
+                x.TransactionAmount ?? 0);
 
     var lastTransaction =
         transactions.FirstOrDefault();
@@ -536,59 +543,39 @@ var totalSpent =
 
     // =====================================================
     // HUMAN COMMENT:
-    // RECENT ACTIVITY MOCK DATA
+    // BUILD RECENT ACTIVITIES
     // =====================================================
 
-    // =====================================================
-// HUMAN COMMENT:
-// LOAD REAL USER ACTIVITIES
-// =====================================================
+    var recentActivities = new List<string>();
 
-var recentActivities = new List<string>();
+    foreach (var txn in transactions)
+    {
+        recentActivities.Add(
 
-// =====================================================
-// HUMAN COMMENT:
-// LAST 5 TRANSACTION ACTIVITIES
-// =====================================================
+            $"Transaction {txn.TransactionStatus} | " +
+            $"₹{txn.TransactionAmount ?? 0} | " +
+            $"{txn.PaymentMethod ?? "NA"} | " +
+            $"{txn.BookingCreatedAt:dd MMM yyyy hh:mm tt}"
 
-foreach (var txn in transactions)
-{
+        );
+    }
+
+    if (user.UpdatedAt != null)
+    {
+        recentActivities.Add(
+
+            $"Profile updated on " +
+            $"{user.UpdatedAt:dd MMM yyyy hh:mm tt}"
+
+        );
+    }
+
     recentActivities.Add(
 
-        $"Transaction {txn.TransactionStatus} | " +
-        $"₹{txn.TransactionAmount ?? 0} | " +
-        $"{txn.PaymentMethod ?? "NA"} | " +
-        $"{txn.BookingCreatedAt:dd MMM yyyy hh:mm tt}"
+        $"Account registered on " +
+        $"{user.CreatedAt:dd MMM yyyy hh:mm tt}"
 
     );
-}
-
-// =====================================================
-// HUMAN COMMENT:
-// PROFILE UPDATE TRACKING
-// =====================================================
-
-if (user.UpdatedAt != null)
-{
-    recentActivities.Add(
-
-        $"Profile updated on " +
-        $"{user.UpdatedAt:dd MMM yyyy hh:mm tt}"
-
-    );
-}
-
-// =====================================================
-// HUMAN COMMENT:
-// ACCOUNT CREATED TRACKING
-// =====================================================
-
-recentActivities.Add(
-
-    $"Account registered on " +
-    $"{user.CreatedAt:dd MMM yyyy hh:mm tt}"
-
-);
 
     // =====================================================
     // HUMAN COMMENT:
@@ -599,23 +586,59 @@ recentActivities.Add(
     {
         UserId = user.Id,
 
-        Name = user.Name,
-        Email = user.Email,
-        Mobile = user.Mobile,
+        Name =
+            string.IsNullOrWhiteSpace(user.Name)
+                ? "NA"
+                : user.Name,
 
-        Language = user.Language,
-        Genre = user.Genre,
+        Email =
+            string.IsNullOrWhiteSpace(user.Email)
+                ? "NA"
+                : user.Email,
 
-        Country = user.Country,
-        State = user.State,
-        District = user.District,
+        Mobile =
+            string.IsNullOrWhiteSpace(user.Mobile)
+                ? "NA"
+                : user.Mobile,
 
-        Address = user.Address,
-        Pincode = user.Pincode,
+        Language =
+            string.IsNullOrWhiteSpace(user.Language)
+                ? "NA"
+                : user.Language,
+
+        Genre =
+            string.IsNullOrWhiteSpace(user.Genre)
+                ? "NA"
+                : user.Genre,
+
+        Country =
+            string.IsNullOrWhiteSpace(user.Country)
+                ? "NA"
+                : user.Country,
+
+        State =
+            string.IsNullOrWhiteSpace(user.State)
+                ? "NA"
+                : user.State,
+
+        District =
+            string.IsNullOrWhiteSpace(user.District)
+                ? "NA"
+                : user.District,
+
+        Address =
+            string.IsNullOrWhiteSpace(user.Address)
+                ? "NA"
+                : user.Address,
+
+        Pincode =
+            string.IsNullOrWhiteSpace(user.Pincode)
+                ? "NA"
+                : user.Pincode,
 
         // =====================================================
-        // IMPORTANT FIX:
-        // NULL SAFE IMAGE
+        // HUMAN COMMENT:
+        // PROFILE IMAGE
         // =====================================================
 
         ProfileImagePath =
@@ -624,6 +647,7 @@ recentActivities.Add(
                 : user.ProfileImagePath,
 
         IsActive = user.is_active,
+
         IsDeleted = user.is_deleted,
 
         RegisteredAt = user.CreatedAt,
@@ -631,6 +655,7 @@ recentActivities.Add(
         LastLoginAt = user.UpdatedAt,
 
         // =====================================================
+        // HUMAN COMMENT:
         // WALLET
         // =====================================================
 
@@ -638,7 +663,8 @@ recentActivities.Add(
             wallet?.WalletBalance ?? 0,
 
         // =====================================================
-        // TRANSACTION SUMMARY
+        // HUMAN COMMENT:
+        // TRANSACTION STATS
         // =====================================================
 
         TotalTransactions = transactions.Count,
@@ -652,41 +678,131 @@ recentActivities.Add(
         TotalSpent = totalSpent,
 
         LastTransactionRef =
-            lastTransaction?.TransactionRef ?? "-",
+            lastTransaction?.TransactionRef ?? "NA",
 
         LastTransactionStatus =
-            lastTransaction?.TransactionStatus ?? "-",
+            lastTransaction?.TransactionStatus ?? "NA",
 
         LastTransactionDate =
             lastTransaction?.BookingCreatedAt,
 
         // =====================================================
-        // LAST 5 TRANSACTIONS
+        // HUMAN COMMENT:
+        // LAST TRANSACTIONS
         // =====================================================
 
         LastTransactions = transactions,
 
         // =====================================================
+        // HUMAN COMMENT:
         // ACTIVITIES
         // =====================================================
 
         RecentActivities = recentActivities,
+
+        // =====================================================
+        // HUMAN COMMENT:
+        // USER ACCESS ROLES
+        // =====================================================
+
+        UserAccess = userRoles
+    };
+
+    return View(model);
+}
 // =====================================================
 // HUMAN COMMENT:
-// USER ACCESS PERMISSIONS
+// ADMIN USER ACCESS PAGE
 // =====================================================
 
-UserAccess = new List<string>
+// =====================================================
+// HUMAN COMMENT:
+// ADMIN USER ACCESS PAGE
+// =====================================================
+
+public IActionResult UserAccess()
 {
-    "Movie Booking",
-    "Standup Booking",
-    "Live Stream",
-    "Wallet Access",
-    "Coupon Usage",
-    "Profile Update",
-    "Ticket Validation"
-}
-    };
+    // =====================================================
+    // HUMAN COMMENT:
+    // LOAD ACTIVE USERS
+    // =====================================================
+
+    var users = _context.Users
+        .AsNoTracking()
+        .Where(x => !x.is_deleted)
+        .OrderBy(x => x.Name)
+        .ToList();
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // LOAD ACTIVE USER ROLE MAPPINGS
+    // =====================================================
+
+    var mappings = _context.UserRoleMappings
+        .AsNoTracking()
+        .Where(x => x.IsActive)
+        .ToList();
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // LOAD ALL ROLES
+    // =====================================================
+
+    var roles = _context.Roles
+        .AsNoTracking()
+        .ToList();
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // BUILD USER ROLE VIEW MODEL
+    // =====================================================
+
+    var model = users.Select(user => new AdminUserRoleViewModel
+    {
+        UserId = user.Id,
+
+        UserName =
+            string.IsNullOrWhiteSpace(user.Name)
+                ? "NA"
+                : user.Name,
+
+        UserEmail =
+            string.IsNullOrWhiteSpace(user.Email)
+                ? "NA"
+                : user.Email,
+
+        IsActive = user.is_active,
+
+        // =====================================================
+        // HUMAN COMMENT:
+        // CURRENT USER ROLE IDS
+        // =====================================================
+
+        RoleIds = mappings
+            .Where(x => x.UserId == user.Id)
+            .Select(x => x.RoleId)
+            .Distinct()
+            .ToList(),
+
+        // =====================================================
+        // HUMAN COMMENT:
+        // CURRENT USER ROLE NAMES
+        // =====================================================
+
+        Roles = mappings
+            .Where(x => x.UserId == user.Id)
+            .Join(
+                roles,
+                map => map.RoleId,
+                role => role.Id,
+                (map, role) => role.Name
+            )
+            .Distinct()
+            .ToList()
+
+    }).ToList();
+
+    ViewBag.AllRoles = roles;
 
     return View(model);
 }
@@ -709,6 +825,124 @@ public IActionResult ToggleUserStatus(long id)
     _context.SaveChanges();
 
     return RedirectToAction("Users");
+}
+[HttpPost]
+public IActionResult AddUserRole(UserRoleUpdateViewModel request)
+{
+    // =====================================================
+    // HUMAN COMMENT:
+    // VALIDATE USER EXISTS
+    // =====================================================
+
+    var userExists =
+        _context.Users.Any(x =>
+            x.Id == request.UserId);
+
+    if (!userExists)
+    {
+        TempData["Error"] =
+            "User not found.";
+
+        return RedirectToAction("UserAccess");
+    }
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // VALIDATE ROLE EXISTS
+    // =====================================================
+
+    var roleExists =
+        _context.Roles.Any(x =>
+            x.Id == request.RoleId);
+
+    if (!roleExists)
+    {
+        TempData["Error"] =
+            "Role not found.";
+
+        return RedirectToAction("UserAccess");
+    }
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // PREVENT DUPLICATE ROLE ACCESS
+    // =====================================================
+
+    bool alreadyExists =
+        _context.UserRoleMappings.Any(x =>
+            x.UserId == request.UserId &&
+            x.RoleId == request.RoleId &&
+            x.IsActive);
+
+    if (alreadyExists)
+    {
+        TempData["Error"] =
+            "User already has this role.";
+
+        return RedirectToAction("UserAccess");
+    }
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // ADD NEW ROLE ACCESS
+    // =====================================================
+
+    var mapping = new UserRoleMapping
+    {
+        UserId = request.UserId,
+
+        RoleId = request.RoleId,
+
+        AssignedAt = DateTime.UtcNow,
+
+        IsActive = true
+    };
+
+    _context.UserRoleMappings.Add(mapping);
+
+    _context.SaveChanges();
+
+    TempData["Success"] =
+        "Role assigned successfully.";
+
+    return RedirectToAction("UserAccess");
+}
+
+[HttpPost]
+public IActionResult RemoveUserRole(long userId, long roleId)
+{
+    // =====================================================
+    // HUMAN COMMENT:
+    // FIND ACTIVE ROLE MAPPING
+    // =====================================================
+
+    var mapping = _context.UserRoleMappings
+        .FirstOrDefault(x =>
+            x.UserId == userId &&
+            x.RoleId == roleId &&
+            x.IsActive);
+
+    if (mapping == null)
+    {
+        TempData["Error"] =
+            "Role mapping not found.";
+
+        return RedirectToAction("UserAccess");
+    }
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // DEACTIVATE ROLE ACCESS
+    // =====================================================
+
+    mapping.IsActive = false;
+
+    _context.SaveChanges();
+
+    TempData["Success"] =
+        "Role removed successfully.";
+
+    return RedirectToAction("UserAccess");
 }
 // =====================================================
 // HUMAN COMMENT:
