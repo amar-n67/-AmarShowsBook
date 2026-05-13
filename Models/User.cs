@@ -35,6 +35,14 @@ public bool IsDeleted { get; set; } = false;
 // =====================================================
 
 public string? Genre { get; set; } = "Dramatic";
+// =====================================================
+// HUMAN COMMENT:
+// ADMIN USER CONTROL FLAGS
+// =====================================================
+
+public bool is_active { get; set; } = true;
+
+public bool is_deleted { get; set; } = false;
 public string? Language { get; set; } = "English";
         public string? ProfileImagePath { get; set; }
         // ADDRESS BREAKDOWN

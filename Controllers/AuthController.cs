@@ -184,6 +184,18 @@ public async Task<IActionResult> Login(string email, string password)
             ViewBag.Error = "No performer found with this email.";
             return View();
         }
+        // =====================================================
+// HUMAN COMMENT:
+// BLOCK LOGIN FOR DISABLED OR DELETED USERS
+// =====================================================
+
+if (!user.is_active || user.is_deleted)
+{
+    ViewBag.Error =
+        "Your account has been disabled by admin.";
+
+    return View();
+}
 
         bool isValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
 
@@ -319,6 +331,15 @@ HttpContext.Session.SetString(
             // Hash password
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             user.CreatedAt = DateTime.UtcNow;
+
+// =====================================================
+// HUMAN COMMENT:
+// DEFAULT ACCOUNT STATUS FOR NEW USERS
+// =====================================================
+
+user.is_active = true;
+
+user.is_deleted = false;
 user.CreatedBy = user.Email;
 if (string.IsNullOrEmpty(user.Genre))
     user.Genre = "Dramatic";

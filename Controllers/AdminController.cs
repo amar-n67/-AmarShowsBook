@@ -538,5 +538,157 @@ FailedRefunds =
                 return View(new List<ActivityLog>());
             }
         }
+        // =====================================================
+// HUMAN COMMENT:
+// ADMIN USER DETAILS PAGE
+// =====================================================
+
+public IActionResult UserDetails(long id)
+{
+    var user = _context.Users
+        .Where(x => x.Id == id)
+        .Select(x => new AdminUserDetailsViewModel
+        {
+            UserId = x.Id,
+
+            Name = x.Name,
+
+            Email = x.Email,
+
+            Mobile = x.Mobile,
+
+            Language = x.Language,
+
+            Genre = x.Genre,
+
+            Country = x.Country,
+
+            State = x.State,
+
+            District = x.District,
+
+            Address = x.Address,
+
+            Pincode = x.Pincode,
+
+            IsActive = x.is_active,
+
+            IsDeleted = x.is_deleted,
+
+            CreatedAt = x.CreatedAt
+        })
+        .FirstOrDefault();
+
+    if (user == null)
+    {
+        return NotFound();
+    }
+
+    return View(user);
+}
+// =====================================================
+// HUMAN COMMENT:
+// TOGGLE USER ACTIVE STATUS
+// =====================================================
+
+public IActionResult ToggleUserStatus(long id)
+{
+    var user = _context.Users.FirstOrDefault(x => x.Id == id);
+
+    if (user == null)
+    {
+        return NotFound();
+    }
+
+    user.is_active = !user.is_active;
+
+    _context.SaveChanges();
+
+    return RedirectToAction("Users");
+}
+// =====================================================
+// HUMAN COMMENT:
+// MOVE USER TO DELETED TABLE
+// =====================================================
+
+public IActionResult DeleteUser(long id)
+{
+    var user = _context.Users.FirstOrDefault(x => x.Id == id);
+
+    if (user == null)
+    {
+        return NotFound();
+    }
+
+    var deletedUser = new DeletedUser
+    {
+        OriginalUserId = user.Id,
+
+        Name = user.Name,
+
+        Email = user.Email,
+
+        Mobile = user.Mobile,
+
+        Password = user.Password,
+
+        Language = user.Language,
+
+        Genre = user.Genre,
+
+        Country = user.Country,
+
+        State = user.State,
+
+        District = user.District,
+
+        Address = user.Address,
+
+        Pincode = user.Pincode,
+
+        ProfileImagePath = user.ProfileImagePath,
+
+        CreatedAt = user.CreatedAt,
+
+        UpdatedAt = user.UpdatedAt,
+
+        DeletedAt = DateTime.Now,
+
+        DeleteReason = "Deleted by admin"
+    };
+
+    _context.DeletedUsers.Add(deletedUser);
+
+    user.is_deleted = true;
+
+    user.is_active = false;
+
+    _context.SaveChanges();
+
+    return RedirectToAction("Users");
+}
+// =====================================================
+// HUMAN COMMENT:
+// RESTORE USER FROM DELETED STATE
+// =====================================================
+
+public IActionResult RevokeUser(long id)
+{
+    var user = _context.Users.FirstOrDefault(x => x.Id == id);
+
+    if (user == null)
+    {
+        return NotFound();
+    }
+
+    user.is_deleted = false;
+
+    user.is_active = true;
+
+    _context.SaveChanges();
+
+    return RedirectToAction("Users");
+}
+
     }
 }
