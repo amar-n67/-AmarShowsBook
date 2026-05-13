@@ -84,6 +84,20 @@
     <!-- DETAILS -->
 
     <div class="details-grid">
+        <div class="detail-card">
+
+    <h3>User Access</h3>
+
+    <ul class="access-list">
+
+        @foreach (var access in Model.UserAccess)
+        {
+            <li>@access</li>
+        }
+
+    </ul>
+
+</div>
 
         <!-- ACCOUNT INFO -->
 
@@ -92,13 +106,12 @@
             <h3>Account Information</h3>
 
             <p>
-                <strong>Registered:</strong>
-                @Model.RegisteredAt
+                @(Model.RegisteredAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
             </p>
 
             <p>
                 <strong>Last Login:</strong>
-                @Model.LastLoginAt
+                @(Model.LastLoginAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
             </p>
 
             <p>
@@ -119,15 +132,19 @@
 
             <h3>Address</h3>
 
-            <p>@Model.Address</p>
+           @(string.IsNullOrWhiteSpace(Model.Address) ? "NA" : Model.Address)
 
-            <p>@Model.District</p>
-
-            <p>@Model.State</p>
-
-            <p>@Model.Country</p>
-
-            <p>@Model.Pincode</p>
+            @Model.Address
+@Model.District
+@Model.State
+@Model.Country
+@Model.Pincode
+@Model.Language
+@Model.Genre
+@Model.Email
+@Model.Mobile
+@Model.LastTransactionRef
+@Model.LastTransactionStatus
 
         </div>
 
@@ -148,8 +165,7 @@
             </p>
 
             <p>
-                <strong>Date:</strong>
-                @Model.LastTransactionDate
+               @(Model.LastTransactionDate?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
             </p>
 
         </div>
@@ -174,13 +190,25 @@
     </div>
 
 </section>
-
+@* CSS starts here *@
 <style>
+    .access-list{
+    margin-top:12px;
+    padding-left:18px;
+}
+
+.access-list li{
+    margin-bottom:12px;
+    color:#475569;
+    font-size:15px;
+    font-weight:600;
+}
 
 .admin-user-page{
     padding:24px;
-    background:#f8fafc;
+    background:#f1f5f9;
     min-height:100vh;
+    color:#0f172a;
 }
 
 /* TOP BAR */
@@ -195,21 +223,22 @@
 .top-bar h1{
     font-size:42px;
     font-weight:700;
-    color:#111827;
+    color:#0f172a;
 }
 
 .back-btn{
     padding:12px 18px;
-    background:#1e293b;
+    background:#2563eb;
     color:white;
     border-radius:10px;
     text-decoration:none;
     font-weight:600;
     transition:0.3s;
+    box-shadow:0 4px 12px rgba(37,99,235,0.2);
 }
 
 .back-btn:hover{
-    background:#0f172a;
+    background:#1d4ed8;
     color:white;
 }
 
@@ -219,12 +248,12 @@
     display:flex;
     gap:24px;
     align-items:center;
-    background:linear-gradient(135deg,#020617,#0f172a,#1e3a8a);
+    background:white;
     padding:28px;
-    border-radius:20px;
+    border-radius:22px;
     margin-bottom:24px;
-    color:white;
-    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    border:1px solid #dbeafe;
+    box-shadow:0 10px 30px rgba(15,23,42,0.08);
 }
 
 .profile-image{
@@ -232,26 +261,26 @@
     height:120px;
     border-radius:50%;
     object-fit:cover;
-    border:4px solid rgba(255,255,255,0.2);
+    border:5px solid #dbeafe;
 }
 
 .profile-info h2{
     margin-bottom:10px;
     font-size:38px;
-    color:white;
+    color:#0f172a;
 }
 
 .profile-info p{
     margin-bottom:8px;
-    color:#e2e8f0;
+    color:#475569;
     font-size:16px;
 }
 
 .status-badge{
     display:inline-block;
     margin-top:12px;
-    background:#16a34a;
-    color:white;
+    background:#dcfce7;
+    color:#166534;
     padding:8px 16px;
     border-radius:999px;
     font-size:14px;
@@ -269,20 +298,21 @@
 
 .card{
     background:white;
-    padding:22px;
-    border-radius:16px;
-    border:1px solid #dbeafe;
-    box-shadow:0 4px 10px rgba(0,0,0,0.05);
+    padding:24px;
+    border-radius:18px;
+    border:1px solid #e2e8f0;
+    box-shadow:0 4px 14px rgba(15,23,42,0.06);
 }
 
 .card span{
-    color:#475569;
+    color:#64748b;
     font-size:15px;
+    font-weight:600;
 }
 
 .card strong{
     display:block;
-    margin-top:12px;
+    margin-top:14px;
     font-size:40px;
     font-weight:700;
     color:#0f172a;
@@ -310,43 +340,43 @@
 }
 
 .detail-card{
-    background:linear-gradient(135deg,#020617,#0f172a,#1e3a8a);
+    background:white;
     padding:24px;
-    border-radius:18px;
-    color:white;
-    box-shadow:0 10px 25px rgba(0,0,0,0.2);
+    border-radius:20px;
+    border:1px solid #dbeafe;
+    box-shadow:0 10px 25px rgba(15,23,42,0.06);
 }
 
 .detail-card h3{
     margin-bottom:18px;
     font-size:28px;
-    color:white;
+    color:#0f172a;
 }
 
 .detail-card p{
     margin-bottom:14px;
-    color:#e2e8f0;
-    line-height:1.6;
+    color:#475569;
+    line-height:1.7;
 }
 
 .detail-card strong{
-    color:white;
+    color:#0f172a;
 }
 
 /* ACTIVITY */
 
 .activity-card{
-    background:linear-gradient(135deg,#020617,#0f172a,#1e3a8a);
+    background:white;
     padding:24px;
-    border-radius:18px;
-    color:white;
-    box-shadow:0 10px 25px rgba(0,0,0,0.2);
+    border-radius:20px;
+    border:1px solid #dbeafe;
+    box-shadow:0 10px 25px rgba(15,23,42,0.06);
 }
 
 .activity-card h3{
     margin-bottom:18px;
     font-size:30px;
-    color:white;
+    color:#0f172a;
 }
 
 .activity-card ul{
@@ -356,7 +386,7 @@
 
 .activity-card li{
     margin-bottom:14px;
-    color:#e2e8f0;
+    color:#475569;
     font-size:16px;
 }
 

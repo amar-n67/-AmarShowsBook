@@ -12,41 +12,6 @@ namespace AmarShowsBook.Controllers
 {
     public class AdminController : Controller
     {
-//         // =========================================================
-// // ADMIN TRANSACTION PAGE
-// // Enterprise Transaction Monitoring
-// // =========================================================
-
-// public IActionResult Transactions(int page = 1)
-// {
-//     const int pageSize = 50;
-
-//     var query = _context
-//         .Set<AdminTransactionViewModel>()
-//         .FromSqlRaw(@"
-//             SELECT *
-//             FROM vw_admin_transaction_complete
-//             ORDER BY created_at DESC
-//         ");
-
-//     var totalCount = query.Count();
-
-//     var transactions = query
-//         .Skip((page - 1) * pageSize)
-//         .Take(pageSize)
-//         .ToList();
-
-//     ViewBag.CurrentPage = page;
-
-//     ViewBag.TotalPages =
-//         (int)Math.Ceiling(totalCount / (double)pageSize);
-
-//     return View(transactions);
-// }
-        // =====================================================
-        // DATABASE CONTEXT
-        // =====================================================
-
         private readonly ApplicationDbContext _context;
 
         // =====================================================
@@ -173,6 +138,7 @@ FailedRefunds =
                     _context.VwWalletSummaries
                         .Sum(x => x.TotalDebits)
             };
+            
 
             // =====================================================
             // ACTIVITY LOG
@@ -573,14 +539,56 @@ var totalSpent =
     // RECENT ACTIVITY MOCK DATA
     // =====================================================
 
-    var recentActivities = new List<string>
-    {
-        "User logged in",
-        "Updated profile",
-        "Booked movie ticket",
-        "Payment completed",
-        "Viewed profile"
-    };
+    // =====================================================
+// HUMAN COMMENT:
+// LOAD REAL USER ACTIVITIES
+// =====================================================
+
+var recentActivities = new List<string>();
+
+// =====================================================
+// HUMAN COMMENT:
+// LAST 5 TRANSACTION ACTIVITIES
+// =====================================================
+
+foreach (var txn in transactions)
+{
+    recentActivities.Add(
+
+        $"Transaction {txn.TransactionStatus} | " +
+        $"₹{txn.TransactionAmount ?? 0} | " +
+        $"{txn.PaymentMethod ?? "NA"} | " +
+        $"{txn.BookingCreatedAt:dd MMM yyyy hh:mm tt}"
+
+    );
+}
+
+// =====================================================
+// HUMAN COMMENT:
+// PROFILE UPDATE TRACKING
+// =====================================================
+
+if (user.UpdatedAt != null)
+{
+    recentActivities.Add(
+
+        $"Profile updated on " +
+        $"{user.UpdatedAt:dd MMM yyyy hh:mm tt}"
+
+    );
+}
+
+// =====================================================
+// HUMAN COMMENT:
+// ACCOUNT CREATED TRACKING
+// =====================================================
+
+recentActivities.Add(
+
+    $"Account registered on " +
+    $"{user.CreatedAt:dd MMM yyyy hh:mm tt}"
+
+);
 
     // =====================================================
     // HUMAN COMMENT:
@@ -662,7 +670,22 @@ var totalSpent =
         // ACTIVITIES
         // =====================================================
 
-        RecentActivities = recentActivities
+        RecentActivities = recentActivities,
+// =====================================================
+// HUMAN COMMENT:
+// USER ACCESS PERMISSIONS
+// =====================================================
+
+UserAccess = new List<string>
+{
+    "Movie Booking",
+    "Standup Booking",
+    "Live Stream",
+    "Wallet Access",
+    "Coupon Usage",
+    "Profile Update",
+    "Ticket Validation"
+}
     };
 
     return View(model);
