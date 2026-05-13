@@ -502,48 +502,170 @@ FailedRefunds =
 // ADMIN USER DETAILS PAGE
 // =====================================================
 
+// =====================================================
+// HUMAN COMMENT:
+// FULL ADMIN USER DETAILS PAGE
+// =====================================================
+
+// =====================================================
+// HUMAN COMMENT:
+// FULL ADMIN USER DETAILS PAGE
+// =====================================================
+
 public IActionResult UserDetails(long id)
 {
     var user = _context.Users
-        .Where(x => x.Id == id)
-        .Select(x => new AdminUserDetailsViewModel
-        {
-            UserId = x.Id,
-
-            Name = x.Name,
-
-            Email = x.Email,
-
-            Mobile = x.Mobile,
-
-            Language = x.Language,
-
-            Genre = x.Genre,
-
-            Country = x.Country,
-
-            State = x.State,
-
-            District = x.District,
-
-            Address = x.Address,
-
-            Pincode = x.Pincode,
-
-            IsActive = x.is_active,
-
-            IsDeleted = x.is_deleted,
-
-            CreatedAt = x.CreatedAt
-        })
-        .FirstOrDefault();
+        .FirstOrDefault(x => x.Id == id);
 
     if (user == null)
     {
         return NotFound();
     }
 
-    return View(user);
+    // =====================================================
+    // HUMAN COMMENT:
+    // LOAD LAST 5 TRANSACTIONS
+    // =====================================================
+
+    var transactions = _context.VwBookingTransactionSummaries
+        .Where(x => x.UserId == id)
+        .OrderByDescending(x => x.BookingCreatedAt)
+        .Take(5)
+        .ToList();
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // CALCULATE TRANSACTION STATS
+    // =====================================================
+
+    var successCount =
+        transactions.Count(x =>
+            x.TransactionStatus == "SUCCESS");
+
+    var failedCount =
+        transactions.Count(x =>
+            x.TransactionStatus == "FAILED");
+
+    var pendingCount =
+        transactions.Count(x =>
+            x.TransactionStatus == "PENDING");
+
+var totalSpent =
+    transactions
+        .Where(x =>
+            x.TransactionStatus == "SUCCESS")
+        .Sum(x =>
+            x.TransactionAmount ?? 0);
+
+    var lastTransaction =
+        transactions.FirstOrDefault();
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // LOAD WALLET DATA
+    // =====================================================
+
+    var wallet = _context.VwWalletSummaries
+        .FirstOrDefault(x => x.UserId == id);
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // RECENT ACTIVITY MOCK DATA
+    // =====================================================
+
+    var recentActivities = new List<string>
+    {
+        "User logged in",
+        "Updated profile",
+        "Booked movie ticket",
+        "Payment completed",
+        "Viewed profile"
+    };
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // CREATE VIEW MODEL
+    // =====================================================
+
+    var model = new AdminUserDetailsViewModel
+    {
+        UserId = user.Id,
+
+        Name = user.Name,
+        Email = user.Email,
+        Mobile = user.Mobile,
+
+        Language = user.Language,
+        Genre = user.Genre,
+
+        Country = user.Country,
+        State = user.State,
+        District = user.District,
+
+        Address = user.Address,
+        Pincode = user.Pincode,
+
+        // =====================================================
+        // IMPORTANT FIX:
+        // NULL SAFE IMAGE
+        // =====================================================
+
+        ProfileImagePath =
+            string.IsNullOrWhiteSpace(user.ProfileImagePath)
+                ? "/images/default-user.png"
+                : user.ProfileImagePath,
+
+        IsActive = user.is_active,
+        IsDeleted = user.is_deleted,
+
+        RegisteredAt = user.CreatedAt,
+
+        LastLoginAt = user.UpdatedAt,
+
+        // =====================================================
+        // WALLET
+        // =====================================================
+
+        WalletBalance =
+            wallet?.WalletBalance ?? 0,
+
+        // =====================================================
+        // TRANSACTION SUMMARY
+        // =====================================================
+
+        TotalTransactions = transactions.Count,
+
+        SuccessTransactions = successCount,
+
+        FailedTransactions = failedCount,
+
+        PendingTransactions = pendingCount,
+
+        TotalSpent = totalSpent,
+
+        LastTransactionRef =
+            lastTransaction?.TransactionRef ?? "-",
+
+        LastTransactionStatus =
+            lastTransaction?.TransactionStatus ?? "-",
+
+        LastTransactionDate =
+            lastTransaction?.BookingCreatedAt,
+
+        // =====================================================
+        // LAST 5 TRANSACTIONS
+        // =====================================================
+
+        LastTransactions = transactions,
+
+        // =====================================================
+        // ACTIVITIES
+        // =====================================================
+
+        RecentActivities = recentActivities
+    };
+
+    return View(model);
 }
 // =====================================================
 // HUMAN COMMENT:

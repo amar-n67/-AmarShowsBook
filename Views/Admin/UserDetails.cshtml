@@ -1,53 +1,280 @@
-@model AmarShowsBook.Models.User
+@model AmarShowsBook.Models.ViewModels.AdminUserDetailsViewModel
 
 @{
-    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "User Details";
 }
 
-<section class="admin-page">
-    <div class="admin-page-header">
-        <div>
-            <h1>User Details</h1>
-            <p>Profile, contact, address, and audit information.</p>
-        </div>
-        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
-    </div>
+<section class="admin-user-page">
 
-<div class="card p-4">
+    <div class="top-bar">
 
-    <div class="row">
+        <h1>User Details</h1>
 
-        <div class="col-md-4">
+        <a href="/Admin/Users"
+           class="back-btn">
 
-            <img src="@Model.ProfileImagePath"
-                 class="img-fluid rounded" />
+            ← Back Users
 
-        </div>
-
-        <div class="col-md-8">
-
-            <h3>@Model.Name</h3>
-
-            <p>Email: @Model.Email</p>
-
-            <p>Mobile: @Model.Mobile</p>
-
-            <p>Genre: @Model.Genre</p>
-
-            <p>Language: @Model.Language</p>
-
-            <p>Country: @Model.Country</p>
-
-            <p>State: @Model.State</p>
-
-            <p>District: @Model.District</p>
-
-            <p>Created: @Model.CreatedAt</p>
-
-        </div>
+        </a>
 
     </div>
 
-</div>
+    <!-- PROFILE SECTION -->
+
+    <div class="profile-card">
+
+        <img src="@(string.IsNullOrWhiteSpace(Model.ProfileImagePath)
+            ? "/images/default-user.png"
+            : Model.ProfileImagePath)"
+             class="profile-image" />
+
+        <div class="profile-info">
+
+            <h2>@Model.Name</h2>
+
+            <p>@Model.Email</p>
+
+            <p>@Model.Mobile</p>
+
+            <span class="status-badge">
+
+                @(Model.IsActive ? "ACTIVE" : "DISABLED")
+
+            </span>
+
+        </div>
+
+    </div>
+
+    <!-- STATS -->
+
+    <div class="stats-grid">
+
+        <div class="card">
+            <span>Wallet</span>
+            <strong>₹@Model.WalletBalance</strong>
+        </div>
+
+        <div class="card">
+            <span>Total Transactions</span>
+            <strong>@Model.TotalTransactions</strong>
+        </div>
+
+        <div class="card success">
+            <span>Success</span>
+            <strong>@Model.SuccessTransactions</strong>
+        </div>
+
+        <div class="card danger">
+            <span>Failed</span>
+            <strong>@Model.FailedTransactions</strong>
+        </div>
+
+        <div class="card warning">
+            <span>Pending</span>
+            <strong>@Model.PendingTransactions</strong>
+        </div>
+
+        <div class="card">
+            <span>Total Spent</span>
+            <strong>₹@Model.TotalSpent</strong>
+        </div>
+
+    </div>
+
+    <!-- USER INFO -->
+
+    <div class="details-grid">
+
+        <div class="detail-card">
+
+            <h3>Account Information</h3>
+
+            <p><strong>Registered:</strong> @Model.RegisteredAt</p>
+
+            <p><strong>Last Login:</strong> @Model.LastLoginAt</p>
+
+            <p><strong>Language:</strong> @Model.Language</p>
+
+            <p><strong>Genre:</strong> @Model.Genre</p>
+
+        </div>
+
+        <div class="detail-card">
+
+            <h3>Address</h3>
+
+            <p>@Model.Address</p>
+
+            <p>@Model.District</p>
+
+            <p>@Model.State</p>
+
+            <p>@Model.Country</p>
+
+            <p>@Model.Pincode</p>
+
+        </div>
+
+        <div class="detail-card">
+
+            <h3>Last Transaction</h3>
+
+            <p>
+                <strong>Ref:</strong>
+                @Model.LastTransactionRef
+            </p>
+
+            <p>
+                <strong>Status:</strong>
+                @Model.LastTransactionStatus
+            </p>
+
+            <p>
+                <strong>Date:</strong>
+                @Model.LastTransactionDate
+            </p>
+
+        </div>
+
+    </div>
+
+    <!-- ACTIVITY -->
+
+    <div class="activity-card">
+
+        <h3>Recent Activity</h3>
+
+        <ul>
+
+            @foreach (var activity in Model.RecentActivities)
+            {
+                <li>@activity</li>
+            }
+
+        </ul>
+
+    </div>
+
 </section>
+
+<style>
+
+.admin-user-page{
+    padding:24px;
+}
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:24px;
+}
+
+.back-btn{
+    padding:10px 14px;
+    background:#1e293b;
+    color:white;
+    border-radius:8px;
+    text-decoration:none;
+}
+
+.profile-card{
+    display:flex;
+    gap:24px;
+    background:#111827;
+    padding:24px;
+    border-radius:16px;
+    margin-bottom:24px;
+}
+
+.profile-image{
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    object-fit:cover;
+}
+
+.profile-info h2{
+    margin-bottom:8px;
+}
+
+.status-badge{
+    display:inline-block;
+    margin-top:10px;
+    background:#14532d;
+    padding:6px 12px;
+    border-radius:999px;
+}
+
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-bottom:24px;
+}
+
+.card{
+    background:#111827;
+    padding:20px;
+    border-radius:14px;
+}
+
+.card strong{
+    display:block;
+    margin-top:10px;
+    font-size:24px;
+}
+
+.success{
+    border-left:4px solid #22c55e;
+}
+
+.danger{
+    border-left:4px solid #ef4444;
+}
+
+.warning{
+    border-left:4px solid #f59e0b;
+}
+
+.details-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-bottom:24px;
+}
+
+.detail-card{
+    background:#111827;
+    padding:20px;
+    border-radius:14px;
+}
+
+.activity-card{
+    background:#111827;
+    padding:20px;
+    border-radius:14px;
+}
+
+.activity-card ul{
+    margin-top:14px;
+}
+
+.activity-card li{
+    margin-bottom:10px;
+}
+
+@@media(max-width:900px){
+
+    .stats-grid,
+    .details-grid{
+        grid-template-columns:1fr;
+    }
+
+    .profile-card{
+        flex-direction:column;
+    }
+
+}
+
+</style>
