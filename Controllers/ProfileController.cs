@@ -5,7 +5,8 @@ using AmarShowsBook.Data;
 using AmarShowsBook.Models;                             
 using System.IO;        // Added for file handling
 using System.Linq;      // Added for LINQ queries
-using System.Text.RegularExpressions;                   
+using System.Text.RegularExpressions;     
+using Microsoft.EntityFrameworkCore;              
 
 public class ProfileController : Controller
 {
@@ -447,5 +448,112 @@ user.UpdatedBy = currentUser ?? "System";
     return RedirectToAction("MyProfile");
 }
 //=======================================end of added activity log for password change failure =================
+    // =====================================================
+// HUMAN COMMENT:
+// CURRENT USER TRANSACTION HISTORY PAGE
+// SHOWS LOGGED-IN USER PAYMENT HISTORY
+// =====================================================
+
+public IActionResult Transactions()
+{
+    // =====================================================
+    // HUMAN COMMENT:
+    // GET CURRENT LOGGED-IN USER EMAIL
+    // =====================================================
+
+    var userEmail =
+        HttpContext.Session.GetString("UserEmail");
+
+    if (string.IsNullOrWhiteSpace(userEmail))
+    {
+        return RedirectToAction("Login", "Auth");
     }
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // LOAD TRANSACTIONS FROM DATABASE
+    // =====================================================
+
+    var transactions = _context.Transactions
+
+        .Include(x => x.User)
+
+        .Include(x => x.Booking)
+
+        .Where(x =>
+            x.User.Email == userEmail)
+
+        .OrderByDescending(x => x.CreatedAt)
+
+        .Select(x => new VwBookingTransactionSummary
+        {
+            TransactionId = x.Id,
+
+            TransactionRef = x.TransactionRef,
+
+            TransactionAmount = x.Amount,
+
+            Currency =
+                x.Currency ?? "INR",
+
+            TransactionStatus =
+                x.Status,
+
+            PaymentMethod =
+                x.PaymentMethod ?? "-",
+
+            GatewayName =
+                x.GatewayName ?? "-",
+
+            FailureReason =
+                x.FailureReason,
+
+            CompletedAt =
+                x.CompletedAt,
+
+            BookingId =
+                x.BookingId ?? 0,
+
+            BookingRef =
+                x.Booking != null
+                    ? x.Booking.BookingRef
+                    : "-",
+
+            BookingStatus =
+                x.Booking != null
+                    ? x.Booking.Status
+                    : "-",
+
+            UserId = x.UserId,
+
+            UserName =
+                x.User.Name,
+
+            UserEmail =
+                x.User.Email,
+
+            ShowTitle = "-",
+
+            ShowType = "-",
+
+            TotalAmount =
+                x.Amount,
+
+            IsPaymentError =
+                x.Status != "SUCCESS",
+
+            BookingCreatedAt =
+                x.CreatedAt ?? DateTime.Now
+        })
+
+        .ToList();
+
+    // =====================================================
+    // HUMAN COMMENT:
+    // RETURN TRANSACTION PAGE
+    // =====================================================
+
+    return View(transactions);
+}
+   
 }

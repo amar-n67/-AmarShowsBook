@@ -1,0 +1,46 @@
+@model List<AmarShowsBook.Models.VwBookingTransactionSummary>
+
+<h2>My Transactions</h2>
+
+<table class="table">
+
+    <thead>
+        <tr>
+            <th>Ref</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Method</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+
+            <td>@item.TransactionRef</td>
+
+            <td>
+                ₹@item.TransactionAmount
+            </td>
+
+            <td>
+                @item.TransactionStatus
+            </td>
+
+            <td>
+                @item.PaymentMethod
+            </td>
+
+            <td>
+                @item.BookingCreatedAt
+            </td>
+
+        </tr>
+    }
+
+    </tbody>
+
+</table>
