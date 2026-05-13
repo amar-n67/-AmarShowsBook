@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "My Bookings";
-    var totalSpend = Model.Sum(x => x.PayableAmount);
+    var totalSpend = Model.Sum(x => x.TotalAmount);
     var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" || x.PaymentStatus == "SUCCESS");
 }
 
@@ -48,7 +48,7 @@
                     <div class="booking-meta">
                         <div>
                             <span>Amount Paid</span>
-                            <strong>₹@booking.PayableAmount.ToString("N2")</strong>
+                            <strong>₹@booking.TotalAmount.ToString("N2")</strong>
                         </div>
                         <div>
                             <span>Payment</span>
@@ -57,7 +57,9 @@
                     </div>
 
                     <p class="booking-date">
-                        @(booking.BookedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "N/A")
+                       <p class="booking-date">
+    @booking.BookedAt.ToString("dd MMM yyyy")
+</p>
                     </p>
 
                 </article>

@@ -54,23 +54,27 @@ namespace AmarShowsBook.Controllers
         // ======================
         // My Bookings Page
         // ======================
-        public IActionResult MyBookings()
-        {
-            var userEmail = HttpContext.Session.GetString("UserEmail");
+public IActionResult MyBookings()
+{
+    var userEmail =
+        HttpContext.Session.GetString("UserEmail");
 
-            // Redirect guest users
-            if (string.IsNullOrWhiteSpace(userEmail))
-            {
-                return RedirectToAction("Login", "Auth");
-            }
+    if (string.IsNullOrWhiteSpace(userEmail))
+    {
+        return RedirectToAction("Login", "Auth");
+    }
 
-            var bookings = _context
-                .VwBookingCompleteDetails
-                .Where(x => x.UserEmail == userEmail)
-                .OrderByDescending(x => x.BookedAt)
-                .ToList();
+    // =====================================================
+    // HUMAN COMMENT:
+    // Fetch bookings using proper PostgreSQL column mapping
+    // =====================================================
 
-            return View(bookings);
-        }
+    var bookings = _context.VwBookingCompleteDetails
+        .Where(v => v.UserEmail == userEmail)
+        .OrderByDescending(v => v.BookedAt)
+        .ToList();
+
+    return View(bookings);
+}
     }
 }

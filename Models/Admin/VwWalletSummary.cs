@@ -10,8 +10,10 @@ public class VwWalletSummary
     [Column("wallet_id")]
     public long WalletId { get; set; }
 
+    // =====================================================
     // HUMAN COMMENT:
     // USER BASIC DETAILS
+    // =====================================================
 
     [Column("user_id")]
     public long UserId { get; set; }
@@ -22,8 +24,10 @@ public class VwWalletSummary
     [Column("user_email")]
     public string? UserEmail { get; set; }
 
+    // =====================================================
     // HUMAN COMMENT:
     // WALLET MONEY DETAILS
+    // =====================================================
 
     [Column("wallet_balance")]
     public decimal WalletBalance { get; set; }
@@ -37,8 +41,10 @@ public class VwWalletSummary
     [Column("total_debits")]
     public decimal TotalDebits { get; set; }
 
+    // =====================================================
     // HUMAN COMMENT:
     // WALLET STATUS
+    // =====================================================
 
     [Column("wallet_status")]
     public string? WalletStatus { get; set; }

@@ -1,36 +1,61 @@
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AmarShowsBook.Models
+namespace AmarShowsBook.Models;
+
+public class VwBookingCompleteDetails
 {
-    // SQL analytics view for booking dashboard
-    [Keyless]
-    public class VwBookingCompleteDetails
-    {
-        public int BookingId { get; set; }
+    [Key]
+    [Column("booking_id")]
+    public long BookingId { get; set; }
 
-        public string? BookingRef { get; set; }
+    // =====================================================
+    // HUMAN COMMENT:
+    // PostgreSQL column booked_at mapped to C# PascalCase
+    // =====================================================
 
-        public string? UserEmail { get; set; }
+    [Column("booked_at")]
+    public DateTime BookedAt { get; set; }
 
-        public string? ShowTitle { get; set; }
+    [Column("booking_ref")]
+    public string BookingRef { get; set; } = string.Empty;
 
-        public string? BookingStatus { get; set; }
+    [Column("booking_status")]
+    public string BookingStatus { get; set; } = string.Empty;
 
-        public string? PaymentStatus { get; set; }
+    [Column("seat_numbers")]
+    public string SeatNumbers { get; set; } = string.Empty;
 
-        public decimal PayableAmount { get; set; }
+    [Column("show_title")]
+    public string ShowTitle { get; set; } = string.Empty;
 
-        // Human readable booking timestamp
-        // Used in booking history + admin analytics
-        public DateTime? BookedAt { get; set; }
+    [Column("show_type")]
+    public string ShowType { get; set; } = string.Empty;
 
-        // Computed SQL error flag
-        // 1 = failed booking
-        // 0 = successful booking
-       // public int IsError { get; set; }
-        // Maps SQL snake_case column to C# PascalCase property
-[Column("is_error")]
-public int IsError { get; set; }
-    }
+    [Column("start_time")]
+    public DateTime StartTime { get; set; }
+
+    [Column("total_amount")]
+    public decimal TotalAmount { get; set; }
+
+    [Column("payment_status")]
+    public string PaymentStatus { get; set; } = string.Empty;
+
+    [Column("payment_method")]
+    public string PaymentMethod { get; set; } = string.Empty;
+
+    [Column("user_id")]
+    public long UserId { get; set; }
+
+    [Column("user_name")]
+    public string UserName { get; set; } = string.Empty;
+
+    [Column("user_email")]
+    public string UserEmail { get; set; } = string.Empty;
+
+    [Column("location_name")]
+    public string LocationName { get; set; } = string.Empty;
+
+    [Column("is_error")]
+    public int IsError { get; set; }
 }
