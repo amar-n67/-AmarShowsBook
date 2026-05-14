@@ -240,7 +240,8 @@
                         <th>Status</th>
                         <th>Method</th>
                         <th>Requested</th>
-                        <th class="text-center">Actions</th>
+                        <th>Workflow Status</th>
+                        <th>Actions</th>
                         <th class="text-center">Workflow Actions</th>
                     </tr>
                 </thead>
@@ -300,6 +301,32 @@
                                     @item.RequestedAt?.ToString("hh:mm tt")
                                 </span>
                             </td>
+                            <td>
+    @if (item.RefundStatus == "SUCCESS")
+    {
+        <span class="badge bg-success px-3 py-2">
+            ✅ Approved by Admin
+        </span>
+    }
+    else if (item.RefundStatus == "REJECTED")
+    {
+        <span class="badge bg-danger px-3 py-2">
+            ❌ Rejected by Admin
+        </span>
+    }
+    else if (item.RefundStatus == "RETRY")
+    {
+        <span class="badge bg-warning text-dark px-3 py-2">
+            🔄 Retry Initiated
+        </span>
+    }
+    else
+    {
+        <span class="badge bg-secondary px-3 py-2">
+            ⏳ Pending Review
+        </span>
+    }
+</td>
                             <td class="text-center">
                                 <a
                                     asp-action="RefundDetails"
