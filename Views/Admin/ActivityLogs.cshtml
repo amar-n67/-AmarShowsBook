@@ -1,32 +1,43 @@
+
 @model List<AmarShowsBook.Models.Admin.VwEnterpriseActivityLog>
 
 @{
-    var currentPage = ViewBag.CurrentPage ?? 1;
-    var totalPages = ViewBag.TotalPages ?? 1;
+    ViewData["Title"] = "Activity Logs";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+
+    int totalPages = ViewBag.TotalPages ?? 1;
+
+    int rowNo = ((currentPage - 1) * 50) + 1;
 }
 
 <section class="activity-page">
 
-    <div class="top-bar">
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         PAGE HEADER
+    -->
+    <!-- ===================================================== -->
+
+    <div class="page-header">
 
         <div>
 
             <h1>Enterprise Activity Logs</h1>
 
             <p>
-                Complete system monitoring
+                Complete system monitoring and audit center
             </p>
 
         </div>
 
-        <a href="/Admin/Index"
-           class="back-btn">
-
-            ← Back Dashboard
-
-        </a>
-
     </div>
+
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         SEARCH BAR
+    -->
+    <!-- ===================================================== -->
 
     <div class="search-box">
 
@@ -38,15 +49,22 @@
 
     </div>
 
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         LOG TABLE
+    -->
+    <!-- ===================================================== -->
+
     <div class="table-wrapper">
 
-        <table
-            class="activity-table"
-            id="activityTable">
+        <table class="log-table"
+               id="logsTable">
 
             <thead>
 
                 <tr>
+
+                    <th>#</th>
 
                     <th>Time</th>
 
@@ -56,11 +74,11 @@
 
                     <th>User</th>
 
-                    <th>Reference</th>
-
                     <th>Status</th>
 
                     <th>Description</th>
+
+                    <th>IP</th>
 
                     <th>Error</th>
 
@@ -70,101 +88,99 @@
 
             <tbody>
 
-            @foreach(var item in Model)
+            @if (!Model.Any())
             {
                 <tr>
 
-                    <td>
+                    <td colspan="9"
+                        class="empty-row">
 
-                        @item.ActivityTime
-                            .ToString("dd MMM yyyy")
-
-                        <div class="sub-text">
-
-                            @item.ActivityTime
-                                .ToString("hh:mm tt")
-
-                        </div>
-
-                    </td>
-
-                    <td>
-
-                        <span class="module-badge">
-
-                            @(item.Module ?? "NA")
-
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        @(item.Action ?? "NA")
-
-                    </td>
-
-                    <td>
-
-                        <strong>
-
-                            @(string.IsNullOrWhiteSpace(item.UserName)
-                                ? "NA"
-                                : item.UserName)
-
-                        </strong>
-
-                        <div class="sub-text">
-
-                            @(string.IsNullOrWhiteSpace(item.UserEmail)
-                                ? "NA"
-                                : item.UserEmail)
-
-                        </div>
-
-                    </td>
-
-                    <td>
-
-                        @(string.IsNullOrWhiteSpace(item.ReferenceNo)
-                            ? "NA"
-                            : item.ReferenceNo)
-
-                    </td>
-
-                    <td>
-
-                        <span class="
-                            status-badge
-                            @(item.Status == "SUCCESS"
-                                ? "success"
-                                : item.Status == "FAILED"
-                                    ? "danger"
-                                    : "warning")">
-
-                            @(item.Status ?? "NA")
-
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        @(string.IsNullOrWhiteSpace(item.Description)
-                            ? "NA"
-                            : item.Description)
-
-                    </td>
-
-                    <td class="error-text">
-
-                        @(string.IsNullOrWhiteSpace(item.ErrorMessage)
-                            ? "-"
-                            : item.ErrorMessage)
+                        No logs found
 
                     </td>
 
                 </tr>
+            }
+            else
+            {
+                @foreach (var item in Model)
+                {
+                    <tr>
+
+                        <td>@rowNo</td>
+
+                        <td>
+
+                            @item.ActivityTime
+                                .ToString("dd MMM yyyy")
+
+                            <div class="sub-text">
+
+                                @item.ActivityTime
+                                    .ToString("hh:mm tt")
+
+                            </div>
+
+                        </td>
+
+                        <td>@item.Module</td>
+
+                        <td>@item.ActionType</td>
+
+                        <td>
+
+                            <strong>
+                                @item.UserName
+                            </strong>
+
+                            <div class="sub-text">
+
+                                @item.UserEmail
+
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            <span class="
+                                badge
+                                @(item.Status == "SUCCESS"
+                                    ? "success"
+                                    : item.Status == "FAILED"
+                                        ? "danger"
+                                        : "warning")">
+
+                                @item.Status
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            @item.Description
+
+                        </td>
+
+                        <td>
+
+                            @item.IpAddress
+
+                        </td>
+
+                        <td>
+
+                            @(string.IsNullOrWhiteSpace(item.ErrorMessage)
+                                ? "NA"
+                                : item.ErrorMessage)
+
+                        </td>
+
+                    </tr>
+
+                    rowNo++;
+                }
             }
 
             </tbody>
@@ -173,11 +189,15 @@
 
     </div>
 
-    <!-- PAGINATION -->
+    <!-- ===================================================== -->
+    <!-- HUMAN COMMENT:
+         PAGINATION
+    -->
+    <!-- ===================================================== -->
 
-    <div class="pagination">
+    <div class="pagination-area">
 
-        @for(int i = 1; i <= totalPages; i++)
+        @for (int i = 1; i <= totalPages; i++)
         {
             <a href="/Admin/ActivityLogs?page=@i"
                class="page-btn @(i == currentPage ? "active" : "")">
@@ -191,90 +211,57 @@
 
 </section>
 
-<script>
-
-function searchLogs(){
-
-    let input =
-        document.getElementById("logSearch");
-
-    let filter =
-        input.value.toLowerCase();
-
-    let rows =
-        document.querySelectorAll(
-            "#activityTable tbody tr"
-        );
-
-    rows.forEach(row => {
-
-        row.style.display =
-            row.innerText
-                .toLowerCase()
-                .includes(filter)
-                    ? ""
-                    : "none";
-    });
-}
-
-</script>
 <style>
 
 .activity-page{
     padding:24px;
-    background:#f8fafc;
-    min-height:100vh;
 }
 
-.top-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.page-header{
     margin-bottom:24px;
 }
 
-.top-bar h1{
-    font-size:40px;
-    color:#0f172a;
+.page-header h1{
+    font-size:38px;
+    font-weight:700;
 }
 
-.back-btn{
-    background:#0f172a;
-    color:white;
-    padding:12px 18px;
-    border-radius:10px;
-    text-decoration:none;
+.page-header p{
+    color:#64748b;
 }
 
 .search-box{
-    margin-bottom:20px;
+    margin-bottom:18px;
 }
 
 .search-box input{
     width:100%;
     padding:14px;
-    border-radius:12px;
+    border-radius:10px;
     border:1px solid #cbd5e1;
 }
 
 .table-wrapper{
     overflow:auto;
-    background:white;
-    border-radius:18px;
+    border-radius:12px;
 }
 
-.activity-table{
+.log-table{
     width:100%;
     border-collapse:collapse;
+    background:white;
 }
 
-.activity-table th{
+.log-table thead{
     background:#e2e8f0;
+}
+
+.log-table th{
     padding:16px;
     text-align:left;
 }
 
-.activity-table td{
+.log-table td{
     padding:16px;
     border-top:1px solid #e2e8f0;
     vertical-align:top;
@@ -286,16 +273,7 @@ function searchLogs(){
     margin-top:4px;
 }
 
-.module-badge{
-    background:#dbeafe;
-    color:#1e40af;
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
-}
-
-.status-badge{
+.badge{
     padding:6px 10px;
     border-radius:999px;
     font-size:12px;
@@ -317,12 +295,7 @@ function searchLogs(){
     color:#92400e;
 }
 
-.error-text{
-    color:#dc2626;
-    max-width:300px;
-}
-
-.pagination{
+.pagination-area{
     margin-top:24px;
     display:flex;
     gap:10px;
@@ -331,10 +304,10 @@ function searchLogs(){
 
 .page-btn{
     padding:10px 14px;
-    background:white;
     border-radius:8px;
+    background:#e2e8f0;
     text-decoration:none;
-    color:#0f172a;
+    color:black;
 }
 
 .page-btn.active{
@@ -342,4 +315,40 @@ function searchLogs(){
     color:white;
 }
 
+.empty-row{
+    text-align:center;
+    padding:40px;
+    color:#64748b;
+}
+
 </style>
+
+<script>
+
+function searchLogs() {
+
+    let input =
+        document.getElementById("logSearch");
+
+    let filter =
+        input.value.toLowerCase();
+
+    let table =
+        document.getElementById("logsTable");
+
+    let tr =
+        table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+
+        let txt =
+            tr[i].innerText.toLowerCase();
+
+        tr[i].style.display =
+            txt.includes(filter)
+                ? ""
+                : "none";
+    }
+}
+
+</script>

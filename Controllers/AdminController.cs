@@ -4,7 +4,7 @@ using AmarShowsBook.Models.Admin;
 using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
 using AmarShowsBook.Helpers;
-
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -422,36 +422,6 @@ FailedRefunds =
             }
         }
 
-        // =====================================================
-        // ACTIVITY LOGS PAGE
-        // =====================================================
-
-        public async Task<IActionResult> ActivityLogs()
-        {
-            try
-            {
-                // Human Comment:
-                // Load latest 100 logs
-
-                var logs =
-                    await _context.ActivityLogs
-                        .AsNoTracking()
-                        .OrderByDescending(x => x.CreatedAt)
-                        .Take(100)
-                        .ToListAsync();
-
-                return View(logs);
-            }
-            catch
-            {
-                return View(new List<ActivityLog>());
-            }
-        }
-        // =====================================================
-// HUMAN COMMENT:
-// ENTERPRISE ACTIVITY LOGS PAGE
-// =====================================================
-
 public IActionResult ActivityLogs(
     int page = 1)
 {
@@ -532,12 +502,11 @@ public IActionResult UserDetails(long id)
         transactions.Count(x =>
             x.TransactionStatus == "PENDING");
 
-    var totalSpent =
-        transactions
-            .Where(x =>
-                x.TransactionStatus == "SUCCESS")
-            .Sum(x =>
-                x.TransactionAmount ?? 0);
+    decimal totalSpent = transactions.Any()
+    ? transactions
+        .Where(x => x.TransactionStatus == "SUCCESS")
+        .Sum(x => x.TransactionAmount ?? 0)
+    : 0;
 
     var lastTransaction =
         transactions.FirstOrDefault();
@@ -661,7 +630,8 @@ public IActionResult UserDetails(long id)
 
         RegisteredAt = user.CreatedAt,
 
-        LastLoginAt = user.UpdatedAt,
+        LastLoginAt =
+    user.UpdatedAt ?? user.CreatedAt,
 
         // =====================================================
         // HUMAN COMMENT:

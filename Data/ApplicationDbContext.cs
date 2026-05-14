@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using AmarShowsBook.Models.ViewModels;
+
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.Admin;
+using AmarShowsBook.Models.ViewModels;
 
 namespace AmarShowsBook.Data
 {
@@ -22,13 +23,11 @@ namespace AmarShowsBook.Data
         // =====================================================
 
         public DbSet<User> Users { get; set; }
-        public DbSet<DeletedUser> DeletedUsers { get; set; }
-// =====================================================
-// HUMAN COMMENT:
-// ENTERPRISE ACTIVITY LOG VIEW
-// =====================================================
 
-public DbSet<VwEnterpriseActivityLog>VwEnterpriseActivityLogs { get; set; }
+        public DbSet<DeletedUser> DeletedUsers { get; set; }
+
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
+
         public DbSet<Movie> Movies { get; set; }
 
         public DbSet<StandupShow> StandupShows { get; set; }
@@ -36,12 +35,6 @@ public DbSet<VwEnterpriseActivityLog>VwEnterpriseActivityLogs { get; set; }
         public DbSet<LiveStream> LiveStreams { get; set; }
 
         public DbSet<Location> Locations { get; set; }
-        // =====================================================
-// HUMAN COMMENT:
-// USER ROLE ACCESS MAPPING TABLE
-// =====================================================
-
-public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
 
         public DbSet<ShowSchedule> ShowSchedules { get; set; }
 
@@ -54,22 +47,21 @@ public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
         public DbSet<Region> Regions { get; set; }
 
         // =====================================================
-        // RBAC TABLES
+        // USER ROLE ACCESS TABLES
         // =====================================================
+
+        public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
 
         public DbSet<Role> Roles { get; set; }
 
         public DbSet<Permission> Permissions { get; set; }
 
         // =====================================================
-        // ACTIVITY LOG TABLE
+        // ADMIN SQL VIEW TABLES
         // =====================================================
 
-        public DbSet<ActivityLog> ActivityLogs { get; set; }
-
-        // =====================================================
-        // ADMIN DASHBOARD SQL VIEWS
-        // =====================================================
+        public DbSet<VwEnterpriseActivityLog>
+            VwEnterpriseActivityLogs { get; set; }
 
         public DbSet<VwBookingCompleteDetails>
             VwBookingCompleteDetails { get; set; }
@@ -100,11 +92,13 @@ public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
 
         public DbSet<VwAdminUserManagement>
             VwAdminUserManagement { get; set; }
-            // =========================================================
-// HUMAN COMMENT:
-// Admin transaction monitoring view
-// =========================================================
-public DbSet<AdminTransactionViewModel> AdminTransactions { get; set; }
+
+        // =====================================================
+        // ADMIN TRANSACTION VIEW
+        // =====================================================
+
+        public DbSet<AdminTransactionViewModel>
+            AdminTransactions { get; set; }
 
         // =====================================================
         // MODEL CONFIGURATION
@@ -114,46 +108,6 @@ public DbSet<AdminTransactionViewModel> AdminTransactions { get; set; }
             ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            // =====================================================
-// HUMAN COMMENT:
-// ENTERPRISE ACTIVITY LOG VIEW
-// =====================================================
-
-modelBuilder.Entity<VwEnterpriseActivityLog>()
-    .HasNoKey()
-    .ToView("vw_enterprise_activity_logs");
-// =========================================================
-
-// PostgreSQL admin transaction reporting view
-// =========================================================
-modelBuilder.Entity<AdminTransactionViewModel>()
-    .HasNoKey()
-    .ToView("vw_admin_transaction_complete");
-
-            // =====================================================
-            // SHOW SCHEDULE RELATIONSHIPS
-            // =====================================================
-
-            // Human Comment:
-            // Prevent cascade delete issues
-
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(s => s.Movie)
-                .WithMany()
-                .HasForeignKey(s => s.MovieId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(s => s.StandupShow)
-                .WithMany()
-                .HasForeignKey(s => s.StandupShowId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(s => s.LiveStream)
-                .WithMany()
-                .HasForeignKey(s => s.LiveStreamId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // =====================================================
             // ACTIVITY LOG TABLE
@@ -163,12 +117,46 @@ modelBuilder.Entity<AdminTransactionViewModel>()
                 .ToTable("activity_logs");
 
             // =====================================================
-            // ADMIN SQL VIEW MAPPINGS
+            // ENTERPRISE ACTIVITY LOG VIEW
             // =====================================================
 
-            // Human Comment:
-            // PostgreSQL views must use:
-            // HasNoKey + ToView
+            modelBuilder.Entity<VwEnterpriseActivityLog>()
+                .HasNoKey()
+                .ToView("vw_enterprise_activity_logs");
+
+            // =====================================================
+            // ADMIN TRANSACTION VIEW
+            // =====================================================
+
+            modelBuilder.Entity<AdminTransactionViewModel>()
+                .HasNoKey()
+                .ToView("vw_admin_transaction_complete");
+
+            // =====================================================
+            // SHOW SCHEDULE RELATIONSHIPS
+            // =====================================================
+
+            modelBuilder.Entity<ShowSchedule>()
+                .HasOne(x => x.Movie)
+                .WithMany()
+                .HasForeignKey(x => x.MovieId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ShowSchedule>()
+                .HasOne(x => x.StandupShow)
+                .WithMany()
+                .HasForeignKey(x => x.StandupShowId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ShowSchedule>()
+                .HasOne(x => x.LiveStream)
+                .WithMany()
+                .HasForeignKey(x => x.LiveStreamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // =====================================================
+            // ADMIN SQL VIEW MAPPINGS
+            // =====================================================
 
             modelBuilder.Entity<VwBookingCompleteDetails>()
                 .HasNoKey()
@@ -209,7 +197,6 @@ modelBuilder.Entity<AdminTransactionViewModel>()
             modelBuilder.Entity<VwAdminUserManagement>()
                 .HasNoKey()
                 .ToView("vw_admin_user_management");
-                
         }
     }
 }
