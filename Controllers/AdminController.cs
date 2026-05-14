@@ -449,24 +449,33 @@ FailedRefunds =
         }
         // =====================================================
 // HUMAN COMMENT:
-// ADMIN USER DETAILS PAGE
+// ENTERPRISE ACTIVITY LOGS PAGE
 // =====================================================
 
-// =====================================================
-// HUMAN COMMENT:
-// FULL ADMIN USER DETAILS PAGE
-// =====================================================
+public IActionResult ActivityLogs(
+    int page = 1)
+{
+    int pageSize = 50;
 
-// =====================================================
-// HUMAN COMMENT:
-// FULL ADMIN USER DETAILS PAGE
-// =====================================================
+    var query = _context
+        .VwEnterpriseActivityLogs
+        .OrderByDescending(x => x.ActivityTime);
 
-// =====================================================
-// HUMAN COMMENT:
-// FULL ADMIN USER DETAILS PAGE
-// =====================================================
+    int totalCount = query.Count();
 
+    var logs = query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    ViewBag.CurrentPage = page;
+
+    ViewBag.TotalPages =
+        (int)Math.Ceiling(
+            totalCount / (double)pageSize);
+
+    return View(logs);
+}
 public IActionResult UserDetails(long id)
 {
     var user = _context.Users

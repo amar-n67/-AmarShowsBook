@@ -23,7 +23,12 @@ namespace AmarShowsBook.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<DeletedUser> DeletedUsers { get; set; }
+// =====================================================
+// HUMAN COMMENT:
+// ENTERPRISE ACTIVITY LOG VIEW
+// =====================================================
 
+public DbSet<VwEnterpriseActivityLog>VwEnterpriseActivityLogs { get; set; }
         public DbSet<Movie> Movies { get; set; }
 
         public DbSet<StandupShow> StandupShows { get; set; }
@@ -109,6 +114,14 @@ public DbSet<AdminTransactionViewModel> AdminTransactions { get; set; }
             ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            // =====================================================
+// HUMAN COMMENT:
+// ENTERPRISE ACTIVITY LOG VIEW
+// =====================================================
+
+modelBuilder.Entity<VwEnterpriseActivityLog>()
+    .HasNoKey()
+    .ToView("vw_enterprise_activity_logs");
 // =========================================================
 
 // PostgreSQL admin transaction reporting view

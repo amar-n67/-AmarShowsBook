@@ -1,45 +1,345 @@
-@model IEnumerable<AmarShowsBook.Models.Admin.ActivityLog>
+@model List<AmarShowsBook.Models.Admin.VwEnterpriseActivityLog>
 
 @{
-    Layout = "~/Views/Shared/_AdminLayout.cshtml";
-    ViewData["Title"] = "Activity Logs";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
 }
 
-<section class="admin-page">
-    <div class="admin-page-header">
+<section class="activity-page">
+
+    <div class="top-bar">
+
         <div>
-            <h1>Activity Logs</h1>
-            <p>Latest administrative events and system activity.</p>
+
+            <h1>Enterprise Activity Logs</h1>
+
+            <p>
+                Complete system monitoring
+            </p>
+
         </div>
-        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+
+        <a href="/Admin/Index"
+           class="back-btn">
+
+            ← Back Dashboard
+
+        </a>
+
     </div>
 
-<div class="table-wrapper">
-<table class="table admin-table">
+    <div class="search-box">
 
-<thead>
-<tr>
-    <th>Action</th>
-    <th>Module</th>
-    <th>Status</th>
-    <th>Created</th>
-</tr>
-</thead>
+        <input
+            type="text"
+            id="logSearch"
+            placeholder="Search logs..."
+            onkeyup="searchLogs()" />
 
-<tbody>
+    </div>
 
-@foreach (var item in Model)
-{
-    <tr>
-        <td>@item.Action</td>
-        <td>@item.Module</td>
-        <td>@item.Status</td>
-        <td>@item.CreatedAt</td>
-    </tr>
+    <div class="table-wrapper">
+
+        <table
+            class="activity-table"
+            id="activityTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Time</th>
+
+                    <th>Module</th>
+
+                    <th>Action</th>
+
+                    <th>User</th>
+
+                    <th>Reference</th>
+
+                    <th>Status</th>
+
+                    <th>Description</th>
+
+                    <th>Error</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            @foreach(var item in Model)
+            {
+                <tr>
+
+                    <td>
+
+                        @item.ActivityTime
+                            .ToString("dd MMM yyyy")
+
+                        <div class="sub-text">
+
+                            @item.ActivityTime
+                                .ToString("hh:mm tt")
+
+                        </div>
+
+                    </td>
+
+                    <td>
+
+                        <span class="module-badge">
+
+                            @(item.Module ?? "NA")
+
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        @(item.Action ?? "NA")
+
+                    </td>
+
+                    <td>
+
+                        <strong>
+
+                            @(string.IsNullOrWhiteSpace(item.UserName)
+                                ? "NA"
+                                : item.UserName)
+
+                        </strong>
+
+                        <div class="sub-text">
+
+                            @(string.IsNullOrWhiteSpace(item.UserEmail)
+                                ? "NA"
+                                : item.UserEmail)
+
+                        </div>
+
+                    </td>
+
+                    <td>
+
+                        @(string.IsNullOrWhiteSpace(item.ReferenceNo)
+                            ? "NA"
+                            : item.ReferenceNo)
+
+                    </td>
+
+                    <td>
+
+                        <span class="
+                            status-badge
+                            @(item.Status == "SUCCESS"
+                                ? "success"
+                                : item.Status == "FAILED"
+                                    ? "danger"
+                                    : "warning")">
+
+                            @(item.Status ?? "NA")
+
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        @(string.IsNullOrWhiteSpace(item.Description)
+                            ? "NA"
+                            : item.Description)
+
+                    </td>
+
+                    <td class="error-text">
+
+                        @(string.IsNullOrWhiteSpace(item.ErrorMessage)
+                            ? "-"
+                            : item.ErrorMessage)
+
+                    </td>
+
+                </tr>
+            }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- PAGINATION -->
+
+    <div class="pagination">
+
+        @for(int i = 1; i <= totalPages; i++)
+        {
+            <a href="/Admin/ActivityLogs?page=@i"
+               class="page-btn @(i == currentPage ? "active" : "")">
+
+                @i
+
+            </a>
+        }
+
+    </div>
+
+</section>
+
+<script>
+
+function searchLogs(){
+
+    let input =
+        document.getElementById("logSearch");
+
+    let filter =
+        input.value.toLowerCase();
+
+    let rows =
+        document.querySelectorAll(
+            "#activityTable tbody tr"
+        );
+
+    rows.forEach(row => {
+
+        row.style.display =
+            row.innerText
+                .toLowerCase()
+                .includes(filter)
+                    ? ""
+                    : "none";
+    });
 }
 
-</tbody>
+</script>
+<style>
 
-</table>
-</div>
-</section>
+.activity-page{
+    padding:24px;
+    background:#f8fafc;
+    min-height:100vh;
+}
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+}
+
+.top-bar h1{
+    font-size:40px;
+    color:#0f172a;
+}
+
+.back-btn{
+    background:#0f172a;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    text-decoration:none;
+}
+
+.search-box{
+    margin-bottom:20px;
+}
+
+.search-box input{
+    width:100%;
+    padding:14px;
+    border-radius:12px;
+    border:1px solid #cbd5e1;
+}
+
+.table-wrapper{
+    overflow:auto;
+    background:white;
+    border-radius:18px;
+}
+
+.activity-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.activity-table th{
+    background:#e2e8f0;
+    padding:16px;
+    text-align:left;
+}
+
+.activity-table td{
+    padding:16px;
+    border-top:1px solid #e2e8f0;
+    vertical-align:top;
+}
+
+.sub-text{
+    font-size:12px;
+    color:#64748b;
+    margin-top:4px;
+}
+
+.module-badge{
+    background:#dbeafe;
+    color:#1e40af;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.status-badge{
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.success{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.danger{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.warning{
+    background:#fef3c7;
+    color:#92400e;
+}
+
+.error-text{
+    color:#dc2626;
+    max-width:300px;
+}
+
+.pagination{
+    margin-top:24px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.page-btn{
+    padding:10px 14px;
+    background:white;
+    border-radius:8px;
+    text-decoration:none;
+    color:#0f172a;
+}
+
+.page-btn.active{
+    background:#2563eb;
+    color:white;
+}
+
+</style>
