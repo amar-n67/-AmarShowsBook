@@ -33,7 +33,6 @@ namespace AmarShowsBook.Models
         public DateTime? updated_at { get; set; }
 
         // =====================================================
-        // HUMAN COMMENT:
         // ADMIN WORKFLOW TRACKING
         // =====================================================
 

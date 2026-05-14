@@ -466,10 +466,6 @@ public IActionResult ActivityLogs(int page = 1)
 [HttpPost]
 public async Task<IActionResult> ApproveRefund(long id)
 {
-    // =====================================================
-    // LOAD REFUND
-    // =====================================================
-
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
 
@@ -482,10 +478,13 @@ public async Task<IActionResult> ApproveRefund(long id)
     }
 
     // =====================================================
-    // UPDATE REFUND STATUS
+    // UPDATE STATUS
     // =====================================================
 
-    refund.refund_status = "SUCCESS";
+    refund.refund_status = "APPROVED";
+
+    refund.workflow_action =
+        "APPROVED BY ADMIN";
 
     refund.processed_at =
         DateTime.UtcNow;
@@ -494,7 +493,7 @@ public async Task<IActionResult> ApproveRefund(long id)
         DateTime.UtcNow;
 
     // =====================================================
-    // SAVE ADMIN AUDIT DETAILS
+    // ADMIN DETAILS
     // =====================================================
 
     refund.approved_by =
@@ -504,7 +503,7 @@ public async Task<IActionResult> ApproveRefund(long id)
         DateTime.UtcNow;
 
     // =====================================================
-    // SAVE DATABASE CHANGES
+    // SAVE
     // =====================================================
 
     await _context.SaveChangesAsync();
@@ -523,15 +522,12 @@ public async Task<IActionResult> ApproveRefund(long id)
         isError: 0
     );
 
-    // =====================================================
-    // SUCCESS MESSAGE
-    // =====================================================
-
     TempData["Success"] =
         "Refund approved successfully.";
 
     return RedirectToAction("Refunds");
 }
+
 
 // =====================================================
 // REJECT REFUND
@@ -540,10 +536,6 @@ public async Task<IActionResult> ApproveRefund(long id)
 [HttpPost]
 public async Task<IActionResult> RejectRefund(long id)
 {
-    // =====================================================
-    // LOAD REFUND
-    // =====================================================
-
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
 
@@ -556,16 +548,19 @@ public async Task<IActionResult> RejectRefund(long id)
     }
 
     // =====================================================
-    // UPDATE REFUND STATUS
+    // UPDATE STATUS
     // =====================================================
 
     refund.refund_status = "REJECTED";
+
+    refund.workflow_action =
+        "REJECTED BY ADMIN";
 
     refund.updated_at =
         DateTime.UtcNow;
 
     // =====================================================
-    // SAVE ADMIN AUDIT DETAILS
+    // ADMIN DETAILS
     // =====================================================
 
     refund.rejected_by =
@@ -575,7 +570,7 @@ public async Task<IActionResult> RejectRefund(long id)
         DateTime.UtcNow;
 
     // =====================================================
-    // SAVE DATABASE CHANGES
+    // SAVE
     // =====================================================
 
     await _context.SaveChangesAsync();
@@ -594,10 +589,6 @@ public async Task<IActionResult> RejectRefund(long id)
         isError: 0
     );
 
-    // =====================================================
-    // SUCCESS MESSAGE
-    // =====================================================
-
     TempData["Success"] =
         "Refund rejected successfully.";
 
@@ -606,7 +597,7 @@ public async Task<IActionResult> RejectRefund(long id)
 
 
 // =====================================================
-// RETRY FAILED REFUND
+// RETRY REFUND
 // =====================================================
 
 [HttpPost]
@@ -617,34 +608,44 @@ public async Task<IActionResult> RetryRefund(long id)
 
     if (refund == null)
     {
-        TempData["Error"] = "Refund not found.";
+        TempData["Error"] =
+            "Refund not found.";
 
         return RedirectToAction("Refunds");
     }
 
     // =====================================================
-    // HUMAN COMMENT:
-    // RESET REFUND FOR RETRY
+    // UPDATE STATUS
     // =====================================================
 
-    refund.refund_status = "PENDING";
+    refund.refund_status = "PROCESSING";
+
+    refund.workflow_action =
+        "RETRIED BY ADMIN";
 
     refund.failure_reason = null;
 
-    refund.workflow_action = "RETRIED BY ADMIN";
+    refund.updated_at =
+        DateTime.UtcNow;
+
+    // =====================================================
+    // ADMIN DETAILS
+    // =====================================================
 
     refund.retried_by =
         HttpContext.Session.GetString("UserName");
 
-    refund.retried_at = DateTime.UtcNow;
+    refund.retried_at =
+        DateTime.UtcNow;
 
-    refund.updated_at = DateTime.UtcNow;
+    // =====================================================
+    // SAVE
+    // =====================================================
 
     await _context.SaveChangesAsync();
 
     // =====================================================
-    // HUMAN COMMENT:
-    // ACTIVITY LOGGER
+    // ACTIVITY LOG
     // =====================================================
 
     await _activityLogger.LogAsync(
