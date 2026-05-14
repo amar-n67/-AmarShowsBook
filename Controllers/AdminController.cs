@@ -460,6 +460,120 @@ public IActionResult ActivityLogs(int page = 1)
     return View(logs);
 }
 // =====================================================
+// APPROVE REFUND
+// =====================================================
+
+[HttpPost]
+public async Task<IActionResult> ApproveRefund(long id)
+{
+    var refund = await _context.Refunds
+        .FirstOrDefaultAsync(x => x.id == id);
+
+    if (refund == null)
+    {
+        TempData["Error"] = "Refund not found.";
+
+        return RedirectToAction("Refunds");
+    }
+
+    refund.refund_status = "SUCCESS";
+
+    refund.processed_at = DateTime.UtcNow;
+
+    refund.updated_at = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    await _activityLogger.LogAsync(
+        action: "APPROVE_REFUND",
+        module: "REFUND",
+        entityType: "REFUND",
+        description: $"Refund approved: {refund.refund_ref}",
+        status: "SUCCESS",
+        isError: 0
+    );
+
+    TempData["Success"] = "Refund approved successfully.";
+
+    return RedirectToAction("Refunds");
+}
+
+// =====================================================
+// REJECT REFUND
+// =====================================================
+
+[HttpPost]
+public async Task<IActionResult> RejectRefund(long id)
+{
+    var refund = await _context.Refunds
+        .FirstOrDefaultAsync(x => x.id == id);
+
+    if (refund == null)
+    {
+        TempData["Error"] = "Refund not found.";
+
+        return RedirectToAction("Refunds");
+    }
+
+    refund.refund_status = "REJECTED";
+
+    refund.updated_at = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    await _activityLogger.LogAsync(
+        action: "REJECT_REFUND",
+        module: "REFUND",
+        entityType: "REFUND",
+        description: $"Refund rejected: {refund.refund_ref}",
+        status: "SUCCESS",
+        isError: 0
+    );
+
+    TempData["Success"] = "Refund rejected successfully.";
+
+    return RedirectToAction("Refunds");
+}
+
+// =====================================================
+// RETRY FAILED REFUND
+// =====================================================
+
+[HttpPost]
+public async Task<IActionResult> RetryRefund(long id)
+{
+    var refund = await _context.Refunds
+        .FirstOrDefaultAsync(x => x.id == id);
+
+    if (refund == null)
+    {
+        TempData["Error"] = "Refund not found.";
+
+        return RedirectToAction("Refunds");
+    }
+
+    refund.refund_status = "PROCESSING";
+
+    refund.failure_reason = null;
+
+    refund.updated_at = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    await _activityLogger.LogAsync(
+        action: "RETRY_REFUND",
+        module: "REFUND",
+        entityType: "REFUND",
+        description: $"Refund retry initiated: {refund.refund_ref}",
+        status: "SUCCESS",
+        isError: 0
+    );
+
+    TempData["Success"] = "Refund retry initiated.";
+
+    return RedirectToAction("Refunds");
+}
+// =====================================================
 // EXPORT REFUNDS CSV
 // =====================================================
 

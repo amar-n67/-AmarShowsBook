@@ -18,9 +18,7 @@ namespace AmarShowsBook.Data
         {
         }
 
-        // =====================================================
-        // MAIN TABLES
-        // =====================================================
+        public DbSet<Refund> Refunds { get; set; }
 
         public DbSet<User> Users { get; set; }
 

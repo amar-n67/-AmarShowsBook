@@ -30,7 +30,6 @@
 
 </a>
                 <i class="bi bi-download me-2"></i>
-                Export
             </button>
         </div>
     </div>
@@ -212,6 +211,7 @@
                         <th>Method</th>
                         <th>Requested</th>
                         <th class="text-center">Actions</th>
+                        <th class="text-center">Workflow Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -279,6 +279,127 @@
                                     View
                                 </a>
                             </td>
+                            <td class="text-center">
+
+    <div class="d-flex justify-content-center">
+
+        @if (item.RefundStatus == "PENDING")
+        {
+            <div
+                class="btn-group shadow-sm"
+                role="group">
+
+                <!-- APPROVE -->
+
+                <form
+                    asp-action="ApproveRefund"
+                    method="post">
+
+                    <input
+                        type="hidden"
+                        name="id"
+                        value="@item.RefundId" />
+
+                    <button
+                        type="submit"
+                        class="btn btn-sm btn-success px-3">
+
+                        <i class="bi bi-check-lg me-1"></i>
+                        Approve
+
+                    </button>
+
+                </form>
+
+                <!-- REJECT -->
+
+                <form
+                    asp-action="RejectRefund"
+                    method="post">
+
+                    <input
+                        type="hidden"
+                        name="id"
+                        value="@item.RefundId" />
+
+                    <button
+                        type="submit"
+                        class="btn btn-sm btn-danger px-3">
+
+                        <i class="bi bi-x-lg me-1"></i>
+                        Reject
+
+                    </button>
+
+                </form>
+
+            </div>
+        }
+
+        else if (item.RefundStatus == "FAILED")
+        {
+            <form
+                asp-action="RetryRefund"
+                method="post">
+
+                <input
+                    type="hidden"
+                    name="id"
+                    value="@item.RefundId" />
+
+                <button
+                    type="submit"
+                    class="btn btn-sm btn-warning rounded-pill shadow-sm px-3">
+
+                    <i class="bi bi-arrow-repeat me-1"></i>
+                    Retry
+
+                </button>
+
+            </form>
+        }
+
+        else if (item.RefundStatus == "SUCCESS")
+        {
+            <div
+                class="d-flex align-items-center justify-content-center">
+
+                <div
+                    class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                    style="
+                        width: 34px;
+                        height: 34px;
+                    ">
+
+                    <i class="bi bi-check-lg"></i>
+
+                </div>
+
+            </div>
+        }
+
+        else if (item.RefundStatus == "REJECTED")
+        {
+            <div
+                class="d-flex align-items-center justify-content-center">
+
+                <div
+                    class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                    style="
+                        width: 34px;
+                        height: 34px;
+                    ">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+</td>
                         </tr>
                     }
                 </tbody>
