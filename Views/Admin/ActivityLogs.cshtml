@@ -1,187 +1,139 @@
-
 @model List<AmarShowsBook.Models.Admin.VwEnterpriseActivityLog>
 
 @{
     ViewData["Title"] = "Activity Logs";
-
-    int currentPage = ViewBag.CurrentPage ?? 1;
-
-    int totalPages = ViewBag.TotalPages ?? 1;
-
-    int rowNo = ((currentPage - 1) * 50) + 1;
 }
 
 <section class="activity-page">
 
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         PAGE HEADER
-    -->
-    <!-- ===================================================== -->
+    <!-- HEADER -->
 
-    <div class="page-header">
+    <div class="activity-header">
 
         <div>
-
             <h1>Enterprise Activity Logs</h1>
-
             <p>
-                Complete system monitoring and audit center
+                System activity, bookings, transactions,
+                errors, user actions and audit events
             </p>
-
         </div>
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         SEARCH BAR
-    -->
-    <!-- ===================================================== -->
-
-    <div class="search-box">
-
-        <input
-            type="text"
-            id="logSearch"
-            placeholder="Search logs..."
-            onkeyup="searchLogs()" />
-
-    </div>
-
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         LOG TABLE
-    -->
-    <!-- ===================================================== -->
+    <!-- TABLE -->
 
     <div class="table-wrapper">
 
-        <table class="log-table"
-               id="logsTable">
+        <table class="activity-table">
 
             <thead>
 
                 <tr>
-
-                    <th>#</th>
-
                     <th>Time</th>
-
                     <th>Module</th>
-
                     <th>Action</th>
-
                     <th>User</th>
-
+                    <th>Email</th>
+                    <th>Reference</th>
                     <th>Status</th>
-
                     <th>Description</th>
-
-                    <th>IP</th>
-
                     <th>Error</th>
-
                 </tr>
 
             </thead>
 
             <tbody>
 
-            @if (!Model.Any())
-            {
-                <tr>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
 
-                    <td colspan="9"
-                        class="empty-row">
+                            <td>
+                                @item.activity_time.ToString("dd MMM yyyy hh:mm tt")
+                            </td>
 
-                        No logs found
+                            <td>
+                                <span class="module-badge">
+                                    @(string.IsNullOrWhiteSpace(item.module)
+                                        ? "NA"
+                                        : item.module)
+                                </span>
+                            </td>
 
-                    </td>
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.action)
+                                    ? "NA"
+                                    : item.action)
+                            </td>
 
-                </tr>
-            }
-            else
-            {
-                @foreach (var item in Model)
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.user_name)
+                                    ? "NA"
+                                    : item.user_name)
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.user_email)
+                                    ? "NA"
+                                    : item.user_email)
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.reference_no)
+                                    ? "NA"
+                                    : item.reference_no)
+                            </td>
+
+                            <td>
+
+                                @if (item.status == "SUCCESS")
+                                {
+                                    <span class="status success">
+                                        SUCCESS
+                                    </span>
+                                }
+                                else if (item.status == "FAILED")
+                                {
+                                    <span class="status failed">
+                                        FAILED
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status pending">
+                                        @(string.IsNullOrWhiteSpace(item.status)
+                                            ? "NA"
+                                            : item.status)
+                                    </span>
+                                }
+
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.description)
+                                    ? "NA"
+                                    : item.description)
+                            </td>
+
+                            <td class="error-cell">
+                                @(string.IsNullOrWhiteSpace(item.error_message)
+                                    ? "NA"
+                                    : item.error_message)
+                            </td>
+
+                        </tr>
+                    }
+                }
+                else
                 {
                     <tr>
-
-                        <td>@rowNo</td>
-
-                        <td>
-
-                            @item.ActivityTime
-                                .ToString("dd MMM yyyy")
-
-                            <div class="sub-text">
-
-                                @item.ActivityTime
-                                    .ToString("hh:mm tt")
-
-                            </div>
-
+                        <td colspan="9" class="empty-state">
+                            No activity logs found
                         </td>
-
-                        <td>@item.Module</td>
-
-                        <td>@item.ActionType</td>
-
-                        <td>
-
-                            <strong>
-                                @item.UserName
-                            </strong>
-
-                            <div class="sub-text">
-
-                                @item.UserEmail
-
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <span class="
-                                badge
-                                @(item.Status == "SUCCESS"
-                                    ? "success"
-                                    : item.Status == "FAILED"
-                                        ? "danger"
-                                        : "warning")">
-
-                                @item.Status
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            @item.Description
-
-                        </td>
-
-                        <td>
-
-                            @item.IpAddress
-
-                        </td>
-
-                        <td>
-
-                            @(string.IsNullOrWhiteSpace(item.ErrorMessage)
-                                ? "NA"
-                                : item.ErrorMessage)
-
-                        </td>
-
                     </tr>
-
-                    rowNo++;
                 }
-            }
 
             </tbody>
 
@@ -189,21 +141,27 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         PAGINATION
-    -->
-    <!-- ===================================================== -->
+    <!-- PAGINATION -->
 
-    <div class="pagination-area">
+    <div class="pagination-wrapper">
 
-        @for (int i = 1; i <= totalPages; i++)
+        @if (ViewBag.CurrentPage > 1)
         {
-            <a href="/Admin/ActivityLogs?page=@i"
-               class="page-btn @(i == currentPage ? "active" : "")">
+            <a href="?page=@(ViewBag.CurrentPage - 1)"
+               class="page-btn">
+                Previous
+            </a>
+        }
 
-                @i
+        <span class="page-info">
+            Page @ViewBag.CurrentPage of @ViewBag.TotalPages
+        </span>
 
+        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+        {
+            <a href="?page=@(ViewBag.CurrentPage + 1)"
+               class="page-btn">
+                Next
             </a>
         }
 
@@ -215,66 +173,75 @@
 
 .activity-page{
     padding:24px;
+    background:#f8fafc;
+    min-height:100vh;
 }
 
-.page-header{
+.activity-header{
     margin-bottom:24px;
 }
 
-.page-header h1{
+.activity-header h1{
     font-size:38px;
     font-weight:700;
+    color:#0f172a;
+    margin-bottom:8px;
 }
 
-.page-header p{
+.activity-header p{
     color:#64748b;
-}
-
-.search-box{
-    margin-bottom:18px;
-}
-
-.search-box input{
-    width:100%;
-    padding:14px;
-    border-radius:10px;
-    border:1px solid #cbd5e1;
+    font-size:15px;
 }
 
 .table-wrapper{
     overflow:auto;
-    border-radius:12px;
+    background:white;
+    border-radius:18px;
+    border:1px solid #e2e8f0;
 }
 
-.log-table{
+.activity-table{
     width:100%;
     border-collapse:collapse;
-    background:white;
+    min-width:1400px;
 }
 
-.log-table thead{
-    background:#e2e8f0;
+.activity-table thead{
+    background:#eff6ff;
 }
 
-.log-table th{
-    padding:16px;
+.activity-table th{
+    padding:18px;
     text-align:left;
+    font-size:14px;
+    color:#1e293b;
+    border-bottom:1px solid #dbeafe;
 }
 
-.log-table td{
-    padding:16px;
-    border-top:1px solid #e2e8f0;
+.activity-table td{
+    padding:18px;
+    border-bottom:1px solid #f1f5f9;
+    font-size:14px;
+    color:#334155;
     vertical-align:top;
 }
 
-.sub-text{
-    font-size:12px;
-    color:#64748b;
-    margin-top:4px;
+.activity-table tr:hover{
+    background:#f8fafc;
 }
 
-.badge{
-    padding:6px 10px;
+.module-badge{
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:999px;
+    background:#dbeafe;
+    color:#1d4ed8;
+    font-size:12px;
+    font-weight:700;
+}
+
+.status{
+    padding:6px 12px;
     border-radius:999px;
     font-size:12px;
     font-weight:700;
@@ -285,70 +252,64 @@
     color:#166534;
 }
 
-.danger{
+.failed{
     background:#fee2e2;
     color:#991b1b;
 }
 
-.warning{
+.pending{
     background:#fef3c7;
     color:#92400e;
 }
 
-.pagination-area{
-    margin-top:24px;
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
+.error-cell{
+    color:#dc2626;
+    min-width:220px;
 }
 
-.page-btn{
-    padding:10px 14px;
-    border-radius:8px;
-    background:#e2e8f0;
-    text-decoration:none;
-    color:black;
-}
-
-.page-btn.active{
-    background:#2563eb;
-    color:white;
-}
-
-.empty-row{
+.empty-state{
     text-align:center;
     padding:40px;
     color:#64748b;
 }
 
-</style>
-
-<script>
-
-function searchLogs() {
-
-    let input =
-        document.getElementById("logSearch");
-
-    let filter =
-        input.value.toLowerCase();
-
-    let table =
-        document.getElementById("logsTable");
-
-    let tr =
-        table.getElementsByTagName("tr");
-
-    for (let i = 1; i < tr.length; i++) {
-
-        let txt =
-            tr[i].innerText.toLowerCase();
-
-        tr[i].style.display =
-            txt.includes(filter)
-                ? ""
-                : "none";
-    }
+.pagination-wrapper{
+    margin-top:24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
 }
 
-</script>
+.page-btn{
+    padding:10px 18px;
+    background:#2563eb;
+    color:white;
+    text-decoration:none;
+    border-radius:10px;
+    font-weight:600;
+}
+
+.page-btn:hover{
+    background:#1d4ed8;
+    color:white;
+}
+
+.page-info{
+    font-weight:600;
+    color:#334155;
+}
+
+@@media(max-width:900px){
+
+    .activity-page{
+        padding:16px;
+    }
+
+    .activity-header h1{
+        font-size:28px;
+    }
+
+}
+
+</style>

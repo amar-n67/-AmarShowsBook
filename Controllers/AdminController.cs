@@ -422,14 +422,14 @@ FailedRefunds =
             }
         }
 
-public IActionResult ActivityLogs(
-    int page = 1)
+public IActionResult ActivityLogs(int page = 1)
 {
     int pageSize = 50;
 
     var query = _context
         .VwEnterpriseActivityLogs
-        .OrderByDescending(x => x.ActivityTime);
+        .AsNoTracking()
+        .OrderByDescending(x => x.activity_time);
 
     int totalCount = query.Count();
 

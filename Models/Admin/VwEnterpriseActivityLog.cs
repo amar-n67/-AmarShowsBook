@@ -1,24 +1,25 @@
-namespace AmarShowsBook.Models.Admin;
-
-public class VwEnterpriseActivityLog
+namespace AmarShowsBook.Models.Admin
 {
-    public long Id { get; set; }
+    public class VwEnterpriseActivityLog
+    {
+        public long entity_id { get; set; }
 
-    public DateTime ActivityTime { get; set; }
+        public string module { get; set; }
 
-    public string Module { get; set; } = "NA";
+        public string action { get; set; }
 
-    public string ActionType { get; set; } = "NA";
+        public string? user_name { get; set; }
 
-    public string Description { get; set; } = "NA";
+        public string? user_email { get; set; }
 
-    public string UserName { get; set; } = "NA";
+        public string? reference_no { get; set; }
 
-    public string UserEmail { get; set; } = "NA";
+        public string status { get; set; }
 
-    public string Status { get; set; } = "NA";
+        public string description { get; set; }
 
-    public string IpAddress { get; set; } = "NA";
+        public string? error_message { get; set; }
 
-    public string ErrorMessage { get; set; } = "NA";
+        public DateTime activity_time { get; set; }
+    }
 }
