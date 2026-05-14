@@ -459,6 +459,54 @@ public IActionResult ActivityLogs(int page = 1)
 
     return View(logs);
 }
+// =====================================================
+// EXPORT REFUNDS CSV
+// =====================================================
+
+public IActionResult ExportRefunds()
+{
+    var refunds = _context.VwRefundSummaries
+        .AsNoTracking()
+        .ToList();
+
+    var builder = new System.Text.StringBuilder();
+
+    // =====================================================
+    // CSV HEADER
+    // =====================================================
+
+    builder.AppendLine(
+        "RefundRef,BookingRef,TransactionRef,UserName,UserEmail,RefundAmount,RefundStatus,RefundMethod,RequestedAt");
+
+    // =====================================================
+    // CSV ROWS
+    // =====================================================
+
+    foreach (var item in refunds)
+    {
+        builder.AppendLine(
+            $"{item.RefundRef}," +
+            $"{item.BookingRef}," +
+            $"{item.TransactionRef}," +
+            $"{item.UserName}," +
+            $"{item.UserEmail}," +
+            $"{item.RefundAmount}," +
+            $"{item.RefundStatus}," +
+            $"{item.RefundMethod}," +
+            $"{item.RequestedAt}"
+        );
+    }
+
+    // =====================================================
+    // DOWNLOAD CSV FILE
+    // =====================================================
+
+    return File(
+        System.Text.Encoding.UTF8.GetBytes(builder.ToString()),
+        "text/csv",
+        $"refunds_{DateTime.Now:yyyyMMddHHmmss}.csv"
+    );
+}
 public IActionResult UserDetails(long id)
 {
     var user = _context.Users
