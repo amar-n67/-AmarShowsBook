@@ -110,7 +110,9 @@ namespace AmarShowsBook.Data
             // =====================================================
             // ACTIVITY LOG TABLE
             // =====================================================
+            base.OnModelCreating(modelBuilder);
 
+    modelBuilder.Entity<Refund>().ToTable("refunds");
             modelBuilder.Entity<ActivityLog>()
                 .ToTable("activity_logs");
 

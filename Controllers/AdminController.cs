@@ -612,54 +612,39 @@ public async Task<IActionResult> RejectRefund(long id)
 [HttpPost]
 public async Task<IActionResult> RetryRefund(long id)
 {
-    // =====================================================
-    // LOAD REFUND
-    // =====================================================
-
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
 
     if (refund == null)
     {
-        TempData["Error"] =
-            "Refund not found.";
+        TempData["Error"] = "Refund not found.";
 
         return RedirectToAction("Refunds");
     }
 
     // =====================================================
-    // UPDATE REFUND STATUS
+    // HUMAN COMMENT:
+    // RESET REFUND FOR RETRY
     // =====================================================
 
-    refund.refund_status = "RETRY";
-
-    // =====================================================
-    // CLEAR PREVIOUS FAILURE MESSAGE
-    // =====================================================
+    refund.refund_status = "PENDING";
 
     refund.failure_reason = null;
 
-    refund.updated_at =
-        DateTime.UtcNow;
-
-    // =====================================================
-    // SAVE ADMIN AUDIT DETAILS
-    // =====================================================
+    refund.workflow_action = "RETRIED BY ADMIN";
 
     refund.retried_by =
         HttpContext.Session.GetString("UserName");
 
-    refund.retried_at =
-        DateTime.UtcNow;
+    refund.retried_at = DateTime.UtcNow;
 
-    // =====================================================
-    // SAVE DATABASE CHANGES
-    // =====================================================
+    refund.updated_at = DateTime.UtcNow;
 
     await _context.SaveChangesAsync();
 
     // =====================================================
-    // ACTIVITY LOG
+    // HUMAN COMMENT:
+    // ACTIVITY LOGGER
     // =====================================================
 
     await _activityLogger.LogAsync(
@@ -671,10 +656,6 @@ public async Task<IActionResult> RetryRefund(long id)
         status: "SUCCESS",
         isError: 0
     );
-
-    // =====================================================
-    // SUCCESS MESSAGE
-    // =====================================================
 
     TempData["Success"] =
         "Refund retry initiated successfully.";
