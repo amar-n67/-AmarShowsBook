@@ -1,5 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace AmarShowsBook.Models
 {
+    [Table("refunds")]
     public class Refund
     {
         public long id { get; set; }
@@ -12,7 +15,7 @@ namespace AmarShowsBook.Models
 
         public string refund_ref { get; set; }
 
-        public decimal? refund_amount { get; set; }
+        public decimal refund_amount { get; set; }
 
         public string refund_reason { get; set; }
 
@@ -20,11 +23,11 @@ namespace AmarShowsBook.Models
 
         public string refund_method { get; set; }
 
-        public string gateway_refund_id { get; set; }
+        public string? gateway_refund_id { get; set; }
 
-        public string failure_reason { get; set; }
+        public string? failure_reason { get; set; }
 
-        public DateTime? requested_at { get; set; }
+        public DateTime requested_at { get; set; }
 
         public DateTime? processed_at { get; set; }
 
