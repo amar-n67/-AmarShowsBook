@@ -17,6 +17,7 @@ namespace AmarShowsBook.Data
             : base(options)
         {
         }
+        public DbSet<RefundActionLog> RefundActionLogs { get; set; }
 
         public DbSet<Refund> Refunds { get; set; }
 

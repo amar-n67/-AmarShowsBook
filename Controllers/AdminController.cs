@@ -421,6 +421,390 @@ FailedRefunds =
                 return View(new List<VwNotificationCenter>());
             }
         }
+// public async Task<IActionResult> RefundDetails(long id)
+// {
+//     var refund = await _context
+//         .VwRefundSummaries
+//         .AsNoTracking()
+//         .FirstOrDefaultAsync(x => x.RefundId == id);
+
+//     if (refund == null)
+//     {
+//         return NotFound();
+//     }
+
+//     return View(refund);
+// }
+// public IActionResult ActivityLogs(int page = 1)
+// {
+//     int pageSize = 50;
+
+//     var query = _context
+//         .VwEnterpriseActivityLogs
+//         .AsNoTracking()
+//         .OrderByDescending(x => x.activity_time);
+
+//     int totalCount = query.Count();
+
+//     var logs = query
+//         .Skip((page - 1) * pageSize)
+//         .Take(pageSize)
+//         .ToList();
+
+//     ViewBag.CurrentPage = page;
+
+//     ViewBag.TotalPages =
+//         (int)Math.Ceiling(
+//             totalCount / (double)pageSize);
+
+//     return View(logs);
+// }
+// // =====================================================
+// // APPROVE REFUND
+// // =====================================================
+
+// [HttpPost]
+// public async Task<IActionResult> ApproveRefund(long id)
+// {
+//     var refund = await _context.Refunds
+//         .FirstOrDefaultAsync(x => x.id == id);
+
+//     if (refund == null)
+//     {
+
+//         // =====================================================
+// // RBAC VALIDATION
+// // =====================================================
+
+// if (!RbacAuthorizationHelper.CanAccess(
+//     HttpContext,
+//     _rbacService,
+//     "REFUND",
+//     "APPROVE"))
+// {
+//     TempData["Error"] =
+//         "You do not have permission to approve refunds.";
+
+//     return RedirectToAction("Refunds");
+// }
+
+//         TempData["Error"] =
+//             "Refund not found.";
+
+//         return RedirectToAction("Refunds");
+//     }
+
+//     // =====================================================
+//     // UPDATE STATUS
+//     // =====================================================
+
+//     refund.refund_status = "APPROVED";
+
+//     refund.workflow_action =
+//         "APPROVED BY ADMIN";
+
+//     refund.processed_at =
+//         DateTime.UtcNow;
+
+//     refund.updated_at =
+//         DateTime.UtcNow;
+
+//     // =====================================================
+//     // ADMIN DETAILS
+//     // =====================================================
+
+//     refund.approved_by =
+//         HttpContext.Session.GetString("UserName");
+
+//     refund.approved_at =
+//         DateTime.UtcNow;
+//         refund.admin_notes =
+//     "Refund approved by admin";
+
+// refund.workflow_action =
+//     "APPROVED BY ADMIN";
+
+// refund.approved_by =
+//     HttpContext.Session.GetString("UserName");
+
+// refund.approved_at =
+//     DateTime.UtcNow;
+
+//     // =====================================================
+//     // SAVE
+//     // =====================================================
+
+//     await _context.SaveChangesAsync();
+
+//     // =====================================================
+//     // ACTIVITY LOG
+//     // =====================================================
+// _context.RefundActionLogs.Add(
+//     new RefundActionLog
+//     {
+//         refund_id = refund.id,
+
+//         refund_ref = refund.refund_ref,
+
+//         action_name = "APPROVE_REFUND",
+
+//         action_by =
+//             HttpContext.Session.GetString("UserName"),
+
+//         action_time = DateTime.UtcNow,
+
+//         action_notes =
+//             "Refund approved successfully",
+
+//         ip_address =
+//             HttpContext.Connection.RemoteIpAddress?.ToString(),
+
+//         created_at = DateTime.UtcNow
+//     });
+
+// await _context.SaveChangesAsync();
+//     await _activityLogger.LogAsync(
+//         action: "APPROVE_REFUND",
+//         module: "NOTIFICATION",
+//         entityType: "REFUND",
+//         description:
+//             $"Refund approved: {refund.refund_ref}",
+//         status: "SUCCESS",
+//         isError: 0
+//     );
+
+//     TempData["Success"] =
+//         "Refund approved successfully.";
+
+//     return RedirectToAction("Refunds");
+// }
+
+
+// // =====================================================
+// // REJECT REFUND
+// // =====================================================
+
+// [HttpPost]
+// public async Task<IActionResult> RejectRefund(long id)
+// {
+//     var refund = await _context.Refunds
+//         .FirstOrDefaultAsync(x => x.id == id);
+
+//     if (refund == null)
+//     {
+//         TempData["Error"] =
+//             "Refund not found.";
+
+//         return RedirectToAction("Refunds");
+//     }
+
+//     // =====================================================
+//     // UPDATE STATUS
+//     // =====================================================
+
+//     refund.refund_status = "REJECTED";
+
+//     refund.workflow_action =
+//         "REJECTED BY ADMIN";
+
+//     refund.updated_at =
+//         DateTime.UtcNow;
+
+//     // =====================================================
+//     // ADMIN DETAILS
+//     // =====================================================
+
+//     refund.rejected_by =
+//         HttpContext.Session.GetString("UserName");
+
+//     refund.rejected_at =
+//         DateTime.UtcNow;
+
+//     // =====================================================
+//     // SAVE
+//     // =====================================================
+
+//     await _context.SaveChangesAsync();
+
+//     // =====================================================
+//     // ACTIVITY LOG
+//     // =====================================================
+
+//     await _activityLogger.LogAsync(
+//         action: "REJECT_REFUND",
+//         module: "REFUND",
+//         entityType: "REFUND",
+//         description:
+//             $"Refund rejected: {refund.refund_ref}",
+//         status: "SUCCESS",
+//         isError: 0
+//     );
+
+//     TempData["Success"] =
+//         "Refund rejected successfully.";
+
+//     return RedirectToAction("Refunds");
+// }
+
+
+// // =====================================================
+// // RETRY REFUND
+// // =====================================================
+
+// [HttpPost]
+// public async Task<IActionResult> RetryRefund(long id)
+// {
+//     var refund = await _context.Refunds
+//         .FirstOrDefaultAsync(x => x.id == id);
+
+//     if (refund == null)
+//     {
+//         TempData["Error"] =
+//             "Refund not found.";
+
+//         return RedirectToAction("Refunds");
+//     }
+
+//     // =====================================================
+//     // UPDATE STATUS
+//     // =====================================================
+
+//     refund.refund_status = "PROCESSING";
+
+//     refund.workflow_action =
+//         "RETRIED BY ADMIN";
+
+//     refund.failure_reason = null;
+
+//     refund.updated_at =
+//         DateTime.UtcNow;
+
+//     // =====================================================
+//     // ADMIN DETAILS
+//     // =====================================================
+
+//     refund.retried_by =
+//         HttpContext.Session.GetString("UserName");
+
+//     refund.retried_at =
+//         DateTime.UtcNow;
+
+//     // =====================================================
+//     // SAVE
+//     // =====================================================
+
+//     await _context.SaveChangesAsync();
+
+//     // =====================================================
+//     // ACTIVITY LOG
+//     // =====================================================
+
+//     await _activityLogger.LogAsync(
+//         action: "RETRY_REFUND",
+//         module: "REFUND",
+//         entityType: "REFUND",
+//         description:
+//             $"Refund retry initiated: {refund.refund_ref}",
+//         status: "SUCCESS",
+//         isError: 0
+//     );
+
+//     TempData["Success"] =
+//         "Refund retry initiated successfully.";
+
+//     return RedirectToAction("Refunds");
+// }
+
+// [HttpPost]
+// public async Task<IActionResult> SaveRefundNotes(
+//     long refundId,
+//     string notes)
+// {
+//     var refund = await _context.Refunds
+//         .FirstOrDefaultAsync(x => x.id == refundId);
+
+//     if (refund == null)
+//     {
+//         TempData["Error"] = "Refund not found.";
+
+//         return RedirectToAction("Refunds");
+//     }
+
+//     refund.admin_notes = notes;
+
+//     refund.updated_at = DateTime.UtcNow;
+
+//     await _context.SaveChangesAsync();
+
+//     await _activityLogger.LogAsync(
+//         action: "SAVE_REFUND_NOTES",
+//         module: "REFUND",
+//         entityType: "REFUND",
+//         description: $"Admin notes updated for {refund.refund_ref}",
+//         status: "SUCCESS",
+//         isError: 0
+//     );
+
+//     TempData["Success"] =
+//         "Admin notes saved successfully.";
+
+//     return RedirectToAction(
+//         "RefundDetails",
+//         new { id = refundId });
+// }
+// // =====================================================
+// // EXPORT REFUNDS CSV
+// // =====================================================
+
+// public IActionResult ExportRefunds()
+// {
+//     var refunds = _context.VwRefundSummaries
+//         .AsNoTracking()
+//         .ToList();
+
+//     var builder = new System.Text.StringBuilder();
+
+//     // =====================================================
+//     // CSV HEADER
+//     // =====================================================
+
+//     builder.AppendLine(
+//         "RefundRef,BookingRef,TransactionRef,UserName,UserEmail,RefundAmount,RefundStatus,RefundMethod,RequestedAt");
+
+//     // =====================================================
+//     // CSV ROWS
+//     // =====================================================
+
+//     foreach (var item in refunds)
+//     {
+//         builder.AppendLine(
+//             $"{item.RefundRef}," +
+//             $"{item.BookingRef}," +
+//             $"{item.TransactionRef}," +
+//             $"{item.UserName}," +
+//             $"{item.UserEmail}," +
+//             $"{item.RefundAmount}," +
+//             $"{item.RefundStatus}," +
+//             $"{item.RefundMethod}," +
+//             $"{item.RequestedAt}"
+//         );
+//     }
+
+//     // =====================================================
+//     // DOWNLOAD CSV FILE
+//     // =====================================================
+
+//     return File(
+//         System.Text.Encoding.UTF8.GetBytes(builder.ToString()),
+//         "text/csv",
+//         $"refunds_{DateTime.Now:yyyyMMddHHmmss}.csv"
+//     );
+// }
+
+// =====================================================
+// REFUND DETAILS PAGE
+// =====================================================
+
 public async Task<IActionResult> RefundDetails(long id)
 {
     var refund = await _context
@@ -435,30 +819,7 @@ public async Task<IActionResult> RefundDetails(long id)
 
     return View(refund);
 }
-public IActionResult ActivityLogs(int page = 1)
-{
-    int pageSize = 50;
 
-    var query = _context
-        .VwEnterpriseActivityLogs
-        .AsNoTracking()
-        .OrderByDescending(x => x.activity_time);
-
-    int totalCount = query.Count();
-
-    var logs = query
-        .Skip((page - 1) * pageSize)
-        .Take(pageSize)
-        .ToList();
-
-    ViewBag.CurrentPage = page;
-
-    ViewBag.TotalPages =
-        (int)Math.Ceiling(
-            totalCount / (double)pageSize);
-
-    return View(logs);
-}
 // =====================================================
 // APPROVE REFUND
 // =====================================================
@@ -466,6 +827,26 @@ public IActionResult ActivityLogs(int page = 1)
 [HttpPost]
 public async Task<IActionResult> ApproveRefund(long id)
 {
+    // =====================================================
+    // RBAC VALIDATION
+    // =====================================================
+
+    if (!RbacAuthorizationHelper.CanAccess(
+        HttpContext,
+        _rbacService,
+        "REFUND",
+        "APPROVE"))
+    {
+        TempData["Error"] =
+            "You do not have permission to approve refunds.";
+
+        return RedirectToAction("Refunds");
+    }
+
+    // =====================================================
+    // LOAD REFUND
+    // =====================================================
+
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
 
@@ -478,10 +859,10 @@ public async Task<IActionResult> ApproveRefund(long id)
     }
 
     // =====================================================
-    // UPDATE STATUS
+    // UPDATE REFUND STATUS
     // =====================================================
 
-    refund.refund_status = "APPROVED";
+    refund.refund_status = "SUCCESS";
 
     refund.workflow_action =
         "APPROVED BY ADMIN";
@@ -493,7 +874,7 @@ public async Task<IActionResult> ApproveRefund(long id)
         DateTime.UtcNow;
 
     // =====================================================
-    // ADMIN DETAILS
+    // ADMIN TRACKING
     // =====================================================
 
     refund.approved_by =
@@ -502,8 +883,43 @@ public async Task<IActionResult> ApproveRefund(long id)
     refund.approved_at =
         DateTime.UtcNow;
 
+    refund.admin_notes =
+        "Refund approved by admin";
+
     // =====================================================
-    // SAVE
+    // SAVE AUDIT LOG
+    // =====================================================
+
+    _context.RefundActionLogs.Add(
+        new RefundActionLog
+        {
+            refund_id = refund.id,
+
+            refund_ref = refund.refund_ref,
+
+            action_name = "APPROVE_REFUND",
+
+            action_by =
+                HttpContext.Session.GetString("UserName"),
+
+            action_time =
+                DateTime.UtcNow,
+
+            action_notes =
+                "Refund approved successfully",
+
+            ip_address =
+                HttpContext
+                    .Connection
+                    .RemoteIpAddress?
+                    .ToString(),
+
+            created_at =
+                DateTime.UtcNow
+        });
+
+    // =====================================================
+    // SAVE CHANGES
     // =====================================================
 
     await _context.SaveChangesAsync();
@@ -522,12 +938,25 @@ public async Task<IActionResult> ApproveRefund(long id)
         isError: 0
     );
 
+    // =====================================================
+    // NOTIFICATION LOG
+    // =====================================================
+
+    await _activityLogger.LogAsync(
+        action: "REFUND_NOTIFICATION",
+        module: "NOTIFICATION",
+        entityType: "REFUND",
+        description:
+            $"Approval notification sent for refund {refund.refund_ref}",
+        status: "SUCCESS",
+        isError: 0
+    );
+
     TempData["Success"] =
         "Refund approved successfully.";
 
     return RedirectToAction("Refunds");
 }
-
 
 // =====================================================
 // REJECT REFUND
@@ -536,6 +965,26 @@ public async Task<IActionResult> ApproveRefund(long id)
 [HttpPost]
 public async Task<IActionResult> RejectRefund(long id)
 {
+    // =====================================================
+    // RBAC VALIDATION
+    // =====================================================
+
+    if (!RbacAuthorizationHelper.CanAccess(
+        HttpContext,
+        _rbacService,
+        "REFUND",
+        "REJECT"))
+    {
+        TempData["Error"] =
+            "You do not have permission to reject refunds.";
+
+        return RedirectToAction("Refunds");
+    }
+
+    // =====================================================
+    // LOAD REFUND
+    // =====================================================
+
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
 
@@ -548,7 +997,7 @@ public async Task<IActionResult> RejectRefund(long id)
     }
 
     // =====================================================
-    // UPDATE STATUS
+    // UPDATE REFUND STATUS
     // =====================================================
 
     refund.refund_status = "REJECTED";
@@ -560,7 +1009,7 @@ public async Task<IActionResult> RejectRefund(long id)
         DateTime.UtcNow;
 
     // =====================================================
-    // ADMIN DETAILS
+    // ADMIN TRACKING
     // =====================================================
 
     refund.rejected_by =
@@ -569,8 +1018,43 @@ public async Task<IActionResult> RejectRefund(long id)
     refund.rejected_at =
         DateTime.UtcNow;
 
+    refund.admin_notes =
+        "Refund rejected by admin";
+
     // =====================================================
-    // SAVE
+    // SAVE AUDIT LOG
+    // =====================================================
+
+    _context.RefundActionLogs.Add(
+        new RefundActionLog
+        {
+            refund_id = refund.id,
+
+            refund_ref = refund.refund_ref,
+
+            action_name = "REJECT_REFUND",
+
+            action_by =
+                HttpContext.Session.GetString("UserName"),
+
+            action_time =
+                DateTime.UtcNow,
+
+            action_notes =
+                "Refund rejected by admin",
+
+            ip_address =
+                HttpContext
+                    .Connection
+                    .RemoteIpAddress?
+                    .ToString(),
+
+            created_at =
+                DateTime.UtcNow
+        });
+
+    // =====================================================
+    // SAVE CHANGES
     // =====================================================
 
     await _context.SaveChangesAsync();
@@ -589,12 +1073,25 @@ public async Task<IActionResult> RejectRefund(long id)
         isError: 0
     );
 
+    // =====================================================
+    // NOTIFICATION LOG
+    // =====================================================
+
+    await _activityLogger.LogAsync(
+        action: "REFUND_NOTIFICATION",
+        module: "NOTIFICATION",
+        entityType: "REFUND",
+        description:
+            $"Rejection notification sent for refund {refund.refund_ref}",
+        status: "SUCCESS",
+        isError: 0
+    );
+
     TempData["Success"] =
         "Refund rejected successfully.";
 
     return RedirectToAction("Refunds");
 }
-
 
 // =====================================================
 // RETRY REFUND
@@ -603,6 +1100,26 @@ public async Task<IActionResult> RejectRefund(long id)
 [HttpPost]
 public async Task<IActionResult> RetryRefund(long id)
 {
+    // =====================================================
+    // RBAC VALIDATION
+    // =====================================================
+
+    if (!RbacAuthorizationHelper.CanAccess(
+        HttpContext,
+        _rbacService,
+        "REFUND",
+        "RETRY"))
+    {
+        TempData["Error"] =
+            "You do not have permission to retry refunds.";
+
+        return RedirectToAction("Refunds");
+    }
+
+    // =====================================================
+    // LOAD REFUND
+    // =====================================================
+
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
 
@@ -615,10 +1132,10 @@ public async Task<IActionResult> RetryRefund(long id)
     }
 
     // =====================================================
-    // UPDATE STATUS
+    // RESET REFUND STATUS
     // =====================================================
 
-    refund.refund_status = "PROCESSING";
+    refund.refund_status = "PENDING";
 
     refund.workflow_action =
         "RETRIED BY ADMIN";
@@ -629,7 +1146,7 @@ public async Task<IActionResult> RetryRefund(long id)
         DateTime.UtcNow;
 
     // =====================================================
-    // ADMIN DETAILS
+    // ADMIN TRACKING
     // =====================================================
 
     refund.retried_by =
@@ -638,8 +1155,43 @@ public async Task<IActionResult> RetryRefund(long id)
     refund.retried_at =
         DateTime.UtcNow;
 
+    refund.admin_notes =
+        "Refund retry initiated by admin";
+
     // =====================================================
-    // SAVE
+    // SAVE AUDIT LOG
+    // =====================================================
+
+    _context.RefundActionLogs.Add(
+        new RefundActionLog
+        {
+            refund_id = refund.id,
+
+            refund_ref = refund.refund_ref,
+
+            action_name = "RETRY_REFUND",
+
+            action_by =
+                HttpContext.Session.GetString("UserName"),
+
+            action_time =
+                DateTime.UtcNow,
+
+            action_notes =
+                "Refund retry initiated",
+
+            ip_address =
+                HttpContext
+                    .Connection
+                    .RemoteIpAddress?
+                    .ToString(),
+
+            created_at =
+                DateTime.UtcNow
+        });
+
+    // =====================================================
+    // SAVE CHANGES
     // =====================================================
 
     await _context.SaveChangesAsync();
@@ -658,11 +1210,71 @@ public async Task<IActionResult> RetryRefund(long id)
         isError: 0
     );
 
+    // =====================================================
+    // NOTIFICATION LOG
+    // =====================================================
+
+    await _activityLogger.LogAsync(
+        action: "REFUND_NOTIFICATION",
+        module: "NOTIFICATION",
+        entityType: "REFUND",
+        description:
+            $"Retry notification sent for refund {refund.refund_ref}",
+        status: "SUCCESS",
+        isError: 0
+    );
+
     TempData["Success"] =
         "Refund retry initiated successfully.";
 
     return RedirectToAction("Refunds");
 }
+
+// =====================================================
+// SAVE REFUND NOTES
+// =====================================================
+
+[HttpPost]
+public async Task<IActionResult> SaveRefundNotes(
+    long refundId,
+    string notes)
+{
+    var refund = await _context.Refunds
+        .FirstOrDefaultAsync(x => x.id == refundId);
+
+    if (refund == null)
+    {
+        TempData["Error"] =
+            "Refund not found.";
+
+        return RedirectToAction("Refunds");
+    }
+
+    refund.admin_notes = notes;
+
+    refund.updated_at =
+        DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    await _activityLogger.LogAsync(
+        action: "SAVE_REFUND_NOTES",
+        module: "REFUND",
+        entityType: "REFUND",
+        description:
+            $"Admin notes updated for {refund.refund_ref}",
+        status: "SUCCESS",
+        isError: 0
+    );
+
+    TempData["Success"] =
+        "Admin notes saved successfully.";
+
+    return RedirectToAction(
+        "RefundDetails",
+        new { id = refundId });
+}
+
 // =====================================================
 // EXPORT REFUNDS CSV
 // =====================================================
@@ -673,7 +1285,8 @@ public IActionResult ExportRefunds()
         .AsNoTracking()
         .ToList();
 
-    var builder = new System.Text.StringBuilder();
+    var builder =
+        new System.Text.StringBuilder();
 
     // =====================================================
     // CSV HEADER
@@ -706,11 +1319,15 @@ public IActionResult ExportRefunds()
     // =====================================================
 
     return File(
-        System.Text.Encoding.UTF8.GetBytes(builder.ToString()),
+        System.Text.Encoding.UTF8.GetBytes(
+            builder.ToString()),
         "text/csv",
         $"refunds_{DateTime.Now:yyyyMMddHHmmss}.csv"
     );
 }
+
+
+
 public IActionResult UserDetails(long id)
 {
     var user = _context.Users

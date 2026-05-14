@@ -57,5 +57,21 @@ namespace AmarShowsBook.Models.Admin
 
         [Column("is_refund_error")]
         public int IsRefundError { get; set; }
+        public string? workflow_action { get; set; }
+
+public string? approved_by { get; set; }
+
+public DateTime? approved_at { get; set; }
+
+public string? rejected_by { get; set; }
+
+public DateTime? rejected_at { get; set; }
+
+public string? retried_by { get; set; }
+
+public DateTime? retried_at { get; set; }
+
+public string? admin_notes { get; set; }
     }
+    
 }
