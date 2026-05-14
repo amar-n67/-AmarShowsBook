@@ -1,5 +1,5 @@
-@model IEnumerable<AmarShowsBook.Models.Admin.VwRefundSummary>
 
+@model List<AmarShowsBook.Models.Admin.VwRefundSummary>
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refunds";
@@ -18,23 +18,135 @@
 <table class="table admin-table">
 
 <thead>
-<tr>
-    <th>Refund Ref</th>
-    <th>User</th>
-    <th>Amount</th>
-    <th>Status</th>
-</tr>
+
+    <tr>
+        <th>Refund Ref</th>
+        <th>Booking Ref</th>
+        <th>Transaction Ref</th>
+        <th>User</th>
+        <th>Email</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Method</th>
+        <th>Gateway Refund Id</th>
+        <th>Requested</th>
+        <th>Processed</th>
+        <th>Action</th>
+    </tr>
+
 </thead>
 
 <tbody>
 
-@foreach (var item in Model)
+<tbody>
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var item in Model)
+    {
+        <tr>
+
+            <td>
+                @(string.IsNullOrWhiteSpace(item.RefundRef)
+                    ? "NA"
+                    : item.RefundRef)
+            </td>
+
+            <td>
+                @(string.IsNullOrWhiteSpace(item.BookingRef)
+                    ? "NA"
+                    : item.BookingRef)
+            </td>
+
+            <td>
+                @(string.IsNullOrWhiteSpace(item.TransactionRef)
+                    ? "NA"
+                    : item.TransactionRef)
+            </td>
+
+            <td>
+                @(string.IsNullOrWhiteSpace(item.UserName)
+                    ? "NA"
+                    : item.UserName)
+            </td>
+
+            <td>
+                @(string.IsNullOrWhiteSpace(item.UserEmail)
+                    ? "NA"
+                    : item.UserEmail)
+            </td>
+
+            <td>
+                ₹@item.RefundAmount
+            </td>
+
+            <td>
+
+                @if (item.RefundStatus == "SUCCESS")
+                {
+                    <span class="status success">
+                        SUCCESS
+                    </span>
+                }
+                else if (item.RefundStatus == "FAILED")
+                {
+                    <span class="status failed">
+                        FAILED
+                    </span>
+                }
+                else
+                {
+                    <span class="status pending">
+                        @(string.IsNullOrWhiteSpace(item.RefundStatus)
+                            ? "NA"
+                            : item.RefundStatus)
+                    </span>
+                }
+
+            </td>
+
+            <td>
+                @(string.IsNullOrWhiteSpace(item.RefundMethod)
+                    ? "NA"
+                    : item.RefundMethod)
+            </td>
+
+            <td>
+                @(string.IsNullOrWhiteSpace(item.GatewayRefundId)
+                    ? "NA"
+                    : item.GatewayRefundId)
+            </td>
+
+            <td>
+                @(item.RequestedAt.HasValue
+                    ? item.RequestedAt.Value.ToString("dd MMM yyyy hh:mm tt")
+                    : "NA")
+            </td>
+
+            <td>
+                @(item.UpdatedAt.HasValue
+                    ? item.UpdatedAt.Value.ToString("dd MMM yyyy hh:mm tt")
+                    : "NA")
+            </td>
+
+            <td>
+
+                <a href="/Admin/RefundDetails/@item.RefundId"
+                   class="view-btn">
+                    View
+                </a>
+
+            </td>
+
+        </tr>
+    }
+}
+else
 {
     <tr>
-        <td>@item.RefundRef</td>
-        <td>@item.UserName</td>
-        <td>@item.RefundAmount</td>
-        <td>@item.RefundStatus</td>
+        <td colspan="12" class="empty-state">
+            No refund records found
+        </td>
     </tr>
 }
 

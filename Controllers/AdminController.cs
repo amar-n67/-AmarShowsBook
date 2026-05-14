@@ -421,7 +421,20 @@ FailedRefunds =
                 return View(new List<VwNotificationCenter>());
             }
         }
+public async Task<IActionResult> RefundDetails(long id)
+{
+    var refund = await _context
+        .VwRefundSummaries
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.RefundId == id);
 
+    if (refund == null)
+    {
+        return NotFound();
+    }
+
+    return View(refund);
+}
 public IActionResult ActivityLogs(int page = 1)
 {
     int pageSize = 50;
