@@ -3,6 +3,8 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Users";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
 }
 
 <section class="admin-page">
@@ -18,12 +20,14 @@
             </p>
         </div>
 
-        <a class="admin-back-btn admin-page-back"
-           href="/Admin/Dashboard">
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back"
+               href="/Admin/Dashboard">
 
-            ← Back to Dashboard
+                ← Back to Dashboard
 
-        </a>
+            </a>
+        </div>
 
     </div>
 
@@ -103,15 +107,6 @@
 
                                 </a>
 
-                                <!-- ACCESS -->
-
-                                <a href="/Admin/UserAccess?id=@user.Id"
-                                   class="btn btn-warning">
-
-                                    Access
-
-                                </a>
-
                                 <!-- ENABLE / DISABLE -->
 
                                 @if (user.is_active)
@@ -179,6 +174,21 @@
             </tbody>
 
         </table>
+
+    </div>
+
+    <!-- Human Comment: Admin tables show 50 rows per page and share the transaction pagination style. -->
+    <div class="pagination-area">
+
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a class="page-btn @(i == currentPage ? "active" : "")"
+               href="/Admin/Users?page=@i">
+
+                @i
+
+            </a>
+        }
 
     </div>
 

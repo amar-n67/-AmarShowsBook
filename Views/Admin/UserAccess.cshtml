@@ -1,65 +1,145 @@
+@model List<AmarShowsBook.Models.ViewModels.AdminUserRoleViewModel>
+@using AmarShowsBook.Models.Admin
+
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "User Access";
+    var allRoles = ViewBag.AllRoles as List<Role> ?? new List<Role>();
 }
 
 <section class="admin-page">
     <div class="admin-page-header">
         <div>
             <h1>User Access Management</h1>
-            <p>Review user roles, permissions, and access actions.</p>
+            <p>Assign and remove roles for active users from one controlled access table.</p>
         </div>
-        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+        </div>
     </div>
 
-<div class="card p-4">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
 
-    <table class="table">
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
 
-        <thead>
+    <div class="table-wrapper">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Status</th>
+                    <th>Current Roles</th>
+                    <th>Grant Role</th>
+                    <th>Remove Role</th>
+                </tr>
+            </thead>
 
-            <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Permissions</th>
-                <th>Actions</th>
-            </tr>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="empty-state">No users found</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var user in Model)
+                    {
+                        var availableRoles = allRoles
+                            .Where(role => role.IsActive && !user.RoleIds.Contains(role.Id))
+                            .ToList();
 
-        </thead>
+                        <tr>
+                            <td>
+                                <strong>@user.UserName</strong>
+                                <div class="sub-text">@user.UserEmail</div>
+                            </td>
 
-        <tbody>
+                            <td>
+                                <span class="@(user.IsActive ? "badge-active" : "badge-disabled")">
+                                    @(user.IsActive ? "Active" : "Disabled")
+                                </span>
+                            </td>
 
-            <tr>
+                            <td>
+                                @if (user.Roles.Any())
+                                {
+                                    <div class="admin-role-list">
+                                        @foreach (var roleName in user.Roles)
+                                        {
+                                            <span class="badge warning">@roleName</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="sub-text">No roles assigned</span>
+                                }
+                            </td>
 
-                <td>Demo User</td>
+                            <td>
+                                <!-- Human Comment: Posts a selected role to AddUserRole for full access assignment. -->
+                                <form class="admin-inline-form"
+                                      asp-action="AddUserRole"
+                                      method="post">
+                                    <input type="hidden" name="UserId" value="@user.UserId" />
 
-                <td>STANDARD USER</td>
+                                    <select name="RoleId"
+                                            class="form-select form-select-sm"
+                                            required
+                                            disabled="@(!availableRoles.Any())">
+                                        <option value="">Select role</option>
+                                        @foreach (var role in availableRoles)
+                                        {
+                                            <option value="@role.Id">@role.Name</option>
+                                        }
+                                    </select>
 
-                <td>
-                    VIEW BOOKINGS
-                </td>
+                                    <button type="submit"
+                                            class="btn btn-dark btn-sm"
+                                            disabled="@(!availableRoles.Any())">
+                                        Grant
+                                    </button>
+                                </form>
+                            </td>
 
-                <td>
+                            <td>
+                                @if (user.RoleIds.Any())
+                                {
+                                    <div class="admin-role-list">
+                                        @foreach (var roleId in user.RoleIds)
+                                        {
+                                            var role = allRoles.FirstOrDefault(x => x.Id == roleId);
 
-                    <button class="btn btn-primary">
-                        Grant Access
-                    </button>
+                                            <form asp-action="RemoveUserRole"
+                                                  method="post">
+                                                <input type="hidden" name="userId" value="@user.UserId" />
+                                                <input type="hidden" name="roleId" value="@roleId" />
 
-                    <button class="btn btn-warning">
-                        Edit Access
-                    </button>
-
-                    <button class="btn btn-danger">
-                        Remove Access
-                    </button>
-
-                </td>
-
-            </tr>
-
-        </tbody>
-
-    </table>
-
-</div>
+                                                <button type="submit"
+                                                        class="btn btn-outline-danger btn-sm">
+                                                    Remove @(role?.Name ?? "Role")
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="sub-text">Nothing to remove</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
 </section>
