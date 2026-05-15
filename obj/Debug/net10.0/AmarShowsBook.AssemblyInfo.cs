@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AmarShowsBook")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ff3ce39200adeb1546009678f3fac3c5723326e8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a677745017379c80e9d4bfb0277fd6371d71ca0a")]
 [assembly: System.Reflection.AssemblyProductAttribute("AmarShowsBook")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AmarShowsBook")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -305,6 +305,8 @@
         repeat(auto-fit,minmax(220px,1fr));
 
     margin-top:24px;
+
+    margin-bottom:10px;
 }
 
 .access-stat-card{
@@ -320,18 +322,49 @@
         0 4px 12px rgba(0,0,0,0.04);
 }
 
+/* ===================================================== */
+/* HORIZONTAL USER LIST */
+/* ===================================================== */
+
 .access-card-grid{
     margin-top:30px;
 
-    display:grid;
-
-    grid-template-columns:
-        repeat(auto-fit,minmax(420px,1fr));
+    display:flex;
 
     gap:24px;
+
+    overflow-x:auto;
+
+    overflow-y:hidden;
+
+    padding-bottom:14px;
+
+    scroll-behavior:smooth;
+
+    scrollbar-width:thin;
+}
+
+.access-card-grid::-webkit-scrollbar{
+    height:10px;
+}
+
+.access-card-grid::-webkit-scrollbar-thumb{
+    background:#cbd5e1;
+
+    border-radius:999px;
+}
+
+.access-card-grid::-webkit-scrollbar-track{
+    background:#f1f5f9;
 }
 
 .access-card{
+    min-width:420px;
+
+    max-width:420px;
+
+    flex-shrink:0;
+
     background:#ffffff;
 
     border-radius:18px;
@@ -593,8 +626,10 @@
 
 @@media (max-width:768px){
 
-    .access-card-grid{
-        grid-template-columns:1fr;
+    .access-card{
+        min-width:340px;
+
+        max-width:340px;
     }
 
     .access-card-header{
