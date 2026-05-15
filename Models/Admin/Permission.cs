@@ -1,16 +1,31 @@
-namespace AmarShowsBook.Models.Admin
-{
-    // Human Comment:
-    // Stores permission master list
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
+namespace AmarShowsBook.Models
+{
+    [Table("permissions")]
     public class Permission
     {
-        public int Id { get; set; }
+        [Key]
+        [Column("id")]
+        public long Id { get; set; }
 
-        public string Module { get; set; } = string.Empty;
+        [Column("permission_code")]
+        public string PermissionCode { get; set; }
 
-        public string Action { get; set; } = string.Empty;
+        [Column("permission_name")]
+        public string PermissionName { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        [Column("module_id")]
+        public long ModuleId { get; set; }
+
+        [Column("action_type")]
+        public string ActionType { get; set; }
+
+        [Column("description")]
+        public string Description { get; set; }
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
     }
 }

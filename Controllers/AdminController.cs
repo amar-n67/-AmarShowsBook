@@ -1466,7 +1466,7 @@ public IActionResult UserDetails(long id)
             _context.Roles,
             map => map.RoleId,
             role => role.Id,
-            (map, role) => role.Name
+            (map, role) => role.RoleName
         )
         .Distinct()
         .ToList();
@@ -1771,7 +1771,7 @@ public IActionResult UserAccess()
                 roles,
                 map => map.RoleId,
                 role => role.Id,
-                (map, role) => role.Name
+                (map, role) => role.RoleName
             )
             .Distinct()
             .ToList()

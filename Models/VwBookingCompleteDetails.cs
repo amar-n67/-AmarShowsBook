@@ -24,7 +24,7 @@ public class VwBookingCompleteDetails
     public string BookingStatus { get; set; } = string.Empty;
 
     [Column("seat_numbers")]
-    public string SeatNumbers { get; set; } = string.Empty;
+    public string? SeatNumbers { get; set; } = string.Empty;
 
     [Column("show_title")]
     public string ShowTitle { get; set; } = string.Empty;
@@ -39,22 +39,22 @@ public class VwBookingCompleteDetails
     public decimal TotalAmount { get; set; }
 
     [Column("payment_status")]
-    public string PaymentStatus { get; set; } = string.Empty;
+    public string? PaymentStatus { get; set; } = string.Empty;
 
     [Column("payment_method")]
-    public string PaymentMethod { get; set; } = string.Empty;
+    public string? PaymentMethod { get; set; } = string.Empty;
 
     [Column("user_id")]
     public long UserId { get; set; }
 
     [Column("user_name")]
-    public string UserName { get; set; } = string.Empty;
+    public string? UserName { get; set; } = string.Empty;
 
     [Column("user_email")]
-    public string UserEmail { get; set; } = string.Empty;
+    public string? UserEmail { get; set; } = string.Empty;
 
     [Column("location_name")]
-    public string LocationName { get; set; } = string.Empty;
+    public string? LocationName { get; set; } = string.Empty;
 
     [Column("is_error")]
     public int IsError { get; set; }

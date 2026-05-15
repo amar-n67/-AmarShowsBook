@@ -98,7 +98,7 @@
                                         <option value="">Select role</option>
                                         @foreach (var role in availableRoles)
                                         {
-                                            <option value="@role.Id">@role.Name</option>
+                                            <option value="@role.Id">@role.RoleName</option>
                                         }
                                     </select>
 
@@ -125,7 +125,7 @@
 
                                                 <button type="submit"
                                                         class="btn btn-outline-danger btn-sm">
-                                                    Remove @(role?.Name ?? "Role")
+                                                    Remove @(role?.RoleName ?? "Role")
                                                 </button>
                                             </form>
                                         }
