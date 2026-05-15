@@ -9,16 +9,24 @@
         ViewBag.AllRoles as List<Role>
         ?? new List<Role>();
 
-    int totalUsers = Model.Count;
+    // =====================================================
+    // USER COUNTS
+    // =====================================================
+
+    int totalUsers =
+        Model.Count;
 
     int activeUsers =
         Model.Count(x => x.IsActive);
 
+    int disabledUsers =
+        Model.Count(x => !x.IsActive);
+
     int usersWithRoles =
         Model.Count(x => x.RoleIds.Any());
 
-    int disabledUsers =
-        Model.Count(x => !x.IsActive);
+    int usersWithoutRoles =
+        Model.Count(x => !x.RoleIds.Any());
 }
 
 <section class="admin-page">
