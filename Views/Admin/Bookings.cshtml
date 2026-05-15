@@ -1,8 +1,12 @@
 @model IEnumerable<AmarShowsBook.Models.VwBookingCompleteDetails>
+@using AmarShowsBook.Helpers
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Bookings";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
 }
 
 <section class="admin-page">
@@ -11,43 +15,98 @@
             <h1>Bookings</h1>
             <p>Booking references, users, shows, amounts, and current status.</p>
         </div>
-        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+        </div>
     </div>
 
-<div class="table-wrapper">
-<table class="table admin-table">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Total Bookings</span>
+            <strong>@totalRecords</strong>
+        </div>
 
-<thead>
-<tr>
-    <th>Booking Ref</th>
-    <th>User</th>
-    <th>Show</th>
-    <th>Amount</th>
-    <th>Status</th>
-</tr>
-</thead>
+        <div class="stat-card">
+            <span>Visible Rows</span>
+            <strong>@Model.Count()</strong>
+        </div>
 
-<tbody>
+        <div class="stat-card">
+            <span>Visible Value</span>
+            <strong>@CurrencyFormatter.FormatRupees(Model.Sum(x => x.TotalAmount))</strong>
+        </div>
+    </div>
 
-@foreach (var item in Model)
-{
-    <tr>
+    <div class="table-wrapper">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>Booking Ref</th>
+                    <th>User</th>
+                    <th>Show</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Booked</th>
+                </tr>
+            </thead>
 
-        <td>@item.BookingRef</td>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="empty-state">No bookings found</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@item.BookingRef</strong>
+                                <div class="sub-text">@item.SeatNumbers</div>
+                            </td>
 
-        <td>@item.UserEmail</td>
+                            <td>
+                                <strong>@item.UserName</strong>
+                                <div class="sub-text">@item.UserEmail</div>
+                            </td>
 
-        <td>@item.ShowTitle</td>
+                            <td>
+                                @item.ShowTitle
+                                <div class="sub-text">@item.ShowType</div>
+                            </td>
 
-        @item.TotalAmount
+                            <!-- Human Comment: Amount belongs inside a table cell so booking rows render correctly. -->
+                            <td>@CurrencyFormatter.FormatRupees(item.TotalAmount)</td>
 
-        <td>@item.BookingStatus</td>
+                            <td>
+                                <span class="badge @(item.IsError == 1 ? "danger" : "success")">
+                                    @item.BookingStatus
+                                </span>
+                                <div class="sub-text">@item.PaymentStatus</div>
+                            </td>
 
-    </tr>
-}
+                            <td>
+                                @item.BookedAt.ToString("dd MMM yyyy")
+                                <div class="sub-text">@item.BookedAt.ToString("hh:mm tt")</div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
 
-</tbody>
-
-</table>
-</div>
+    <!-- Human Comment: Admin booking list follows the 50-row pagination requirement. -->
+    <div class="pagination-area">
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a class="page-btn @(i == currentPage ? "active" : "")"
+               href="/Admin/Bookings?page=@i">
+                @i
+            </a>
+        }
+    </div>
 </section>

@@ -1,33 +1,43 @@
 @model List<AmarShowsBook.Models.Admin.VwEnterpriseActivityLog>
 
 @{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Activity Logs";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count;
 }
 
-<section class="activity-page">
-
-    <!-- HEADER -->
-
-    <div class="activity-header">
-
+<section class="admin-page">
+    <div class="admin-page-header">
         <div>
             <h1>Enterprise Activity Logs</h1>
-            <p>
-                System activity, bookings, transactions,
-                errors, user actions and audit events
-            </p>
+            <p>System activity, bookings, transactions, errors, user actions, and audit events.</p>
         </div>
 
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+        </div>
     </div>
 
-    <!-- TABLE -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Total Logs</span>
+            <strong>@totalRecords</strong>
+        </div>
+        <div class="stat-card">
+            <span>Visible Rows</span>
+            <strong>@Model.Count</strong>
+        </div>
+        <div class="stat-card">
+            <span>Errors Visible</span>
+            <strong>@Model.Count(x => !string.IsNullOrWhiteSpace(x.error_message))</strong>
+        </div>
+    </div>
 
     <div class="table-wrapper">
-
-        <table class="activity-table">
-
+        <table class="table admin-table">
             <thead>
-
                 <tr>
                     <th>Time</th>
                     <th>Module</th>
@@ -39,277 +49,61 @@
                     <th>Description</th>
                     <th>Error</th>
                 </tr>
-
             </thead>
 
             <tbody>
-
-                @if (Model != null && Model.Any())
+                @if (Model.Any())
                 {
                     @foreach (var item in Model)
                     {
                         <tr>
-
                             <td>
-                                @item.activity_time.ToString("dd MMM yyyy hh:mm tt")
+                                @item.activity_time.ToString("dd MMM yyyy")
+                                <div class="sub-text">@item.activity_time.ToString("hh:mm tt")</div>
                             </td>
 
                             <td>
-                                <span class="module-badge">
-                                    @(string.IsNullOrWhiteSpace(item.module)
-                                        ? "NA"
-                                        : item.module)
+                                <span class="badge warning">
+                                    @(string.IsNullOrWhiteSpace(item.module) ? "NA" : item.module)
                                 </span>
                             </td>
 
-                            <td>
-                                @(string.IsNullOrWhiteSpace(item.action)
-                                    ? "NA"
-                                    : item.action)
-                            </td>
+                            <td>@(string.IsNullOrWhiteSpace(item.action) ? "NA" : item.action)</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.user_name) ? "NA" : item.user_name)</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.user_email) ? "NA" : item.user_email)</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.reference_no) ? "NA" : item.reference_no)</td>
 
                             <td>
-                                @(string.IsNullOrWhiteSpace(item.user_name)
-                                    ? "NA"
-                                    : item.user_name)
+                                <span class="badge @(item.status == "SUCCESS" ? "success" : item.status == "FAILED" ? "danger" : "warning")">
+                                    @(string.IsNullOrWhiteSpace(item.status) ? "NA" : item.status)
+                                </span>
                             </td>
 
-                            <td>
-                                @(string.IsNullOrWhiteSpace(item.user_email)
-                                    ? "NA"
-                                    : item.user_email)
+                            <td>@(string.IsNullOrWhiteSpace(item.description) ? "NA" : item.description)</td>
+                            <td class="admin-error-cell">
+                                @(string.IsNullOrWhiteSpace(item.error_message) ? "NA" : item.error_message)
                             </td>
-
-                            <td>
-                                @(string.IsNullOrWhiteSpace(item.reference_no)
-                                    ? "NA"
-                                    : item.reference_no)
-                            </td>
-
-                            <td>
-
-                                @if (item.status == "SUCCESS")
-                                {
-                                    <span class="status success">
-                                        SUCCESS
-                                    </span>
-                                }
-                                else if (item.status == "FAILED")
-                                {
-                                    <span class="status failed">
-                                        FAILED
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="status pending">
-                                        @(string.IsNullOrWhiteSpace(item.status)
-                                            ? "NA"
-                                            : item.status)
-                                    </span>
-                                }
-
-                            </td>
-
-                            <td>
-                                @(string.IsNullOrWhiteSpace(item.description)
-                                    ? "NA"
-                                    : item.description)
-                            </td>
-
-                            <td class="error-cell">
-                                @(string.IsNullOrWhiteSpace(item.error_message)
-                                    ? "NA"
-                                    : item.error_message)
-                            </td>
-
                         </tr>
                     }
                 }
                 else
                 {
                     <tr>
-                        <td colspan="9" class="empty-state">
-                            No activity logs found
-                        </td>
+                        <td colspan="9" class="empty-state">No activity logs found</td>
                     </tr>
                 }
-
             </tbody>
-
         </table>
-
     </div>
 
-    <!-- PAGINATION -->
-
-    <div class="pagination-wrapper">
-
-        @if (ViewBag.CurrentPage > 1)
+    <!-- Human Comment: Activity logs are capped at 50 rows per page. -->
+    <div class="pagination-area">
+        @for (int i = 1; i <= totalPages; i++)
         {
-            <a href="?page=@(ViewBag.CurrentPage - 1)"
-               class="page-btn">
-                Previous
+            <a class="page-btn @(i == currentPage ? "active" : "")"
+               href="/Admin/ActivityLogs?page=@i">
+                @i
             </a>
         }
-
-        <span class="page-info">
-            Page @ViewBag.CurrentPage of @ViewBag.TotalPages
-        </span>
-
-        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
-        {
-            <a href="?page=@(ViewBag.CurrentPage + 1)"
-               class="page-btn">
-                Next
-            </a>
-        }
-
     </div>
-
 </section>
-
-<style>
-
-.activity-page{
-    padding:24px;
-    background:#f8fafc;
-    min-height:100vh;
-}
-
-.activity-header{
-    margin-bottom:24px;
-}
-
-.activity-header h1{
-    font-size:38px;
-    font-weight:700;
-    color:#0f172a;
-    margin-bottom:8px;
-}
-
-.activity-header p{
-    color:#64748b;
-    font-size:15px;
-}
-
-.table-wrapper{
-    overflow:auto;
-    background:white;
-    border-radius:18px;
-    border:1px solid #e2e8f0;
-}
-
-.activity-table{
-    width:100%;
-    border-collapse:collapse;
-    min-width:1400px;
-}
-
-.activity-table thead{
-    background:#eff6ff;
-}
-
-.activity-table th{
-    padding:18px;
-    text-align:left;
-    font-size:14px;
-    color:#1e293b;
-    border-bottom:1px solid #dbeafe;
-}
-
-.activity-table td{
-    padding:18px;
-    border-bottom:1px solid #f1f5f9;
-    font-size:14px;
-    color:#334155;
-    vertical-align:top;
-}
-
-.activity-table tr:hover{
-    background:#f8fafc;
-}
-
-.module-badge{
-    display:inline-block;
-    padding:6px 12px;
-    border-radius:999px;
-    background:#dbeafe;
-    color:#1d4ed8;
-    font-size:12px;
-    font-weight:700;
-}
-
-.status{
-    padding:6px 12px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
-}
-
-.success{
-    background:#dcfce7;
-    color:#166534;
-}
-
-.failed{
-    background:#fee2e2;
-    color:#991b1b;
-}
-
-.pending{
-    background:#fef3c7;
-    color:#92400e;
-}
-
-.error-cell{
-    color:#dc2626;
-    min-width:220px;
-}
-
-.empty-state{
-    text-align:center;
-    padding:40px;
-    color:#64748b;
-}
-
-.pagination-wrapper{
-    margin-top:24px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:16px;
-}
-
-.page-btn{
-    padding:10px 18px;
-    background:#2563eb;
-    color:white;
-    text-decoration:none;
-    border-radius:10px;
-    font-weight:600;
-}
-
-.page-btn:hover{
-    background:#1d4ed8;
-    color:white;
-}
-
-.page-info{
-    font-weight:600;
-    color:#334155;
-}
-
-@@media(max-width:900px){
-
-    .activity-page{
-        padding:16px;
-    }
-
-    .activity-header h1{
-        font-size:28px;
-    }
-
-}
-
-</style>

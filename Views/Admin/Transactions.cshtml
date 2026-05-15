@@ -1,4 +1,5 @@
 @model List<AmarShowsBook.Models.VwBookingTransactionSummary>
+@using AmarShowsBook.Helpers
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -9,515 +10,139 @@
     int totalRecords = ViewBag.TotalRecords ?? Model.Count;
     int successCount = ViewBag.SuccessCount ?? Model.Count(x => x.TransactionStatus == "SUCCESS");
     int failedCount = ViewBag.FailedCount ?? Model.Count(x => x.TransactionStatus != "SUCCESS");
-
     int rowNo = ((currentPage - 1) * 50) + 1;
 }
 
 <section class="admin-page">
-
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         ADMIN PAGE HEADER
-    -->
-    <!-- ===================================================== -->
-
-    <div class="admin-header">
-
+    <div class="admin-page-header">
         <div>
             <h1>Transaction Center</h1>
-
-            <p>
-                Enterprise payment monitoring dashboard
-            </p>
+            <p>Enterprise payment monitoring across users, bookings, gateways, and status outcomes.</p>
         </div>
 
         <div class="admin-actions">
-
-            <a href="/Admin/Dashboard"
-               class="admin-back-btn admin-page-back">
-
-                ← Back to Dashboard
-
-            </a>
-
+            <a href="/Admin/Dashboard" class="admin-back-btn admin-page-back">← Back to Dashboard</a>
         </div>
-
     </div>
 
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         QUICK STATS
-    -->
-    <!-- ===================================================== -->
-
     <div class="stats-grid">
-
         <div class="stat-card">
             <span>Total Transactions</span>
             <strong>@totalRecords</strong>
         </div>
 
-        <div class="stat-card success-card">
+        <div class="stat-card">
             <span>Success</span>
-            <strong>
-                @successCount
-            </strong>
+            <strong>@successCount</strong>
         </div>
 
-        <div class="stat-card danger-card">
+        <div class="stat-card">
             <span>Failed</span>
-            <strong>
-                @failedCount
-            </strong>
+            <strong>@failedCount</strong>
         </div>
-
     </div>
-
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         SEARCH BAR
-    -->
-    <!-- ===================================================== -->
-
-    <div class="search-bar">
-
-        <input
-            type="text"
-            id="transactionSearch"
-            placeholder="Search transaction, booking, user..."
-            oninput="searchTransactions()" />
-
-    </div>
-
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         TABLE SECTION
-    -->
-    <!-- ===================================================== -->
 
     <div class="table-wrapper">
-
-        <table class="admin-table" id="transactionTable">
-
+        <table class="admin-table">
             <thead>
-
                 <tr>
-
                     <th>#</th>
-
                     <th>Transaction</th>
-
                     <th>User</th>
-
                     <th>Amount</th>
-
                     <th>Payment</th>
-
-                    <th>Coupon</th>
-
                     <th>Booking</th>
-
                     <th>Status</th>
-
-                    <th>Refund</th>
-
                     <th>Created</th>
-
                     <th>Action</th>
-
                 </tr>
-
             </thead>
 
             <tbody>
-
-            @if (!Model.Any())
-            {
-                <tr>
-                    <td colspan="11" class="empty-state">
-
-                        No transactions found
-
-                    </td>
-                </tr>
-            }
-            else
-            {
-                @foreach (var item in Model)
+                @if (!Model.Any())
                 {
                     <tr>
-
-                        <td>@rowNo</td>
-
-                        <td>
-
-                            <strong>
-                                @item.TransactionRef
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.ShowTitle
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                @item.UserName
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.UserEmail
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                ₹@item.TransactionAmount
-                            </strong>
-
-                            <div class="sub-text">
-
-                                Currency:
-                                @(string.IsNullOrWhiteSpace(item.Currency)
-                                    ? "INR"
-                                    : item.Currency)
-
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                @item.PaymentMethod
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.GatewayName
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <!-- HUMAN COMMENT:
-                                 Coupon module not added yet
-                            -->
-
-                            -
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                @item.BookingRef
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.BookingStatus
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <span class="
-                                badge
-                                @(item.TransactionStatus == "SUCCESS"
-                                    ? "success"
-                                    : "danger")">
-
-                                @item.TransactionStatus
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <!-- HUMAN COMMENT:
-                                 Refund system not added yet
-                            -->
-
-                            <span>-</span>
-
-                        </td>
-
-                        <td>
-
-                            @item.BookingCreatedAt.ToString("dd MMM yyyy")
-
-                            <div class="sub-text">
-
-                                @item.BookingCreatedAt.ToString("hh:mm tt")
-
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <a class="view-btn"
-                               href="/Admin/TransactionDetails/@item.TransactionId">
-
-                                View
-
-                            </a>
-
-                        </td>
-
+                        <td colspan="9" class="empty-state">No transactions found</td>
                     </tr>
-
-                    rowNo++;
                 }
-            }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@rowNo</td>
 
+                            <td>
+                                <strong>@item.TransactionRef</strong>
+                                <div class="sub-text">@item.ShowTitle</div>
+                            </td>
+
+                            <td>
+                                <strong>@item.UserName</strong>
+                                <div class="sub-text">@item.UserEmail</div>
+                            </td>
+
+                            <td>
+                                <strong>@CurrencyFormatter.FormatRupees(item.TransactionAmount)</strong>
+                                <div class="sub-text">Currency: @(string.IsNullOrWhiteSpace(item.Currency) ? "INR" : item.Currency)</div>
+                            </td>
+
+                            <td>
+                                <strong>@item.PaymentMethod</strong>
+                                <div class="sub-text">@item.GatewayName</div>
+                            </td>
+
+                            <td>
+                                <strong>@item.BookingRef</strong>
+                                <div class="sub-text">@item.BookingStatus</div>
+                            </td>
+
+                            <td>
+                                <span class="badge @(item.TransactionStatus == "SUCCESS" ? "success" : "danger")">
+                                    @item.TransactionStatus
+                                </span>
+                                @if (!string.IsNullOrWhiteSpace(item.FailureReason))
+                                {
+                                    <div class="sub-text">@item.FailureReason</div>
+                                }
+                            </td>
+
+                            <td>
+                                @item.BookingCreatedAt.ToString("dd MMM yyyy")
+                                <div class="sub-text">@item.BookingCreatedAt.ToString("hh:mm tt")</div>
+                            </td>
+
+                            <td>
+                                @if (item.TransactionId.HasValue)
+                                {
+                                    <!-- Human Comment: Uses a real transaction id so the View button resolves to details. -->
+                                    <a class="view-btn"
+                                       href="/Admin/TransactionDetails/@item.TransactionId.Value">
+                                        View
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="sub-text">No transaction id</span>
+                                }
+                            </td>
+                        </tr>
+
+                        rowNo++;
+                    }
+                }
             </tbody>
-
         </table>
-
     </div>
 
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         PAGINATION
-    -->
-    <!-- ===================================================== -->
-
+    <!-- Human Comment: Transaction center stays capped at 50 rows per page. -->
     <div class="pagination-area">
-
         @for (int i = 1; i <= totalPages; i++)
         {
-            <a
-                class="page-btn @(i == currentPage ? "active" : "")"
-                href="/Admin/Transactions?page=@i">
-
+            <a class="page-btn @(i == currentPage ? "active" : "")"
+               href="/Admin/Transactions?page=@i">
                 @i
-
             </a>
         }
-
     </div>
-
 </section>
-
-<!-- ===================================================== -->
-<!-- HUMAN COMMENT:
-     PAGE STYLES
--->
-<!-- ===================================================== -->
-
-<style>
-
-.admin-page{
-    padding:24px;
-}
-
-.admin-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:24px;
-}
-
-.admin-header h1{
-    margin-bottom:6px;
-}
-
-.stats-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:16px;
-    margin-bottom:24px;
-}
-
-.stat-card{
-    background:#111827;
-    padding:20px;
-    border-radius:12px;
-    color:white;
-}
-
-.stat-card span{
-    display:block;
-    margin-bottom:8px;
-    color:#94a3b8;
-}
-
-.stat-card strong{
-    font-size:28px;
-}
-
-.success-card{
-    border-left:4px solid #22c55e;
-}
-
-.danger-card{
-    border-left:4px solid #ef4444;
-}
-
-.search-bar{
-    margin-bottom:18px;
-}
-
-.search-bar input{
-    width:100%;
-    padding:14px;
-    border-radius:10px;
-    border:none;
-    background:#0f172a;
-    color:white;
-}
-
-.table-wrapper{
-    overflow:auto;
-    border-radius:12px;
-}
-
-.admin-table{
-    width:100%;
-    border-collapse:collapse;
-    background:#111827;
-    color:white;
-}
-
-.admin-table thead{
-    position:sticky;
-    top:0;
-    background:#1e293b;
-}
-
-.admin-table th{
-    padding:16px;
-    text-align:left;
-    font-size:14px;
-}
-
-.admin-table td{
-    padding:16px;
-    border-top:1px solid #1e293b;
-    vertical-align:top;
-}
-
-.sub-text{
-    margin-top:4px;
-    font-size:12px;
-    color:#94a3b8;
-}
-
-.badge{
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
-}
-
-.success{
-    background:#14532d;
-    color:white;
-}
-
-.danger{
-    background:#7f1d1d;
-    color:white;
-}
-
-.warning{
-    background:#78350f;
-    color:white;
-}
-
-.view-btn{
-    padding:8px 12px;
-    border-radius:8px;
-    background:#2563eb;
-    color:white;
-    text-decoration:none;
-    font-size:13px;
-}
-
-.pagination-area{
-    margin-top:24px;
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-.page-btn{
-    padding:10px 14px;
-    border-radius:8px;
-    background:#1e293b;
-    color:white;
-    text-decoration:none;
-}
-
-.page-btn.active{
-    background:#2563eb;
-}
-
-.empty-state{
-    text-align:center;
-    padding:40px;
-    color:#94a3b8;
-}
-
-@@media(max-width:900px){
-
-    .stats-grid{
-        grid-template-columns:1fr;
-    }
-
-}
-
-</style>
-
-<!-- ===================================================== -->
-<!-- HUMAN COMMENT:
-     SEARCH FILTER SCRIPT
--->
-<!-- ===================================================== -->
-
-<script>
-
-let transactionSearchTimer;
-let transactionRowsCache;
-
-function searchTransactions() {
-
-    window.clearTimeout(transactionSearchTimer);
-
-    transactionSearchTimer = window.setTimeout(() => {
-        let input =
-        document.getElementById("transactionSearch");
-
-        let filter =
-            input.value.trim().toLowerCase();
-
-        if (!transactionRowsCache) {
-            let table =
-                document.getElementById("transactionTable");
-
-            transactionRowsCache =
-                Array.from(table.querySelectorAll("tbody tr"))
-                    .map(row => ({
-                        row,
-                        text: row.innerText.toLowerCase()
-                    }));
-        }
-
-        transactionRowsCache.forEach(({ row, text }) => {
-
-            row.style.display =
-                filter.length === 0 || text.includes(filter)
-                ? ""
-                : "none";
-        });
-    }, 120);
-}
-
-</script>

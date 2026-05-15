@@ -1,4 +1,5 @@
 @model AmarShowsBook.Models.VwBookingTransactionSummary
+@using AmarShowsBook.Helpers
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -11,30 +12,77 @@
             <h1>Transaction Details</h1>
             <p>Payment, booking, gateway, and user details for the selected transaction.</p>
         </div>
-        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back" href="/Admin/Transactions">← Back to Transactions</a>
+        </div>
     </div>
 
-    <div class="admin-detail-panel" data-admin-searchable>
-        <div class="row g-4">
-            <div class="col-md-6">
-                <h2 class="h5">Payment</h2>
-                <p><strong>Transaction Ref:</strong> @Model.TransactionRef</p>
-                <p><strong>Status:</strong> @Model.TransactionStatus</p>
-                <p><strong>Amount:</strong> ₹@Model.TransactionAmount</p>
-                <p><strong>Method:</strong> @Model.PaymentMethod</p>
-                <p><strong>Gateway:</strong> @Model.GatewayName</p>
-                <p><strong>Failure Reason:</strong> @(string.IsNullOrWhiteSpace(Model.FailureReason) ? "-" : Model.FailureReason)</p>
-            </div>
+    <div class="transaction-detail-hero" data-admin-searchable>
+        <div>
+            <span class="badge @(Model.TransactionStatus == "SUCCESS" ? "success" : "danger")">
+                @Model.TransactionStatus
+            </span>
+            <h2>@Model.TransactionRef</h2>
+            <p>@Model.ShowTitle</p>
+        </div>
 
-            <div class="col-md-6">
-                <h2 class="h5">Booking</h2>
-                <p><strong>Booking Ref:</strong> @Model.BookingRef</p>
-                <p><strong>Show:</strong> @Model.ShowTitle</p>
-                <p><strong>Booking Status:</strong> @Model.BookingStatus</p>
-                <p><strong>User:</strong> @Model.UserName</p>
-                <p><strong>Email:</strong> @Model.UserEmail</p>
-                <p><strong>Created:</strong> @Model.BookingCreatedAt.ToString("dd MMM yyyy hh:mm tt")</p>
-            </div>
+        <strong>@CurrencyFormatter.FormatRupees(Model.TransactionAmount)</strong>
+    </div>
+
+    <div class="admin-detail-grid">
+        <div class="admin-detail-panel" data-admin-searchable>
+            <h2 class="h5">Payment</h2>
+            <dl class="admin-detail-list">
+                <dt>Transaction Ref</dt>
+                <dd>@Model.TransactionRef</dd>
+
+                <dt>Amount</dt>
+                <dd>@CurrencyFormatter.FormatRupees(Model.TransactionAmount)</dd>
+
+                <dt>Method</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.PaymentMethod) ? "NA" : Model.PaymentMethod)</dd>
+
+                <dt>Gateway</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.GatewayName) ? "NA" : Model.GatewayName)</dd>
+
+                <dt>Failure Reason</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.FailureReason) ? "-" : Model.FailureReason)</dd>
+            </dl>
+        </div>
+
+        <div class="admin-detail-panel" data-admin-searchable>
+            <h2 class="h5">Booking</h2>
+            <dl class="admin-detail-list">
+                <dt>Booking Ref</dt>
+                <dd>@Model.BookingRef</dd>
+
+                <dt>Show</dt>
+                <dd>@Model.ShowTitle</dd>
+
+                <dt>Booking Status</dt>
+                <dd>@Model.BookingStatus</dd>
+
+                <dt>Created</dt>
+                <dd>@Model.BookingCreatedAt.ToString("dd MMM yyyy hh:mm tt")</dd>
+            </dl>
+        </div>
+
+        <div class="admin-detail-panel" data-admin-searchable>
+            <h2 class="h5">User</h2>
+            <dl class="admin-detail-list">
+                <dt>Name</dt>
+                <dd>@Model.UserName</dd>
+
+                <dt>Email</dt>
+                <dd>@Model.UserEmail</dd>
+
+                <dt>User Id</dt>
+                <dd>@Model.UserId</dd>
+
+                <dt>Completed</dt>
+                <dd>@(Model.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")</dd>
+            </dl>
         </div>
     </div>
 </section>
