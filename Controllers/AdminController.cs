@@ -1803,10 +1803,10 @@ public IActionResult ToggleUserStatus(long id)
     return RedirectToAction("Users");
 }
 [HttpPost]
+[HttpPost]
 public IActionResult AddUserRole(UserRoleUpdateViewModel request)
 {
     // =====================================================
-    // HUMAN COMMENT:
     // VALIDATE USER EXISTS
     // =====================================================
 
@@ -1823,7 +1823,6 @@ public IActionResult AddUserRole(UserRoleUpdateViewModel request)
     }
 
     // =====================================================
-    // HUMAN COMMENT:
     // VALIDATE ROLE EXISTS
     // =====================================================
 
@@ -1840,27 +1839,49 @@ public IActionResult AddUserRole(UserRoleUpdateViewModel request)
     }
 
     // =====================================================
-    // HUMAN COMMENT:
-    // PREVENT DUPLICATE ROLE ACCESS
+    // CHECK EXISTING ROLE MAPPING
     // =====================================================
 
-    bool alreadyExists =
-        _context.UserRoleMappings.Any(x =>
-            x.UserId == request.UserId &&
-            x.RoleId == request.RoleId &&
-            x.IsActive);
+    var existingMapping =
+        _context.UserRoleMappings
+            .FirstOrDefault(x =>
+                x.UserId == request.UserId &&
+                x.RoleId == request.RoleId);
 
-    if (alreadyExists)
+    // =====================================================
+    // REACTIVATE OLD ROLE
+    // =====================================================
+
+    if (existingMapping != null)
     {
-        TempData["Error"] =
-            "User already has this role.";
+        if (existingMapping.IsActive)
+        {
+            TempData["Error"] =
+                "User already has this role.";
+
+            return RedirectToAction("UserAccess");
+        }
+
+        existingMapping.IsActive = true;
+
+        existingMapping.AssignedAt =
+            DateTime.UtcNow;
+
+        existingMapping.AssignedBy =
+            Convert.ToInt64(
+
+        HttpContext.Session.GetString("UserId"));
+
+        _context.SaveChanges();
+
+        TempData["Success"] =
+            "Role reactivated successfully.";
 
         return RedirectToAction("UserAccess");
     }
 
     // =====================================================
-    // HUMAN COMMENT:
-    // ADD NEW ROLE ACCESS
+    // CREATE NEW ROLE MAPPING
     // =====================================================
 
     var mapping = new UserRoleMapping
@@ -1870,6 +1891,10 @@ public IActionResult AddUserRole(UserRoleUpdateViewModel request)
         RoleId = request.RoleId,
 
         AssignedAt = DateTime.UtcNow,
+
+        AssignedBy =
+            Convert.ToInt64(
+                HttpContext.Session.GetString("UserId")),
 
         IsActive = true
     };
@@ -1883,7 +1908,6 @@ public IActionResult AddUserRole(UserRoleUpdateViewModel request)
 
     return RedirectToAction("UserAccess");
 }
-
 [HttpPost]
 public IActionResult RemoveUserRole(long userId, long roleId)
 {
