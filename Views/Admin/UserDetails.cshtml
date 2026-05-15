@@ -1,6 +1,8 @@
 @model AmarShowsBook.Models.ViewModels.AdminUserDetailsViewModel
+@using AmarShowsBook.Helpers
 
 @{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "User Details";
 }
 
@@ -51,7 +53,7 @@
 
         <div class="card">
             <span>Wallet</span>
-            <strong>₹@Model.WalletBalance</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.WalletBalance)</strong>
         </div>
 
         <div class="card">
@@ -76,7 +78,7 @@
 
         <div class="card">
             <span>Total Spent</span>
-            <strong>₹@Model.TotalSpent</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalSpent)</strong>
         </div>
 
     </div>

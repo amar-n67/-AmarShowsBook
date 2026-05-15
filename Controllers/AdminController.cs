@@ -410,14 +410,29 @@ FailedRefunds =
         // REFUNDS PAGE
         // =====================================================
 
-        public async Task<IActionResult> Refunds()
+        public async Task<IActionResult> Refunds(int page = 1)
         {
             try
             {
-                var refunds =
-                    await _context.VwRefundSummaries
-                        .AsNoTracking()
-                        .ToListAsync();
+                // Human Comment:
+                // Refunds follow the shared 50-row admin page size while keeping page layout intact.
+                const int pageSize = 50;
+                page = Math.Max(page, 1);
+
+                var query = _context.VwRefundSummaries
+                    .AsNoTracking()
+                    .OrderByDescending(x => x.RequestedAt ?? x.CreatedAt);
+
+                var totalCount = await query.CountAsync();
+
+                var refunds = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                ViewBag.TotalRecords = totalCount;
 
                 return View(refunds);
             }
@@ -425,6 +440,10 @@ FailedRefunds =
             {
                 // Human Comment:
                 // Return empty list if database fails
+
+                ViewBag.CurrentPage = 1;
+                ViewBag.TotalPages = 1;
+                ViewBag.TotalRecords = 0;
 
                 return View(new List<VwRefundSummary>());
             }
@@ -434,14 +453,29 @@ FailedRefunds =
         // WALLETS PAGE
         // =====================================================
 
-        public async Task<IActionResult> Wallets()
+        public async Task<IActionResult> Wallets(int page = 1)
         {
             try
             {
-                var wallets =
-                    await _context.VwWalletSummaries
-                        .AsNoTracking()
-                        .ToListAsync();
+                // Human Comment:
+                // Wallet admin page uses the same 50-row paging contract as other admin lists.
+                const int pageSize = 50;
+                page = Math.Max(page, 1);
+
+                var query = _context.VwWalletSummaries
+                    .AsNoTracking()
+                    .OrderBy(x => x.UserName);
+
+                var totalCount = await query.CountAsync();
+
+                var wallets = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                ViewBag.TotalRecords = totalCount;
 
                 return View(wallets);
             }
@@ -449,6 +483,10 @@ FailedRefunds =
             {
                 // Human Comment:
                 // Return empty list if wallet query fails
+
+                ViewBag.CurrentPage = 1;
+                ViewBag.TotalPages = 1;
+                ViewBag.TotalRecords = 0;
 
                 return View(new List<VwWalletSummary>());
             }
@@ -458,14 +496,29 @@ FailedRefunds =
         // NOTIFICATIONS PAGE
         // =====================================================
 
-        public async Task<IActionResult> Notifications()
+        public async Task<IActionResult> Notifications(int page = 1)
         {
             try
             {
-                var notifications =
-                    await _context.VwNotificationCenters
-                        .AsNoTracking()
-                        .ToListAsync();
+                // Human Comment:
+                // Notification admin page uses the shared 50-row pagination contract.
+                const int pageSize = 50;
+                page = Math.Max(page, 1);
+
+                var query = _context.VwNotificationCenters
+                    .AsNoTracking()
+                    .OrderByDescending(x => x.CreatedAt);
+
+                var totalCount = await query.CountAsync();
+
+                var notifications = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                ViewBag.TotalRecords = totalCount;
 
                 return View(notifications);
             }
@@ -475,6 +528,10 @@ FailedRefunds =
                 // Your previous code used:
                 // List<VwNotificationCenters>()
                 // That class DOES NOT exist
+
+                ViewBag.CurrentPage = 1;
+                ViewBag.TotalPages = 1;
+                ViewBag.TotalRecords = 0;
 
                 return View(new List<VwNotificationCenter>());
             }
@@ -1471,7 +1528,7 @@ public IActionResult UserDetails(long id)
         recentActivities.Add(
 
             $"Transaction {txn.TransactionStatus} | " +
-            $"₹{txn.TransactionAmount ?? 0} | " +
+            $"{CurrencyFormatter.FormatRupees(txn.TransactionAmount)} | " +
             $"{txn.PaymentMethod ?? "NA"} | " +
             $"{txn.BookingCreatedAt:dd MMM yyyy hh:mm tt}"
 

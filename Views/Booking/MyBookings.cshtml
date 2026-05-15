@@ -1,4 +1,5 @@
 @model List<AmarShowsBook.Models.VwBookingCompleteDetails>
+@using AmarShowsBook.Helpers
 
 @{
     ViewData["Title"] = "My Bookings";
@@ -16,7 +17,7 @@
         </div>
         <div class="booking-summary">
             <span>Total Spend</span>
-            <strong>₹ @totalSpend.ToString("N2")</strong>
+            <strong>@CurrencyFormatter.FormatRupees(totalSpend)</strong>
             <small>@confirmedCount confirmed</small>
         </div>
     </div>
@@ -48,7 +49,7 @@
                     <div class="booking-meta">
                         <div>
                             <span>Amount Paid</span>
-                            <strong>₹@booking.TotalAmount.ToString("N2")</strong>
+                            <strong>@CurrencyFormatter.FormatRupees(booking.TotalAmount)</strong>
                         </div>
                         <div>
                             <span>Payment</span>
@@ -57,9 +58,7 @@
                     </div>
 
                     <p class="booking-date">
-                       <p class="booking-date">
-    @booking.BookedAt.ToString("dd MMM yyyy")
-</p>
+                        @booking.BookedAt.ToString("dd MMM yyyy")
                     </p>
 
                 </article>

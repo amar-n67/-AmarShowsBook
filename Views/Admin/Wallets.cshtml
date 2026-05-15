@@ -1,8 +1,12 @@
 @model IEnumerable<AmarShowsBook.Models.Admin.VwWalletSummary>
+@using AmarShowsBook.Helpers
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Wallets";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
 }
 
 <section class="admin-page">
@@ -11,8 +15,25 @@
             <h1>Wallets</h1>
             <p>Wallet balances, blocked balances, and loyalty points by user.</p>
         </div>
-        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+        </div>
     </div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span>Total Wallet Rows</span>
+        <strong>@totalRecords</strong>
+    </div>
+    <div class="stat-card">
+        <span>Visible Balance</span>
+        <strong>@CurrencyFormatter.FormatRupees(Model.Sum(x => x.WalletBalance))</strong>
+    </div>
+    <div class="stat-card">
+        <span>Visible Blocked</span>
+        <strong>@CurrencyFormatter.FormatRupees(Model.Sum(x => x.BlockedBalance))</strong>
+    </div>
+</div>
 
 <div class="table-wrapper">
 <table class="table admin-table">
@@ -32,8 +53,8 @@
 {
     <tr>
         <td>@item.UserName</td>
-        <td>@item.WalletBalance</td>
-        <td>@item.BlockedBalance</td>
+        <td>@CurrencyFormatter.FormatRupees(item.WalletBalance)</td>
+        <td>@CurrencyFormatter.FormatRupees(item.BlockedBalance)</td>
         <td>@item.LoyaltyPoints</td>
     </tr>
 }
@@ -41,5 +62,15 @@
 </tbody>
 
 </table>
+</div>
+
+<div class="pagination-area">
+    @for (int i = 1; i <= totalPages; i++)
+    {
+        <a class="page-btn @(i == currentPage ? "active" : "")"
+           href="/Admin/Wallets?page=@i">
+            @i
+        </a>
+    }
 </div>
 </section>

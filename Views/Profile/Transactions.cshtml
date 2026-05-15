@@ -1,4 +1,5 @@
 @model List<AmarShowsBook.Models.VwBookingTransactionSummary>
+@using AmarShowsBook.Helpers
 
 <h2>My Transactions</h2>
 
@@ -23,7 +24,7 @@
             <td>@item.TransactionRef</td>
 
             <td>
-                ₹@item.TransactionAmount
+                @CurrencyFormatter.FormatRupees(item.TransactionAmount)
             </td>
 
             <td>

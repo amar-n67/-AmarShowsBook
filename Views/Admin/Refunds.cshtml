@@ -1,43 +1,50 @@
 
 @model IEnumerable<AmarShowsBook.Models.Admin.VwRefundSummary>
-    @if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">
-
-        @TempData["Success"]
-
-        <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="alert">
-        </button>
-
-    </div>
-}
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-
-        @TempData["Error"]
-
-        <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="alert">
-        </button>
-
-    </div>
-}
+@using AmarShowsBook.Helpers
 @{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refund Management";
     var totalRefunds = Model.Count();
     var successRefunds = Model.Count(x => x.RefundStatus == "SUCCESS");
     var pendingRefunds = Model.Count(x => x.RefundStatus == "PENDING");
     var failedRefunds = Model.Count(x => x.RefundStatus == "FAILED");
+    var rejectedRefunds = Model.Count(x => x.RefundStatus == "REJECTED");
     var totalRefundAmount = Model.Sum(x => x.RefundAmount ?? 0);
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalRecords = ViewBag.TotalRecords ?? totalRefunds;
 }
 <div class="container-fluid px-4 py-4">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+
+            @TempData["Success"]
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+            </button>
+
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+
+            @TempData["Error"]
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+            </button>
+
+        </div>
+    }
+
     <!-- ===================================================== -->
     <!-- PAGE HEADER -->
     <!-- ===================================================== -->
@@ -50,7 +57,15 @@
                 Monitor refund requests, failures, processing status and customer refund history.
             </p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <a
+                href="/Admin/Dashboard"
+                class="btn btn-outline-dark rounded-pill px-4">
+
+                ← Back
+
+            </a>
+
             <a
     asp-action="ExportRefunds"
     class="btn btn-dark rounded-pill px-4">
@@ -59,8 +74,6 @@
     Export
 
 </a>
-                <i class="bi bi-download me-2"></i>
-            </button>
         </div>
     </div>
     <!-- ===================================================== -->
@@ -145,6 +158,40 @@
         </div>
     </div>
     <!-- ===================================================== -->
+    <!-- HUMAN COMMENT: ANALYTICAL STRUCTURE -->
+    <!-- ===================================================== -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">All Records</p>
+                    <h3 class="fw-bold mb-0">@totalRecords</h3>
+                    <span class="small text-muted">Across every refund page</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Rejected</p>
+                    <h3 class="fw-bold text-danger mb-0">@rejectedRefunds</h3>
+                    <span class="small text-muted">Visible page count</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Visible Rows</p>
+                    <h3 class="fw-bold mb-0">@totalRefunds</h3>
+                    <span class="small text-muted">50 rows per page maximum</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===================================================== -->
     <!-- TOTAL REFUND AMOUNT -->
     <!-- ===================================================== -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -154,7 +201,7 @@
                     Total Refund Amount Processed
                 </h6>
                 <h2 class="fw-bold text-dark mb-0">
-                    ₹ @totalRefundAmount.ToString("N2")
+                    @CurrencyFormatter.FormatRupees(totalRefundAmount)
                 </h2>
             </div>
             <div class="bg-dark text-white rounded-circle p-4">
@@ -229,7 +276,7 @@
     <!-- ===================================================== -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="table-responsive">
-            <table class="table align-middle mb-0" id="refundTable">
+            <table class="table align-middle mb-0 refund-auto-table" id="refundTable">
                 <thead class="table-light">
                     <tr>
                         <th>Refund Ref</th>
@@ -267,7 +314,7 @@
                                 @item.TransactionRef
                             </td>
                             <td class="fw-bold">
-                                ₹ @((item.RefundAmount ?? 0).ToString("N2"))
+                                @CurrencyFormatter.FormatRupees(item.RefundAmount)
                             </td>
                             <td>
                                 @if (item.RefundStatus == "SUCCESS")
@@ -463,6 +510,16 @@
             </table>
         </div>
     </div>
+    <!-- Human Comment: Refunds show 50 rows per page and keep all columns auto-sized. -->
+    <div class="pagination-area">
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a class="page-btn @(i == currentPage ? "active" : "")"
+               href="/Admin/Refunds?page=@i">
+                @i
+            </a>
+        }
+    </div>
 </div>
 <!-- ===================================================== -->
 <!-- FILTER SCRIPT -->
@@ -497,3 +554,17 @@
         filterTable();
     }
 </script>
+
+<style>
+    /* Human Comment: Let refund columns grow naturally instead of forcing cramped fixed widths. */
+    .refund-auto-table {
+        table-layout: auto;
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .refund-auto-table th,
+    .refund-auto-table td {
+        white-space: nowrap;
+    }
+</style>

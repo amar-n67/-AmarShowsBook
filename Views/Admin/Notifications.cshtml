@@ -3,6 +3,9 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Notifications";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
 }
 
 <section class="admin-page">
@@ -11,8 +14,25 @@
             <h1>Notifications</h1>
             <p>Delivery status for user notification activity.</p>
         </div>
-        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+        </div>
     </div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span>Total Notifications</span>
+        <strong>@totalRecords</strong>
+    </div>
+    <div class="stat-card">
+        <span>Visible Failed</span>
+        <strong>@Model.Count(x => x.IsError == 1)</strong>
+    </div>
+    <div class="stat-card">
+        <span>Visible Sent</span>
+        <strong>@Model.Count(x => x.Status == "SENT" || x.Status == "SUCCESS")</strong>
+    </div>
+</div>
 
 <div class="table-wrapper">
 <table class="table admin-table">
@@ -22,22 +42,56 @@
     <th>User</th>
     <th>Title</th>
     <th>Status</th>
+    <th>Created</th>
 </tr>
 </thead>
 
 <tbody>
 
-@foreach (var item in Model)
+@if (!Model.Any())
 {
     <tr>
-        <td>@item.UserName</td>
-        <td>@item.Title</td>
-        <td>@item.Status</td>
+        <td colspan="4" class="empty-state">No notifications found</td>
     </tr>
+}
+else
+{
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                <strong>@item.UserName</strong>
+                <div class="sub-text">@item.UserEmail</div>
+            </td>
+            <td>
+                @item.Title
+                <div class="sub-text">@item.NotificationType</div>
+            </td>
+            <td>
+                <span class="badge @(item.IsError == 1 ? "danger" : "success")">
+                    @item.Status
+                </span>
+            </td>
+            <td>
+                @item.CreatedAt.ToString("dd MMM yyyy")
+                <div class="sub-text">@item.CreatedAt.ToString("hh:mm tt")</div>
+            </td>
+        </tr>
+    }
 }
 
 </tbody>
 
 </table>
+</div>
+
+<div class="pagination-area">
+    @for (int i = 1; i <= totalPages; i++)
+    {
+        <a class="page-btn @(i == currentPage ? "active" : "")"
+           href="/Admin/Notifications?page=@i">
+            @i
+        </a>
+    }
 </div>
 </section>

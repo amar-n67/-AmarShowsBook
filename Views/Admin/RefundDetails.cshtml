@@ -1,6 +1,8 @@
 @model AmarShowsBook.Models.Admin.VwRefundSummary
+@using AmarShowsBook.Helpers
 
 @{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refund Details";
 }
 
@@ -142,7 +144,7 @@
 
             <p>
                 <strong>Refund Amount:</strong>
-                ₹@Model.RefundAmount
+                @CurrencyFormatter.FormatRupees(Model.RefundAmount)
             </p>
 
             <p>

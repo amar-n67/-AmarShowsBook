@@ -1,4 +1,5 @@
 @model AmarShowsBook.Models.ViewModels.AdminDashboardViewModel
+@using AmarShowsBook.Helpers
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -14,6 +15,11 @@
                 Analytics overview for bookings, payments, refunds, wallets,
                 invoices, notifications, and security.
             </p>
+        </div>
+
+        <div class="admin-actions">
+            <!-- Human Comment: Lets admin return to the customer home page from the main dashboard. -->
+            <a class="admin-back-btn admin-page-back" href="/Home/Index">← Back to Home</a>
         </div>
     </div>
 
@@ -66,17 +72,17 @@
 
         <div class="dashboard-card">
             <span>Total Wallet Balance</span>
-            <strong>₹ @Model.TotalWalletBalance</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalWalletBalance)</strong>
         </div>
 
         <div class="dashboard-card">
             <span>Total Credits</span>
-            <strong>₹ @Model.TotalCredits</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalCredits)</strong>
         </div>
 
         <div class="dashboard-card">
             <span>Total Debits</span>
-            <strong>₹ @Model.TotalDebits</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalDebits)</strong>
         </div>
 
     </div>
