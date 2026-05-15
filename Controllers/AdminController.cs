@@ -180,15 +180,28 @@ FailedRefunds =
             return View();
         }
 
-        public IActionResult Users()
+        public IActionResult Users(int page = 1)
         {
             // Human Comment:
-            // Load non-deleted users for admin management
+            // Load users in 50-row pages so the admin table stays fast and readable.
 
-          var users = _context.Users
-    .AsNoTracking()
-    .OrderByDescending(x => x.CreatedAt)
-    .ToList();
+            const int pageSize = 50;
+            page = Math.Max(page, 1);
+
+            var query = _context.Users
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt);
+
+            var totalCount = query.Count();
+
+            var users = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalRecords = totalCount;
 
             return View(users);
         }
@@ -234,15 +247,29 @@ FailedRefunds =
         // BOOKINGS PAGE
         // =====================================================
 
-        public IActionResult Bookings()
+        public IActionResult Bookings(int page = 1)
         {
             // Human Comment:
-            // Load booking summary data
+            // Load booking summary data in 50-row pages for admin tables.
 
-            var bookings =
+            const int pageSize = 50;
+            page = Math.Max(page, 1);
+
+            var query =
                 _context.VwBookingCompleteDetails
                     .AsNoTracking()
-                    .ToList();
+                    .OrderByDescending(x => x.BookedAt);
+
+            var totalCount = query.Count();
+
+            var bookings = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalRecords = totalCount;
 
             return View(bookings);
         }
@@ -312,6 +339,37 @@ FailedRefunds =
             }
 
             return View(transaction);
+        }
+
+        // =====================================================
+        // ACTIVITY LOGS PAGE
+        // =====================================================
+
+        public IActionResult ActivityLogs(int page = 1)
+        {
+            // Human Comment:
+            // Activity logs use the same 50-row admin pagination pattern as transactions.
+
+            const int pageSize = 50;
+            page = Math.Max(page, 1);
+
+            var query = _context
+                .VwEnterpriseActivityLogs
+                .AsNoTracking()
+                .OrderByDescending(x => x.activity_time);
+
+            var totalCount = query.Count();
+
+            var logs = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalRecords = totalCount;
+
+            return View(logs);
         }
 
         // =====================================================

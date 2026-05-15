@@ -58,6 +58,8 @@ public IActionResult MyBookings()
 {
     var userEmail =
         HttpContext.Session.GetString("UserEmail");
+    var userIdText =
+        HttpContext.Session.GetString("UserId");
 
     if (string.IsNullOrWhiteSpace(userEmail))
     {
@@ -69,8 +71,17 @@ public IActionResult MyBookings()
     // Fetch bookings using proper PostgreSQL column mapping
     // =====================================================
 
+    // Human Comment:
+    // User id is preferred because it survives email case or profile email changes.
+    var userId = long.TryParse(userIdText, out var parsedUserId)
+        ? parsedUserId
+        : 0;
+
     var bookings = _context.VwBookingCompleteDetails
-        .Where(v => v.UserEmail == userEmail)
+        .AsNoTracking()
+        .Where(v =>
+            (userId > 0 && v.UserId == userId) ||
+            v.UserEmail.ToLower() == userEmail.ToLower())
         .OrderByDescending(v => v.BookedAt)
         .ToList();
 
