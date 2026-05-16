@@ -17,10 +17,7 @@ namespace AmarShowsBook.Controllers
 
         public IActionResult Create()
         {
-            ViewBag.Movies = _context.Movies.ToList();
-            ViewBag.Standups = _context.StandupShows.ToList();
-            ViewBag.Lives = _context.LiveStreams.ToList();
-            ViewBag.Locations = _context.Locations.ToList();
+            LoadCreateLookups();
 
             return View();
         }
@@ -28,6 +25,14 @@ namespace AmarShowsBook.Controllers
         [HttpPost]
         public IActionResult Create(string type, int itemId, int locationId, DateTime startTime)
         {
+            LoadCreateLookups();
+
+            if (itemId <= 0 || locationId <= 0 || startTime == default)
+            {
+                ViewBag.Error = "Please select show, country/state/region, and start time.";
+                return View();
+            }
+
             int duration = 0;
 
             if (type == "Movie")
@@ -38,6 +43,12 @@ namespace AmarShowsBook.Controllers
 
             if (type == "Live")
                 duration = _context.LiveStreams.Find(itemId)?.Duration ?? 0;
+
+            if (duration <= 0)
+            {
+                ViewBag.Error = "Selected show was not found.";
+                return View();
+            }
 
             DateTime endTime = startTime.AddMinutes(duration);
 
@@ -75,6 +86,14 @@ namespace AmarShowsBook.Controllers
 
             ViewBag.Success = "🎬 Show scheduled successfully!";
             return View();
+        }
+
+        private void LoadCreateLookups()
+        {
+            ViewBag.Movies = _context.Movies.ToList();
+            ViewBag.Standups = _context.StandupShows.ToList();
+            ViewBag.Lives = _context.LiveStreams.ToList();
+            ViewBag.Locations = _context.Locations.ToList();
         }
     }
 }

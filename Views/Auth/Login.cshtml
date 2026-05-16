@@ -1,45 +1,192 @@
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card p-4 shadow-lg">
+@{
+    ViewData["Title"] = "Login";
+}
 
-            <h3 class="text-center mb-3">🎬 Welcome Back to AmarShows</h3>
-            <p class="text-center text-muted">Lights. Camera. Action.</p>
+<section class="auth-stage">
+    <div class="auth-frame">
+        <div class="auth-copy">
+            <span class="auth-kicker">Shot 01 / Entry Gate</span>
+            <h1>showTime</h1>
+            <p>Take your mark, verify the script, and open the next scene.</p>
+        </div>
 
-            <form method="post" novalidate>
+        <div class="auth-card">
+            <div class="auth-slate">
+                <span>Rolling</span>
+                <span>Login Take</span>
+            </div>
 
+            <form method="post" novalidate onsubmit="return validateLoginForm()">
                 <div class="mb-3">
-                    <input name="email" class="form-control" placeholder="Email" required />
+                    <label>Email</label>
+                    <input name="email" type="email" class="form-control" placeholder="artist@gmail.com" required />
                 </div>
 
                 <div class="mb-3">
                     <label>Password</label>
-
                     <div class="input-group">
-                        <input id="loginPassword" name="password" type="password" class="form-control" required />
-
-                        <button type="button" class="btn btn-outline-light"
-                                onclick="togglePassword('loginPassword')">
-                            👁
+                        <input id="loginPassword" name="password" type="password" class="form-control" minlength="8"
+                               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$" required />
+                        <button type="button" class="btn btn-outline-light" data-password-toggle="loginPassword" title="Show password" onclick="togglePassword('loginPassword', this)">
                         </button>
                     </div>
                 </div>
 
-                <button class="btn btn-dark w-100">🎬 Enter Cinema</button>
-
+                <button class="btn btn-primary w-100 auth-main-btn">Enter The Set</button>
             </form>
 
-            <div class="text-center mt-3">
-                <a href="/Auth/Signup">🎟 Create your stage</a><br/>
-                <a href="/Auth/ForgotPassword">🔐 Forgot the script?</a>
+            <div class="auth-links">
+                <a href="/Auth/Signup">Create your opening credit</a>
+                <a href="/Auth/ForgotPassword">Forgot the script?</a>
             </div>
 
-            @if (ViewBag.Error != null)
-            {
-                <div class="alert alert-danger text-center mt-3">
-                    @ViewBag.Error
-                </div>
-            }
-
+            <button type="button" class="btn btn-danger w-100 auth-close-btn" onclick="closeApplication()">
+                Close Application
+            </button>
         </div>
     </div>
-</div>
+</section>
+
+<style>
+.auth-stage {
+    min-height: calc(100vh - 190px);
+    display: grid;
+    align-items: center;
+    padding: 24px 0 44px;
+}
+.auth-frame {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(320px, 440px);
+    gap: 28px;
+    align-items: stretch;
+}
+.auth-copy {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 430px;
+    overflow: hidden;
+    border-radius: 8px;
+    padding: 34px;
+    color: #231f20;
+    background:
+        linear-gradient(135deg, rgba(255, 242, 199, 0.92), rgba(245, 178, 196, 0.88), rgba(146, 229, 221, 0.86)),
+        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
+    box-shadow: 0 24px 70px rgba(35, 31, 32, 0.24);
+}
+.auth-copy h1 {
+    margin: 8px 0 8px;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 900;
+    color: #231f20;
+}
+.auth-copy p {
+    max-width: 520px;
+    margin: 0;
+    color: #34303a;
+    font-size: 1.08rem;
+}
+.auth-kicker,
+.auth-slate {
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+}
+.auth-card {
+    align-self: center;
+    overflow: hidden;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 22px 58px rgba(0,0,0,0.24);
+}
+.auth-slate {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--app-nav);
+    color: var(--app-nav-text);
+}
+.auth-card form,
+.auth-links,
+.auth-close-btn {
+    margin: 22px;
+}
+.auth-card label {
+    margin-bottom: 6px;
+    font-weight: 800;
+}
+.auth-main-btn {
+    min-height: 44px;
+    font-weight: 850;
+}
+.auth-links {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.auth-close-btn {
+    width: calc(100% - 44px) !important;
+    font-weight: 850;
+}
+@@media (max-width: 840px) {
+    .auth-frame {
+        grid-template-columns: 1fr;
+    }
+    .auth-copy {
+        min-height: 260px;
+    }
+}
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const error = "@ViewBag.Error";
+            if (error) {
+                showCinemaPopup(error, "error");
+            }
+        });
+
+        function closeApplication() {
+            showCinemaPopup("This will stop the local application and try to close this tab.", "confirm", {
+                title: "Pack Up?",
+                okText: "Close App",
+                cancelText: "Stay",
+                onOk: function () {
+                    fetch("/Auth/CloseApplication", { method: "POST" })
+                        .finally(function () {
+                            window.open("", "_self");
+                            window.close();
+                            document.body.innerHTML = "<main class='container mt-5'><div class='alert alert-success text-center'>Application closed. You may close this tab if the browser keeps it open.</div></main>";
+                        });
+                }
+            });
+        }
+
+        function validateLoginForm() {
+            const email = document.querySelector('input[name="email"]').value.trim();
+            const password = document.getElementById("loginPassword").value;
+            const emailMark = String.fromCharCode(64);
+            const emailRegex = new RegExp("^[a-zA-Z0-9._%+-]+" + emailMark + "(gmail[.]com|outlook[.]com)$");
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
+
+            if (!emailRegex.test(email)) {
+                showCinemaPopup("Only Gmail or Outlook email is allowed.", "error");
+                return false;
+            }
+
+            if (!passwordRegex.test(password)) {
+                showCinemaPopup("Password must be at least 8 characters and include uppercase, lowercase, and special character.", "error");
+                return false;
+            }
+
+            return true;
+        }
+    </script>
+}

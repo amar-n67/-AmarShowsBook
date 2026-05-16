@@ -1,0 +1,614 @@
+@model AmarShowsBook.Models.User
+
+<div class="profile-page">
+    <div class="profile-shell">
+        <div class="profile-hero">
+            <div>
+                <span class="profile-kicker">Now Editing</span>
+                <h2>Star Profile Cut</h2>
+                <p>Refresh your contact credits, preferred genre, language track, and poster shot.</p>
+            </div>
+            <div class="profile-ticket">Admit One</div>
+        </div>
+
+        <!-- SUCCESS / ERROR -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success profile-alert">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger profile-alert">@TempData["Error"]</div>
+        }
+
+        <form method="post" enctype="multipart/form-data" class="profile-form">
+
+
+            <input type="hidden" id="originalEmail" value="@Model.Email" />
+            <input type="hidden" id="originalMobile" value="@Model.Mobile" />
+            <input type="hidden" id="originalName" value="@Model.Name" />
+            <input type="hidden" id="originalAddress" value="@Model.Address" />
+            <input type="hidden" id="originalCountry" value="@Model.Country" />
+            <input type="hidden" id="originalState" value="@Model.State" />
+            <input type="hidden" id="originalDistrict" value="@Model.District" />
+            <input type="hidden" id="originalPincode" value="@Model.Pincode" />
+            <input type="hidden" id="originalGenre" value="@Model.Genre" />
+            <input type="hidden" id="originalLanguage" value="@Model.Language" />
+
+            <div class="profile-grid">
+                <aside class="poster-panel">
+                    <span class="poster-label">Profile Poster</span>
+                    <img id="profilePreview"
+                         src="@(!string.IsNullOrEmpty(Model.ProfileImagePath) ? Model.ProfileImagePath : "/uploads/default.png")"
+                         class="profile-poster" />
+
+                    <input type="file" name="profileImage"
+                           id="profileImage"
+                           class="poster-file-input"
+                           accept="image/*"
+                           onchange="previewProfileImage()" />
+
+                    <div class="poster-actions">
+                        <label for="profileImage"
+                               class="btn btn-warning btn-sm action-btn poster-upload-btn"
+                               onclick="prepareImageChange()">
+                            Change Poster
+                        </label>
+
+                        <button type="button" id="imageCancel"
+                                class="btn btn-secondary btn-sm action-btn d-none"
+                                onclick="cancelImage()">Cancel</button>
+                    </div>
+                </aside>
+
+                <div class="fields-panel">
+            <!-- ================= NAME ================= -->
+            <section class="profile-scene">
+                <div class="scene-title">
+                    <span>Opening Shot</span>
+                    <h5>Stage Identity</h5>
+                </div>
+
+                <div class="field-block">
+                    <label>Display Name</label>
+                    <div class="input-group input-group-sm">
+                        <input name="Name" id="nameField"
+                               class="form-control clean-input"
+                               value="@Model.Name" readonly />
+
+                        <button type="button" class="btn btn-warning btn-sm"
+                                onclick="editSimpleField('nameField', 'nameCancel')">Retake</button>
+
+                        <button id="nameCancel" type="button"
+                                class="btn btn-secondary btn-sm d-none"
+                                onclick="cancelSimpleField('nameField', 'originalName', 'nameCancel')">Cancel</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= EMAIL ================= -->
+            <section class="profile-scene">
+                <div class="scene-title">
+                    <span>Scene 01</span>
+                    <h5>Contact Credits</h5>
+                </div>
+
+                <div class="field-block">
+                <label>Email Premiere</label>
+
+                <div class="input-group input-group-sm">
+
+                    <input name="Email" id="emailField"
+                           class="form-control clean-input"
+                           value="@Model.Email" readonly />
+
+                    <span id="emailVerifiedIcon" class="text-success d-none ms-2">✔</span>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="editEmail('@Model.Email')">Retake</button>
+
+                    <button id="emailCancel" type="button"
+                            class="btn btn-secondary btn-sm d-none"
+                            onclick="cancelEmail('@Model.Email')">Cancel</button>
+                </div>
+
+                <div id="emailOtpSection" class="mt-2 d-none">
+                    <button type="button" class="btn btn-info btn-sm"
+                            onclick="sendEmailOtp('@Model.Email')">
+                        Send Secret Code
+                    </button>
+                </div>
+
+                <div id="emailVerifyBox" class="mt-2 d-none">
+                    <input id="emailOtpInput"
+                           class="form-control clean-input mb-2"
+                           placeholder="Enter OTP" />
+
+                    <button type="button"
+                            class="btn btn-success btn-sm"
+                            onclick="verifyEmailOtp()">
+                        Lock Scene
+                    </button>
+                </div>
+                </div>
+
+            <!-- ================= MOBILE ================= -->
+                <div class="field-block">
+                <label>Mobile Hotline</label>
+
+                <div class="input-group input-group-sm">
+
+                    <input name="Mobile" id="mobileField"
+                           class="form-control clean-input"
+                           value="@Model.Mobile" readonly />
+
+                    <span id="mobileVerifiedIcon" class="text-success d-none ms-2">✔</span>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="editMobile('@Model.Mobile')">Retake</button>
+
+                    <button id="mobileCancel" type="button"
+                            class="btn btn-secondary btn-sm d-none"
+                            onclick="cancelMobile('@Model.Mobile')">Cancel</button>
+                </div>
+
+                <div id="mobileOtpSection" class="mt-2 d-none">
+                    <button type="button" class="btn btn-info btn-sm"
+                            onclick="sendMobileOtp('@Model.Mobile')">
+                        Send Secret Code
+                    </button>
+                </div>
+
+                <div id="mobileVerifyBox" class="mt-2 d-none">
+                    <input id="mobileOtpInput"
+                           class="form-control clean-input mb-2"
+                           placeholder="Enter OTP" />
+
+                    <button type="button"
+                            class="btn btn-success btn-sm"
+                            onclick="verifyMobileOtp()">
+                        Lock Scene
+                    </button>
+                </div>
+                </div>
+            </section>
+
+            <!-- ================= ADDRESS ================= -->
+            <section class="profile-scene">
+                <div class="scene-title">
+                    <span>Scene 02</span>
+                    <h5>Shooting Location</h5>
+                </div>
+
+                <div class="field-block">
+                <label>Full Address</label>
+
+                <div class="input-group input-group-sm">
+                    <input name="Address" id="addressField"
+                           class="form-control clean-input"
+                           value="@Model.Address" readonly />
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="editAddress('@Model.Address')">Retake</button>
+
+                    <button id="addressCancel" type="button"
+                            class="btn btn-secondary btn-sm d-none"
+                            onclick="cancelAddress('@Model.Address')">Cancel</button>
+                </div>
+
+                <div id="addressDropdown" class="location-grid mt-2">
+                    <div class="position-relative">
+                        <select name="Country" id="countryField"
+                                class="form-control clean-input address-part"
+                                onchange="buildFullAddress()" disabled>
+                            <option value="">Country</option>
+                            <option selected="@(Model.Country == "India" ? "selected" : null)">India</option>
+                            <option selected="@(Model.Country == "United States" ? "selected" : null)">United States</option>
+                        </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
+
+                    <div class="position-relative">
+                        <select name="State" id="stateField"
+                                class="form-control clean-input address-part"
+                                onchange="buildFullAddress()" disabled>
+                            <option value="">State</option>
+                            <option selected="@(Model.State == "Delhi" ? "selected" : null)">Delhi</option>
+                            <option selected="@(Model.State == "Maharashtra" ? "selected" : null)">Maharashtra</option>
+                            <option selected="@(Model.State == "Karnataka" ? "selected" : null)">Karnataka</option>
+                            <option selected="@(Model.State == "California" ? "selected" : null)">California</option>
+                        </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
+
+                    <div class="position-relative">
+                        <select name="District" id="districtField"
+                                class="form-control clean-input address-part"
+                                onchange="buildFullAddress()" disabled>
+                            <option value="">Region</option>
+                            <option selected="@(Model.District == "New Delhi" ? "selected" : null)">New Delhi</option>
+                            <option selected="@(Model.District == "Dwarka" ? "selected" : null)">Dwarka</option>
+                            <option selected="@(Model.District == "Mumbai" ? "selected" : null)">Mumbai</option>
+                            <option selected="@(Model.District == "Pune" ? "selected" : null)">Pune</option>
+                            <option selected="@(Model.District == "Bengaluru" ? "selected" : null)">Bengaluru</option>
+                            <option selected="@(Model.District == "Los Angeles" ? "selected" : null)">Los Angeles</option>
+                        </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
+
+                    <input name="Pincode" id="pincodeField"
+                           class="form-control clean-input address-part"
+                           value="@Model.Pincode"
+                           placeholder="Pincode"
+                           oninput="buildFullAddress()" readonly />
+                </div>
+                </div>
+            </section>
+
+            <!-- ================= GENRE ================= -->
+            <section class="profile-scene">
+                <div class="scene-title">
+                    <span>Scene 03</span>
+                    <h5>Show Taste</h5>
+                </div>
+
+                <div class="field-split">
+            <div class="field-block">
+                <label>Favourite Genre</label>
+
+                <div class="input-group input-group-sm">
+                    <div class="position-relative flex-grow-1">
+                    <select name="Genre" id="genreField"
+                            class="form-control clean-input" disabled>
+                        <option value="@Model.Genre">@Model.Genre</option>
+                        <option>Action</option>
+                        <option>Comedy</option>
+                        <option>Romance</option>
+                        <option>Thriller</option>
+                    </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="enableProfileSelect('genreField')">Retake</button>
+                </div>
+            </div>
+
+            <!-- ================= LANGUAGE ================= -->
+            <div class="field-block">
+                <label>Dialogue Track</label>
+
+                <div class="input-group input-group-sm">
+                    <div class="position-relative flex-grow-1">
+                    <select name="Language" id="languageField"
+                            class="form-control clean-input" disabled>
+                        <option value="@Model.Language">@Model.Language</option>
+                        <option>Hindi</option>
+                        <option>English</option>
+                        <option>Tamil</option>
+                    </select>
+                        <span class="dropdown-icon d-none">⌄</span>
+                    </div>
+
+                    <button type="button" class="btn btn-warning btn-sm"
+                            onclick="enableProfileSelect('languageField')">Retake</button>
+                </div>
+            </div>
+                </div>
+            </section>
+
+            <!-- ================= PASSWORD ================= -->
+            <section class="profile-scene password-scene">
+                <div class="scene-title">
+                    <span>Scene 04</span>
+                    <h5>Security Retake</h5>
+                </div>
+
+                <div class="password-panel">
+                    <div class="field-block">
+                        <label>Verify Current Email</label>
+                        <div class="input-group input-group-sm">
+                            <input id="passwordEmailField"
+                                   class="form-control clean-input"
+                                   value="@Model.Email" readonly />
+
+                            <button type="button" class="btn btn-info btn-sm"
+                                    onclick="sendPasswordEmailOtp()">Send Secret Code</button>
+                        </div>
+                    </div>
+
+                    <div id="passwordEmailVerifyBox" class="field-block d-none">
+                        <label>Email OTP</label>
+                        <div class="input-group input-group-sm">
+                            <input id="passwordEmailOtpInput"
+                                   class="form-control clean-input"
+                                   placeholder="Enter OTP" />
+                            <button type="button" class="btn btn-success btn-sm"
+                                    onclick="verifyPasswordEmailOtp()">Lock Scene</button>
+                        </div>
+                    </div>
+
+                    <div class="change-password-form">
+                        <input form="changePasswordForm" type="hidden" id="verifiedPasswordEmail" name="verifiedEmail" value="" />
+
+                        <div class="field-split">
+                            <div class="field-block">
+                                <label>New Password</label>
+                                <div class="input-group input-group-sm">
+                                    <input form="changePasswordForm" id="newPassword" name="newPassword" type="password"
+                                           class="form-control clean-input"
+                                           minlength="8"
+                                           pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$"
+                                           placeholder="Minimum 8 characters" />
+                                    <button type="button" class="btn btn-outline-light" data-password-toggle="newPassword" title="Show password"
+                                            onclick="togglePassword('newPassword', this)"></button>
+                                </div>
+                            </div>
+
+                            <div class="field-block">
+                                <label>Confirm New Password</label>
+                                <div class="input-group input-group-sm">
+                                    <input form="changePasswordForm" id="confirmPassword" name="confirmPassword" type="password"
+                                           class="form-control clean-input"
+                                           minlength="8"
+                                           pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$"
+                                           placeholder="Repeat new password" />
+                                    <button type="button" class="btn btn-outline-light" data-password-toggle="confirmPassword" title="Show password"
+                                            onclick="togglePassword('confirmPassword', this)"></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                form="changePasswordForm"
+                                class="btn btn-success btn-sm save-btn"
+                                onclick="return validateChangePasswordForm()">
+                            Change Password
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= ACTION ================= -->
+            <div class="profile-actions">
+                <button type="submit"
+                        class="btn btn-success btn-sm save-btn"
+                        onclick="return validateProfileForm()">
+                    Release Final Cut
+                </button>
+
+                <a href="/Home/Index" class="btn btn-secondary btn-sm back-btn">Back to Lobby</a>
+            </div>
+                </div>
+            </div>
+
+        </form>
+        <form id="changePasswordForm" method="post" action="/Profile/ChangePassword"></form>
+    </div>
+</div>
+
+<style>
+.profile-page {
+    min-height: calc(100vh - 90px);
+    padding: 30px 12px;
+    background: var(--app-profile-bg);
+}
+.profile-shell {
+    max-width: 980px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 24px 60px rgba(34,37,47,0.16);
+}
+.profile-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 26px 30px;
+    background: var(--app-nav);
+    color: var(--app-nav-text);
+}
+.profile-hero h2 {
+    margin: 4px 0 6px;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+.profile-hero p {
+    margin: 0;
+    max-width: 560px;
+    color: color-mix(in srgb, var(--app-nav-text) 78%, transparent);
+}
+.profile-kicker,
+.poster-label,
+.scene-title span {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+.profile-ticket {
+    align-self: center;
+    padding: 10px 14px;
+    border: 1px dashed color-mix(in srgb, var(--app-nav-text) 54%, transparent);
+    border-radius: 8px;
+    color: #7d4b00;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.profile-alert {
+    margin: 18px 24px 0;
+}
+.profile-form {
+    padding: 24px;
+}
+.profile-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
+}
+.poster-panel {
+    padding: 18px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #fff4c8, #ffd1da 58%, #c8f7ef);
+    color: #22252f;
+    border: 1px solid var(--app-input-border);
+}
+.poster-label {
+    display: block;
+    margin-bottom: 12px;
+    color: #8b2f4b;
+}
+.profile-poster {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border: 4px solid rgba(255,255,255,0.72);
+    border-radius: 8px;
+    box-shadow: 0 16px 34px rgba(34,37,47,0.16);
+}
+.poster-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+.poster-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.poster-upload-btn {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+.profile-scene {
+    padding: 16px 0;
+    border-bottom: 1px solid #edf0f3;
+}
+.profile-scene:first-child {
+    padding-top: 0;
+}
+.profile-scene:last-of-type {
+    border-bottom: 0;
+}
+.scene-title {
+    margin-bottom: 12px;
+}
+.scene-title span {
+    color: var(--app-primary);
+}
+.scene-title h5 {
+    margin: 2px 0 0;
+    color: var(--app-card-text);
+    font-weight: 800;
+}
+.field-block {
+    margin-bottom: 14px;
+}
+.field-block:last-child {
+    margin-bottom: 0;
+}
+.field-block label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--app-card-text);
+    font-size: 0.86rem;
+    font-weight: 750;
+}
+.field-split,
+.location-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.clean-input {
+    min-height: 38px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+}
+input.clean-input[readonly],
+.clean-input:disabled {
+    background: var(--app-input-disabled);
+    color: var(--app-input-disabled-text);
+    border-color: var(--app-input-border);
+    opacity: 1;
+}
+.clean-input:focus {
+    border-color: var(--app-accent-strong);
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--app-accent-strong) 24%, transparent);
+}
+.dropdown-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #0f766e;
+    font-size: 1.1rem;
+    font-weight: 900;
+    pointer-events: none;
+}
+.input-group .btn,
+.action-btn,
+.save-btn,
+.back-btn {
+    border-radius: 8px;
+    font-weight: 750;
+}
+.profile-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+}
+.password-panel {
+    padding: 14px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 86%, var(--app-accent-strong) 14%);
+}
+.change-password-form {
+    margin-top: 10px;
+}
+.save-btn {
+    min-width: 160px;
+}
+@@media (max-width: 760px) {
+    .profile-hero,
+    .profile-actions {
+        flex-direction: column;
+    }
+    .profile-grid,
+    .field-split,
+    .location-grid {
+        grid-template-columns: 1fr;
+    }
+    .profile-form,
+    .profile-hero {
+        padding: 20px;
+    }
+}
+</style>
+
+@section Scripts {
+    <script src="~/js/profile.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = "@TempData["Success"]";
+            const error = "@TempData["Error"]";
+
+            if (success) {
+                showCinemaPopup(success, "success");
+            }
+
+            if (error) {
+                showCinemaPopup(error, "error");
+            }
+        });
+    </script>
+}

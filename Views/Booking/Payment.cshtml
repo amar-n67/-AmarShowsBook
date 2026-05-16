@@ -1,0 +1,74 @@
+@model BookingDraft
+
+<div class="card">
+
+    <h2>Payment</h2>
+
+    <p>Amount: ₹@Model.TotalAmount</p>
+
+    <div>
+        <input type="radio" name="pay" value="UPI" checked />
+        UPI
+    </div>
+
+    <div>
+        <input type="radio" name="pay" value="CARD" />
+        Card
+    </div>
+
+    <div>
+        <input type="radio" name="pay" value="NETBANKING" />
+        Net Banking
+    </div>
+
+    <div>
+        <input type="radio" name="pay" value="QR" />
+        QR Scan
+    </div>
+
+    <button type="button" onclick="pay()">
+        Pay
+    </button>
+
+</div>
+
+<script>
+
+<script>
+
+async function pay()
+{
+    let selectedPayment =
+        document.querySelector(
+            'input[name="pay"]:checked'
+        ).value;
+
+    let response = await fetch(
+        "/Booking/CompletePayment",
+        {
+            method: "POST",
+            headers:
+            {
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify(
+            {
+                bookingId: @Model.Id,
+                paymentMethod: selectedPayment
+            })
+        });
+
+    let result = await response.json();
+
+    if(result.success)
+    {
+        alert("Payment Success");
+        window.location.href="/Booking/MyBookings";
+    }
+    else
+    {
+        alert(result.message);
+    }
+}
+
+</script>

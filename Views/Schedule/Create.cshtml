@@ -1,28 +1,84 @@
-<h2>🎬 Schedule Show</h2>
+<section class="card p-4 mx-auto schedule-create">
+    <h2>Schedule Show</h2>
+    <p class="text-muted">Choose the show, country/state/region location, and start time.</p>
 
-<form method="post">
+    <form method="post">
+        <label>Type</label>
+        <select id="scheduleType" name="type" class="form-control mb-3" onchange="syncScheduleItems()">
+            <option>Movie</option>
+            <option>Standup</option>
+            <option>Live</option>
+        </select>
 
-    <label>Type</label>
-    <select name="type" class="form-control">
-        <option>Movie</option>
-        <option>Standup</option>
-        <option>Live</option>
-    </select>
+        <label>Show</label>
+        <select id="itemId" name="itemId" class="form-control mb-3" required>
+            @foreach (var movie in ViewBag.Movies)
+            {
+                <option value="@movie.Id" data-type="Movie">@movie.Title</option>
+            }
+            @foreach (var standup in ViewBag.Standups)
+            {
+                <option value="@standup.Id" data-type="Standup">@standup.Title</option>
+            }
+            @foreach (var live in ViewBag.Lives)
+            {
+                <option value="@live.Id" data-type="Live">@live.Title</option>
+            }
+        </select>
 
-    <label>Item ID</label>
-    <input name="itemId" class="form-control" />
+        <label>Country / State / Region</label>
+        <select name="locationId" class="form-control mb-3" required>
+            @foreach (var location in ViewBag.Locations)
+            {
+                <option value="@location.Id">@location.Country / @location.State / @location.Area</option>
+            }
+        </select>
 
-    <label>Location ID</label>
-    <input name="locationId" class="form-control" />
+        <label>Start Time</label>
+        <input name="startTime" type="datetime-local" class="form-control mb-3" required />
 
-    <label>Start Time</label>
-    <input name="startTime" type="datetime-local" class="form-control" />
+        <button class="btn btn-primary">Create Schedule</button>
+    </form>
+</section>
 
-    <br/>
+<style>
+.schedule-create {
+    max-width: 620px;
+    border-radius: 8px;
+}
+.schedule-create h2 {
+    font-weight: 900;
+}
+.schedule-create label {
+    margin-bottom: 6px;
+    font-weight: 800;
+}
+</style>
 
-    <button class="btn btn-primary">Create Schedule</button>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            syncScheduleItems();
 
-</form>
+            const error = "@ViewBag.Error";
+            const success = "@ViewBag.Success";
+            if (error) showCinemaPopup(error, "error");
+            if (success) showCinemaPopup(success, "success");
+        });
 
-<p style="color:red">@ViewBag.Error</p>
-<p style="color:green">@ViewBag.Success</p>
+        function syncScheduleItems() {
+            const type = document.getElementById("scheduleType").value;
+            const itemSelect = document.getElementById("itemId");
+            const options = Array.from(itemSelect.options);
+
+            options.forEach(option => {
+                option.hidden = option.dataset.type !== type;
+            });
+
+            const firstVisible = options.find(option => !option.hidden);
+            if (firstVisible) {
+                itemSelect.value = firstVisible.value;
+            }
+        }
+    </script>
+}

@@ -1,5 +1,6 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/appsettings.Development.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/appsettings.json
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/appsettings.Production.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/AmarShowsBook.staticwebassets.runtime.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/AmarShowsBook.staticwebassets.endpoints.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/AmarShowsBook
@@ -25,10 +26,14 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.Relational.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Microsoft.Extensions.DependencyModel.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Microsoft.NET.StringTools.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Microsoft.Win32.SystemEvents.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Mono.TextTemplating.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Newtonsoft.Json.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Npgsql.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/QRCoder.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/SendGrid.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/StarkbankEcdsa.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.CodeDom.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Composition.AttributedModel.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Composition.Convention.dll
@@ -36,6 +41,7 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Composition.Runtime.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Composition.TypedParts.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Configuration.ConfigurationManager.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Drawing.Common.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Formats.Nrbf.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Reflection.MetadataLoadContext.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/System.Resources.Extensions.dll
@@ -107,6 +113,9 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/tr/Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/zh-Hans/Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/runtimes/win/lib/net6.0/Microsoft.Win32.SystemEvents.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/runtimes/unix/lib/net6.0/System.Drawing.Common.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/runtimes/win/lib/net6.0/System.Drawing.Common.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/runtimes/win/lib/net9.0/System.Windows.Extensions.dll
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.csproj.AssemblyReference.cache
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/rpswa.dswa.cache.json
@@ -124,8 +133,11 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/scopedcss/Views/Shared/_Layout.cshtml.rz.scp.css
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/scopedcss/bundle/AmarShowsBook.styles.css
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/scopedcss/projectbundle/AmarShowsBook.bundle.scp.css
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/2eugpff619-{0}-7ssazadgud-7ssazadgud.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/9xbbb7jbrn-{0}-b9sayid5wm-b9sayid5wm.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/weluyfgci1-{0}-61n19gt1b8-61n19gt1b8.gz
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/mf998i1i4b-{0}-ap6kbaln50-ap6kbaln50.gz
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/x4gb0n58n7-{0}-d3dorr1pku-d3dorr1pku.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/m2hw9nk6nd-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/b9qc1eur9u-{0}-bqjiyaj88i-bqjiyaj88i.gz
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/z4sawbtvxk-{0}-c2jlpeoesf-c2jlpeoesf.gz
@@ -199,6 +211,3 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.pdb
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.genruntimeconfig.cache
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/ref/AmarShowsBook.dll
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/SendGrid.dll
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/StarkbankEcdsa.dll
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/x4gb0n58n7-{0}-7saaze4lu7-7saaze4lu7.gz

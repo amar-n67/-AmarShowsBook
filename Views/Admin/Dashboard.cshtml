@@ -1,0 +1,90 @@
+@model AmarShowsBook.Models.ViewModels.AdminDashboardViewModel
+@using AmarShowsBook.Helpers
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<section class="admin-dashboard">
+
+    <div class="admin-page-header">
+        <div>
+            <h1>Admin Dashboard</h1>
+            <p>
+                Analytics overview for bookings, payments, refunds, wallets,
+                invoices, notifications, and security.
+            </p>
+        </div>
+
+        <div class="admin-actions">
+            <!-- Human Comment: Lets admin return to the customer home page from the main dashboard. -->
+            <a class="admin-back-btn admin-page-back" href="/Home/Index">← Back to Home</a>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+
+        <div class="dashboard-card">
+            <span>Total Bookings</span>
+            <strong>@Model.TotalBookings</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Failed Bookings</span>
+            <strong>@Model.FailedBookings</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Successful Payments</span>
+            <strong>@Model.SuccessfulPayments</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Failed Payments</span>
+            <strong>@Model.FailedPayments</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Total Refunds</span>
+            <strong>@Model.TotalRefunds</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Refund Failures</span>
+            <strong>@Model.FailedRefunds</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Invoice Failures</span>
+            <strong>@Model.InvoiceFailures</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Notification Failures</span>
+            <strong>@Model.NotificationFailures</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Security Alerts</span>
+            <strong>@Model.TicketValidationIssues</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Total Wallet Balance</span>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalWalletBalance)</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Total Credits</span>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalCredits)</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <span>Total Debits</span>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalDebits)</strong>
+        </div>
+
+    </div>
+
+</section>

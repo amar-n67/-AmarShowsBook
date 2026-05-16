@@ -1,0 +1,195 @@
+@model List<AmarShowsBook.Models.User>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Users";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+}
+
+<section class="admin-page">
+
+    <div class="admin-page-header">
+
+        <div>
+            <h1>User Management</h1>
+
+            <p>
+                Manage account status, profile details,
+                and user access.
+            </p>
+        </div>
+
+        <div class="admin-actions">
+            <a class="admin-back-btn admin-page-back"
+               href="/Admin/Dashboard">
+
+                ← Back to Dashboard
+
+            </a>
+        </div>
+
+    </div>
+
+    <div class="table-wrapper">
+
+        <table class="table admin-table">
+
+            <thead>
+
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Status</th>
+                    <th>Delete Status</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var user in Model)
+                {
+                    <tr>
+
+                        <td>@user.Name</td>
+
+                        <td>@user.Email</td>
+
+                        <td>@user.Mobile</td>
+
+                        <td>
+
+                            @if (user.is_active)
+                            {
+                                <span class="badge-active">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-disabled">
+                                    Disabled
+                                </span>
+                            }
+
+                        </td>
+
+                        <td>
+
+                            @if (user.is_deleted)
+                            {
+                                <span class="badge bg-danger">
+                                    Deleted
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">
+                                    Normal
+                                </span>
+                            }
+
+                        </td>
+
+                        <td>
+
+                            <div class="admin-actions">
+
+                                <!-- DETAILS -->
+
+                                <a href="/Admin/UserDetails/@user.Id"
+                                   class="btn btn-primary">
+
+                                    Details
+
+                                </a>
+
+                                <!-- ENABLE / DISABLE -->
+
+                                @if (user.is_active)
+                                {
+                                    <form method="post"
+                                          action="/Admin/DisableUser/@user.Id">
+
+                                        <button type="submit"
+                                                class="btn btn-danger">
+
+                                            Disable
+
+                                        </button>
+
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post"
+                                          action="/Admin/EnableUser/@user.Id">
+
+                                        <button type="submit"
+                                                class="btn btn-success">
+
+                                            Enable
+
+                                        </button>
+
+                                    </form>
+                                }
+
+                                <!-- DELETE / REVOKE -->
+
+                                @if (user.is_deleted)
+                                {
+                                    <a class="btn btn-success"
+                                       href="/Admin/RevokeUser/@user.Id">
+
+                                        Revoke
+
+                                    </a>
+                                }
+                                else
+                                {
+                                    <form method="post"
+                                          action="/Admin/DeleteUser/@user.Id">
+
+                                        <button type="submit"
+                                                class="btn btn-dark">
+
+                                            Delete
+
+                                        </button>
+
+                                    </form>
+                                }
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- Human Comment: Admin tables show 50 rows per page and share the transaction pagination style. -->
+    <div class="pagination-area">
+
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a class="page-btn @(i == currentPage ? "active" : "")"
+               href="/Admin/Users?page=@i">
+
+                @i
+
+            </a>
+        }
+
+    </div>
+
+</section>

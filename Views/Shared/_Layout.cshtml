@@ -1,126 +1,1045 @@
-﻿<!DOCTYPE html>
+﻿@inject AmarShowsBook.Services.RbacService RbacService
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <style>
-        <div id="customPopup" style="
-display:none;
-position:fixed;
-top:20px;
-right:20px;
-background:#1e293b;
-color:#fff;
-padding:15px 20px;
-border-radius:8px;
-box-shadow:0 0 10px rgba(0,0,0,0.5);
-z-index:9999;">
-</div>
+:root {
+    --app-bg: #fff7eb;
+    --app-text: #22252f;
+    --app-card: #fffdf7;
+    --app-card-text: #22252f;
+    --app-input: #ffffff;
+    --app-input-text: #22252f;
+    --app-input-border: #c8d2df;
+    --app-input-disabled: #f1f5f9;
+    --app-input-disabled-text: #526071;
+    --app-muted: #526071;
+    --app-link: #9d3156;
+    --app-primary: #c94f68;
+    --app-primary-hover: #a93d55;
+    --app-nav: linear-gradient(135deg, #fff3c4, #ffc6d0 52%, #aaf0e6);
+    --app-nav-text: #22252f;
+    --app-accent: #f2bd2d;
+    --app-accent-strong: #139487;
+    --app-danger: #c2415c;
+    --app-page-surface: #fffdf7;
+    --app-page-text: #22252f;
+    --app-popup-surface: #fffdf7;
+    --app-popup-text: #22252f;
+    --app-popup-muted: #526071;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 243, 196, 0.82), rgba(255, 198, 208, 0.72), rgba(170, 240, 230, 0.64)), rgba(34, 37, 47, 0.2);
+    --app-profile-bg: radial-gradient(circle at top left, rgba(255, 198, 208, 0.62), transparent 36%), linear-gradient(135deg, #fff7eb, #fffdf7 45%, #ddfbf6);
+}
+
+html[data-theme="system"] {
+    --app-bg: #e8edf5;
+    --app-text: #1f2937;
+    --app-card: #f9fbff;
+    --app-card-text: #1f2937;
+    --app-input: #ffffff;
+    --app-input-text: #111827;
+    --app-input-border: #bac4d4;
+    --app-input-disabled: #e3e8f0;
+    --app-input-disabled-text: #667085;
+    --app-muted: #64748b;
+    --app-link: #315f9f;
+    --app-primary: #315f9f;
+    --app-primary-hover: #244a7e;
+    --app-nav: linear-gradient(135deg, #233142, #455d7a 58%, #a37c40);
+    --app-nav-text: #fffdf8;
+    --app-accent: #f2c46d;
+    --app-accent-strong: #315f9f;
+    --app-danger: #9f3a3a;
+    --app-page-surface: #f9fbff;
+    --app-page-text: #1f2937;
+    --app-popup-surface: #f9fbff;
+    --app-popup-text: #1f2937;
+    --app-popup-muted: #64748b;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(35, 49, 66, 0.62), rgba(163, 124, 64, 0.42)), rgba(248, 250, 252, 0.58);
+    --app-profile-bg: linear-gradient(135deg, #dfe7f1, #f8fafc, #fff7e6);
+}
+
+html[data-theme="white"] {
+    --app-bg: #f7f7fb;
+    --app-text: #1f2937;
+    --app-card: #ffffff;
+    --app-card-text: #1f2937;
+    --app-input: #ffffff;
+    --app-input-text: #111827;
+    --app-input-border: #d1d5db;
+    --app-input-disabled: #eef2f7;
+    --app-input-disabled-text: #6b7280;
+    --app-muted: #6b7280;
+    --app-link: #2563eb;
+    --app-primary: #2563eb;
+    --app-primary-hover: #1d4ed8;
+    --app-nav: linear-gradient(135deg, #ffffff, #eef2ff 55%, #dbeafe);
+    --app-nav-text: #111827;
+    --app-accent: #2563eb;
+    --app-accent-strong: #0f766e;
+    --app-danger: #dc2626;
+    --app-page-surface: #ffffff;
+    --app-page-text: #111827;
+    --app-popup-surface: #ffffff;
+    --app-popup-text: #111827;
+    --app-popup-muted: #4b5563;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(219, 234, 254, 0.82)), rgba(15, 23, 42, 0.28);
+    --app-profile-bg: linear-gradient(135deg, #f8fafc, #eef2ff, #ecfeff);
+}
+
+html[data-theme="dark"] {
+    --app-bg: #20212a;
+    --app-text: #f8fafc;
+    --app-card: #2a2c38;
+    --app-card-text: #ffffff;
+    --app-input: #343746;
+    --app-input-text: #ffffff;
+    --app-input-border: #6b7280;
+    --app-input-disabled: #292c36;
+    --app-input-disabled-text: #d1d5db;
+    --app-muted: #cbd5e1;
+    --app-link: #bfdbfe;
+    --app-primary: #5b5bd6;
+    --app-primary-hover: #4b4dbf;
+    --app-nav: linear-gradient(135deg, #262737, #7a3153 58%, #2f7c82);
+    --app-nav-text: #f9fafb;
+    --app-accent: #ffd166;
+    --app-accent-strong: #2dd4bf;
+    --app-danger: #dc4c64;
+    --app-page-surface: #2a2c38;
+    --app-page-text: #f9fafb;
+    --app-popup-surface: #2a2c38;
+    --app-popup-text: #f9fafb;
+    --app-popup-muted: #cbd5e1;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(38, 39, 55, 0.82), rgba(122, 49, 83, 0.64)), rgba(0, 0, 0, 0.52);
+    --app-profile-bg: linear-gradient(135deg, #252637, #4c2d45, #2f7c82);
+}
+
+html[data-theme="cinema"] {
+    --app-bg: #fff7eb;
+    --app-text: #22252f;
+    --app-card: #fffdf7;
+    --app-card-text: #22252f;
+    --app-input: #ffffff;
+    --app-input-text: #22252f;
+    --app-input-border: #c8d2df;
+    --app-input-disabled: #f1f5f9;
+    --app-input-disabled-text: #526071;
+    --app-muted: #526071;
+    --app-link: #9d3156;
+    --app-primary: #c94f68;
+    --app-primary-hover: #a93d55;
+    --app-nav: linear-gradient(135deg, #fff3c4, #ffc6d0 52%, #aaf0e6);
+    --app-nav-text: #22252f;
+    --app-accent: #f2bd2d;
+    --app-accent-strong: #139487;
+    --app-danger: #c2415c;
+    --app-page-surface: #fffdf7;
+    --app-page-text: #22252f;
+    --app-popup-surface: #fffdf7;
+    --app-popup-text: #22252f;
+    --app-popup-muted: #526071;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 243, 196, 0.82), rgba(255, 198, 208, 0.72), rgba(170, 240, 230, 0.64)), rgba(34, 37, 47, 0.2);
+    --app-profile-bg: radial-gradient(circle at top left, rgba(255, 198, 208, 0.62), transparent 36%), linear-gradient(135deg, #fff7eb, #fffdf7 45%, #ddfbf6);
+}
+
 body {
-    background: #0f172a;
-    color: #e5e7eb;
+    background: var(--app-bg);
+    color: var(--app-text);
     font-family: 'Segoe UI', sans-serif;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .card {
-    background: #1e293b;
-    border-radius: 16px;
-    color: #f1f5f9;
+    background: var(--app-card) !important;
+    border-radius: 8px;
+    color: var(--app-card-text) !important;
+    border-color: var(--app-input-border) !important;
 }
 
-.form-control {
-    background: #334155;
-    color: #fff;
-    border: none;
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6,
+.card p,
+.card label,
+.card small {
+    color: inherit;
 }
 
-.form-control::placeholder {
-    color: #cbd5f5;
+.form-control,
+.form-select,
+input,
+select,
+textarea {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+select option {
+    background: var(--app-input);
+    color: var(--app-input-text);
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: color-mix(in srgb, var(--app-input-text) 58%, transparent);
+}
+
+.btn[data-password-toggle] {
+    min-width: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-cat {
+    position: relative;
+    width: 25px;
+    height: 20px;
+    display: inline-block;
+}
+
+.password-cat::before,
+.password-cat::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 8px solid currentColor;
+}
+
+.password-cat::before {
+    left: 2px;
+    transform: rotate(-18deg);
+}
+
+.password-cat::after {
+    right: 2px;
+    transform: rotate(18deg);
+}
+
+.password-cat-face {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 0;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-radius: 50% 50% 45% 45%;
+}
+
+.password-cat-eye {
+    position: absolute;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.password-cat-eye:first-child {
+    left: 7px;
+}
+
+.password-cat-eye:last-child {
+    right: 7px;
+}
+
+.password-cat.closed .password-cat-eye {
+    top: 9px;
+    height: 2px;
+    border-radius: 999px;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+input:disabled,
+input[readonly],
+select:disabled,
+textarea:disabled,
+textarea[readonly] {
+    background-color: var(--app-input-disabled) !important;
+    color: var(--app-input-disabled-text) !important;
+    border-color: var(--app-input-border) !important;
+    opacity: 1;
+}
+
+label,
+.form-label,
+h1, h2, h3, h4, h5, h6,
+p,
+li,
+td,
+th {
+    color: inherit;
+}
+
+.text-muted {
+    color: var(--app-muted) !important;
+}
+
+.table {
+    color: var(--app-text);
+}
+
+.alert {
+    border-radius: 12px;
+}
+
+.alert-danger {
+    background: color-mix(in srgb, var(--app-danger) 14%, var(--app-card)) !important;
+    color: var(--app-card-text) !important;
+    border-color: color-mix(in srgb, var(--app-danger) 44%, var(--app-input-border)) !important;
+}
+
+.alert-success {
+    background: color-mix(in srgb, var(--app-accent-strong) 15%, var(--app-card)) !important;
+    color: var(--app-card-text) !important;
+    border-color: color-mix(in srgb, var(--app-accent-strong) 45%, var(--app-input-border)) !important;
 }
 
 .btn-primary {
-    background: #6366f1;
-    border: none;
+    background: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+    color: #fff !important;
 }
 
 .btn-primary:hover {
-    background: #4f46e5;
+    background: var(--app-primary-hover) !important;
+}
+
+.btn-dark,
+.btn-secondary,
+.btn-outline-light {
+    background: var(--app-input-disabled) !important;
+    border-color: var(--app-input-border) !important;
+    color: var(--app-input-text) !important;
+}
+
+.btn-warning {
+    background: var(--app-accent) !important;
+    border-color: var(--app-accent) !important;
+    color: #231f20 !important;
+}
+
+.btn-success {
+    background: var(--app-accent-strong) !important;
+    border-color: var(--app-accent-strong) !important;
+    color: #fff !important;
+}
+
+.btn-danger {
+    background: var(--app-danger) !important;
+    border-color: var(--app-danger) !important;
+    color: #fff !important;
 }
 
 a {
-    color: #93c5fd;
+    color: var(--app-link);
 }
+@@keyframes popupFade {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -58%) scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.cinema-popup-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--app-popup-backdrop);
+    backdrop-filter: blur(7px);
+    z-index: 10000;
+}
+
+.cinema-popup-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(420px, calc(100vw - 32px));
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    background: var(--app-popup-surface);
+    color: var(--app-popup-text);
+    box-shadow: 0 28px 80px rgba(0,0,0,0.46);
+    animation: popupFade 0.25s ease forwards;
+}
+
+.cinema-popup-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    background: var(--app-nav);
+    color: var(--app-accent);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.cinema-popup-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.cinema-popup-title {
+    margin: 0 0 8px;
+    color: var(--app-popup-text);
+    font-weight: 850;
+}
+
+.cinema-popup-message {
+    margin: 0;
+    color: var(--app-popup-muted);
+    line-height: 1.5;
+}
+
+.cinema-popup-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 24px 24px;
+}
+
+.cinema-popup-btn {
+    min-width: 110px;
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-weight: 800;
+}
+
+.cinema-popup-ok {
+    background: var(--app-accent-strong);
+    color: #fff;
+}
+
+.cinema-popup-cancel {
+    background: var(--app-input-disabled);
+    color: var(--app-input-text);
+}
+
+.cinema-popup-backdrop.error .cinema-popup-strip {
+    background: linear-gradient(135deg, var(--app-danger), color-mix(in srgb, var(--app-danger) 45%, var(--app-accent)));
+    color: #fff;
+}
+
+.cinema-popup-backdrop.success .cinema-popup-strip {
+    background: linear-gradient(135deg, var(--app-accent-strong), color-mix(in srgb, var(--app-accent-strong) 50%, var(--app-primary)));
+    color: #fff;
+}
+
+.film-navbar {
+    margin: 14px;
+    border: 1px solid rgba(247, 215, 116, 0.28);
+    border-radius: 8px;
+    background: var(--app-nav);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+}
+
+.film-navbar .container-fluid {
+    gap: 14px;
+    align-items: center;
+}
+
+.film-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--app-nav-text) !important;
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+.film-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px dashed rgba(247, 215, 116, 0.7);
+    border-radius: 10px;
+    color: var(--app-accent);
+    background: rgba(255,255,255,0.08);
+}
+
+.film-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.film-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* Main navigation links section */
+.film-navigation-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.film-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.1);
+    color: var(--app-nav-text);
+    min-height: 58px;
+}
+
+.film-user-meta {
+    text-align: right;
+    line-height: 1.2;
+}
+
+.film-time {
+    color: color-mix(in srgb, var(--app-nav-text) 72%, transparent);
+    font-size: 11px;
+}
+
+.film-email {
+    max-width: 220px;
+    overflow: hidden;
+    color: var(--app-nav-text);
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.film-avatar {
+    width: 42px;
+    height: 42px;
+    border: 2px solid var(--app-accent);
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+}
+
+.film-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 850;
+    text-decoration: none;
+    color: var(--app-nav-text) !important;
+    background: rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 20px rgba(0,0,0,0.12);
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    white-space: nowrap;
+}
+
+.film-nav-btn:hover {
+    background: var(--app-accent);
+    color: #231f20 !important;
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 12px 24px rgba(0,0,0,0.18);
+}
+
+.film-profile-btn {
+    background: var(--app-accent);
+    color: #231f20 !important;
+}
+
+.film-logout-btn {
+    background: var(--app-danger);
+    color: #fff !important;
+}
+
+.theme-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 22%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-nav-text) 10%, transparent);
+}
+
+.theme-toggle-btn {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--app-nav-text);
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.theme-toggle-btn.active {
+    background: var(--app-accent);
+    color: #231f20;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+}
+
+.profile-page {
+    background: var(--app-profile-bg), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 12px, transparent 12px 26px) !important;
+}
+
+html[data-theme="cinema"] .profile-page {
+    --app-input: #ffffff;
+    --app-input-text: #231f20;
+    --app-input-border: #d5d8df;
+    --app-input-disabled: #eef1f5;
+    --app-input-disabled-text: #717986;
+    --app-muted: #6b7280;
+}
+
+.profile-shell {
+    background: var(--app-page-surface) !important;
+    color: var(--app-page-text) !important;
+}
+
+.profile-hero,
+.poster-panel {
+    background: var(--app-nav) !important;
+}
+
+html[data-theme="dark"] .profile-scene,
+.profile-scene,
+.scene-title h5,
+.field-block label {
+    color: var(--app-page-text) !important;
+}
+
+.scene-title span,
+.dropdown-icon {
+    color: var(--app-accent-strong) !important;
+}
+
+.profile-scene {
+    border-bottom-color: var(--app-input-border) !important;
+}
+
+.clean-input {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+input.clean-input[readonly],
+.clean-input:disabled {
+    background-color: var(--app-input-disabled) !important;
+    color: var(--app-input-disabled-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+.profile-hero h2,
+.profile-hero p,
+.poster-panel,
+.poster-panel * {
+    color: var(--app-nav-text) !important;
+}
+
+.poster-label,
+.profile-ticket {
+    color: var(--app-accent) !important;
+}
+
+#sessionPopup {
+    background: var(--app-popup-backdrop) !important;
+}
+
+#sessionPopup > div {
+    background: var(--app-popup-surface) !important;
+    color: var(--app-popup-text) !important;
+    border: 1px solid var(--app-input-border);
+}
+
+#sessionPopup h4 {
+    color: var(--app-accent) !important;
+}
+
+#cinemaText {
+    color: var(--app-popup-muted) !important;
+}
+
+#countdown {
+    color: var(--app-danger) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="white"] .film-user-card,
+html[data-theme="white"] .theme-switcher,
+html[data-theme="white"] .film-nav-btn,
+html[data-theme="system"] .film-user-card,
+html[data-theme="system"] .theme-switcher,
+html[data-theme="system"] .film-nav-btn {
+    border-color: rgba(17,24,39,0.12);
+    background: rgba(17,24,39,0.05);
+}
+
+@@media (max-width: 760px) {
+    .film-navbar {
+        margin: 8px;
+    }
+
+    .film-menu {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .film-actions,
+    .film-navigation-links {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .film-user-card {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .film-user-meta {
+        text-align: left;
+    }
+
+    .theme-switcher {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
 </style>
+<script>
+(function () {
+    if (localStorage.getItem("amarShowsThemeVersion") !== "3") {
+        localStorage.setItem("amarShowsTheme", "cinema");
+        localStorage.setItem("amarShowsThemeVersion", "3");
+    }
+
+    const storedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
+    document.documentElement.dataset.theme = storedTheme;
+    document.documentElement.dataset.themeChoice = storedTheme;
+})();
+</script>
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>@ViewData["Title"] - AmarShowsBook</title>
+<title>@ViewData["Title"] - showTime</title>
 
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="~/css/site.css" />
 
+<style>
+/* Final theme pass after Bootstrap/site.css so every page obeys the active theme. */
+html,
+body {
+    background: var(--app-bg) !important;
+    color: var(--app-text) !important;
+}
+
+main,
+.container,
+.container-fluid {
+    color: inherit;
+}
+
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group-item {
+    background: var(--app-card) !important;
+    color: var(--app-card-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6,
+.card p,
+.card label,
+.card small,
+.card span,
+.card div {
+    color: inherit;
+}
+
+label,
+.form-label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+small,
+span,
+li,
+td,
+th {
+    color: inherit;
+}
+
+.text-muted {
+    color: var(--app-muted) !important;
+}
+
+.form-control,
+.form-select,
+.input-group-text,
+input,
+select,
+textarea {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    background-color: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-accent-strong) !important;
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--app-accent-strong) 24%, transparent) !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+input:disabled,
+input[readonly],
+select:disabled,
+textarea:disabled,
+textarea[readonly] {
+    background-color: var(--app-input-disabled) !important;
+    color: var(--app-input-disabled-text) !important;
+    border-color: var(--app-input-border) !important;
+    opacity: 1;
+}
+
+select option {
+    background: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+}
+
+.btn-primary {
+    background: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover {
+    background: var(--app-primary-hover) !important;
+    border-color: var(--app-primary-hover) !important;
+}
+
+.btn-dark,
+.btn-secondary,
+.btn-outline-light {
+    background: var(--app-input-disabled) !important;
+    border-color: var(--app-input-border) !important;
+    color: var(--app-input-text) !important;
+}
+
+.btn-warning {
+    background: var(--app-accent) !important;
+    border-color: var(--app-accent) !important;
+    color: #231f20 !important;
+}
+
+.btn-success {
+    background: var(--app-accent-strong) !important;
+    border-color: var(--app-accent-strong) !important;
+    color: #fff !important;
+}
+
+.btn-danger {
+    background: var(--app-danger) !important;
+    border-color: var(--app-danger) !important;
+    color: #fff !important;
+}
+
+.table,
+.table td,
+.table th {
+    color: var(--app-text) !important;
+}
+
+.footer,
+footer {
+    color: var(--app-muted) !important;
+}
+</style>
+
 </head>
 
 <body>
-
+    <div id="cinemaPopup" class="cinema-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="cinemaPopupTitle">
+        <div class="cinema-popup-card">
+            <div class="cinema-popup-strip">
+                <span id="cinemaPopupReel">AmarShowsBook</span>
+                <span>Final Take</span>
+            </div>
+            <div class="cinema-popup-body">
+                <h5 id="cinemaPopupTitle" class="cinema-popup-title">Director's Note</h5>
+                <p id="cinemaPopupMessage" class="cinema-popup-message"></p>
+            </div>
+            <div class="cinema-popup-actions">
+                <button type="button" id="cinemaPopupCancel" class="cinema-popup-btn cinema-popup-cancel d-none">Retake</button>
+                <button type="button" id="cinemaPopupOk" class="cinema-popup-btn cinema-popup-ok">Continue</button>
+            </div>
+        </div>
+</div>
 <!-- ================= SESSION POPUP ================= -->
-<div id="sessionPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999;">
+<div id="sessionPopup" style="
+display:none;
+position:fixed;
+top:0; left:0;
+width:100%; height:100%;
+background:rgba(0,0,0,0.75);
+backdrop-filter: blur(6px);
+z-index:9999;">
+
     <div style="
         position:absolute;
         top:50%; left:50%;
-        transform:translate(-50%, -50%);
+        transform:translate(-50%, -50%) scale(0.9);
         background:#1e293b;
         padding:30px;
-        border-radius:12px;
+        border-radius:14px;
         text-align:center;
         color:white;
-        width:300px;
-        box-shadow:0 0 20px rgba(0,0,0,0.5);
+        width:320px;
+        box-shadow:0 0 30px rgba(0,0,0,0.8);
+        animation: popupFade 0.35s ease forwards;
     ">
-        <h4>🎬 Still Watching?</h4>
-        <p>Your session is about to end</p>
-        <h2 id="countdown" style="color:#f87171;">-60</h2>
 
-        <button onclick="stayActive()" class="btn btn-success mt-2">
-            Continue Watching
+        <h4 style="color:#facc15;">🎬 Still Watching?</h4>
+
+        <p id="cinemaText" style="color:#cbd5f5;">
+            Your show is paused... audience missing 🍿
+        </p>
+
+        <h2 id="countdown"
+            style="color:#f87171;
+                   font-size:42px;
+                   margin:10px 0;
+                   text-shadow:0 0 10px #f87171;">
+            -30
+        </h2>
+
+        <button onclick="stayActive()"
+                class="btn btn-success mt-2">
+            ▶ Continue Watching
         </button>
+
     </div>
 </div>
 
 <!-- ================= NAVBAR ================= -->
 <header>
-<nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+<nav class="navbar navbar-expand-sm film-navbar mb-3">
 <div class="container-fluid">
 
-    <a class="navbar-brand" asp-controller="Home" asp-action="Index">AmarShowsBook</a>
+    <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
+        <span class="film-brand-badge">🎬</span>
+        <span>showTime</span>
+    </a>
 
-    <div class="d-flex align-items-center ms-auto">
+@{
+    var isLoggedIn = Context.Session.GetString("UserEmail") != null;
+}
 
-        @if (Context.Session.GetString("UserEmail") != null)
+    <div class="film-menu">
+        <div class="theme-switcher" aria-label="Theme selector">
+            <button type="button" class="theme-toggle-btn" data-theme-choice="system" onclick="setAppTheme('system')">System</button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="dark" onclick="setAppTheme('dark')">Dark</button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="white" onclick="setAppTheme('white')">White</button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')">Cinema</button>
+        </div>
+
+        @if (isLoggedIn)
         {
-            <!-- USER INFO -->
-            <div class="text-end me-3">
-                <div id="liveDateTime" style="font-size:12px;"></div>
-                <div style="font-weight:bold;">
-                    @Context.Session.GetString("UserEmail")
+            <div class="film-actions">
+                <div class="film-navigation-links" aria-label="Main navigation">
+                    <a class="film-nav-btn" href="/Home/Index">Home</a>
+                    <a class="film-nav-btn" href="/Booking/MyBookings">My Bookings</a>
+                    <a class="film-nav-btn" href="/Transaction/History">My Transactions</a>
+                    <a class="film-nav-btn" href="/Wallet/Index">Wallet</a>
+                    <a class="film-nav-btn" href="/Admin/Dashboard">Admin Dashboard</a>
                 </div>
+
+                <div class="film-user-card">
+                    <div class="film-user-meta">
+                        <div id="liveDateTime" class="film-time"></div>
+                        <div class="film-email">
+                            @(Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail"))
+                        </div>
+                        <div class="film-time">
+                            @(Context.Session.GetString("UserLanguage") ?? "English") / @(Context.Session.GetString("UserGenre") ?? "Dramatic")
+                        </div>
+                    </div>
+
+                    <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage"))
+                        ? Context.Session.GetString("ProfileImage")
+                        : "/uploads/default.png")"
+                         class="film-avatar"
+                         alt="Profile image" />
+                </div>
+
+                <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile">My Profile</a>
+
+                <a class="film-nav-btn film-logout-btn"
+                   href="/Auth/Logout"
+                   onclick="return confirmLogout()">Exit Show</a>
             </div>
-
-            <!-- PROFILE IMAGE -->
-            <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage")) 
-    ? Context.Session.GetString("ProfileImage") 
-    : "/uploads/default.png")"
-     style="width:40px;height:40px;border-radius:50%;" />
-     
-            <!-- PROFILE BUTTON -->
-            <a class="btn btn-warning me-2" href="/Profile/Index">Profile</a>
-
-            <!-- LOGOUT -->
-            <a class="btn btn-danger"
-               href="/Auth/Logout"
-               onclick="return confirmLogout()">Logout</a>
         }
-
     </div>
-
 </div>
 </nav>
 </header>
@@ -133,7 +1052,7 @@ a {
 <!-- ================= FOOTER ================= -->
 <footer class="border-top footer text-muted">
 <div class="container">
-    &copy; 2026 - AmarShowsBook
+    &copy; 2026 - showTime
 </div>
 </footer>
 
@@ -142,15 +1061,49 @@ a {
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-function togglePassword(fieldId) {
+function getPasswordCatMarkup(isOpen) {
+    return '<span class="password-cat ' + (isOpen ? 'open' : 'closed') + '" aria-hidden="true">' +
+        '<span class="password-cat-face">' +
+        '<span class="password-cat-eye"></span>' +
+        '<span class="password-cat-eye"></span>' +
+        '</span>' +
+        '</span>';
+}
+
+function setPasswordToggleState(button, isOpen) {
+    if (!button) return;
+
+    button.innerHTML = getPasswordCatMarkup(isOpen);
+    button.setAttribute("aria-label", isOpen ? "Hide password" : "Show password");
+    button.title = isOpen ? "Hide password" : "Show password";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+        var fieldId = button.getAttribute("data-password-toggle");
+        var input = document.getElementById(fieldId);
+        setPasswordToggleState(button, input && input.type === "text");
+    });
+});
+
+function togglePassword(fieldId, button) {
     var input = document.getElementById(fieldId);
-    input.type = input.type === "password" ? "text" : "password";
+    if (!input) return;
+
+    var shouldShow = input.type === "password";
+    input.type = shouldShow ? "text" : "password";
+
+    var toggleButton = button || document.querySelector('[data-password-toggle="' + fieldId + '"]');
+    setPasswordToggleState(toggleButton, shouldShow);
 }
 </script>
 
 <!-- ✅ DATE + TIME -->
 <script>
 function updateDateTime() {
+    let liveDateTime = document.getElementById("liveDateTime");
+    if (!liveDateTime) return;
+
     let now = new Date();
 
     let date = now.toLocaleDateString('en-IN', {
@@ -162,99 +1115,246 @@ function updateDateTime() {
 
     let time = now.toLocaleTimeString();
 
-    document.getElementById("liveDateTime").innerHTML =
-        date + " | " + time;
+    liveDateTime.innerHTML = date + " | " + time;
 }
 setInterval(updateDateTime, 1000);
 updateDateTime();
 </script>
 
+<script>
+(function () {
+    function markThemeButton(choice) {
+        document.querySelectorAll(".theme-toggle-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.themeChoice === choice);
+        });
+    }
+
+    window.setAppTheme = function (choice) {
+        const themeChoice = choice || "cinema";
+        localStorage.setItem("amarShowsTheme", themeChoice);
+        localStorage.setItem("amarShowsThemeVersion", "3");
+        document.documentElement.dataset.themeChoice = themeChoice;
+        document.documentElement.dataset.theme = themeChoice;
+        markThemeButton(themeChoice);
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const saved = localStorage.getItem("amarShowsTheme") || "cinema";
+        window.setAppTheme(saved);
+    });
+})();
+</script>
+
 <!-- LOGOUT CONFIRM -->
 <script>
 function confirmLogout() {
-    return confirm("🎬 Are you sure you want to exit the show?");
+    showCinemaPopup("Interval or exit? Your show will close and you will be logged out.", "confirm", {
+        title: "Exit The Show?",
+        okText: "Exit Show",
+        cancelText: "Stay Seated",
+        onOk: function () {
+            window.location.href = "/Auth/Logout";
+        }
+    });
+
+    return false;
 }
 </script>
 
-<!-- ================= SESSION TIMER ================= -->
 <script>
 
-let inactivityTimer;
-let countdownTimer;
-let timeLeft = 60;
-let popupVisible = false;
+document.addEventListener("DOMContentLoaded", function () {
+    // Human Comment:
+    // Inactivity validation only runs for logged-in users, never on login/logout pages.
+    const isSessionUserLoggedIn = @isLoggedIn.ToString().ToLowerInvariant();
 
-const INACTIVITY_TIME = 2 * 60 * 1000;
-
-function resetTimer() {
-    clearTimeout(inactivityTimer);
-
-    if (popupVisible) {
-        hidePopup();
+    if (!isSessionUserLoggedIn) {
+        return;
     }
 
-    inactivityTimer = setTimeout(showPopup, INACTIVITY_TIME);
-}
+    let inactivityTimer;
+    let countdownTimer;
+    let timeLeft = 30;
+    let popupVisible = false;
 
-function showPopup() {
-    popupVisible = true;
-    document.getElementById("sessionPopup").style.display = "block";
+    const INACTIVITY_TIME = 3 * 60 * 1000; // ✅ 3 minutes (change if needed)
 
-    timeLeft = 60;
-    updateCountdown();
+    const cinemaMessages = [
+        "🍿 Audience gone missing...",
+        "🎥 Projector waiting for you...",
+        "🎬 Interval chal raha hai...",
+        "📽 Scene ruk gaya hai boss...",
+        "🎞 Reel freeze ho gaya...",
+        "🛑 Show paused... hero kidhar hai?"
+    ];
 
-    clearInterval(countdownTimer);
+    function resetTimer() {
+        clearTimeout(inactivityTimer);
 
-    countdownTimer = setInterval(() => {
-        timeLeft--;
-        updateCountdown();
-
-        if (timeLeft <= 0) {
-            clearInterval(countdownTimer);
-            autoLogout();
+        if (popupVisible) {
+            hidePopup();
         }
 
-    }, 1000);
-}
+        inactivityTimer = setTimeout(showSessionPopup, INACTIVITY_TIME);
+    }
 
-function updateCountdown() {
-    document.getElementById("countdown").innerText = "-" + timeLeft;
-}
+    function showSessionPopup() {
+        popupVisible = true;
 
-function hidePopup() {
-    popupVisible = false;
-    document.getElementById("sessionPopup").style.display = "none";
-    clearInterval(countdownTimer);
-}
+        let popup = document.getElementById("sessionPopup");
+        let text = document.getElementById("cinemaText");
 
-function stayActive() {
-    hidePopup();
+        if (!popup || !text) return; // ✅ safety
+
+        popup.style.display = "block";
+
+        // random message
+        text.innerText = cinemaMessages[Math.floor(Math.random() * cinemaMessages.length)];
+
+        timeLeft = 30;
+        updateCountdown();
+
+        clearInterval(countdownTimer);
+
+        countdownTimer = setInterval(() => {
+            timeLeft--;
+            updateCountdown();
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownTimer);
+                autoLogout();
+            }
+
+        }, 1000);
+    }
+
+    function updateCountdown() {
+        let el = document.getElementById("countdown");
+        if (!el) return;
+
+        el.innerText = "-" + timeLeft;
+
+        // subtle animation
+        el.style.transform = "scale(1.1)";
+        setTimeout(() => {
+            el.style.transform = "scale(1)";
+        }, 150);
+    }
+
+    function hidePopup() {
+        popupVisible = false;
+
+        let popup = document.getElementById("sessionPopup");
+        if (popup) popup.style.display = "none";
+
+        clearInterval(countdownTimer);
+    }
+
+    window.stayActive = function () {
+        hidePopup();
+        resetTimer();
+    };
+
+    function autoLogout() {
+        if (window.location.pathname.toLowerCase() === "/auth/logout") {
+            return;
+        }
+
+        window.location.href = "/Auth/Logout";
+    }
+
+    // USER ACTIVITY TRACK
+    ["click","mousemove","keypress","scroll","touchstart"].forEach(event => {
+        document.addEventListener(event, resetTimer);
+    });
+
+    // START
     resetTimer();
-}
 
-function autoLogout() {
-    window.location.href = "/Auth/Logout";
-}
-
-["click","mousemove","keypress","scroll"].forEach(event => {
-    document.addEventListener(event, resetTimer);
 });
 
-resetTimer();
-
 </script>
+
+<script>
+(function () {
+    const nativeAlert = window.alert.bind(window);
+
+    function popupTypeFromMessage(message) {
+        const text = String(message || "").toLowerCase();
+
+        if (text.includes("success") || text.includes("verified") || text.includes("sent")) {
+            return "success";
+        }
+
+        if (
+            text.includes("error") ||
+            text.includes("invalid") ||
+            text.includes("required") ||
+            text.includes("not") ||
+            text.includes("fail") ||
+            text.includes("already") ||
+            text.includes("nothing")
+        ) {
+            return "error";
+        }
+
+        return "info";
+    }
+
+    window.showCinemaPopup = function (message, type, options) {
+        const popup = document.getElementById("cinemaPopup");
+        const title = document.getElementById("cinemaPopupTitle");
+        const body = document.getElementById("cinemaPopupMessage");
+        const ok = document.getElementById("cinemaPopupOk");
+        const cancel = document.getElementById("cinemaPopupCancel");
+
+        if (!popup || !title || !body || !ok || !cancel) {
+            nativeAlert(message);
+            return;
+        }
+
+        const settings = options || {};
+        const popupType = type || popupTypeFromMessage(message);
+
+        popup.className = "cinema-popup-backdrop " + popupType;
+        title.innerText = settings.title || (
+            popupType === "success" ? "Housefull Applause" :
+            popupType === "error" ? "Scene Cut" :
+            popupType === "confirm" ? "Director's Call" :
+            "Director's Note"
+        );
+        body.innerText = message;
+        ok.innerText = settings.okText || "Continue";
+        cancel.innerText = settings.cancelText || "Cancel";
+        cancel.classList.toggle("d-none", popupType !== "confirm");
+        popup.style.display = "block";
+
+        ok.onclick = function () {
+            popup.style.display = "none";
+            if (typeof settings.onOk === "function") settings.onOk();
+        };
+
+        cancel.onclick = function () {
+            popup.style.display = "none";
+            if (typeof settings.onCancel === "function") settings.onCancel();
+        };
+    };
+
+    window.showPopup = function (message, type) {
+        window.showCinemaPopup(message, type);
+    };
+
+    window.alert = function (message) {
+        window.showCinemaPopup(message);
+    };
+})();
+</script>
+
 @RenderSection("Scripts", required: false)
 
 <script>
 function showPopup(message) {
-    let popup = document.getElementById("customPopup");
-
-    popup.innerText = message;
-    popup.style.display = "block";
-
-    setTimeout(() => {
-        popup.style.display = "none";
-    }, 2500);
+    window.showCinemaPopup(message);
 }
 </script>
 </body>

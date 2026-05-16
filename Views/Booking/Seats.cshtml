@@ -1,0 +1,688 @@
+@model AmarShowsBook.Models.ShowSchedule
+
+@{
+    ViewData["Title"]="Seat Booking";
+
+    var title=
+    Model.Type=="Movie"
+    ? Model.Movie?.Title
+    :
+    Model.Type=="Standup"
+    ? Model.StandupShow?.Title
+    :
+    Model.LiveStream?.Title;
+
+    var location=
+    Model.Location==null
+    ?
+    "Location to be announced"
+    :
+    $"{Model.Location.Area}, {Model.Location.State}, {Model.Location.Country}";
+
+    var seats=
+    ViewBag.Seats
+    as List<AmarShowsBook.Models.ViewModels.SeatVM>;
+}
+
+<section class="booking-page">
+
+<div class="booking-hero">
+
+<div>
+
+<span class="booking-kicker">
+
+Seat Shot
+
+</span>
+
+<h1>
+
+@(title??"Untitled Show")
+
+</h1>
+
+<p>
+
+@Model.Type /
+@Model.StartTime.ToString(
+"dd MMM yyyy, hh:mm tt")
+/
+@location
+
+</p>
+
+</div>
+
+<a
+href="/Home/Index?type=@Model.Type"
+class="btn btn-secondary">
+
+Back To showTime
+
+</a>
+
+</div>
+
+
+<div class="screen-line">
+
+<span>
+
+SCREEN
+
+</span>
+
+</div>
+
+
+<div class="seat-board">
+
+@if(seats!=null && seats.Any())
+{
+    foreach(var seat in seats)
+    {
+        var cssClass="available";
+
+        if(seat.IsBooked)
+        {
+            cssClass="booked";
+        }
+
+        else if(seat.IsLocked)
+        {
+            cssClass="locked";
+        }
+
+<button
+
+type="button"
+
+class="seat-btn @cssClass"
+
+data-id="@seat.SeatId"
+
+data-name="@seat.Row@seat.Number"
+
+data-price="@seat.Price"
+
+onclick="toggleSeat(this)"
+
+@(seat.IsBooked || seat.IsLocked ? "disabled":"")
+
+>
+
+@seat.Row@seat.Number
+
+</button>
+
+    }
+}
+else
+{
+    for(var i=1;i<=100;i++)
+    {
+        var row=
+        (char)('A'+((i-1)/10));
+
+        var seatNo=
+        ((i-1)%10)+1;
+
+<button
+
+type="button"
+
+class="seat-btn available"
+
+data-id="@i"
+
+data-name="@row@seatNo"
+
+onclick="toggleSeat(this)"
+
+>
+
+@row@seatNo
+
+</button>
+
+    }
+}
+
+</div>
+
+
+
+<div class="legend">
+
+<div class="legend-item">
+
+<div class="legend-box available">
+
+</div>
+
+Available
+
+</div>
+
+
+<div class="legend-item">
+
+<div class="legend-box selected">
+
+</div>
+
+Selected
+
+</div>
+
+
+<div class="legend-item">
+
+<div class="legend-box locked">
+
+</div>
+
+Locked
+
+</div>
+
+
+<div class="legend-item">
+
+<div class="legend-box booked">
+
+</div>
+
+Booked
+
+</div>
+
+
+<div class="legend-item">
+
+<div class="legend-box gold">
+
+</div>
+
+Gold/Premium
+
+</div>
+
+</div>
+
+
+
+<div class="booking-summary">
+
+<div>
+
+<span>
+
+Selected Seats
+
+</span>
+
+<strong id="selectedSeats">
+
+None
+
+</strong>
+
+</div>
+
+
+<button
+type="button"
+class="btn btn-primary"
+onclick="nextStep()">
+
+Next
+
+</button>
+
+
+</div>
+
+</section>
+
+
+
+<style>
+
+.booking-page{
+
+padding-bottom:40px;
+
+}
+
+
+.booking-hero{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:end;
+
+gap:20px;
+
+padding:30px;
+
+border-radius:12px;
+
+background:
+
+linear-gradient(
+135deg,
+rgba(255,242,199,.94),
+rgba(245,178,196,.86),
+rgba(146,229,221,.86)
+);
+
+}
+
+
+
+.screen-line{
+
+max-width:900px;
+
+margin:30px auto;
+
+border-top:6px solid #3b82f6;
+
+text-align:center;
+
+}
+
+.screen-line span{
+
+padding:5px 18px;
+
+background:white;
+
+border-radius:999px;
+
+font-weight:700;
+
+position:relative;
+
+top:-15px;
+
+}
+
+
+
+.seat-board{
+
+display:grid;
+
+grid-template-columns:
+repeat(10,1fr);
+
+gap:10px;
+
+max-width:900px;
+
+margin:auto;
+
+padding:25px;
+
+background:white;
+
+border-radius:15px;
+
+}
+
+
+
+.seat-btn{
+
+height:45px;
+
+border:none;
+
+border-radius:8px;
+
+font-weight:700;
+
+transition:.3s;
+
+cursor:pointer;
+
+}
+
+
+
+.seat-btn:hover{
+
+transform:scale(1.05);
+
+}
+
+
+
+.available{
+
+background:white;
+
+border:1px solid #ddd;
+
+}
+
+
+
+.selected{
+
+background:#22c55e!important;
+
+color:white;
+
+}
+
+
+
+.booked{
+
+background:#ef4444;
+
+color:white;
+
+opacity:.6;
+
+cursor:not-allowed;
+
+}
+
+
+
+.locked{
+
+background:#f59e0b;
+
+color:white;
+
+opacity:.7;
+
+cursor:not-allowed;
+
+}
+
+
+
+.gold{
+
+background:#facc15;
+
+}
+
+
+
+.legend{
+
+display:flex;
+
+justify-content:center;
+
+flex-wrap:wrap;
+
+gap:25px;
+
+margin:20px auto;
+
+}
+
+
+
+.legend-item{
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+}
+
+
+
+.legend-box{
+
+width:20px;
+
+height:20px;
+
+border-radius:4px;
+
+}
+
+
+
+.booking-summary{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin:25px auto;
+
+max-width:900px;
+
+padding:20px;
+
+border-radius:15px;
+
+background:white;
+
+}
+
+
+
+@@media(max-width:768px)
+{
+
+.seat-board{
+
+grid-template-columns:
+repeat(5,1fr);
+
+}
+
+.booking-summary{
+
+flex-direction:column;
+
+gap:20px;
+
+}
+
+}
+
+</style>
+
+
+
+
+<script>
+
+const maxSeatLimit=
+
+@(User.IsInRole("Admin")
+?999
+:6);
+
+
+
+function toggleSeat(button)
+{
+
+if(
+button.classList.contains(
+"booked")
+||
+button.classList.contains(
+"locked")
+)
+{
+return;
+}
+
+
+let selected=
+
+document.querySelectorAll(
+".seat-btn.selected"
+);
+
+
+if(
+!button.classList.contains(
+"selected"
+)
+&&
+selected.length>=
+maxSeatLimit
+)
+{
+showCinemaPopup(
+`Maximum ${maxSeatLimit} seats allowed`,
+"error"
+);
+
+return;
+}
+
+
+button.classList.toggle(
+"selected"
+);
+
+
+updateSeatDisplay();
+
+}
+
+
+
+function updateSeatDisplay()
+{
+
+let seats=
+
+Array.from(
+
+document.querySelectorAll(
+".seat-btn.selected"
+)
+
+)
+
+.map(
+
+x=>x.dataset.name
+
+);
+
+
+document.getElementById(
+"selectedSeats"
+)
+
+.innerText=
+
+seats.length
+?
+seats.join(", ")
+:
+"None";
+
+}
+
+
+
+
+function nextStep()
+{
+
+let seatIds=
+
+Array.from(
+document.querySelectorAll(
+".seat-btn.selected"
+)
+)
+
+.map(
+x=>x.dataset.id
+);
+
+
+if(!seatIds.length)
+{
+showCinemaPopup(
+"Please select seats",
+"error"
+);
+
+return;
+}
+
+
+
+fetch(
+"/Booking/LockSeats",
+{
+
+method:"POST",
+
+headers:
+{
+"Content-Type":
+"application/json"
+},
+
+body:
+JSON.stringify(
+{
+scheduleId:
+@Model.Id,
+
+seatIds:
+seatIds
+})
+
+})
+
+.then(
+x=>x.json()
+)
+
+.then(
+result=>
+{
+    if(result.success)
+    {
+        showCinemaPopup(
+        "Seats Locked",
+        "success"
+        );
+
+        window.location=
+        "/Booking/Details?id="
+        +result.bookingId;
+    }
+    else
+    {
+        showCinemaPopup(
+        result.message,
+        "error"
+        );
+    }
+});
+
+}
+
+</script>
