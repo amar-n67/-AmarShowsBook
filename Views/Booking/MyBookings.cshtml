@@ -6,6 +6,14 @@
     var totalSpend = Model.Sum(x => x.TotalAmount);
     var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" || x.PaymentStatus == "SUCCESS");
 }
+@if(TempData["Success"]!=null)
+{
+<div class="alert alert-success">
+
+@TempData["Success"]
+
+</div>
+}
 
 <section class="my-bookings-page">
 

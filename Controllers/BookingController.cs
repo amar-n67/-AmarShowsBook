@@ -227,7 +227,24 @@ Details(long id)
 
             return View(booking);
         }
+// ==========================================
+// MY BOOKINGS
+// ==========================================
 
+public IActionResult MyBookings()
+{
+    var bookings=
+
+    _context
+    .VwBookingCompleteDetails
+    .AsNoTracking()
+    .OrderByDescending(
+    x=>x.BookedAt)
+    .ToList();
+
+    return View(
+    bookings);
+}
 
 
         // ==========================================
@@ -371,8 +388,7 @@ ApprovePayment(string token)
     booking.Status=
     "CONFIRMED";
 
-    session.Status=
-    "APPROVED";
+    session.Status="SUCCESS";
 
     _context.BookingTransactions.Add(
 
@@ -412,7 +428,6 @@ ApprovePayment(string token)
 // ==========================================
 // REJECT QR PAYMENT
 // ==========================================
-
 [HttpPost]
 public async Task<IActionResult>
 RejectPayment(string token)
@@ -433,13 +448,58 @@ RejectPayment(string token)
     }
 
     session.Status=
-    "REJECTED";
+    "FAILED";
 
-    await _context.SaveChangesAsync();
+    var booking=
+
+    await _context
+    .BookingDrafts
+    .FindAsync(
+    session.BookingId);
+
+    if(booking!=null)
+    {
+        booking.Status=
+        "FAILED";
+    }
+
+    await _context
+    .SaveChangesAsync();
 
     return Json(new
     {
         success=true
+    });
+}
+// ==========================================
+// CHECK PAYMENT STATUS
+// ==========================================
+
+[HttpGet]
+public async Task<IActionResult>
+CheckPaymentStatus(long bookingId)
+{
+    var session=
+
+    await _context
+    .PaymentSessions
+    .Where(
+    x=>x.BookingId==bookingId)
+    .OrderByDescending(
+    x=>x.Id)
+    .FirstOrDefaultAsync();
+
+    if(session==null)
+    {
+        return Json(new
+        {
+            status="PENDING"
+        });
+    }
+
+    return Json(new
+    {
+        status=session.Status
     });
 }
 
@@ -508,24 +568,69 @@ RejectPayment(string token)
                 success=true
             });
         }
+// ==========================================
+// CONFIRMATION
+// ==========================================
 
+public async Task<IActionResult>
+Confirmation(long bookingId)
+{
+    var booking=
 
+    await _context
+    .BookingDrafts
+    .FirstOrDefaultAsync(
+    x=>x.Id==bookingId);
 
-        // ==========================================
-        // CONFIRMATION
-        // ==========================================
+    if(booking==null)
+    {
+        return NotFound();
+    }
 
-        public async Task<IActionResult>
-        Confirmation(long bookingId)
+    var schedule=
+
+    await _context
+    .ShowSchedules
+    .Include(x=>x.Movie)
+    .Include(x=>x.StandupShow)
+    .Include(x=>x.LiveStream)
+    .Include(x=>x.Location)
+    .FirstOrDefaultAsync(
+    x=>x.Id==
+    booking.ScheduleId);
+
+    ViewBag.Schedule=
+    schedule;
+
+    return View(
+    booking);
+}
+[HttpGet]
+public async Task<IActionResult>
+CheckQRStatus(long bookingId)
+{
+    var session=
+
+    await _context
+    .PaymentSessions
+    .Where(
+    x=>x.BookingId==bookingId)
+    .OrderByDescending(
+    x=>x.Id)
+    .FirstOrDefaultAsync();
+
+    if(session==null)
+    {
+        return Json(new
         {
-            var booking=
+            status="PENDING"
+        });
+    }
 
-            await _context
-            .BookingDrafts
-            .FirstOrDefaultAsync(
-            x=>x.Id==bookingId);
-
-            return View(booking);
-        }
+    return Json(new
+    {
+        status=session.Status
+    });
+}
     }
 }

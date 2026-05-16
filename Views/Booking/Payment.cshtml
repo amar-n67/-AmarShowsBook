@@ -38,22 +38,17 @@
                name="pay"
                value="QR"
                onchange="toggleQR()">
-        QR Payment
+        QR Scan
     </div>
+
 
     <div id="qrSection"
          style="display:none">
 
-        <h4>
-            Scan QR from mobile
-        </h4>
-
         <img id="qrImage"
              width="250"/>
-
     </div>
 
-    <br/>
 
     <button id="payButton"
             onclick="pay()">
@@ -62,35 +57,41 @@
 
 </div>
 
+
 <script>
 
 async function toggleQR()
 {
-    let selected=
+    let paymentMethod=
 
     document.querySelector(
     'input[name="pay"]:checked'
     ).value;
 
-    if(selected==="QR")
+
+    if(paymentMethod==="QR")
     {
         document
         .getElementById(
         "qrSection")
         .style.display="block";
 
+
         document
         .getElementById(
         "payButton")
         .style.display="none";
 
+
         let response=
 
         await fetch(
-        "/Booking/GenerateQR?bookingId=@Model.Id");
+        "/Booking/GenerateQR?bookingId=@Model.Id"
+        );
 
-        let data=
+        let result=
         await response.json();
+
 
         document
         .getElementById(
@@ -99,7 +100,7 @@ async function toggleQR()
         "/Booking/CreateQR?text="
         +
         encodeURIComponent(
-        data.url);
+        result.url);
     }
     else
     {
@@ -123,6 +124,7 @@ async function pay()
     document.querySelector(
     'input[name="pay"]:checked'
     ).value;
+
 
     let response=
 
@@ -149,15 +151,50 @@ async function pay()
     await response.json();
 
     if(result.success)
+{
+    window.location=
+    "/Booking/Confirmation?bookingId=@Model.Id";
+}
+else
+{
+    alert(
+    "Transaction failed. Booking not completed");
+}
+}
+let statusChecker=
+
+setInterval(
+checkQRStatus,
+3000
+);
+
+async function checkQRStatus()
+{
+    let response=
+
+    await fetch(
+    "/Booking/CheckQRStatus?bookingId=@Model.Id"
+    );
+
+    let result=
+    await response.json();
+
+    if(result.status==="SUCCESS")
     {
+        clearInterval(
+        statusChecker);
+
         window.location=
         "/Booking/Confirmation?bookingId=@Model.Id";
     }
-    else
-    {
-        alert(
-        "Payment failed");
-    }
-}
 
+   if(result.status==="FAILED")
+{
+    clearInterval(
+    statusChecker);
+
+    window.location=
+    "/Booking/Confirmation?bookingId=@Model.Id";
+}
+}
 </script>

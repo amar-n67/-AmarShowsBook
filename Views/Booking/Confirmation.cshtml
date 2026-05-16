@@ -1,25 +1,113 @@
 @model BookingDraft
 
+@{
+    var schedule = ViewBag.Schedule;
+}
+
 <div class="card">
 
-    <h2>
-        Payment Successful
-    </h2>
+    <h2>Ticket Status</h2>
+
+    @if(Model.Status=="CONFIRMED")
+    {
+        <h3>Booking Successful</h3>
+
+        <p>
+            Status:
+            <b style="color:green">
+                CONFIRMED
+            </b>
+        </p>
+    }
+    else
+    {
+        <h3>Booking Failed</h3>
+
+        <p>
+            Status:
+            <b style="color:red">
+                FAILED
+            </b>
+        </p>
+
+        <p>
+            Reason:
+            Transaction Failed
+        </p>
+    }
+
+    <hr/>
 
     <p>
-        Booking ID: @Model.Id
+        Booking Id:
+        @Model.Id
     </p>
 
     <p>
-        Amount: ₹@Model.TotalAmount
+        Seats:
+        @Model.SeatNumbers
     </p>
 
     <p>
-        Status: @Model.Status
+        Amount:
+        ₹@Model.TotalAmount
     </p>
 
-    <a href="/">
-        Go Home
-    </a>
+    <hr/>
+
+    @if(schedule.Movie!=null)
+    {
+        <p>
+            Movie:
+            @schedule.Movie.Title
+        </p>
+    }
+
+    @if(schedule.StandupShow!=null)
+    {
+        <p>
+            Show:
+            @schedule.StandupShow.Title
+        </p>
+    }
+
+    @if(schedule.LiveStream!=null)
+    {
+        <p>
+            Live:
+            @schedule.LiveStream.Title
+        </p>
+    }
+
+    <p>
+        Venue:
+        @schedule.Location.Area
+    </p>
+
+    <p>
+        Location:
+        @schedule.Location.State,
+        @schedule.Location.Country
+    </p>
+
+    <p>
+        Show Time:
+        @schedule.StartTime
+    </p>
+
+    <br/>
+
+    @if(Model.Status=="CONFIRMED")
+    {
+        <a href="/Booking/MyBookings">
+            View My Bookings
+        </a>
+    }
+    else
+    {
+        <a href="/Booking/Payment?bookingId=@Model.Id">
+            Retry Payment
+        </a>
+    }
 
 </div>
