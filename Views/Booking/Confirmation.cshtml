@@ -1,0 +1,25 @@
+@model BookingDraft
+
+<div class="card">
+
+    <h2>
+        Payment Successful
+    </h2>
+
+    <p>
+        Booking ID: @Model.Id
+    </p>
+
+    <p>
+        Amount: ₹@Model.TotalAmount
+    </p>
+
+    <p>
+        Status: @Model.Status
+    </p>
+
+    <a href="/">
+        Go Home
+    </a>
+
+</div>

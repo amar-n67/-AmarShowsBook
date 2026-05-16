@@ -328,6 +328,21 @@ public async Task<IActionResult> CompletePayment(
     });
 }
 
+public async Task<IActionResult> Confirmation(long bookingId)
+{
+    var booking = await _context
+        .BookingDrafts
+        .FirstOrDefaultAsync(
+        b => b.Id == bookingId);
+
+    if (booking == null)
+    {
+        return NotFound();
+    }
+
+    return View(booking);
+}
+
         // =====================================================
         // MY BOOKINGS
         // =====================================================

@@ -532,6 +532,7 @@ Views/Auth/
  Signup.cshtml
  VerifyOTP.cshtml
 Views/Booking/
+ Confirmation.cshtml
  Details.cshtml
  MyBookings.cshtml
  Payment.cshtml
@@ -582,6 +583,7 @@ Views/Auth/
  Signup.cshtml
  VerifyOTP.cshtml
 Views/Booking/
+ Confirmation.cshtml
  Details.cshtml
  MyBookings.cshtml
  Payment.cshtml

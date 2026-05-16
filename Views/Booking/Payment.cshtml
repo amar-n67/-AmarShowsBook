@@ -1,10 +1,11 @@
 @model BookingDraft
 
 <div class="card">
-
     <h2>Payment</h2>
 
-    <p>Amount: ₹@Model.TotalAmount</p>
+    <p>
+        Amount: ₹@Model.TotalAmount
+    </p>
 
     <div>
         <input type="radio" name="pay" value="UPI" checked />
@@ -26,48 +27,55 @@
         QR Scan
     </div>
 
-    <button type="button" onclick="pay()">
+    <button onclick="pay()">
         Pay
     </button>
-
 </div>
-
-<script>
 
 <script>
 
 async function pay()
 {
-    let selectedPayment =
-        document.querySelector(
-            'input[name="pay"]:checked'
-        ).value;
+    const paymentMethod =
+    document.querySelector(
+    'input[name="pay"]:checked'
+    ).value;
 
-    let response = await fetch(
-        "/Booking/CompletePayment",
+    const response =
+    await fetch(
+    "/Booking/CompletePayment",
+    {
+        method:"POST",
+
+        headers:
         {
-            method: "POST",
-            headers:
-            {
-                "Content-Type":"application/json"
-            },
-            body: JSON.stringify(
-            {
-                bookingId: @Model.Id,
-                paymentMethod: selectedPayment
-            })
-        });
+            'Content-Type':
+            'application/json'
+        },
 
-    let result = await response.json();
+        body:
+        JSON.stringify(
+        {
+            bookingId:@Model.Id,
+            paymentMethod:paymentMethod
+        })
+    });
+
+    const result =
+    await response.json();
 
     if(result.success)
     {
-        alert("Payment Success");
-        window.location.href="/Booking/MyBookings";
+        alert(
+        "Payment successful");
+
+        window.location=
+        "/Booking/Confirmation?bookingId=@Model.Id";
     }
     else
     {
-        alert(result.message);
+        alert(
+        "Payment failed");
     }
 }
 
