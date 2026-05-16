@@ -1,8 +1,16 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Roles";
 }
 
-<h1>Roles Management</h1>
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Roles Management</h1>
+            <p>Create and maintain administrative role definitions.</p>
+        </div>
+        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">← Back to Dashboard</a>
+    </div>
 
 <div class="card p-4">
 
@@ -43,3 +51,4 @@
     </table>
 
 </div>
+</section>

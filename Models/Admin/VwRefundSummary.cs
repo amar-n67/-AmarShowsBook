@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models.Admin
 {
-    [Table("vw_refund_summary")]
     public class VwRefundSummary
     {
         [Column("refund_id")]
@@ -18,7 +17,7 @@ namespace AmarShowsBook.Models.Admin
         public string? TransactionRef { get; set; }
 
         [Column("user_id")]
-        public int UserId { get; set; }
+        public long UserId { get; set; }
 
         [Column("user_name")]
         public string? UserName { get; set; }
@@ -27,7 +26,7 @@ namespace AmarShowsBook.Models.Admin
         public string? UserEmail { get; set; }
 
         [Column("refund_amount")]
-        public decimal RefundAmount { get; set; }
+        public decimal? RefundAmount { get; set; }
 
         [Column("refund_reason")]
         public string? RefundReason { get; set; }
@@ -45,7 +44,7 @@ namespace AmarShowsBook.Models.Admin
         public string? FailureReason { get; set; }
 
         [Column("requested_at")]
-        public DateTime RequestedAt { get; set; }
+        public DateTime? RequestedAt { get; set; }
 
         [Column("processed_at")]
         public DateTime? ProcessedAt { get; set; }
@@ -54,12 +53,25 @@ namespace AmarShowsBook.Models.Admin
         public DateTime CreatedAt { get; set; }
 
         [Column("updated_at")]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
-        // Human comment:
-        // PostgreSQL view column is "is_refund_error"
-        // but C# uses PascalCase naming convention.
         [Column("is_refund_error")]
         public int IsRefundError { get; set; }
+        public string? workflow_action { get; set; }
+
+public string? approved_by { get; set; }
+
+public DateTime? approved_at { get; set; }
+
+public string? rejected_by { get; set; }
+
+public DateTime? rejected_at { get; set; }
+
+public string? retried_by { get; set; }
+
+public DateTime? retried_at { get; set; }
+
+public string? admin_notes { get; set; }
     }
+    
 }

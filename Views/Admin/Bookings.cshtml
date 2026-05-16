@@ -1,42 +1,465 @@
-@model IEnumerable<dynamic>
+@model IEnumerable<AmarShowsBook.Models.VwBookingCompleteDetails>
+
+@using AmarShowsBook.Helpers
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    ViewData["Title"] = "Bookings";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+
+    int totalPages = ViewBag.TotalPages ?? 1;
+
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
 }
 
-<h1>Bookings</h1>
+<section class="admin-page">
 
-<table class="table admin-table">
+    <!-- ===================================================== -->
+    <!-- PAGE HEADER -->
+    <!-- ===================================================== -->
 
-<thead>
-<tr>
-    <th>Booking Ref</th>
-    <th>User</th>
-    <th>Show</th>
-    <th>Amount</th>
-    <th>Status</th>
-</tr>
-</thead>
+    <div class="admin-page-header">
 
-<tbody>
+        <div>
 
-@foreach (var item in Model)
-{
-    <tr>
+            <h1 class="page-title">
+                Booking Center
+            </h1>
 
-        <td>@item.booking_ref</td>
+            <p class="page-subtitle">
+                Monitor booking references, users,
+                seats, show details, payment status,
+                and booking lifecycle activity.
+            </p>
 
-        <td>@item.user_name</td>
+        </div>
 
-        <td>@item.show_title</td>
+        <div class="admin-actions">
 
-        <td>@item.payable_amount</td>
+            <a href="/Admin/Dashboard"
+               class="admin-back-btn admin-page-back">
+                ← Back to Dashboard
+            </a>
 
-        <td>@item.booking_status</td>
+        </div>
 
-    </tr>
-}
+    </div>
 
-</tbody>
+    <!-- ===================================================== -->
+    <!-- STATS -->
+    <!-- ===================================================== -->
 
-</table>
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <span>Total Bookings</span>
+
+            <strong>
+                @totalRecords
+            </strong>
+
+        </div>
+
+        <div class="stat-card">
+
+            <span>Visible Rows</span>
+
+            <strong>
+                @Model.Count()
+            </strong>
+
+        </div>
+
+        <div class="stat-card">
+
+            <span>Total Booking Value</span>
+
+            <strong>
+                @CurrencyFormatter.FormatRupees(
+                    Model.Sum(x => x.TotalAmount))
+            </strong>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- TABLE -->
+    <!-- ===================================================== -->
+
+    <div class="table-wrapper">
+
+        <table class="table admin-table booking-table">
+
+            <thead>
+
+                <tr>
+
+                    <th style="min-width:220px;">
+                        Booking
+                    </th>
+
+                    <th style="min-width:250px;">
+                        User
+                    </th>
+
+                    <th style="min-width:250px;">
+                        Show
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Amount
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Status
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Booked At
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @if (!Model.Any())
+                {
+                    <tr>
+
+                        <td colspan="6"
+                            class="empty-state">
+                            No bookings found
+                        </td>
+
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+
+                            <!-- BOOKING -->
+
+                            <td>
+
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.BookingRef)
+                                        ? "NA"
+                                        : item.BookingRef)
+                                </div>
+
+                                <div class="sub-text">
+                                    Seats:
+                                    @(string.IsNullOrWhiteSpace(item.SeatNumbers)
+                                        ? "NA"
+                                        : item.SeatNumbers)
+                                </div>
+
+                            </td>
+
+                            <!-- USER -->
+
+                            <td>
+
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.UserName)
+                                        ? "NA"
+                                        : item.UserName)
+                                </div>
+
+                                <div class="sub-text email-cell">
+                                    @(string.IsNullOrWhiteSpace(item.UserEmail)
+                                        ? "NA"
+                                        : item.UserEmail)
+                                </div>
+
+                            </td>
+
+                            <!-- SHOW -->
+
+                            <td>
+
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.ShowTitle)
+                                        ? "NA"
+                                        : item.ShowTitle)
+                                </div>
+
+                                <div class="sub-text">
+                                    @(string.IsNullOrWhiteSpace(item.ShowType)
+                                        ? "NA"
+                                        : item.ShowType)
+                                </div>
+
+                            </td>
+
+                            <!-- AMOUNT -->
+
+                            <td>
+
+                                <div class="amount-text">
+                                   @CurrencyFormatter.FormatRupees(item.TotalAmount)
+                                </div>
+
+                            </td>
+
+                            <!-- STATUS -->
+
+                            <td>
+
+                                @if (item.IsError == 1)
+                                {
+                                    <span class="badge danger">
+                                        @(string.IsNullOrWhiteSpace(item.BookingStatus)
+                                            ? "FAILED"
+                                            : item.BookingStatus)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge success">
+                                        @(string.IsNullOrWhiteSpace(item.BookingStatus)
+                                            ? "SUCCESS"
+                                            : item.BookingStatus)
+                                    </span>
+                                }
+
+                                <div class="sub-text">
+                                    Payment:
+                                    @(string.IsNullOrWhiteSpace(item.PaymentStatus)
+                                        ? "NA"
+                                        : item.PaymentStatus)
+                                </div>
+
+                            </td>
+
+                            <!-- BOOKED AT -->
+
+                            <td>
+
+                                <div class="created-date">
+                                    @item.BookedAt
+                                        .ToString("dd MMM yyyy")
+                                </div>
+
+                                <div class="sub-text">
+                                    @item.BookedAt
+                                        .ToString("hh:mm tt")
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- PAGINATION -->
+    <!-- ===================================================== -->
+
+    <div class="pagination-area">
+
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a href="/Admin/Bookings?page=@i"
+               class="page-btn @(i == currentPage ? "active" : "")">
+                @i
+            </a>
+        }
+
+    </div>
+
+</section>
+
+<!-- ===================================================== -->
+<!-- PAGE CSS -->
+<!-- ===================================================== -->
+
+<style>
+
+    .booking-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .booking-table th {
+        background: #111827;
+        color: white;
+        padding: 14px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .booking-table td {
+        padding: 14px;
+        vertical-align: top;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+    }
+
+    .booking-table tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stat-card span {
+        display: block;
+        color: #6b7280;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .stat-card strong {
+        font-size: 28px;
+        color: #111827;
+        line-height: 1.4;
+    }
+
+    .page-title {
+        margin-bottom: 6px;
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .primary-text {
+        font-weight: 600;
+        color: #111827;
+        word-break: break-word;
+    }
+
+    .sub-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    .email-cell {
+        word-break: break-all;
+    }
+
+    .amount-text {
+        font-weight: 700;
+        color: #15803d;
+        font-size: 15px;
+    }
+
+    .created-date {
+        font-weight: 500;
+        color: #111827;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .badge.success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .pagination-area {
+        margin-top: 24px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .page-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        background: white;
+        color: #111827;
+        border: 1px solid #d1d5db;
+        transition: 0.2s;
+    }
+
+    .page-btn:hover {
+        background: #111827;
+        color: white;
+    }
+
+    .page-btn.active {
+        background: #111827;
+        color: white;
+        border-color: #111827;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    @@media(max-width: 768px) {
+
+        .page-title {
+            font-size: 24px;
+        }
+
+        .booking-table td,
+        .booking-table th {
+            font-size: 13px;
+            padding: 10px;
+        }
+
+    }
+
+</style>

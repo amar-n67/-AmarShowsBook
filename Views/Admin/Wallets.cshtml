@@ -1,39 +1,454 @@
 @model IEnumerable<AmarShowsBook.Models.Admin.VwWalletSummary>
 
+@using AmarShowsBook.Helpers
+
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    ViewData["Title"] = "Wallets";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+
+    int totalPages = ViewBag.TotalPages ?? 1;
+
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
 }
 
-<h1>Wallets</h1>
+<section class="admin-page">
 
-<table class="table admin-table">
+    <!-- ===================================================== -->
+    <!-- PAGE HEADER -->
+    <!-- ===================================================== -->
 
-<thead>
-<tr>
-    <th>User</th>
-    <th>Balance</th>
-    <th>Blocked</th>
-    <th>Loyalty</th>
-</tr>
-</thead>
+    <div class="admin-page-header">
 
-<tbody>
+        <div>
 
-@foreach (var item in Model)
-{
-    <tr>
-        <td>@item.UserName</td>
-        <td>@item.WalletBalance</td>
-        <td>@item.BlockedBalance</td>
-        <td>@item.LoyaltyPoints</td>
-    </tr>
-}
+            <h1 class="page-title">
+                Wallet Management
+            </h1>
 
-</tbody>
+            <p class="page-subtitle">
+                Monitor wallet balances, blocked balances,
+                loyalty points, and financial activity across users.
+            </p>
 
-</table>
+        </div>
 
-<a href="/Admin/Dashboard"
-   class="btn btn-dark mt-3">
-   ← Back Dashboard
-</a>
+        <div class="admin-actions">
+
+            <a href="/Admin/Dashboard"
+               class="admin-back-btn admin-page-back">
+                ← Back to Dashboard
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- STATS -->
+    <!-- ===================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <span>Total Wallet Rows</span>
+            <strong>@totalRecords</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Total Wallet Balance</span>
+            <strong>
+                @CurrencyFormatter.FormatRupees(
+                    Model.Sum(x => x.WalletBalance))
+            </strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Total Blocked Balance</span>
+            <strong>
+                @CurrencyFormatter.FormatRupees(
+                    Model.Sum(x => x.BlockedBalance))
+            </strong>
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- TABLE -->
+    <!-- ===================================================== -->
+
+    <div class="table-wrapper">
+
+        <table class="table admin-table wallet-table">
+
+            <thead>
+
+                <tr>
+
+                    <th style="min-width:240px;">
+                        User
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Wallet Balance
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Blocked Balance
+                    </th>
+
+                    <th style="min-width:140px;">
+                        Loyalty Points
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Wallet Status
+                    </th>
+
+                    <th style="min-width:200px;">
+                        Last Transaction
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @if (!Model.Any())
+                {
+                    <tr>
+
+                        <td colspan="6"
+                            class="empty-state">
+                            No wallet records found
+                        </td>
+
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+
+                            <!-- USER -->
+
+                            <td>
+
+                                <div class="user-name">
+                                    @(string.IsNullOrWhiteSpace(item.UserName)
+                                        ? "NA"
+                                        : item.UserName)
+                                </div>
+
+                                <div class="sub-text email-cell">
+                                    @(string.IsNullOrWhiteSpace(item.UserEmail)
+                                        ? "NA"
+                                        : item.UserEmail)
+                                </div>
+
+                            </td>
+
+                            <!-- WALLET BALANCE -->
+
+                            <td>
+
+                                <div class="amount-text success-text">
+                                   @CurrencyFormatter.FormatRupees(item.WalletBalance)
+                                </div>
+
+                            </td>
+
+                            <!-- BLOCKED BALANCE -->
+
+                            <td>
+
+                                <div class="amount-text danger-text">
+                                    @CurrencyFormatter.FormatRupees(item.BlockedBalance)
+                                </div>
+
+                            </td>
+
+                            <!-- LOYALTY -->
+
+                            <td>
+
+                                <span class="loyalty-badge">
+                                    @item.LoyaltyPoints
+                                </span>
+
+                            </td>
+
+                            <!-- STATUS -->
+
+                            <td>
+
+                                @if (item.WalletStatus == "ACTIVE")
+                                {
+                                    <span class="badge success">
+                                        ACTIVE
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge warning">
+                                        @(string.IsNullOrWhiteSpace(item.WalletStatus)
+                                            ? "NA"
+                                            : item.WalletStatus)
+                                    </span>
+                                }
+
+                            </td>
+
+                            <!-- LAST TRANSACTION -->
+
+                            <td>
+
+                                @if (item.LastTransactionAt != null)
+                                {
+                                    <div class="created-date">
+                                        @item.LastTransactionAt?
+                                            .ToString("dd MMM yyyy")
+                                    </div>
+
+                                    <div class="sub-text">
+                                        @item.LastTransactionAt?
+                                            .ToString("hh:mm tt")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="sub-text">
+                                        No Transactions
+                                    </span>
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- PAGINATION -->
+    <!-- ===================================================== -->
+
+    <div class="pagination-area">
+
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a href="/Admin/Wallets?page=@i"
+               class="page-btn @(i == currentPage ? "active" : "")">
+                @i
+            </a>
+        }
+
+    </div>
+
+</section>
+
+<!-- ===================================================== -->
+<!-- PAGE CSS -->
+<!-- ===================================================== -->
+
+<style>
+
+    .wallet-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .wallet-table th {
+        background: #111827;
+        color: white;
+        padding: 14px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .wallet-table td {
+        padding: 14px;
+        vertical-align: top;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+    }
+
+    .wallet-table tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stat-card span {
+        display: block;
+        color: #6b7280;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .stat-card strong {
+        font-size: 26px;
+        color: #111827;
+        line-height: 1.4;
+    }
+
+    .page-title {
+        margin-bottom: 6px;
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .badge.success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge.warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .sub-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+
+    .pagination-area {
+        margin-top: 24px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .page-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        background: white;
+        color: #111827;
+        border: 1px solid #d1d5db;
+        transition: 0.2s;
+    }
+
+    .page-btn:hover {
+        background: #111827;
+        color: white;
+    }
+
+    .page-btn.active {
+        background: #111827;
+        color: white;
+        border-color: #111827;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #111827;
+        word-break: break-word;
+    }
+
+    .email-cell {
+        word-break: break-all;
+    }
+
+    .amount-text {
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .success-text {
+        color: #15803d;
+    }
+
+    .danger-text {
+        color: #dc2626;
+    }
+
+    .loyalty-badge {
+        background: #ede9fe;
+        color: #6d28d9;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        display: inline-block;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .created-date {
+        font-weight: 500;
+        color: #111827;
+    }
+
+    @@media(max-width: 768px) {
+
+        .page-title {
+            font-size: 24px;
+        }
+
+        .wallet-table td,
+        .wallet-table th {
+            font-size: 13px;
+            padding: 10px;
+        }
+
+    }
+
+</style>

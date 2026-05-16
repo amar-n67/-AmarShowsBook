@@ -1,59 +1,60 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AmarShowsBook.Models.Admin
+namespace AmarShowsBook.Models.Admin;
+
+[Table("vw_wallet_summary")]
+public class VwWalletSummary
 {
-    public class VwWalletSummary
-    {
-        public long WalletId { get; set; }
+    [Key]
+    [Column("wallet_id")]
+    public long WalletId { get; set; }
 
-        public int UserId { get; set; }
+    // =====================================================
+    // HUMAN COMMENT:
+    // USER BASIC DETAILS
+    // =====================================================
 
-        public string UserName { get; set; }
+    [Column("user_id")]
+    public long UserId { get; set; }
 
-        public string UserEmail { get; set; }
+    [Column("user_name")]
+    public string? UserName { get; set; }
 
-        public decimal BlockedBalance { get; set; }
+    [Column("user_email")]
+    public string? UserEmail { get; set; }
 
-        public int LoyaltyPoints { get; set; }
+    // =====================================================
+    // HUMAN COMMENT:
+    // WALLET MONEY DETAILS
+    // =====================================================
 
-        public string WalletStatus { get; set; }
+    [Column("wallet_balance")]
+    public decimal WalletBalance { get; set; }
 
-        public DateTime? LastTransactionAt { get; set; }
+    [Column("blocked_balance")]
+    public decimal BlockedBalance { get; set; }
 
-        public int TotalWalletTransactions { get; set; }
+    [Column("total_credits")]
+    public decimal TotalCredits { get; set; }
 
-        
+    [Column("total_debits")]
+    public decimal TotalDebits { get; set; }
 
+    // =====================================================
+    // HUMAN COMMENT:
+    // WALLET STATUS
+    // =====================================================
 
-        // Human Comment:
+    [Column("wallet_status")]
+    public string? WalletStatus { get; set; }
 
-        // PostgreSQL column:
+    [Column("loyalty_points")]
+    public int LoyaltyPoints { get; set; }
 
-        // wallet_balance
+    [Column("total_wallet_transactions")]
+    public int TotalWalletTransactions { get; set; }
 
-        [Column("wallet_balance")]
-
-        public decimal WalletBalance { get; set; }
-
-        // Human Comment:
-
-        // PostgreSQL column:
-
-        // total_credits
-
-        [Column("total_credits")]
-
-        public decimal TotalCredits { get; set; }
-
-        // Human Comment:
-
-        // PostgreSQL column:
-
-        // total_debits
-
-        [Column("total_debits")]
-
-        public decimal TotalDebits { get; set; }
-
-    }
+    [Column("last_transaction_at")]
+    public DateTime? LastTransactionAt { get; set; }
 }

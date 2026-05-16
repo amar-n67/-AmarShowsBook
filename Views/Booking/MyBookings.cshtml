@@ -1,8 +1,9 @@
 @model List<AmarShowsBook.Models.VwBookingCompleteDetails>
+@using AmarShowsBook.Helpers
 
 @{
     ViewData["Title"] = "My Bookings";
-    var totalSpend = Model.Sum(x => x.PayableAmount);
+    var totalSpend = Model.Sum(x => x.TotalAmount);
     var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" || x.PaymentStatus == "SUCCESS");
 }
 
@@ -16,7 +17,7 @@
         </div>
         <div class="booking-summary">
             <span>Total Spend</span>
-            <strong>₹ @totalSpend.ToString("N2")</strong>
+            <strong>@CurrencyFormatter.FormatRupees(totalSpend)</strong>
             <small>@confirmedCount confirmed</small>
         </div>
     </div>
@@ -48,7 +49,7 @@
                     <div class="booking-meta">
                         <div>
                             <span>Amount Paid</span>
-                            <strong>₹@booking.PayableAmount.ToString("N2")</strong>
+                            <strong>@CurrencyFormatter.FormatRupees(booking.TotalAmount)</strong>
                         </div>
                         <div>
                             <span>Payment</span>
@@ -57,7 +58,7 @@
                     </div>
 
                     <p class="booking-date">
-                        @(booking.BookedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "N/A")
+                        @booking.BookedAt.ToString("dd MMM yyyy")
                     </p>
 
                 </article>

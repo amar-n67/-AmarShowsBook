@@ -2,36 +2,405 @@
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    ViewData["Title"] = "Notifications";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+
+    int totalPages = ViewBag.TotalPages ?? 1;
+
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
 }
 
-<h1>Notifications</h1>
+<section class="admin-page">
 
-<table class="table admin-table">
+    <!-- ===================================================== -->
+    <!-- PAGE HEADER -->
+    <!-- ===================================================== -->
 
-<thead>
-<tr>
-    <th>User</th>
-    <th>Title</th>
-    <th>Status</th>
-</tr>
-</thead>
+    <div class="admin-page-header">
 
-<tbody>
+        <div>
 
-@foreach (var item in Model)
-{
-    <tr>
-        <td>@item.UserName</td>
-        <td>@item.Title</td>
-        <td>@item.Status</td>
-    </tr>
-}
+            <h1 class="page-title">
+                Notifications
+            </h1>
 
-</tbody>
+            <p class="page-subtitle">
+                Track notification delivery status,
+                email alerts, system pushes,
+                and user communication activity.
+            </p>
 
-</table>
+        </div>
 
-<a href="/Admin/Dashboard"
-   class="btn btn-dark mt-3">
-   ← Back Dashboard
-</a>
+        <div class="admin-actions">
+
+            <a href="/Admin/Dashboard"
+               class="admin-back-btn admin-page-back">
+                ← Back to Dashboard
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- STATS -->
+    <!-- ===================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <span>Total Notifications</span>
+            <strong>@totalRecords</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Failed Notifications</span>
+            <strong>
+                @Model.Count(x => x.IsError == 1)
+            </strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Successful Notifications</span>
+            <strong>
+                @Model.Count(x =>
+                    x.Status == "SENT" ||
+                    x.Status == "SUCCESS")
+            </strong>
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- TABLE -->
+    <!-- ===================================================== -->
+
+    <div class="table-wrapper">
+
+        <table class="table admin-table notification-table">
+
+            <thead>
+
+                <tr>
+
+                    <th style="min-width:220px;">
+                        User
+                    </th>
+
+                    <th style="min-width:320px;">
+                        Notification
+                    </th>
+
+                    <th style="min-width:140px;">
+                        Status
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Created
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="4"
+                            class="empty-state">
+                            No notifications found
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+
+                            <!-- USER -->
+
+                            <td>
+
+                                <div class="user-name">
+                                    @(string.IsNullOrWhiteSpace(item.UserName)
+                                        ? "NA"
+                                        : item.UserName)
+                                </div>
+
+                                <div class="sub-text email-cell">
+                                    @(string.IsNullOrWhiteSpace(item.UserEmail)
+                                        ? "NA"
+                                        : item.UserEmail)
+                                </div>
+
+                            </td>
+
+                            <!-- TITLE -->
+
+                            <td>
+
+                                <div class="notification-title">
+                                    @(string.IsNullOrWhiteSpace(item.Title)
+                                        ? "NA"
+                                        : item.Title)
+                                </div>
+
+                                <div class="sub-text">
+                                    @(string.IsNullOrWhiteSpace(item.NotificationType)
+                                        ? "NA"
+                                        : item.NotificationType)
+                                </div>
+
+                            </td>
+
+                            <!-- STATUS -->
+
+                            <td>
+
+                                @if (item.IsError == 1)
+                                {
+                                    <span class="badge danger">
+                                        @(string.IsNullOrWhiteSpace(item.Status)
+                                            ? "FAILED"
+                                            : item.Status)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge success">
+                                        @(string.IsNullOrWhiteSpace(item.Status)
+                                            ? "SUCCESS"
+                                            : item.Status)
+                                    </span>
+                                }
+
+                            </td>
+
+                            <!-- CREATED -->
+
+                            <td>
+
+                                <div class="created-date">
+                                    @item.CreatedAt
+                                        .ToString("dd MMM yyyy")
+                                </div>
+
+                                <div class="sub-text">
+                                    @item.CreatedAt
+                                        .ToString("hh:mm tt")
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- PAGINATION -->
+    <!-- ===================================================== -->
+
+    <div class="pagination-area">
+
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a href="/Admin/Notifications?page=@i"
+               class="page-btn @(i == currentPage ? "active" : "")">
+                @i
+            </a>
+        }
+
+    </div>
+
+</section>
+
+<!-- ===================================================== -->
+<!-- PAGE CSS -->
+<!-- ===================================================== -->
+
+<style>
+
+    .notification-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .notification-table th {
+        background: #111827;
+        color: white;
+        padding: 14px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .notification-table td {
+        padding: 14px;
+        vertical-align: top;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+    }
+
+    .notification-table tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stat-card span {
+        display: block;
+        color: #6b7280;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .stat-card strong {
+        font-size: 28px;
+        color: #111827;
+    }
+
+    .page-title {
+        margin-bottom: 6px;
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .badge.success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .sub-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+
+    .pagination-area {
+        margin-top: 24px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .page-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        background: white;
+        color: #111827;
+        border: 1px solid #d1d5db;
+        transition: 0.2s;
+    }
+
+    .page-btn:hover {
+        background: #111827;
+        color: white;
+    }
+
+    .page-btn.active {
+        background: #111827;
+        color: white;
+        border-color: #111827;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #111827;
+        word-break: break-word;
+    }
+
+    .email-cell {
+        word-break: break-all;
+    }
+
+    .notification-title {
+        font-weight: 500;
+        color: #111827;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .created-date {
+        font-weight: 500;
+        color: #111827;
+    }
+
+    @@media(max-width: 768px) {
+
+        .page-title {
+            font-size: 24px;
+        }
+
+        .notification-table td,
+        .notification-table th {
+            font-size: 13px;
+            padding: 10px;
+        }
+
+    }
+
+</style>

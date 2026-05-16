@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using AmarShowsBook.Models.ViewModels;
+
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.Admin;
+using AmarShowsBook.Models.ViewModels;
 
 namespace AmarShowsBook.Data
 {
@@ -16,12 +17,23 @@ namespace AmarShowsBook.Data
             : base(options)
         {
         }
+        public DbSet<BookingDraft> BookingDrafts { get; set; }
 
-        // =====================================================
-        // MAIN TABLES
-        // =====================================================
+public DbSet<BookingTransaction> BookingTransactions { get; set; }
+
+public DbSet<SeatLock> SeatLocks { get; set; }
+
+public DbSet<DummyCard> DummyCards { get; set; }
+        public DbSet<RefundActionLog> RefundActionLogs { get; set; }
+
+        public DbSet<Refund> Refunds { get; set; }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<ScreenSeat> ScreenSeats { get; set; }
+
+        public DbSet<DeletedUser> DeletedUsers { get; set; }
+
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
 
         public DbSet<Movie> Movies { get; set; }
 
@@ -42,22 +54,21 @@ namespace AmarShowsBook.Data
         public DbSet<Region> Regions { get; set; }
 
         // =====================================================
-        // RBAC TABLES
+        // USER ROLE ACCESS TABLES
         // =====================================================
+
+        public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
 
         public DbSet<Role> Roles { get; set; }
 
         public DbSet<Permission> Permissions { get; set; }
 
         // =====================================================
-        // ACTIVITY LOG TABLE
+        // ADMIN SQL VIEW TABLES
         // =====================================================
 
-        public DbSet<ActivityLog> ActivityLogs { get; set; }
-
-        // =====================================================
-        // ADMIN DASHBOARD SQL VIEWS
-        // =====================================================
+        public DbSet<VwEnterpriseActivityLog>
+            VwEnterpriseActivityLogs { get; set; }
 
         public DbSet<VwBookingCompleteDetails>
             VwBookingCompleteDetails { get; set; }
@@ -88,11 +99,14 @@ namespace AmarShowsBook.Data
 
         public DbSet<VwAdminUserManagement>
             VwAdminUserManagement { get; set; }
-            // =========================================================
-// HUMAN COMMENT:
-// Admin transaction monitoring view
-// =========================================================
-public DbSet<AdminTransactionViewModel> AdminTransactions { get; set; }
+
+        // =====================================================
+        // ADMIN TRANSACTION VIEW
+        // =====================================================
+
+        public DbSet<AdminTransactionViewModel>
+            AdminTransactions { get; set; }
+            
 
         // =====================================================
         // MODEL CONFIGURATION
@@ -102,53 +116,70 @@ public DbSet<AdminTransactionViewModel> AdminTransactions { get; set; }
             ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-// =========================================================
 
-// PostgreSQL admin transaction reporting view
-// =========================================================
-modelBuilder.Entity<AdminTransactionViewModel>()
-    .HasNoKey()
-    .ToView("vw_admin_transaction_complete");
+    modelBuilder.Entity<BookingDraft>()
+
+        .ToTable("booking_drafts");
+
+    modelBuilder.Entity<BookingTransaction>()
+
+        .ToTable("booking_transactions");
+
+    modelBuilder.Entity<DummyCard>()
+
+        .ToTable("dummy_cards");
+            base.OnModelCreating(modelBuilder);
+
+            // =====================================================
+            // ACTIVITY LOG TABLE
+            // =====================================================
+            base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<Refund>().ToTable("refunds");
+            modelBuilder.Entity<ActivityLog>()
+                .ToTable("activity_logs");
+
+            // =====================================================
+            // ENTERPRISE ACTIVITY LOG VIEW
+            // =====================================================
+
+            modelBuilder.Entity<VwEnterpriseActivityLog>()
+                .HasNoKey()
+                .ToView("vw_enterprise_activity_logs");
+
+            // =====================================================
+            // ADMIN TRANSACTION VIEW
+            // =====================================================
+
+            modelBuilder.Entity<AdminTransactionViewModel>()
+                .HasNoKey()
+                .ToView("vw_admin_transaction_complete");
 
             // =====================================================
             // SHOW SCHEDULE RELATIONSHIPS
             // =====================================================
 
-            // Human Comment:
-            // Prevent cascade delete issues
-
             modelBuilder.Entity<ShowSchedule>()
-                .HasOne(s => s.Movie)
+                .HasOne(x => x.Movie)
                 .WithMany()
-                .HasForeignKey(s => s.MovieId)
+                .HasForeignKey(x => x.MovieId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ShowSchedule>()
-                .HasOne(s => s.StandupShow)
+                .HasOne(x => x.StandupShow)
                 .WithMany()
-                .HasForeignKey(s => s.StandupShowId)
+                .HasForeignKey(x => x.StandupShowId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ShowSchedule>()
-                .HasOne(s => s.LiveStream)
+                .HasOne(x => x.LiveStream)
                 .WithMany()
-                .HasForeignKey(s => s.LiveStreamId)
+                .HasForeignKey(x => x.LiveStreamId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            // =====================================================
-            // ACTIVITY LOG TABLE
-            // =====================================================
-
-            modelBuilder.Entity<ActivityLog>()
-                .ToTable("activity_logs");
 
             // =====================================================
             // ADMIN SQL VIEW MAPPINGS
             // =====================================================
-
-            // Human Comment:
-            // PostgreSQL views must use:
-            // HasNoKey + ToView
 
             modelBuilder.Entity<VwBookingCompleteDetails>()
                 .HasNoKey()
@@ -189,7 +220,15 @@ modelBuilder.Entity<AdminTransactionViewModel>()
             modelBuilder.Entity<VwAdminUserManagement>()
                 .HasNoKey()
                 .ToView("vw_admin_user_management");
-                
+                 base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<ScreenSeat>()
+
+        .ToTable("screen_seats");
+
+    modelBuilder.Entity<SeatLock>()
+
+        .ToTable("seat_locks");
         }
     }
 }

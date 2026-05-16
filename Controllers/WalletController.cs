@@ -10,7 +10,10 @@ namespace AmarShowsBook.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
 
-        // Inject database context and activity logger
+        // =====================================================
+        // CONSTRUCTOR
+        // =====================================================
+
         public WalletController(
             ApplicationDbContext context,
             IActivityLogger activityLogger)
@@ -19,45 +22,57 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        // ================= WALLET DASHBOARD =================
+        // =====================================================
+        // WALLET DASHBOARD
+        // =====================================================
 
         public async Task<IActionResult> Index()
         {
-            // Get logged-in user email from session
+            // Get logged in user email
             var userEmail =
                 HttpContext.Session.GetString("UserEmail");
 
-            // Prevent guest access
+            // Redirect guest users
             if (string.IsNullOrWhiteSpace(userEmail))
             {
-                return RedirectToAction("Login", "Auth");
+                return RedirectToAction(
+                    "Login",
+                    "Auth"
+                );
             }
-// Read wallet data from PostgreSQL wallet summary VIEW
-var wallet = _context
-    .VwWalletSummaries
-    .FirstOrDefault(x => x.UserEmail == userEmail);
+
+            // Get wallet summary from view
+            var wallet = _context
+                .VwWalletSummaries
+                .FirstOrDefault(x =>
+                    x.UserEmail == userEmail);
 
             // Wallet not found
             if (wallet == null)
             {
                 TempData["Error"] =
-                    "Wallet information could not be found.";
+                    "Wallet information not found.";
 
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction(
+                    "Index",
+                    "Home"
+                );
             }
 
-            // Store wallet activity log
+            // Store activity log
             await _activityLogger.LogAsync(
-                userId: wallet.UserId,
+                userId: (int)wallet.UserId,
                 action: "VIEW_WALLET",
                 module: "WALLET",
                 entityType: "WALLET",
                 entityId: (int)wallet.WalletId,
-                description: "User viewed wallet dashboard",
+                description:
+                    "User viewed wallet dashboard",
                 status: "SUCCESS",
                 isError: 0
             );
 
+            // Return wallet page
             return View(wallet);
         }
     }

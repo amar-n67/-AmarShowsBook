@@ -1,4 +1,5 @@
 @model List<AmarShowsBook.Models.VwBookingTransactionSummary>
+@using AmarShowsBook.Helpers
 
 @{
     ViewData["Title"] = "Transaction History";
@@ -19,7 +20,7 @@
     <div class="transaction-stats">
         <div class="transaction-stat">
             <span>Total Paid</span>
-            <strong>₹ @totalAmount</strong>
+            <strong>@CurrencyFormatter.FormatRupees(totalAmount)</strong>
         </div>
         <div class="transaction-stat">
             <span>Successful</span>
@@ -64,7 +65,7 @@
                             </td>
                             <td>@item.ShowTitle</td>
                             <td>
-                                <span class="transaction-amount">@item.Currency @item.TransactionAmount</span>
+                                <span class="transaction-amount">@CurrencyFormatter.FormatRupees(item.TransactionAmount)</span>
                             </td>
                             <td>@item.PaymentMethod</td>
                             <td>

@@ -1,6 +1,7 @@
 using AmarShowsBook.Data;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AmarShowsBook.Controllers
 {
@@ -25,6 +26,8 @@ namespace AmarShowsBook.Controllers
             // Get logged-in user email from session
             var userEmail =
                 HttpContext.Session.GetString("UserEmail");
+            var userIdText =
+                HttpContext.Session.GetString("UserId");
 
             // Prevent guest users from accessing transactions
             if (string.IsNullOrWhiteSpace(userEmail))
@@ -32,9 +35,18 @@ namespace AmarShowsBook.Controllers
                 return RedirectToAction("Login", "Auth");
             }
 
+            // Human Comment:
+            // User id is the stable lookup key; email remains as a compatibility fallback.
+            var userId = int.TryParse(userIdText, out var parsedUserId)
+                ? parsedUserId
+                : 0;
+
             var transactions = _context
                 .VwBookingTransactionSummaries
-                .Where(x => x.UserEmail == userEmail)
+                .AsNoTracking()
+                .Where(x =>
+                    (userId > 0 && x.UserId == userId) ||
+                    x.UserEmail.ToLower() == userEmail.ToLower())
                 .OrderByDescending(x => x.BookingCreatedAt)
                 .ToList();
 

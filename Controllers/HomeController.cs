@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.ViewModels;
+using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
@@ -171,25 +172,88 @@ public async Task<IActionResult> Index(string type = "Movie")
             });
         }
         [HttpGet]
-public JsonResult GetStates(int countryId)
-{
-    var states = _context.States
-        .Where(s => s.CountryId == countryId)
-        .Select(s => new { id = s.Id, name = s.Name })
-        .ToList();
+        public async Task<IActionResult> GetCountries()
+        {
+            try
+            {
+                // Human Comment:
+                // Return all country names, while preserving local DB ids for countries
+                // that have state/region data in the application.
+                var dataCountries = await _context.Countries
+                    .AsNoTracking()
+                    .OrderBy(c => c.Name)
+                    .Select(c => new { id = c.Id, name = c.Name })
+                    .ToListAsync();
 
-    return Json(states);
-}
+                var countriesByName = dataCountries
+                    .GroupBy(c => c.name.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => (int?)g.First().id, StringComparer.OrdinalIgnoreCase);
 
-[HttpGet]
-public JsonResult GetDistricts(int stateId)
-{
-    var districts = _context.Districts
-        .Where(d => d.StateId == stateId)
-        .Select(d => new { id = d.Id, name = d.Name })
-        .ToList();
+                var cultureCountries = CultureInfo
+                    .GetCultures(CultureTypes.SpecificCultures)
+                    .Select(c => new RegionInfo(c.Name).EnglishName)
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase);
 
-    return Json(districts);
-}
+                foreach (var countryName in cultureCountries)
+                {
+                    countriesByName.TryAdd(countryName.Trim(), null);
+                }
+
+                var countries = countriesByName
+                    .OrderBy(c => c.Key)
+                    .Select(c => new { id = c.Value, name = c.Key })
+                    .ToList();
+
+                return Json(countries);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load countries for home location dropdown.");
+                return StatusCode(500, new { message = "Failed to load countries." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetStates(int countryId)
+        {
+            try
+            {
+                var states = await _context.States
+                    .AsNoTracking()
+                    .Where(s => s.CountryId == countryId)
+                    .OrderBy(s => s.Name)
+                    .Select(s => new { id = s.Id, name = s.Name })
+                    .ToListAsync();
+
+                return Json(states);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load states for country {CountryId}.", countryId);
+                return StatusCode(500, new { message = "Failed to load states." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDistricts(int stateId)
+        {
+            try
+            {
+                var districts = await _context.Districts
+                    .AsNoTracking()
+                    .Where(d => d.StateId == stateId)
+                    .OrderBy(d => d.Name)
+                    .Select(d => new { id = d.Id, name = d.Name })
+                    .ToListAsync();
+
+                return Json(districts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load districts for state {StateId}.", stateId);
+                return StatusCode(500, new { message = "Failed to load regions." });
+            }
+        }
     }
 }

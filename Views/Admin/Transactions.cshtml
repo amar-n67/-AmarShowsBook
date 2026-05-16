@@ -1,10 +1,25 @@
 @model List<AmarShowsBook.Models.VwBookingTransactionSummary>
 
+@using AmarShowsBook.Helpers
+
 @{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
     ViewData["Title"] = "Admin Transactions";
 
-    var currentPage = ViewBag.CurrentPage ?? 1;
-    var totalPages = ViewBag.TotalPages ?? 1;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+
+    int totalPages = ViewBag.TotalPages ?? 1;
+
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count;
+
+    int successCount =
+        ViewBag.SuccessCount ??
+        Model.Count(x => x.TransactionStatus == "SUCCESS");
+
+    int failedCount =
+        ViewBag.FailedCount ??
+        Model.Count(x => x.TransactionStatus != "SUCCESS");
 
     int rowNo = ((currentPage - 1) * 50) + 1;
 }
@@ -12,28 +27,30 @@
 <section class="admin-page">
 
     <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         ADMIN PAGE HEADER
-    -->
+    <!-- PAGE HEADER -->
     <!-- ===================================================== -->
 
-    <div class="admin-header">
+    <div class="admin-page-header">
 
         <div>
-            <h1>Transaction Center</h1>
 
-            <p>
-                Enterprise payment monitoring dashboard
+            <h1 class="page-title">
+                Transaction Center
+            </h1>
+
+            <p class="page-subtitle">
+                Enterprise payment monitoring across bookings,
+                users, gateways, payment methods,
+                and transaction outcomes.
             </p>
+
         </div>
 
         <div class="admin-actions">
 
-            <a href="/Admin/Index"
-               class="btn btn-secondary">
-
-                ← Back Dashboard
-
+            <a href="/Admin/Dashboard"
+               class="admin-back-btn admin-page-back">
+                ← Back to Dashboard
             </a>
 
         </div>
@@ -41,85 +58,73 @@
     </div>
 
     <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         QUICK STATS
-    -->
+    <!-- STATS -->
     <!-- ===================================================== -->
 
     <div class="stats-grid">
 
         <div class="stat-card">
             <span>Total Transactions</span>
-            <strong>@Model.Count</strong>
+            <strong>@totalRecords</strong>
         </div>
 
-        <div class="stat-card success-card">
-            <span>Success</span>
-            <strong>
-                @Model.Count(x => x.TransactionStatus == "SUCCESS")
-            </strong>
+        <div class="stat-card">
+            <span>Successful Payments</span>
+            <strong>@successCount</strong>
         </div>
 
-        <div class="stat-card danger-card">
-            <span>Failed</span>
-            <strong>
-                @Model.Count(x => x.TransactionStatus != "SUCCESS")
-            </strong>
+        <div class="stat-card">
+            <span>Failed Payments</span>
+            <strong>@failedCount</strong>
         </div>
 
     </div>
 
     <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         SEARCH BAR
-    -->
-    <!-- ===================================================== -->
-
-    <div class="search-bar">
-
-        <input
-            type="text"
-            id="transactionSearch"
-            placeholder="Search transaction, booking, user..."
-            onkeyup="searchTransactions()" />
-
-    </div>
-
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         TABLE SECTION
-    -->
+    <!-- TABLE -->
     <!-- ===================================================== -->
 
     <div class="table-wrapper">
 
-        <table class="admin-table" id="transactionTable">
+        <table class="table admin-table transaction-table">
 
             <thead>
 
                 <tr>
 
-                    <th>#</th>
+                    <th style="min-width:70px;">#</th>
 
-                    <th>Transaction</th>
+                    <th style="min-width:250px;">
+                        Transaction
+                    </th>
 
-                    <th>User</th>
+                    <th style="min-width:250px;">
+                        User
+                    </th>
 
-                    <th>Amount</th>
+                    <th style="min-width:180px;">
+                        Amount
+                    </th>
 
-                    <th>Payment</th>
+                    <th style="min-width:220px;">
+                        Payment
+                    </th>
 
-                    <th>Coupon</th>
+                    <th style="min-width:220px;">
+                        Booking
+                    </th>
 
-                    <th>Booking</th>
+                    <th style="min-width:180px;">
+                        Status
+                    </th>
 
-                    <th>Status</th>
+                    <th style="min-width:180px;">
+                        Created
+                    </th>
 
-                    <th>Refund</th>
-
-                    <th>Created</th>
-
-                    <th>Action</th>
+                    <th style="min-width:140px;">
+                        Action
+                    </th>
 
                 </tr>
 
@@ -127,151 +132,191 @@
 
             <tbody>
 
-            @if (!Model.Any())
-            {
-                <tr>
-                    <td colspan="11" class="empty-state">
-
-                        No transactions found
-
-                    </td>
-                </tr>
-            }
-            else
-            {
-                @foreach (var item in Model)
+                @if (!Model.Any())
                 {
                     <tr>
 
-                        <td>@rowNo</td>
-
-                        <td>
-
-                            <strong>
-                                @item.TransactionRef
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.ShowTitle
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                @item.UserName
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.UserEmail
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                ₹@item.TransactionAmount
-                            </strong>
-
-                            <div class="sub-text">
-
-                                Currency:
-                                @(string.IsNullOrWhiteSpace(item.Currency)
-                                    ? "INR"
-                                    : item.Currency)
-
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                @item.PaymentMethod
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.GatewayName
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <!-- HUMAN COMMENT:
-                                 Coupon module not added yet
-                            -->
-
-                            -
-
-                        </td>
-
-                        <td>
-
-                            <strong>
-                                @item.BookingRef
-                            </strong>
-
-                            <div class="sub-text">
-                                @item.BookingStatus
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <span class="
-                                badge
-                                @(item.TransactionStatus == "SUCCESS"
-                                    ? "success"
-                                    : "danger")">
-
-                                @item.TransactionStatus
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <!-- HUMAN COMMENT:
-                                 Refund system not added yet
-                            -->
-
-                            <span>-</span>
-
-                        </td>
-
-                        <td>
-
-                            @item.BookingCreatedAt.ToString("dd MMM yyyy")
-
-                            <div class="sub-text">
-
-                                @item.BookingCreatedAt.ToString("hh:mm tt")
-
-                            </div>
-
-                        </td>
-
-                        <td>
-
-                            <a class="view-btn"
-                               href="/Admin/TransactionDetails/@item.TransactionId">
-
-                                View
-
-                            </a>
-
+                        <td colspan="9"
+                            class="empty-state">
+                            No transactions found
                         </td>
 
                     </tr>
-
-                    rowNo++;
                 }
-            }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+
+                            <!-- ROW NUMBER -->
+
+                            <td>
+
+                                <span class="row-number">
+                                    @rowNo
+                                </span>
+
+                            </td>
+
+                            <!-- TRANSACTION -->
+
+                            <td>
+
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.TransactionRef)
+                                        ? "NA"
+                                        : item.TransactionRef)
+                                </div>
+
+                                <div class="sub-text">
+                                    @(string.IsNullOrWhiteSpace(item.ShowTitle)
+                                        ? "No Show"
+                                        : item.ShowTitle)
+                                </div>
+
+                            </td>
+
+                            <!-- USER -->
+
+                            <td>
+
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.UserName)
+                                        ? "NA"
+                                        : item.UserName)
+                                </div>
+
+                                <div class="sub-text email-cell">
+                                    @(string.IsNullOrWhiteSpace(item.UserEmail)
+                                        ? "NA"
+                                        : item.UserEmail)
+                                </div>
+
+                            </td>
+
+                            <!-- AMOUNT -->
+
+                            <td>
+
+                                <div class="amount-text">
+                                    @CurrencyFormatter.FormatRupees(item.TransactionAmount)
+                                </div>
+
+                                <div class="sub-text">
+                                    Currency:
+                                    @(string.IsNullOrWhiteSpace(item.Currency)
+                                        ? "INR"
+                                        : item.Currency)
+                                </div>
+
+                            </td>
+
+                            <!-- PAYMENT -->
+
+                            <td>
+
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.PaymentMethod)
+                                        ? "NA"
+                                        : item.PaymentMethod)
+                                </div>
+
+                                <div class="sub-text">
+                                    @(string.IsNullOrWhiteSpace(item.GatewayName)
+                                        ? "NA"
+                                        : item.GatewayName)
+                                </div>
+
+                            </td>
+
+                            <!-- BOOKING -->
+
+                            <td>
+
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.BookingRef)
+                                        ? "NA"
+                                        : item.BookingRef)
+                                </div>
+
+                                <div class="sub-text">
+                                    @(string.IsNullOrWhiteSpace(item.BookingStatus)
+                                        ? "NA"
+                                        : item.BookingStatus)
+                                </div>
+
+                            </td>
+
+                            <!-- STATUS -->
+
+                            <td>
+
+                                @if (item.TransactionStatus == "SUCCESS")
+                                {
+                                    <span class="badge success">
+                                        SUCCESS
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge danger">
+                                        @(string.IsNullOrWhiteSpace(item.TransactionStatus)
+                                            ? "FAILED"
+                                            : item.TransactionStatus)
+                                    </span>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(item.FailureReason))
+                                {
+                                    <div class="sub-text error-text">
+                                        @item.FailureReason
+                                    </div>
+                                }
+
+                            </td>
+
+                            <!-- CREATED -->
+
+                            <td>
+
+                                <div class="created-date">
+                                    @item.BookingCreatedAt
+                                        .ToString("dd MMM yyyy")
+                                </div>
+
+                                <div class="sub-text">
+                                    @item.BookingCreatedAt
+                                        .ToString("hh:mm tt")
+                                </div>
+
+                            </td>
+
+                            <!-- ACTION -->
+
+                            <td>
+
+                                @if (item.TransactionId.HasValue)
+                                {
+                                    <a href="/Admin/TransactionDetails/@item.TransactionId.Value"
+                                       class="view-btn">
+                                        View
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="sub-text">
+                                        No transaction id
+                                    </span>
+                                }
+
+                            </td>
+
+                        </tr>
+
+                        rowNo++;
+                    }
+                }
 
             </tbody>
 
@@ -280,21 +325,16 @@
     </div>
 
     <!-- ===================================================== -->
-    <!-- HUMAN COMMENT:
-         PAGINATION
-    -->
+    <!-- PAGINATION -->
     <!-- ===================================================== -->
 
     <div class="pagination-area">
 
         @for (int i = 1; i <= totalPages; i++)
         {
-            <a
-                class="page-btn @(i == currentPage ? "active" : "")"
-                href="/Admin/Transactions?page=@i">
-
+            <a href="/Admin/Transactions?page=@i"
+               class="page-btn @(i == currentPage ? "active" : "")">
                 @i
-
             </a>
         }
 
@@ -303,207 +343,211 @@
 </section>
 
 <!-- ===================================================== -->
-<!-- HUMAN COMMENT:
-     PAGE STYLES
--->
+<!-- PAGE CSS -->
 <!-- ===================================================== -->
 
 <style>
 
-.admin-page{
-    padding:24px;
-}
-
-.admin-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:24px;
-}
-
-.admin-header h1{
-    margin-bottom:6px;
-}
-
-.stats-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:16px;
-    margin-bottom:24px;
-}
-
-.stat-card{
-    background:#111827;
-    padding:20px;
-    border-radius:12px;
-    color:white;
-}
-
-.stat-card span{
-    display:block;
-    margin-bottom:8px;
-    color:#94a3b8;
-}
-
-.stat-card strong{
-    font-size:28px;
-}
-
-.success-card{
-    border-left:4px solid #22c55e;
-}
-
-.danger-card{
-    border-left:4px solid #ef4444;
-}
-
-.search-bar{
-    margin-bottom:18px;
-}
-
-.search-bar input{
-    width:100%;
-    padding:14px;
-    border-radius:10px;
-    border:none;
-    background:#0f172a;
-    color:white;
-}
-
-.table-wrapper{
-    overflow:auto;
-    border-radius:12px;
-}
-
-.admin-table{
-    width:100%;
-    border-collapse:collapse;
-    background:#111827;
-    color:white;
-}
-
-.admin-table thead{
-    position:sticky;
-    top:0;
-    background:#1e293b;
-}
-
-.admin-table th{
-    padding:16px;
-    text-align:left;
-    font-size:14px;
-}
-
-.admin-table td{
-    padding:16px;
-    border-top:1px solid #1e293b;
-    vertical-align:top;
-}
-
-.sub-text{
-    margin-top:4px;
-    font-size:12px;
-    color:#94a3b8;
-}
-
-.badge{
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
-}
-
-.success{
-    background:#14532d;
-    color:white;
-}
-
-.danger{
-    background:#7f1d1d;
-    color:white;
-}
-
-.warning{
-    background:#78350f;
-    color:white;
-}
-
-.view-btn{
-    padding:8px 12px;
-    border-radius:8px;
-    background:#2563eb;
-    color:white;
-    text-decoration:none;
-    font-size:13px;
-}
-
-.pagination-area{
-    margin-top:24px;
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-.page-btn{
-    padding:10px 14px;
-    border-radius:8px;
-    background:#1e293b;
-    color:white;
-    text-decoration:none;
-}
-
-.page-btn.active{
-    background:#2563eb;
-}
-
-.empty-state{
-    text-align:center;
-    padding:40px;
-    color:#94a3b8;
-}
-
-@@media(max-width:900px){
-
-    .stats-grid{
-        grid-template-columns:1fr;
+    .transaction-table {
+        width: 100%;
+        border-collapse: collapse;
     }
 
-}
+    .transaction-table th {
+        background: #111827;
+        color: white;
+        padding: 14px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .transaction-table td {
+        padding: 14px;
+        vertical-align: top;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+    }
+
+    .transaction-table tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .stat-card span {
+        display: block;
+        color: #6b7280;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .stat-card strong {
+        font-size: 28px;
+        color: #111827;
+    }
+
+    .page-title {
+        margin-bottom: 6px;
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .badge.success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .sub-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    .email-cell {
+        word-break: break-all;
+    }
+
+    .primary-text {
+        font-weight: 600;
+        color: #111827;
+        word-break: break-word;
+    }
+
+    .amount-text {
+        font-weight: 700;
+        color: #15803d;
+        font-size: 15px;
+    }
+
+    .error-text {
+        color: #dc2626;
+    }
+
+    .created-date {
+        font-weight: 500;
+        color: #111827;
+    }
+
+    .row-number {
+        font-weight: 700;
+        color: #374151;
+    }
+
+    .view-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 14px;
+        border-radius: 10px;
+        background: #111827;
+        color: white;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .view-btn:hover {
+        background: #2563eb;
+    }
+
+    .pagination-area {
+        margin-top: 24px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .page-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        background: white;
+        color: #111827;
+        border: 1px solid #d1d5db;
+        transition: 0.2s;
+    }
+
+    .page-btn:hover {
+        background: #111827;
+        color: white;
+    }
+
+    .page-btn.active {
+        background: #111827;
+        color: white;
+        border-color: #111827;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+        font-size: 15px;
+    }
+
+    @@media(max-width: 768px) {
+
+        .page-title {
+            font-size: 24px;
+        }
+
+        .transaction-table td,
+        .transaction-table th {
+            font-size: 13px;
+            padding: 10px;
+        }
+
+        .view-btn {
+            width: 100%;
+        }
+
+    }
 
 </style>
-
-<!-- ===================================================== -->
-<!-- HUMAN COMMENT:
-     SEARCH FILTER SCRIPT
--->
-<!-- ===================================================== -->
-
-<script>
-
-function searchTransactions() {
-
-    let input =
-        document.getElementById("transactionSearch");
-
-    let filter =
-        input.value.toLowerCase();
-
-    let table =
-        document.getElementById("transactionTable");
-
-    let tr =
-        table.getElementsByTagName("tr");
-
-    for (let i = 1; i < tr.length; i++) {
-
-        let rowText =
-            tr[i].innerText.toLowerCase();
-
-        tr[i].style.display =
-            rowText.includes(filter)
-                ? ""
-                : "none";
-    }
-}
-
-</script>

@@ -1164,6 +1164,13 @@ function confirmLogout() {
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
+    // Human Comment:
+    // Inactivity validation only runs for logged-in users, never on login/logout pages.
+    const isSessionUserLoggedIn = @isLoggedIn.ToString().ToLowerInvariant();
+
+    if (!isSessionUserLoggedIn) {
+        return;
+    }
 
     let inactivityTimer;
     let countdownTimer;
@@ -1249,6 +1256,10 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     function autoLogout() {
+        if (window.location.pathname.toLowerCase() === "/auth/logout") {
+            return;
+        }
+
         window.location.href = "/Auth/Logout";
     }
 

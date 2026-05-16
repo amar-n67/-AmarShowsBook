@@ -1,4 +1,5 @@
 @model AmarShowsBook.Models.Admin.VwWalletSummary
+@using AmarShowsBook.Helpers
 
 @{
     ViewData["Title"] = "Wallet";
@@ -26,12 +27,12 @@
 
         <div class="wallet-card wallet-card-feature">
             <span>Wallet Balance</span>
-            <strong>₹ @Model.WalletBalance.ToString("N2")</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.WalletBalance)</strong>
         </div>
 
         <div class="wallet-card">
             <span>Blocked Balance</span>
-            <strong>₹ @Model.BlockedBalance.ToString("N2")</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.BlockedBalance)</strong>
         </div>
 
         <div class="wallet-card">
@@ -41,12 +42,12 @@
 
         <div class="wallet-card">
             <span>Total Credits</span>
-            <strong>₹ @Model.TotalCredits.ToString("N2")</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalCredits)</strong>
         </div>
 
         <div class="wallet-card">
             <span>Total Debits</span>
-            <strong>₹ @Model.TotalDebits.ToString("N2")</strong>
+            <strong>@CurrencyFormatter.FormatRupees(Model.TotalDebits)</strong>
         </div>
 
         <div class="wallet-card">
