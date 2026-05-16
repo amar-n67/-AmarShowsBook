@@ -4,110 +4,381 @@
     var schedule = ViewBag.Schedule;
 }
 
-<div class="card">
+<style>
 
-    <h2>Ticket Status</h2>
+body{
+    background:#f4f6f9;
+}
 
-    @if(Model.Status=="CONFIRMED")
-    {
-        <h3>Booking Successful</h3>
+.ticket-container{
 
-        <p>
-            Status:
-            <b style="color:green">
-                CONFIRMED
-            </b>
-        </p>
-    }
-    else
-    {
-        <h3>Booking Failed</h3>
+    width:750px;
 
-        <p>
-            Status:
-            <b style="color:red">
-                FAILED
-            </b>
-        </p>
+    margin:40px auto;
+}
 
-        <p>
-            Reason:
-            Transaction Failed
-        </p>
-    }
+.ticket-card{
 
-    <hr/>
+    background:white;
 
-    <p>
-        Booking Id:
-        @Model.Id
-    </p>
+    border-radius:25px;
 
-    <p>
-        Seats:
-        @Model.SeatNumbers
-    </p>
+    overflow:hidden;
 
-    <p>
-        Amount:
-        ₹@Model.TotalAmount
-    </p>
+    box-shadow:
+    0px 10px 35px
+    rgba(0,0,0,.15);
+}
 
-    <hr/>
+.ticket-header{
 
-    @if(schedule.Movie!=null)
-    {
-        <p>
-            Movie:
-            @schedule.Movie.Title
-        </p>
-    }
+    padding:30px;
 
-    @if(schedule.StandupShow!=null)
-    {
-        <p>
-            Show:
-            @schedule.StandupShow.Title
-        </p>
-    }
+    text-align:center;
 
-    @if(schedule.LiveStream!=null)
-    {
-        <p>
-            Live:
-            @schedule.LiveStream.Title
-        </p>
-    }
+    color:white;
+}
 
-    <p>
-        Venue:
-        @schedule.Location.Area
-    </p>
+.success{
+    background:
+    linear-gradient(
+    135deg,
+    #28a745,
+    #20c997);
+}
 
-    <p>
-        Location:
-        @schedule.Location.State,
-        @schedule.Location.Country
-    </p>
+.failed{
+    background:
+    linear-gradient(
+    135deg,
+    #dc3545,
+    #ff4d6d);
+}
 
-    <p>
-        Show Time:
-        @schedule.StartTime
-    </p>
+.ticket-header h2{
+    margin:0;
+}
 
-    <br/>
+.ticket-body{
+    padding:35px;
+}
 
-    @if(Model.Status=="CONFIRMED")
-    {
-        <a href="/Booking/MyBookings">
-            View My Bookings
-        </a>
-    }
-    else
-    {
-        <a href="/Booking/Payment?bookingId=@Model.Id">
-            Retry Payment
-        </a>
-    }
+.row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    padding:15px 0;
+
+    border-bottom:
+    1px solid #eee;
+}
+
+.label{
+
+    font-weight:bold;
+
+    color:#666;
+}
+
+.value{
+
+    font-weight:bold;
+}
+
+.amount{
+
+    color:#0d6efd;
+
+    font-size:28px;
+}
+
+.reason{
+
+    color:red;
+
+    font-weight:bold;
+
+    margin-top:15px;
+}
+
+.action{
+
+    margin-top:35px;
+
+    text-align:center;
+}
+
+.action-btn{
+
+    padding:
+    14px
+    35px;
+
+    border:none;
+
+    border-radius:40px;
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    text-decoration:none;
+}
+
+.booking-btn{
+
+    background:
+    linear-gradient(
+    135deg,
+    #0d6efd,
+    #4e73df);
+}
+
+.retry-btn{
+
+    background:
+    linear-gradient(
+    135deg,
+    #dc3545,
+    #ff4d6d);
+}
+
+.icon{
+
+    font-size:50px;
+
+    margin-bottom:10px;
+}
+
+</style>
+
+
+<div class="ticket-container">
+
+<div class="ticket-card">
+
+<div class="ticket-header @(Model.Status=="CONFIRMED" ? "success" : "failed")">
+
+@if(Model.Status=="CONFIRMED")
+{
+<div class="icon">
+✅
+</div>
+
+<h2>
+Booking Successful
+</h2>
+}
+else
+{
+<div class="icon">
+❌
+</div>
+
+<h2>
+Booking Failed
+</h2>
+}
+
+</div>
+
+
+<div class="ticket-body">
+
+<div class="row">
+
+<div class="label">
+Booking Id
+</div>
+
+<div class="value">
+#@Model.Id
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Seats
+</div>
+
+<div class="value">
+@Model.SeatNumbers
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Amount
+</div>
+
+<div class="value amount">
+₹@Model.TotalAmount
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Status
+</div>
+
+<div class="value">
+
+@if(Model.Status=="CONFIRMED")
+{
+<span style="color:green">
+CONFIRMED
+</span>
+}
+else
+{
+<span style="color:red">
+FAILED
+</span>
+}
+
+</div>
+
+</div>
+
+
+@if(schedule.Movie!=null)
+{
+<div class="row">
+
+<div class="label">
+Movie
+</div>
+
+<div class="value">
+@schedule.Movie.Title
+</div>
+
+</div>
+}
+
+@if(schedule.StandupShow!=null)
+{
+<div class="row">
+
+<div class="label">
+Show
+</div>
+
+<div class="value">
+@schedule.StandupShow.Title
+</div>
+
+</div>
+}
+
+@if(schedule.LiveStream!=null)
+{
+<div class="row">
+
+<div class="label">
+Live Stream
+</div>
+
+<div class="value">
+@schedule.LiveStream.Title
+</div>
+
+</div>
+}
+
+<div class="row">
+
+<div class="label">
+Venue
+</div>
+
+<div class="value">
+@schedule.Location.Area
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Location
+</div>
+
+<div class="value">
+@schedule.Location.State,
+@schedule.Location.Country
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Show Time
+</div>
+
+<div class="value">
+@schedule.StartTime
+</div>
+
+</div>
+
+
+@if(Model.Status!="CONFIRMED")
+{
+<div class="reason">
+
+Reason:
+Transaction Failed
+
+</div>
+}
+
+
+<div class="action">
+
+@if(Model.Status=="CONFIRMED")
+{
+<a
+class="action-btn booking-btn"
+href="/Booking/MyBookings">
+
+View My Bookings
+
+</a>
+}
+else
+{
+<a
+class="action-btn retry-btn"
+href="/Booking/Payment?bookingId=@Model.Id">
+
+Retry Payment
+
+</a>
+}
+
+</div>
+
+</div>
+
+</div>
 
 </div>

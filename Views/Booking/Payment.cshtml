@@ -1,64 +1,287 @@
 @model BookingDraft
 
-<div class="card">
+<style>
 
-    <h2>Payment</h2>
+body{
+    background:#f4f6f9;
+}
 
-    <p>
-        Amount: ₹@Model.TotalAmount
-    </p>
+.payment-container{
+    width:700px;
+    margin:40px auto;
+}
 
-    <div>
-        <input type="radio"
-               name="pay"
-               value="UPI"
-               checked
-               onchange="toggleQR()">
-        UPI
-    </div>
+.payment-card{
 
-    <div>
-        <input type="radio"
-               name="pay"
-               value="CARD"
-               onchange="toggleQR()">
-        Card
-    </div>
+    background:white;
 
-    <div>
-        <input type="radio"
-               name="pay"
-               value="NETBANKING"
-               onchange="toggleQR()">
-        Net Banking
-    </div>
+    border-radius:25px;
 
-    <div>
-        <input type="radio"
-               name="pay"
-               value="QR"
-               onchange="toggleQR()">
-        QR Scan
-    </div>
+    overflow:hidden;
+
+    box-shadow:
+    0px 10px 30px rgba(0,0,0,.15);
+}
+
+.payment-header{
+
+    background:
+    linear-gradient(
+    135deg,
+    #6a11cb,
+    #2575fc);
+
+    color:white;
+
+    padding:30px;
+
+    text-align:center;
+}
+
+.payment-header h2{
+    margin:0;
+    font-size:30px;
+}
+
+.payment-body{
+    padding:30px;
+}
+
+.amount-box{
+
+    text-align:center;
+
+    background:#f7f9fc;
+
+    padding:20px;
+
+    border-radius:15px;
+
+    margin-bottom:25px;
+}
+
+.amount-box h3{
+    margin:0;
+    color:#666;
+}
+
+.amount{
+
+    font-size:35px;
+
+    font-weight:bold;
+
+    color:#0d6efd;
+}
+
+.payment-option{
+
+    border:1px solid #ddd;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    margin-bottom:15px;
+
+    cursor:pointer;
+
+    transition:.3s;
+}
+
+.payment-option:hover{
+    background:#f3f7ff;
+}
+
+#qrSection{
+
+    margin-top:20px;
+
+    text-align:center;
+
+    display:none;
+}
+
+#qrImage{
+
+    border:8px solid #eee;
+
+    border-radius:15px;
+
+    padding:10px;
+
+    background:white;
+}
+
+.scan-text{
+
+    margin-top:15px;
+
+    font-weight:bold;
+
+    color:#666;
+}
+
+.pay-btn{
+
+    width:100%;
+
+    border:none;
+
+    padding:15px;
+
+    font-size:18px;
+
+    border-radius:40px;
+
+    cursor:pointer;
+
+    color:white;
+
+    font-weight:bold;
+
+    margin-top:25px;
+
+    background:
+    linear-gradient(
+    135deg,
+    #28a745,
+    #0d6efd);
+
+    transition:.3s;
+}
+
+.pay-btn:hover{
+
+    transform:
+    translateY(-2px);
+
+    box-shadow:
+    0px 10px 20px rgba(0,0,0,.2);
+}
+
+</style>
 
 
-    <div id="qrSection"
-         style="display:none">
 
-        <img id="qrImage"
-             width="250"/>
-    </div>
+<div class="payment-container">
 
+<div class="payment-card">
 
-    <button id="payButton"
-            onclick="pay()">
-        Pay
-    </button>
+<div class="payment-header">
+
+<h2>
+💳 Payment Gateway
+</h2>
 
 </div>
 
 
+<div class="payment-body">
+
+<div class="amount-box">
+
+<h3>
+Total Amount
+</h3>
+
+<div class="amount">
+₹@Model.TotalAmount
+</div>
+
+</div>
+
+
+<label class="payment-option">
+
+<input
+type="radio"
+name="pay"
+value="UPI"
+checked
+onchange="toggleQR()"/>
+
+UPI Payment
+
+</label>
+
+
+<label class="payment-option">
+
+<input
+type="radio"
+name="pay"
+value="CARD"
+onchange="toggleQR()"/>
+
+Card Payment
+
+</label>
+
+
+<label class="payment-option">
+
+<input
+type="radio"
+name="pay"
+value="NETBANKING"
+onchange="toggleQR()"/>
+
+Net Banking
+
+</label>
+
+
+<label class="payment-option">
+
+<input
+type="radio"
+name="pay"
+value="QR"
+onchange="toggleQR()"/>
+
+QR Scan Payment
+
+</label>
+
+
+
+<div id="qrSection">
+
+<img
+id="qrImage"
+width="250"/>
+
+<div class="scan-text">
+
+📱 Scan QR from your mobile
+
+</div>
+
+</div>
+
+
+<button
+id="payButton"
+class="pay-btn"
+onclick="pay()">
+
+Pay Now
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+
 <script>
+
+let statusChecker=null;
+
 
 async function toggleQR()
 {
@@ -75,7 +298,6 @@ async function toggleQR()
         .getElementById(
         "qrSection")
         .style.display="block";
-
 
         document
         .getElementById(
@@ -101,6 +323,19 @@ async function toggleQR()
         +
         encodeURIComponent(
         result.url);
+
+
+        if(statusChecker)
+        {
+            clearInterval(
+            statusChecker);
+        }
+
+        statusChecker=
+        setInterval(
+        checkQRStatus,
+        3000
+        );
     }
     else
     {
@@ -113,8 +348,12 @@ async function toggleQR()
         .getElementById(
         "payButton")
         .style.display="block";
+
+        clearInterval(
+        statusChecker);
     }
 }
+
 
 
 async function pay()
@@ -150,23 +389,20 @@ async function pay()
     let result=
     await response.json();
 
-    if(result.success)
-{
-    window.location=
-    "/Booking/Confirmation?bookingId=@Model.Id";
-}
-else
-{
-    alert(
-    "Transaction failed. Booking not completed");
-}
-}
-let statusChecker=
 
-setInterval(
-checkQRStatus,
-3000
-);
+    if(result.success)
+    {
+        window.location=
+        "/Booking/Confirmation?bookingId=@Model.Id";
+    }
+    else
+    {
+        alert(
+        "Transaction Failed");
+    }
+}
+
+
 
 async function checkQRStatus()
 {
@@ -179,7 +415,12 @@ async function checkQRStatus()
     let result=
     await response.json();
 
-    if(result.status==="SUCCESS")
+
+    if(
+    result.status==="SUCCESS"
+    ||
+    result.status==="FAILED"
+    )
     {
         clearInterval(
         statusChecker);
@@ -187,14 +428,6 @@ async function checkQRStatus()
         window.location=
         "/Booking/Confirmation?bookingId=@Model.Id";
     }
-
-   if(result.status==="FAILED")
-{
-    clearInterval(
-    statusChecker);
-
-    window.location=
-    "/Booking/Confirmation?bookingId=@Model.Id";
 }
-}
+
 </script>

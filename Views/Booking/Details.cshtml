@@ -1,28 +1,270 @@
 @model BookingDraft
 
-<h2>Booking Details</h2>
+@{
+    var schedule=ViewBag.Schedule;
+    var user=ViewBag.User;
 
-<p>
-Booking Id:
-@Model.Id
-</p>
+    string title="";
 
-<p>
-Seats:
+    if(schedule.Movie!=null)
+    {
+        title=schedule.Movie.Title;
+    }
+    else if(schedule.StandupShow!=null)
+    {
+        title=schedule.StandupShow.Title;
+    }
+    else if(schedule.LiveStream!=null)
+    {
+        title=schedule.LiveStream.Title;
+    }
+}
+
+<style>
+
+body{
+background:#f4f6f9;
+}
+
+.booking-container{
+width:800px;
+margin:40px auto;
+}
+
+.ticket-card{
+background:white;
+border-radius:25px;
+overflow:hidden;
+box-shadow:0 10px 30px rgba(0,0,0,.15);
+}
+
+.ticket-header{
+background:linear-gradient(
+135deg,
+#1e3c72,
+#2a5298);
+
+color:white;
+padding:30px;
+text-align:center;
+}
+
+.ticket-body{
+padding:30px;
+}
+
+.detail-row{
+display:flex;
+justify-content:space-between;
+padding:15px 0;
+border-bottom:1px solid #eee;
+}
+
+.label{
+font-weight:bold;
+color:#666;
+}
+
+.value{
+font-weight:bold;
+font-size:18px;
+}
+
+.amount{
+color:#0d6efd;
+font-size:26px;
+}
+
+.status{
+padding:6px 15px;
+border-radius:20px;
+color:white;
+background:orange;
+}
+
+.btn-section{
+margin-top:30px;
+display:flex;
+justify-content:space-between;
+}
+
+.btn{
+
+padding:15px 30px;
+border:none;
+border-radius:30px;
+cursor:pointer;
+font-weight:bold;
+color:white;
+text-decoration:none;
+}
+
+.pay-btn{
+background:linear-gradient(
+135deg,
+#28a745,
+#0d6efd);
+}
+
+.back-btn{
+background:#777;
+}
+
+</style>
+
+
+<div class="booking-container">
+
+<div class="ticket-card">
+
+<div class="ticket-header">
+
+<h2>
+🎟 Booking Details
+</h2>
+
+</div>
+
+<div class="ticket-body">
+
+<div class="detail-row">
+<div class="label">
+Booking Id
+</div>
+
+<div class="value">
+#@Model.Id
+</div>
+</div>
+
+
+<div class="detail-row">
+<div class="label">
+Movie / Show
+</div>
+
+<div class="value">
+@title
+</div>
+</div>
+
+
+<div class="detail-row">
+<div class="label">
+Seat Numbers
+</div>
+
+<div class="value">
 @Model.SeatNumbers
-</p>
+</div>
+</div>
 
-<p>
-Amount:
+
+<div class="detail-row">
+<div class="label">
+Show Time
+</div>
+
+<div class="value">
+@schedule.StartTime
+</div>
+</div>
+
+
+<div class="detail-row">
+<div class="label">
+Theater
+</div>
+
+<div class="value">
+@schedule.Location.Area
+</div>
+</div>
+
+
+<div class="detail-row">
+<div class="label">
+Location
+</div>
+
+<div class="value">
+@schedule.Location.State,
+@schedule.Location.Country
+</div>
+</div>
+
+
+<div class="detail-row">
+<div class="label">
+Email
+</div>
+
+<div class="value">
+@user.Email
+</div>
+</div>
+
+
+<div class="detail-row">
+<div class="label">
+Mobile
+</div>
+
+<div class="value">
+@user.Mobile
+</div>
+</div>
+
+
+<div class="detail-row">
+<div class="label">
+Amount
+</div>
+
+<div class="value amount">
 ₹@Model.TotalAmount
-</p>
+</div>
+</div>
 
-<p>
-Status:
+
+<div class="detail-row">
+
+<div class="label">
+Status
+</div>
+
+<div>
+<span class="status">
 @Model.Status
-</p>
+</span>
+</div>
+
+</div>
+
+
+<div class="btn-section">
+
+<a
+class="btn back-btn"
+href="javascript:history.back()">
+
+← Back
+
+</a>
+
 
 <button
+class="btn pay-btn"
 onclick="location.href='/Booking/Payment?bookingId=@Model.Id'">
-Proceed To Payment
+
+💳 Proceed To Payment
+
 </button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>

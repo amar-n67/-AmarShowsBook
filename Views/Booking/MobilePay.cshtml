@@ -1,31 +1,303 @@
 @model BookingDraft
 
-<h2>Booking Payment</h2>
+@{
+    var schedule=ViewBag.Schedule;
+    var user=ViewBag.User;
 
-<p>
-Booking Id:
-@Model.Id
-</p>
+    string title="";
 
-<p>
-Seats:
+    if(schedule.Movie!=null)
+    {
+        title=schedule.Movie.Title;
+    }
+    else if(schedule.StandupShow!=null)
+    {
+        title=schedule.StandupShow.Title;
+    }
+    else if(schedule.LiveStream!=null)
+    {
+        title=schedule.LiveStream.Title;
+    }
+}
+
+<style>
+
+body{
+margin:0;
+padding:20px;
+font-family:Arial;
+background:linear-gradient(
+135deg,
+#667eea,
+#764ba2);
+
+min-height:100vh;
+}
+
+.payment-card{
+
+max-width:550px;
+margin:auto;
+background:white;
+border-radius:25px;
+overflow:hidden;
+box-shadow:0 15px 40px rgba(0,0,0,.25);
+
+}
+
+.header{
+
+background:
+linear-gradient(
+135deg,
+#0d6efd,
+#4e73df);
+
+color:white;
+padding:25px;
+text-align:center;
+}
+
+.body{
+padding:30px;
+}
+
+.row{
+
+display:flex;
+justify-content:space-between;
+padding:14px 0;
+border-bottom:1px solid #eee;
+}
+
+.label{
+font-weight:bold;
+color:#666;
+}
+
+.value{
+font-weight:bold;
+}
+
+.amount{
+font-size:28px;
+color:#28a745;
+}
+
+.button-area{
+
+margin-top:30px;
+display:flex;
+gap:15px;
+}
+
+.approve-btn{
+
+flex:1;
+border:none;
+padding:15px;
+border-radius:50px;
+cursor:pointer;
+font-size:18px;
+color:white;
+font-weight:bold;
+
+background:
+linear-gradient(
+135deg,
+#28a745,
+#20c997);
+}
+
+.reject-btn{
+
+flex:1;
+border:none;
+padding:15px;
+border-radius:50px;
+cursor:pointer;
+font-size:18px;
+color:white;
+font-weight:bold;
+
+background:
+linear-gradient(
+135deg,
+#dc3545,
+#ff4d6d);
+}
+
+.status{
+text-align:center;
+margin-top:20px;
+font-weight:bold;
+}
+
+</style>
+
+
+<div class="payment-card">
+
+<div class="header">
+
+<h2>
+📱 Payment Approval
+</h2>
+
+</div>
+
+
+<div class="body">
+
+<div class="row">
+
+<div class="label">
+Booking Id
+</div>
+
+<div class="value">
+#@Model.Id
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Movie / Show
+</div>
+
+<div class="value">
+@title
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Seats
+</div>
+
+<div class="value">
 @Model.SeatNumbers
-</p>
+</div>
 
-<p>
-Amount:
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Theater
+</div>
+
+<div class="value">
+@schedule.Location.Area
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Location
+</div>
+
+<div class="value">
+@schedule.Location.State,
+@schedule.Location.Country
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Show Time
+</div>
+
+<div class="value">
+@schedule.StartTime
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Email
+</div>
+
+<div class="value">
+@user.Email
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Mobile
+</div>
+
+<div class="value">
+@user.Mobile
+</div>
+
+</div>
+
+
+<div class="row">
+
+<div class="label">
+Amount
+</div>
+
+<div class="value amount">
 ₹@Model.TotalAmount
-</p>
+</div>
 
-<br/>
+</div>
 
-<button onclick="approve()">
-Approve
+
+<div class="button-area">
+
+<button
+class="approve-btn"
+onclick="approve()">
+
+✅ Approve
+
 </button>
 
-<button onclick="reject()">
-Reject
+
+<button
+class="reject-btn"
+onclick="reject()">
+
+❌ Reject
+
 </button>
+
+</div>
+
+<div
+id="status"
+class="status">
+
+</div>
+
+</div>
+
+</div>
+
 
 
 <script>
@@ -38,49 +310,59 @@ window.location.search)
 
 async function approve()
 {
-    let response=
+document.getElementById(
+"status")
+.innerHTML=
+"Processing payment...";
 
-    await fetch(
-    "/Booking/ApprovePayment?token="
-    +token,
-    {
-        method:"POST"
-    });
 
-    let result=
-    await response.json();
+let response=
+await fetch(
+"/Booking/ApprovePayment?token="
++token,
+{
+method:"POST"
+});
 
-    if(result.success)
-    {
-        alert(
-        "Payment Approved");
+let result=
+await response.json();
 
-        window.close();
-    }
+if(result.success)
+{
+document.getElementById(
+"status")
+.innerHTML=
+"✅ Payment Approved";
+}
 }
 
 
 async function reject()
 {
-    let response=
+document.getElementById(
+"status")
+.innerHTML=
+"Cancelling payment...";
 
-    await fetch(
-    "/Booking/RejectPayment?token="
-    +token,
-    {
-        method:"POST"
-    });
 
-    let result=
-    await response.json();
+let response=
+await fetch(
+"/Booking/RejectPayment?token="
++token,
+{
+method:"POST"
+});
 
-    if(result.success)
-    {
-        alert(
-        "Payment Rejected");
+let result=
+await response.json();
 
-        window.close();
-    }
+if(result.success)
+{
+document.getElementById(
+"status")
+.innerHTML=
+"❌ Payment Rejected";
+}
 }
 
 </script>

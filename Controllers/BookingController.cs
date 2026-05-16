@@ -142,22 +142,54 @@ namespace AmarShowsBook.Controllers
 
             await _context.SaveChangesAsync();
 
-            var booking=
-            new BookingDraft
-            {
-                UserId=userId,
-                ScheduleId=request.ScheduleId,
-                SeatNumbers=
-                string.Join(",",request.SeatIds),
+            // var booking=
+            // new BookingDraft
+            // {
+            //     UserId=userId,
+            //     ScheduleId=request.ScheduleId,
+            //     SeatNumbers=
+            //     string.Join(",",request.SeatIds),
 
-                TotalAmount=
-                request.TotalAmount,
+            //     TotalAmount=
+            //     request.TotalAmount,
 
-                Status="PENDING",
+            //     Status="PENDING",
 
-                CreatedAt=
-                DateTime.UtcNow
-            };
+            //     CreatedAt=
+            //     DateTime.UtcNow
+            // };
+            var seatNames=
+
+await _context.ScreenSeats
+.Where(
+x=>request.SeatIds.Contains(x.Id))
+.Select(
+x=>x.SeatRow + x.SeatNumber)
+.ToListAsync();
+
+
+var booking=
+new BookingDraft
+{
+    UserId=userId,
+
+    ScheduleId=
+    request.ScheduleId,
+
+    SeatNumbers=
+    string.Join(
+    ",",
+    seatNames),
+
+    TotalAmount=
+    request.TotalAmount,
+
+    Status=
+    "PENDING",
+
+    CreatedAt=
+    DateTime.UtcNow
+};
 
             _context.BookingDrafts.Add(
             booking);
@@ -175,10 +207,43 @@ namespace AmarShowsBook.Controllers
 // BOOKING DETAILS
 // ==========================================
 
+// public async Task<IActionResult>
+// Details(long id)
+// {
+//     var booking =
+
+//     await _context
+//     .BookingDrafts
+//     .FirstOrDefaultAsync(
+//     x=>x.Id==id);
+
+//     if(booking==null)
+//     {
+//         return NotFound();
+//     }
+
+//     var schedule=
+
+//     await _context
+//     .ShowSchedules
+//     .Include(x=>x.Movie)
+//     .Include(x=>x.StandupShow)
+//     .Include(x=>x.LiveStream)
+//     .Include(x=>x.Location)
+//     .FirstOrDefaultAsync(
+//     x=>x.Id==
+//     booking.ScheduleId);
+
+//     ViewBag.Schedule=
+//     schedule;
+
+//     return View(
+//     booking);
+// }
 public async Task<IActionResult>
 Details(long id)
 {
-    var booking =
+    var booking=
 
     await _context
     .BookingDrafts
@@ -186,9 +251,8 @@ Details(long id)
     x=>x.Id==id);
 
     if(booking==null)
-    {
         return NotFound();
-    }
+
 
     var schedule=
 
@@ -199,16 +263,26 @@ Details(long id)
     .Include(x=>x.LiveStream)
     .Include(x=>x.Location)
     .FirstOrDefaultAsync(
-    x=>x.Id==
-    booking.ScheduleId);
+    x=>x.Id==booking.ScheduleId);
+
+
+    var user=
+
+    await _context
+    .Users
+    .FirstOrDefaultAsync(
+    x=>x.Id==booking.UserId);
+
 
     ViewBag.Schedule=
     schedule;
 
+    ViewBag.User=
+    user;
+
     return View(
     booking);
 }
-
         // ==========================================
         // PAYMENT PAGE
         // ==========================================
@@ -323,29 +397,82 @@ public IActionResult MyBookings()
         // MOBILE PAYMENT PAGE
         // ==========================================
 
+        // public async Task<IActionResult>
+        // MobilePay(string token)
+        // {
+        //     var session=
+
+        //     await _context
+        //     .PaymentSessions
+        //     .FirstOrDefaultAsync(
+        //     x=>x.SessionToken==token);
+
+        //     if(session==null)
+        //         return NotFound();
+
+        //     var booking=
+
+        //     await _context
+        //     .BookingDrafts
+        //     .FindAsync(
+        //     session.BookingId);
+
+        //     return View(
+        //     booking);
+        // }
         public async Task<IActionResult>
-        MobilePay(string token)
-        {
-            var session=
+MobilePay(string token)
+{
+    var session=
 
-            await _context
-            .PaymentSessions
-            .FirstOrDefaultAsync(
-            x=>x.SessionToken==token);
+    await _context
+    .PaymentSessions
+    .FirstOrDefaultAsync(
+    x=>x.SessionToken==token);
 
-            if(session==null)
-                return NotFound();
+    if(session==null)
+        return NotFound();
 
-            var booking=
 
-            await _context
-            .BookingDrafts
-            .FindAsync(
-            session.BookingId);
+    var booking=
 
-            return View(
-            booking);
-        }
+    await _context
+    .BookingDrafts
+    .FindAsync(
+    session.BookingId);
+
+
+    var schedule=
+
+    await _context
+    .ShowSchedules
+    .Include(x=>x.Movie)
+    .Include(x=>x.StandupShow)
+    .Include(x=>x.LiveStream)
+    .Include(x=>x.Location)
+    .FirstOrDefaultAsync(
+    x=>x.Id==
+    booking.ScheduleId);
+
+
+    var user=
+
+    await _context
+    .Users
+    .FirstOrDefaultAsync(
+    x=>x.Id==
+    booking.UserId);
+
+
+    ViewBag.Schedule=
+    schedule;
+
+    ViewBag.User=
+    user;
+
+    return View(
+    booking);
+}
 
 // ==========================================
 // APPROVE QR PAYMENT
