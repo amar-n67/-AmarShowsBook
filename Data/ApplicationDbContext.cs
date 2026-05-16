@@ -17,11 +17,19 @@ namespace AmarShowsBook.Data
             : base(options)
         {
         }
+        public DbSet<BookingDraft> BookingDrafts { get; set; }
+
+public DbSet<BookingTransaction> BookingTransactions { get; set; }
+
+public DbSet<SeatLock> SeatLocks { get; set; }
+
+public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<RefundActionLog> RefundActionLogs { get; set; }
 
         public DbSet<Refund> Refunds { get; set; }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<ScreenSeat> ScreenSeats { get; set; }
 
         public DbSet<DeletedUser> DeletedUsers { get; set; }
 
@@ -98,6 +106,7 @@ namespace AmarShowsBook.Data
 
         public DbSet<AdminTransactionViewModel>
             AdminTransactions { get; set; }
+            
 
         // =====================================================
         // MODEL CONFIGURATION
@@ -106,6 +115,19 @@ namespace AmarShowsBook.Data
         protected override void OnModelCreating(
             ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<BookingDraft>()
+
+        .ToTable("booking_drafts");
+
+    modelBuilder.Entity<BookingTransaction>()
+
+        .ToTable("booking_transactions");
+
+    modelBuilder.Entity<DummyCard>()
+
+        .ToTable("dummy_cards");
             base.OnModelCreating(modelBuilder);
 
             // =====================================================
@@ -198,6 +220,15 @@ namespace AmarShowsBook.Data
             modelBuilder.Entity<VwAdminUserManagement>()
                 .HasNoKey()
                 .ToView("vw_admin_user_management");
+                 base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<ScreenSeat>()
+
+        .ToTable("screen_seats");
+
+    modelBuilder.Entity<SeatLock>()
+
+        .ToTable("seat_locks");
         }
     }
 }

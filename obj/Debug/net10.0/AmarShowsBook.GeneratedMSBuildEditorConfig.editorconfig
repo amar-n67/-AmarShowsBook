@@ -126,8 +126,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXV0aC9WZXJpZnlPVFAuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Booking/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQm9va2luZy9EZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Booking/MyBookings.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQm9va2luZy9NeUJvb2tpbmdzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Booking/Payment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQm9va2luZy9QYXltZW50LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Booking/Seats.cshtml]
