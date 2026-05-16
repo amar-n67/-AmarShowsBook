@@ -27,5 +27,8 @@ namespace AmarShowsBook.Models
 
         [Column("is_active")]
         public bool IsActive { get; set; }
+         public int ScheduleId { get; set; }
+[Column("schedule_id")]
+    public ShowSchedule? Schedule { get; set; }
     }
 }

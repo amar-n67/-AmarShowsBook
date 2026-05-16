@@ -5,7 +5,7 @@ namespace AmarShowsBook.Models
     public class ShowSchedule
     {
         public int Id { get; set; }
-
+public ICollection<ScreenSeat>? Seats { get; set; }
         public int? MovieId { get; set; }
         //public Movie Movie { get; set; } //commented to handle nullability in the database
         public Movie? Movie { get; set; }

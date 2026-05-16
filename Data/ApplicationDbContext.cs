@@ -116,9 +116,15 @@ public DbSet<DummyCard> DummyCards { get; set; }
         protected override void OnModelCreating(
             ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ScreenSeat>()
+    .HasOne(x => x.Schedule)
+    .WithMany(x => x.Seats)
+    .HasForeignKey(x => x.ScheduleId);
+
             modelBuilder.Entity<HomeShowViewModel>()
     .HasNoKey()
     .ToView("vw_home_show_listing");
+    
             base.OnModelCreating(modelBuilder);
 
     modelBuilder.Entity<BookingDraft>()

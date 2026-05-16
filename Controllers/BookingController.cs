@@ -27,59 +27,86 @@ namespace AmarShowsBook.Controllers
         // ==========================================
 
         [Route("Booking/Seats/{id}")]
-        public async Task<IActionResult> Seats(int id)
-        {
-            var schedule =
-            await _context.ShowSchedules
-            .Include(x=>x.Movie)
-            .Include(x=>x.StandupShow)
-            .Include(x=>x.LiveStream)
-            .Include(x=>x.Location)
-            .FirstOrDefaultAsync(x=>x.Id==id);
+public async Task<IActionResult> Seats(int id)
+{
+    var schedule =
+    await _context.ShowSchedules
+    .Include(x=>x.Movie)
+    .Include(x=>x.StandupShow)
+    .Include(x=>x.LiveStream)
+    .Include(x=>x.Location)
+    .FirstOrDefaultAsync(x=>x.Id==id);
 
-            if(schedule==null)
-                return NotFound();
-
-            var seats=
-
-            await(
-
-            from s in _context.ScreenSeats
-
-            join l in _context.SeatLocks
-            on s.Id equals l.ScreenSeatId
-            into lockGroup
-
-            from lockSeat in
-            lockGroup.DefaultIfEmpty()
-
-            select new SeatVM
-            {
-                SeatId=s.Id,
-                Row=s.SeatRow,
-                Number=s.SeatNumber,
-                Price=s.SeatPrice,
-                Category=s.SeatCategory,
-
-                IsBooked=
-                lockSeat!=null
-                &&
-                lockSeat.LockStatus=="CONFIRMED",
-
-                IsLocked=
-                lockSeat!=null
-                &&
-                lockSeat.LockStatus=="LOCKED"
-            }
-
-            ).ToListAsync();
-
-            ViewBag.Seats=seats;
-
-            return View(schedule);
-        }
+    if(schedule==null)
+        return NotFound();
 
 
+    // ==================================
+    // Create seats for this schedule only
+    // ==================================
+
+    bool seatsExist=
+
+    await _context.ScreenSeats
+    .AnyAsync(
+    x=>x.ScheduleId==id);
+
+    if(!seatsExist)
+    {
+        await GenerateSeats(
+        id,
+        schedule.Type);
+    }
+
+
+    // ==================================
+    // Load only this schedule seats
+    // ==================================
+
+    var seats=
+
+    await(
+
+    from s in _context.ScreenSeats
+
+    where s.ScheduleId==id
+
+    join l in _context.SeatLocks
+    on s.Id equals l.ScreenSeatId
+    into lockGroup
+
+    from lockSeat in
+    lockGroup.DefaultIfEmpty()
+
+    select new SeatVM
+    {
+        SeatId=s.Id,
+
+        Row=s.SeatRow,
+
+        Number=s.SeatNumber,
+
+        Price=s.SeatPrice,
+
+        Category=s.SeatCategory,
+
+        IsBooked=
+        lockSeat!=null
+        &&
+        lockSeat.LockStatus=="CONFIRMED",
+
+        IsLocked=
+        lockSeat!=null
+        &&
+        lockSeat.LockStatus=="LOCKED"
+    }
+
+    ).ToListAsync();
+
+    ViewBag.Seats=seats;
+
+    return View(schedule);
+}
 
         // ==========================================
         // LOCK SEATS
@@ -473,7 +500,65 @@ MobilePay(string token)
     return View(
     booking);
 }
+private async Task GenerateSeats(int scheduleId,string type)
+{
+    int totalSeats = type switch
+    {
+        "Movie" => 100,
+        "Standup" => 50,
+        "Live" => 20,
+        _ => 30
+    };
 
+    // get an existing screen
+    var screenId=
+
+    await _context.ScreenSeats
+    .Select(x=>x.ScreenId)
+    .FirstOrDefaultAsync();
+
+    // fallback if nothing exists
+    if(screenId==0)
+    {
+        screenId=1;
+    }
+
+    var seats=
+    new List<ScreenSeat>();
+
+
+    for(int i=1;i<=totalSeats;i++)
+    {
+        seats.Add(
+        new ScreenSeat
+        {
+            ScheduleId=scheduleId,
+
+            ScreenId=screenId,
+
+            SeatRow=
+            ((char)
+            (65+((i-1)/10)))
+            .ToString(),
+
+            SeatNumber=
+            ((i-1)%10+1)
+            .ToString(),
+
+            SeatCategory=
+            "Regular",
+
+            SeatPrice=
+            150,
+
+            IsActive=true
+        });
+    }
+
+    _context.ScreenSeats.AddRange(seats);
+
+    await _context.SaveChangesAsync();
+}
 // ==========================================
 // APPROVE QR PAYMENT
 // ==========================================
