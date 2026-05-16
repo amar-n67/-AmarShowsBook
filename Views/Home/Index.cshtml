@@ -57,7 +57,7 @@
     </div>
 
     <div class="schedule-board">
-        @if (!Model.Schedules.Any())
+        @if (!Model.HomeShows.Any())
         {
             <div class="empty-slate">
                 <span>No Shot Scheduled</span>
@@ -67,24 +67,20 @@
         }
         else
         {
-            @foreach (var item in Model.Schedules)
-            {
-                var title = item.Type == "Movie" ? item.Movie?.Title :
-                            item.Type == "Standup" ? item.StandupShow?.Title :
-                            item.LiveStream?.Title;
-                var showRegion = item.Location == null
-                    ? "Region to be announced"
-                    : $"{item.Location.Area}, {item.Location.State}, {item.Location.Country}";
+            @foreach (var item in Model.HomeShows)
+{
+    var showRegion =
+        $"{item.Location}, {item.State}, {item.Country}";
 
                 <article class="show-card">
                     <div class="show-card-top">
-                        <span>@item.Type</span>
+                        <span>@item.ShowType</span>
                         <strong>@item.StartTime.ToString("hh:mm tt")</strong>
                     </div>
-                    <h2>@(title ?? "Untitled Show")</h2>
+                    <h2>@(item.Title ?? "Untitled Show")</h2>
                     <p>Camera opens at @item.StartTime.ToString("dd MMM yyyy, hh:mm tt")</p>
                     <p class="show-region">@showRegion</p>
-                    <a class="btn btn-primary" href="/Booking/Seats/@item.Id">Book The Seat</a>
+                    <a class="btn btn-primary" href="/Booking/Seats/@item.ScheduleId">Book The Seat</a>
                 </article>
             }
         }

@@ -87,20 +87,31 @@ public async Task<IActionResult> Index(string type = "Movie")
         var user = _context.Users
             .FirstOrDefault(u => u.Email == userEmail);
 
-        var schedules = _context.ShowSchedules
-            .Include(s => s.Movie)
-            .Include(s => s.StandupShow)
-            .Include(s => s.LiveStream)
-            .Include(s => s.Location)
-            .Where(s => s.Type == type)
-            .OrderBy(s => s.StartTime)
-            .ToList();
+        // var schedules = _context.ShowSchedules
+        //     .Include(s => s.Movie)
+        //     .Include(s => s.StandupShow)
+        //     .Include(s => s.LiveStream)
+        //     .Include(s => s.Location)
+        //     .Where(s => s.Type == type)
+        //     .OrderBy(s => s.StartTime)
+        //     .ToList();
+        string dbType = type switch
+{
+    "Movie" => "Movie",
+    "Standup" => "StandupShow",
+    "Live" => "LiveStream",
+    _ => "Movie"
+};
 
-        var vm = new HomeViewModel
-        {
-            Schedules = schedules
-        };
+var schedules = await _context.HomeShows
+    .Where(x => x.ShowType == type)
+    .OrderBy(x => x.StartTime)
+    .ToListAsync();
 
+var vm = new HomeViewModel
+{
+    HomeShows = schedules
+};
         await _activityLogger.LogAsync(
             userId: user?.Id,
             action: "VIEW_HOME",

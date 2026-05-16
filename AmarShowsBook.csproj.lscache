@@ -120,6 +120,7 @@ Models/
   AdminDashboardViewModel.cs
   AdminTransactionViewModel.cs
   AdminUserRoleViewModel.cs
+  HomeShowViewModel.cs
   HomeViewModel.cs
   RefundDashboardViewModel.cs
   SeatLockRequest.cs

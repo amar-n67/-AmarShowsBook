@@ -17,6 +17,7 @@ namespace AmarShowsBook.Data
             : base(options)
         {
         }
+    public DbSet<HomeShowViewModel> HomeShows { get; set; }
         public DbSet<BookingDraft> BookingDrafts { get; set; }
         public DbSet<PaymentSession> PaymentSessions { get; set; }
 
@@ -107,8 +108,7 @@ public DbSet<DummyCard> DummyCards { get; set; }
 
         public DbSet<AdminTransactionViewModel>
             AdminTransactions { get; set; }
-            
-
+    
         // =====================================================
         // MODEL CONFIGURATION
         // =====================================================
@@ -116,6 +116,9 @@ public DbSet<DummyCard> DummyCards { get; set; }
         protected override void OnModelCreating(
             ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<HomeShowViewModel>()
+    .HasNoKey()
+    .ToView("vw_home_show_listing");
             base.OnModelCreating(modelBuilder);
 
     modelBuilder.Entity<BookingDraft>()
@@ -230,6 +233,39 @@ public DbSet<DummyCard> DummyCards { get; set; }
     modelBuilder.Entity<SeatLock>()
 
         .ToTable("seat_locks");
+        modelBuilder.Entity<HomeShowViewModel>(entity =>
+{
+    entity.HasNoKey();
+
+    entity.ToView("vw_home_show_listing");
+
+    entity.Property(e => e.ScheduleId)
+        .HasColumnName("schedule_id");
+
+    entity.Property(e => e.ShowType)
+        .HasColumnName("show_type");
+
+    entity.Property(e => e.ShowId)
+        .HasColumnName("show_id");
+
+    entity.Property(e => e.Title)
+        .HasColumnName("title");
+
+    entity.Property(e => e.StartTime)
+        .HasColumnName("start_time");
+
+    entity.Property(e => e.EndTime)
+        .HasColumnName("end_time");
+
+    entity.Property(e => e.Location)
+        .HasColumnName("location");
+
+    entity.Property(e => e.State)
+        .HasColumnName("state");
+
+    entity.Property(e => e.Country)
+        .HasColumnName("country");
+});
         }
     }
 }
