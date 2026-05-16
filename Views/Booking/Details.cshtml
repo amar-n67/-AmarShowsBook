@@ -1,110 +1,28 @@
-@model AmarShowsBook.Models.BookingDraft
+@model BookingDraft
 
-@{
-var schedule=ViewBag.Schedule;
-}
-
-<div class="card">
-
-<h2>
-Booking Summary
-</h2>
+<h2>Booking Details</h2>
 
 <p>
-
-Movie:
-
-@(schedule.Movie?.Title)
-
+Booking Id:
+@Model.Id
 </p>
 
 <p>
-
 Seats:
-
 @Model.SeatNumbers
-
 </p>
 
 <p>
-
-Location:
-
-@(schedule.Location.Area)
-
-</p>
-
-<p>
-
-Timing:
-
-@(schedule.StartTime)
-
-</p>
-
-<p>
-
-Total:
-
+Amount:
 ₹@Model.TotalAmount
-
-</p>
-
-
-@if(User.IsInRole("Admin"))
-{
-<div>
-
-<label>Email</label>
-
-<input
-class="form-control"
-id="email"/>
-
-<label>Mobile</label>
-
-<input
-class="form-control"
-id="mobile"/>
-
-</div>
-}
-else
-{
-<p>
-
-Email:
-
-@Context.Session.GetString("UserEmail")
-
 </p>
 
 <p>
-
-Mobile:
-
-@Context.Session.GetString("Mobile")
-
+Status:
+@Model.Status
 </p>
-}
-
 
 <button
-class="btn btn-success"
-onclick="goPayment()">
-
-Confirm Booking
-
+onclick="location.href='/Booking/Payment?bookingId=@Model.Id'">
+Proceed To Payment
 </button>
-
-</div>
-
-<script>
-
-function goPayment()
-{
-window.location=
-"/Booking/Payment?bookingId=@Model.Id";
-}
-
-</script>

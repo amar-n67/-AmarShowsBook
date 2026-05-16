@@ -1,0 +1,86 @@
+@model BookingDraft
+
+<h2>Booking Payment</h2>
+
+<p>
+Booking Id:
+@Model.Id
+</p>
+
+<p>
+Seats:
+@Model.SeatNumbers
+</p>
+
+<p>
+Amount:
+₹@Model.TotalAmount
+</p>
+
+<br/>
+
+<button onclick="approve()">
+Approve
+</button>
+
+<button onclick="reject()">
+Reject
+</button>
+
+
+<script>
+
+const token=
+new URLSearchParams(
+window.location.search)
+.get("token");
+
+
+async function approve()
+{
+    let response=
+
+    await fetch(
+    "/Booking/ApprovePayment?token="
+    +token,
+    {
+        method:"POST"
+    });
+
+    let result=
+    await response.json();
+
+    if(result.success)
+    {
+        alert(
+        "Payment Approved");
+
+        window.close();
+    }
+}
+
+
+async function reject()
+{
+    let response=
+
+    await fetch(
+    "/Booking/RejectPayment?token="
+    +token,
+    {
+        method:"POST"
+    });
+
+    let result=
+    await response.json();
+
+    if(result.success)
+    {
+        alert(
+        "Payment Rejected");
+
+        window.close();
+    }
+}
+
+</script>

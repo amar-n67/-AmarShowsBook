@@ -4,6 +4,7 @@ using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QRCoder;
 
 namespace AmarShowsBook.Controllers
 {
@@ -20,9 +21,10 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        // =====================================================
-        // SEAT PAGE
-        // =====================================================
+
+        // ==========================================
+        // SEATS
+        // ==========================================
 
         [Route("Booking/Seats/{id}")]
         public async Task<IActionResult> Seats(int id)
@@ -33,14 +35,10 @@ namespace AmarShowsBook.Controllers
             .Include(x=>x.StandupShow)
             .Include(x=>x.LiveStream)
             .Include(x=>x.Location)
-            .FirstOrDefaultAsync(
-                x=>x.Id==id
-            );
+            .FirstOrDefaultAsync(x=>x.Id==id);
 
             if(schedule==null)
-            {
                 return NotFound();
-            }
 
             var seats=
 
@@ -50,46 +48,42 @@ namespace AmarShowsBook.Controllers
 
             join l in _context.SeatLocks
             on s.Id equals l.ScreenSeatId
-            into seatLockGroup
+            into lockGroup
 
             from lockSeat in
-            seatLockGroup.DefaultIfEmpty()
+            lockGroup.DefaultIfEmpty()
 
             select new SeatVM
             {
                 SeatId=s.Id,
-
                 Row=s.SeatRow,
-
                 Number=s.SeatNumber,
-
                 Price=s.SeatPrice,
-
                 Category=s.SeatCategory,
 
                 IsBooked=
                 lockSeat!=null
                 &&
-                lockSeat.LockStatus==
-                "CONFIRMED",
+                lockSeat.LockStatus=="CONFIRMED",
 
                 IsLocked=
                 lockSeat!=null
                 &&
-                lockSeat.LockStatus==
-                "LOCKED"
-            })
+                lockSeat.LockStatus=="LOCKED"
+            }
 
-            .ToListAsync();
+            ).ToListAsync();
 
             ViewBag.Seats=seats;
 
             return View(schedule);
         }
 
-        // =====================================================
+
+
+        // ==========================================
         // LOCK SEATS
-        // =====================================================
+        // ==========================================
 
         [HttpPost]
         public async Task<IActionResult>
@@ -97,29 +91,15 @@ namespace AmarShowsBook.Controllers
         [FromBody]
         SeatLockRequest request)
         {
-            var userIdText=
-            HttpContext.Session
-            .GetString("UserId");
+            long userId=
+            Convert.ToInt64(
+            HttpContext.Session.GetString("UserId"));
 
-            var userId=
-            long.TryParse(
-            userIdText,
-            out long parsedId)
-            ?
-            parsedId
-            :
-            0;
-
-
-            foreach(
-            var seatId
-            in request.SeatIds)
+            foreach(var seatId in request.SeatIds)
             {
-                var exists=
+                bool exists=
 
-                await _context
-                .SeatLocks
-                .AnyAsync(
+                await _context.SeatLocks.AnyAsync(
                 x=>
 
                 x.ScheduleId==
@@ -136,250 +116,416 @@ namespace AmarShowsBook.Controllers
                 x.LockStatus=="LOCKED"
                 ||
                 x.LockStatus=="CONFIRMED"
-                )
-                );
-
+                ));
 
                 if(exists)
                 {
-                    return Json(
-                    new
+                    return Json(new
                     {
                         success=false,
-                        message=
-                        "Seat already booked"
+                        message="Seat already booked"
                     });
                 }
-
 
                 _context.SeatLocks.Add(
 
                 new SeatLock
                 {
                     UserId=userId,
-
-                    ScheduleId=
-                    request.ScheduleId,
-
-                    ScreenSeatId=
-                    seatId,
-
-                    LockedAt=
-                    DateTime.UtcNow,
-
-                    ExpiresAt=
-                    DateTime.UtcNow
-                    .AddMinutes(5),
-
-                    LockStatus=
-                    "LOCKED"
+                    ScheduleId=request.ScheduleId,
+                    ScreenSeatId=seatId,
+                    LockedAt=DateTime.UtcNow,
+                    ExpiresAt=DateTime.UtcNow.AddMinutes(5),
+                    LockStatus="LOCKED"
                 });
             }
 
-            await _context
-            .SaveChangesAsync();
-
+            await _context.SaveChangesAsync();
 
             var booking=
             new BookingDraft
             {
                 UserId=userId,
-
-                ScheduleId=
-                request.ScheduleId,
-
+                ScheduleId=request.ScheduleId,
                 SeatNumbers=
-                string.Join(
-                ",",
-                request.SeatIds),
+                string.Join(",",request.SeatIds),
 
                 TotalAmount=
                 request.TotalAmount,
 
-                Status=
-                "PENDING",
+                Status="PENDING",
 
                 CreatedAt=
                 DateTime.UtcNow
             };
 
+            _context.BookingDrafts.Add(
+            booking);
 
-            _context.BookingDrafts
-            .Add(booking);
+            await _context.SaveChangesAsync();
 
-            await _context
-            .SaveChangesAsync();
-
-
-            return Json(
-            new
+            return Json(new
             {
                 success=true,
-                bookingId=
-                booking.Id
+                bookingId=booking.Id
             });
         }
 
-        // =====================================================
-        // DETAILS PAGE
-        // =====================================================
+// ==========================================
+// BOOKING DETAILS
+// ==========================================
+
+public async Task<IActionResult>
+Details(long id)
+{
+    var booking =
+
+    await _context
+    .BookingDrafts
+    .FirstOrDefaultAsync(
+    x=>x.Id==id);
+
+    if(booking==null)
+    {
+        return NotFound();
+    }
+
+    var schedule=
+
+    await _context
+    .ShowSchedules
+    .Include(x=>x.Movie)
+    .Include(x=>x.StandupShow)
+    .Include(x=>x.LiveStream)
+    .Include(x=>x.Location)
+    .FirstOrDefaultAsync(
+    x=>x.Id==
+    booking.ScheduleId);
+
+    ViewBag.Schedule=
+    schedule;
+
+    return View(
+    booking);
+}
+
+        // ==========================================
+        // PAYMENT PAGE
+        // ==========================================
 
         public async Task<IActionResult>
-        Details(long id)
+        Payment(long bookingId)
         {
             var booking=
 
             await _context
             .BookingDrafts
-            .FirstOrDefaultAsync(
-            x=>x.Id==id);
+            .FindAsync(bookingId);
 
             if(booking==null)
-            {
                 return NotFound();
-            }
 
-            var schedule=
+            return View(booking);
+        }
+
+
+
+        // ==========================================
+        // GENERATE QR
+        // ==========================================
+
+        public async Task<IActionResult>
+        GenerateQR(long bookingId)
+        {
+            string token=
+            Guid.NewGuid().ToString();
+
+            var session=
+            new PaymentSession
+            {
+                BookingId=bookingId,
+
+                SessionToken=token,
+
+                Status="PENDING",
+
+                ExpiresAt=
+                DateTime.UtcNow
+                .AddMinutes(5)
+            };
+
+            _context.PaymentSessions
+            .Add(session);
+
+            await _context.SaveChangesAsync();
+
+            // var url=
+
+            // $"{Request.Scheme}://{Request.Host}/Booking/MobilePay?token={token}";
+            string ip = "192.168.1.2"; // replace with your Mac IP
+
+            var url =
+            $"http://{ip}:5089/Booking/MobilePay?token={token}";
+            return Json(new
+            {
+                url
+            });
+        }
+
+
+
+        // ==========================================
+        // CREATE QR IMAGE
+        // ==========================================
+
+        public IActionResult
+        CreateQR(string text)
+        {
+            QRCodeGenerator generator=
+            new QRCodeGenerator();
+
+            QRCodeData data=
+            generator.CreateQrCode(
+            text,
+            QRCodeGenerator.ECCLevel.Q);
+
+            PngByteQRCode qr=
+            new PngByteQRCode(data);
+
+            byte[] bytes=
+            qr.GetGraphic(20);
+
+            return File(
+            bytes,
+            "image/png");
+        }
+
+
+
+        // ==========================================
+        // MOBILE PAYMENT PAGE
+        // ==========================================
+
+        public async Task<IActionResult>
+        MobilePay(string token)
+        {
+            var session=
 
             await _context
-            .ShowSchedules
-            .Include(x=>x.Movie)
-            .Include(x=>x.Location)
-            .FirstAsync(
-            x=>
-            x.Id==
-            booking.ScheduleId
-            );
+            .PaymentSessions
+            .FirstOrDefaultAsync(
+            x=>x.SessionToken==token);
 
-            ViewBag.Schedule=
-            schedule;
+            if(session==null)
+                return NotFound();
+
+            var booking=
+
+            await _context
+            .BookingDrafts
+            .FindAsync(
+            session.BookingId);
 
             return View(
             booking);
         }
 
+// ==========================================
+// APPROVE QR PAYMENT
+// ==========================================
 
-        // =====================================================
-        // PAYMENT PAGE
-        // =====================================================
+[HttpPost]
+public async Task<IActionResult>
+ApprovePayment(string token)
+{
+    var session =
 
+    await _context
+    .PaymentSessions
+    .FirstOrDefaultAsync(
+    x=>x.SessionToken==token);
+
+    if(session==null)
+    {
+        return Json(new
+        {
+            success=false
+        });
+    }
+
+    var booking=
+
+    await _context
+    .BookingDrafts
+    .FindAsync(
+    session.BookingId);
+
+    if(booking==null)
+    {
+        return Json(new
+        {
+            success=false
+        });
+    }
+
+    booking.Status=
+    "CONFIRMED";
+
+    session.Status=
+    "APPROVED";
+
+    _context.BookingTransactions.Add(
+
+    new BookingTransaction
+    {
+        BookingId=
+        booking.Id,
+
+        TransactionRef=
+        Guid.NewGuid().ToString(),
+
+        PaymentMethod=
+        "QR",
+
+        Amount=
+        booking.TotalAmount,
+
+        PaymentStatus=
+        "SUCCESS",
+
+        CreatedAt=
+        DateTime.UtcNow,
+
+        PaidAt=
+        DateTime.UtcNow
+    });
+
+    await _context.SaveChangesAsync();
+
+    return Json(new
+    {
+        success=true
+    });
+}
+
+
+// ==========================================
+// REJECT QR PAYMENT
+// ==========================================
+
+[HttpPost]
+public async Task<IActionResult>
+RejectPayment(string token)
+{
+    var session=
+
+    await _context
+    .PaymentSessions
+    .FirstOrDefaultAsync(
+    x=>x.SessionToken==token);
+
+    if(session==null)
+    {
+        return Json(new
+        {
+            success=false
+        });
+    }
+
+    session.Status=
+    "REJECTED";
+
+    await _context.SaveChangesAsync();
+
+    return Json(new
+    {
+        success=true
+    });
+}
+
+        // ==========================================
+        // COMPLETE PAYMENT
+        // ==========================================
+
+        [HttpPost]
         public async Task<IActionResult>
-        Payment(
-        long bookingId)
+        CompletePayment(
+        [FromBody]
+        PaymentRequest request)
         {
             var booking=
 
             await _context
             .BookingDrafts
             .FindAsync(
-            bookingId);
+            request.BookingId);
 
             if(booking==null)
             {
-                return NotFound();
+                return Json(new
+                {
+                    success=false
+                });
             }
 
-            return View(
-            booking);
+            var transaction=
+            new BookingTransaction
+            {
+                BookingId=
+                booking.Id,
+
+                TransactionRef=
+                Guid.NewGuid().ToString(),
+
+                PaymentMethod=
+                request.PaymentMethod,
+
+                Amount=
+                booking.TotalAmount,
+
+                PaymentStatus=
+                "SUCCESS",
+
+                CreatedAt=
+                DateTime.UtcNow,
+
+                PaidAt=
+                DateTime.UtcNow
+            };
+
+            _context
+            .BookingTransactions
+            .Add(transaction);
+
+            booking.Status=
+            "CONFIRMED";
+
+            await _context
+            .SaveChangesAsync();
+
+            return Json(new
+            {
+                success=true
+            });
         }
 
 
-        // =====================================================
-        // COMPLETE PAYMENT
-        // =====================================================
 
-       [HttpPost]
-public async Task<IActionResult> CompletePayment(
-    [FromBody] PaymentRequest request)
-{
-    var booking = await _context
-        .BookingDrafts
-        .FindAsync(request.BookingId);
+        // ==========================================
+        // CONFIRMATION
+        // ==========================================
 
-    if (booking == null)
-    {
-        return BadRequest(new
+        public async Task<IActionResult>
+        Confirmation(long bookingId)
         {
-            success = false,
-            message = "Booking not found"
-        });
-    }
+            var booking=
 
-    var transaction = new BookingTransaction
-    {
-        BookingId = booking.Id,
-        TransactionRef = Guid.NewGuid().ToString(),
-        PaymentMethod = request.PaymentMethod,
-        Amount = booking.TotalAmount,
-        PaymentStatus = "SUCCESS",
-        CreatedAt = DateTime.UtcNow,
-        PaidAt = DateTime.UtcNow
-    };
+            await _context
+            .BookingDrafts
+            .FirstOrDefaultAsync(
+            x=>x.Id==bookingId);
 
-    _context.BookingTransactions.Add(transaction);
-
-    booking.Status = "CONFIRMED";
-
-    await _context.SaveChangesAsync();
-
-    return Ok(new
-    {
-        success = true
-    });
-}
-
-public async Task<IActionResult> Confirmation(long bookingId)
-{
-    var booking = await _context
-        .BookingDrafts
-        .FirstOrDefaultAsync(
-        b => b.Id == bookingId);
-
-    if (booking == null)
-    {
-        return NotFound();
-    }
-
-    return View(booking);
-}
-
-        // =====================================================
-        // MY BOOKINGS
-        // =====================================================
-
-        public IActionResult MyBookings()
-        {
-            var userEmail=
-            HttpContext.Session
-            .GetString("UserEmail");
-
-            if(
-            string.IsNullOrWhiteSpace(
-            userEmail))
-            {
-                return RedirectToAction(
-                "Login",
-                "Auth");
-            }
-
-            var bookings=
-
-            _context
-            .VwBookingCompleteDetails
-            .AsNoTracking()
-            .Where(
-            x=>
-
-            x.UserEmail
-            .ToLower()==
-            userEmail
-            .ToLower()
-            )
-            .OrderByDescending(
-            x=>x.BookedAt)
-            .ToList();
-
-            return View(bookings);
+            return View(booking);
         }
     }
 }

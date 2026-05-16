@@ -76,6 +76,8 @@ Migrations/
  20260516100314_InitialBaseline.Designer.cs
  20260516100949_AddBookingFlow.cs
  20260516100949_AddBookingFlow.Designer.cs
+ 20260516130932_AddPaymentSession.cs
+ 20260516130932_AddPaymentSession.Designer.cs
  ApplicationDbContextModelSnapshot.cs
 Models/Admin/
  ActivityLog.cs
@@ -103,6 +105,7 @@ Models/
  Location.cs
  Movie.cs
  PaymentRequest.cs
+ PaymentSession.cs
  Refund.cs
  Region.cs
  ScreenSeat.cs
@@ -534,6 +537,7 @@ Views/Auth/
 Views/Booking/
  Confirmation.cshtml
  Details.cshtml
+ MobilePay.cshtml
  MyBookings.cshtml
  Payment.cshtml
  Seats.cshtml
@@ -585,6 +589,7 @@ Views/Auth/
 Views/Booking/
  Confirmation.cshtml
  Details.cshtml
+ MobilePay.cshtml
  MyBookings.cshtml
  Payment.cshtml
  Seats.cshtml

@@ -18,6 +18,7 @@ namespace AmarShowsBook.Data
         {
         }
         public DbSet<BookingDraft> BookingDrafts { get; set; }
+        public DbSet<PaymentSession> PaymentSessions { get; set; }
 
 public DbSet<BookingTransaction> BookingTransactions { get; set; }
 

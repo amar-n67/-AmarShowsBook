@@ -1,6 +1,7 @@
 @model BookingDraft
 
 <div class="card">
+
     <h2>Payment</h2>
 
     <p>
@@ -8,40 +9,123 @@
     </p>
 
     <div>
-        <input type="radio" name="pay" value="UPI" checked />
+        <input type="radio"
+               name="pay"
+               value="UPI"
+               checked
+               onchange="toggleQR()">
         UPI
     </div>
 
     <div>
-        <input type="radio" name="pay" value="CARD" />
+        <input type="radio"
+               name="pay"
+               value="CARD"
+               onchange="toggleQR()">
         Card
     </div>
 
     <div>
-        <input type="radio" name="pay" value="NETBANKING" />
+        <input type="radio"
+               name="pay"
+               value="NETBANKING"
+               onchange="toggleQR()">
         Net Banking
     </div>
 
     <div>
-        <input type="radio" name="pay" value="QR" />
-        QR Scan
+        <input type="radio"
+               name="pay"
+               value="QR"
+               onchange="toggleQR()">
+        QR Payment
     </div>
 
-    <button onclick="pay()">
+    <div id="qrSection"
+         style="display:none">
+
+        <h4>
+            Scan QR from mobile
+        </h4>
+
+        <img id="qrImage"
+             width="250"/>
+
+    </div>
+
+    <br/>
+
+    <button id="payButton"
+            onclick="pay()">
         Pay
     </button>
+
 </div>
 
 <script>
 
-async function pay()
+async function toggleQR()
 {
-    const paymentMethod =
+    let selected=
+
     document.querySelector(
     'input[name="pay"]:checked'
     ).value;
 
-    const response =
+    if(selected==="QR")
+    {
+        document
+        .getElementById(
+        "qrSection")
+        .style.display="block";
+
+        document
+        .getElementById(
+        "payButton")
+        .style.display="none";
+
+        let response=
+
+        await fetch(
+        "/Booking/GenerateQR?bookingId=@Model.Id");
+
+        let data=
+        await response.json();
+
+        document
+        .getElementById(
+        "qrImage")
+        .src=
+        "/Booking/CreateQR?text="
+        +
+        encodeURIComponent(
+        data.url);
+    }
+    else
+    {
+        document
+        .getElementById(
+        "qrSection")
+        .style.display="none";
+
+        document
+        .getElementById(
+        "payButton")
+        .style.display="block";
+    }
+}
+
+
+async function pay()
+{
+    let paymentMethod=
+
+    document.querySelector(
+    'input[name="pay"]:checked'
+    ).value;
+
+    let response=
+
     await fetch(
     "/Booking/CompletePayment",
     {
@@ -49,8 +133,8 @@ async function pay()
 
         headers:
         {
-            'Content-Type':
-            'application/json'
+            "Content-Type":
+            "application/json"
         },
 
         body:
@@ -61,14 +145,11 @@ async function pay()
         })
     });
 
-    const result =
+    let result=
     await response.json();
 
     if(result.success)
     {
-        alert(
-        "Payment successful");
-
         window.location=
         "/Booking/Confirmation?bookingId=@Model.Id";
     }
