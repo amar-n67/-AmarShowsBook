@@ -344,7 +344,10 @@ let oldImageSrc = "";
 
 function prepareImageChange() {
     if (!oldImageSrc) {
-        oldImageSrc = document.getElementById("profilePreview").src;
+        const preview = document.getElementById("profilePreview");
+        oldImageSrc = preview.tagName === "IMG"
+            ? preview.src
+            : "";
     }
 
     document.getElementById("imageCancel").classList.remove("d-none");
@@ -365,13 +368,28 @@ function previewProfileImage() {
 
     let reader = new FileReader();
     reader.onload = function (e) {
-        document.getElementById("profilePreview").src = e.target.result;
+        let preview = document.getElementById("profilePreview");
+
+        if (preview.tagName !== "IMG") {
+            const image = document.createElement("img");
+            image.id = "profilePreview";
+            image.className = "profile-poster";
+            preview.replaceWith(image);
+            preview = image;
+        }
+
+        preview.src = e.target.result;
     };
     reader.readAsDataURL(file);
 }
 
 function cancelImage() {
-    document.getElementById("profilePreview").src = oldImageSrc;
+    const preview = document.getElementById("profilePreview");
+
+    if (oldImageSrc && preview.tagName === "IMG") {
+        preview.src = oldImageSrc;
+    }
+
     document.getElementById("profileImage").value = "";
     document.getElementById("imageCancel").classList.add("d-none");
     oldImageSrc = "";

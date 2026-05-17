@@ -1,4 +1,8 @@
 @model AmarShowsBook.Models.User
+@{
+    var profileName = string.IsNullOrWhiteSpace(Model.Name) ? "User" : Model.Name;
+    var profileInitial = profileName.Trim()[0].ToString().ToUpperInvariant();
+}
 
 <div class="profile-page">
     <div class="profile-shell">
@@ -38,9 +42,16 @@
             <div class="profile-grid">
                 <aside class="poster-panel">
                     <span class="poster-label">Profile Poster</span>
-                    <img id="profilePreview"
-                         src="@(!string.IsNullOrEmpty(Model.ProfileImagePath) ? Model.ProfileImagePath : "/uploads/default.png")"
-                         class="profile-poster" />
+                    @if (!string.IsNullOrEmpty(Model.ProfileImagePath))
+                    {
+                        <img id="profilePreview"
+                             src="@Model.ProfileImagePath"
+                             class="profile-poster" />
+                    }
+                    else
+                    {
+                        <div id="profilePreview" class="profile-poster profile-poster-initial">@profileInitial</div>
+                    }
 
                     <input type="file" name="profileImage"
                            id="profileImage"
@@ -462,12 +473,20 @@
     color: #8b2f4b;
 }
 .profile-poster {
+    display: grid;
+    place-items: center;
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
     border: 4px solid rgba(255,255,255,0.72);
     border-radius: 8px;
     box-shadow: 0 16px 34px rgba(34,37,47,0.16);
+}
+.profile-poster-initial {
+    background: #f59e0b;
+    color: #22252f;
+    font-size: clamp(4rem, 14vw, 8rem);
+    font-weight: 950;
 }
 .poster-actions {
     display: grid;

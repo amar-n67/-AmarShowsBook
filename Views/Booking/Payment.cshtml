@@ -1,4 +1,10 @@
 @model BookingDraft
+@using AmarShowsBook.Helpers
+
+@{
+    var walletAmountUsed = ViewBag.WalletAmountUsed as decimal? ?? 0;
+    var payableAmount = ViewBag.PayableAmount as decimal? ?? Model.TotalAmount;
+}
 
 <style>
 
@@ -72,6 +78,12 @@ body{
     font-weight:bold;
 
     color:#0d6efd;
+}
+
+.wallet-applied{
+    margin-top:8px;
+    color:#16a34a;
+    font-weight:800;
 }
 
 .payment-option{
@@ -186,8 +198,15 @@ Total Amount
 </h3>
 
 <div class="amount">
-₹@Model.TotalAmount
+@CurrencyFormatter.FormatRupees(payableAmount)
 </div>
+
+@if(walletAmountUsed>0)
+{
+<div class="wallet-applied">
+Wallet used: @CurrencyFormatter.FormatRupees(walletAmountUsed)
+</div>
+}
 
 </div>
 

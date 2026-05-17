@@ -160,6 +160,9 @@ ModelBuilder modelBuilder)
 
         entity.Property(x=>x.UpdatedAt)
             .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.WalletAmountUsed)
+            .HasColumnName("wallet_amount_used");
     });
 
     modelBuilder.Entity<Transaction>(entity =>

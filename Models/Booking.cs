@@ -64,6 +64,9 @@ public class Booking
     [Column("convenience_fee")]
     public decimal? ConvenienceFee { get; set; }
 
+    [Column("wallet_amount_used")]
+    public decimal? WalletAmountUsed { get; set; }
+
     [Column("transaction_id")]
     public long? TransactionId { get; set; }
 

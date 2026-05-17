@@ -4,418 +4,208 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "User Details";
+
+    var displayName = string.IsNullOrWhiteSpace(Model.Name) ? "User" : Model.Name;
+    var initial = displayName.Trim()[0].ToString().ToUpperInvariant();
 }
 
-<section class="admin-user-page">
-
-    <!-- TOP BAR -->
-
-    <div class="top-bar">
-
-        <h1>User Details</h1>
-
-        <a href="/Admin/Users" class="back-btn">
-            ← Back Users
-        </a>
-
-    </div>
-
-    <!-- PROFILE SECTION -->
-
-    <div class="profile-card">
-
-        <img src="@(string.IsNullOrWhiteSpace(Model.ProfileImagePath)
-            ? "/images/default-user.png"
-            : Model.ProfileImagePath)"
-             class="profile-image" />
-
-        <div class="profile-info">
-
-            <h2>@Model.Name</h2>
-
-            <p>@Model.Email</p>
-
-            <p>@Model.Mobile</p>
-
-            <span class="status-badge">
-
-                @(Model.IsActive ? "ACTIVE" : "DISABLED")
-
-            </span>
-
+<section class="user-cinema-page">
+    <div class="user-hero">
+        <div class="hero-actions">
+            <a class="icon-action" href="/Admin/Users">Back</a>
+            <a class="icon-action danger" href="/Admin/Users">Cancel</a>
         </div>
 
-    </div>
-
-    <!-- STATS -->
-
-    <div class="stats-grid">
-
-        <div class="card">
-            <span>Wallet</span>
-            <strong>@CurrencyFormatter.FormatRupees(Model.WalletBalance)</strong>
-        </div>
-
-        <div class="card">
-            <span>Total Transactions</span>
-            <strong>@Model.TotalTransactions</strong>
-        </div>
-
-        <div class="card success">
-            <span>Success</span>
-            <strong>@Model.SuccessTransactions</strong>
-        </div>
-
-        <div class="card danger">
-            <span>Failed</span>
-            <strong>@Model.FailedTransactions</strong>
-        </div>
-
-        <div class="card warning">
-            <span>Pending</span>
-            <strong>@Model.PendingTransactions</strong>
-        </div>
-
-        <div class="card">
-            <span>Total Spent</span>
-            <strong>@CurrencyFormatter.FormatRupees(Model.TotalSpent)</strong>
-        </div>
-
-    </div>
-
-    <!-- DETAILS -->
-
-    <div class="details-grid">
-        <div class="detail-card">
-
-    <h3>User Access</h3>
-
-    <ul class="access-list">
-
-        @foreach (var access in Model.UserAccess)
-        {
-            <li>@access</li>
-        }
-
-    </ul>
-
-</div>
-
-        <!-- ACCOUNT INFO -->
-
-        <div class="detail-card">
-
-            <h3>Account Information</h3>
-
-            <p>
-                @(Model.RegisteredAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
-            </p>
-
-            <p>
-                <strong>Last Login:</strong>
-                @(Model.LastLoginAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
-            </p>
-
-            <p>
-                <strong>Language:</strong>
-                @Model.Language
-            </p>
-
-            <p>
-                <strong>Genre:</strong>
-                @Model.Genre
-            </p>
-
-        </div>
-
-        <!-- ADDRESS -->
-
-        <div class="detail-card">
-
-            <h3>Address</h3>
-
-           @(string.IsNullOrWhiteSpace(Model.Address) ? "NA" : Model.Address)
-
-            @Model.Address
-@Model.District
-@Model.State
-@Model.Country
-@Model.Pincode
-@Model.Language
-@Model.Genre
-@Model.Email
-@Model.Mobile
-@Model.LastTransactionRef
-@Model.LastTransactionStatus
-
-        </div>
-
-        <!-- LAST TRANSACTION -->
-
-        <div class="detail-card">
-
-            <h3>Last Transaction</h3>
-
-            <p>
-                <strong>Ref:</strong>
-                @Model.LastTransactionRef
-            </p>
-
-            <p>
-                <strong>Status:</strong>
-                @Model.LastTransactionStatus
-            </p>
-
-            <p>
-               @(Model.LastTransactionDate?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
-            </p>
-
-        </div>
-
-    </div>
-
-    <!-- ACTIVITY -->
-
-    <div class="activity-card">
-
-        <h3>Recent Activity</h3>
-
-        <ul>
-
-            @foreach (var activity in Model.RecentActivities)
+        <div class="identity-strip">
+            @if (!string.IsNullOrWhiteSpace(Model.ProfileImagePath) && Model.ProfileImagePath != "/images/default-user.png")
             {
-                <li>@activity</li>
+                <img class="avatar" src="@Model.ProfileImagePath" alt="@displayName" />
+            }
+            else
+            {
+                <div class="avatar avatar-initial">@initial</div>
             }
 
-        </ul>
-
+            <div>
+                <span class="eyebrow">User Profile</span>
+                <h1>@displayName</h1>
+                <div class="hero-meta">
+                    <span>@Model.Email</span>
+                    <span>@Model.Mobile</span>
+                    <span class="status @(Model.IsActive ? "good" : "bad")">@(Model.IsActive ? "ACTIVE" : "DISABLED")</span>
+                    @if (Model.IsDeleted)
+                    {
+                        <span class="status bad">DELETED</span>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 
+    <div class="metric-grid">
+        <div class="metric"><span>Wallet Balance</span><strong>@CurrencyFormatter.FormatRupees(Model.WalletBalance)</strong></div>
+        <div class="metric"><span>Total Spent</span><strong>@CurrencyFormatter.FormatRupees(Model.TotalSpent)</strong></div>
+        <div class="metric"><span>Bookings</span><strong>@Model.Bookings.Count</strong></div>
+        <div class="metric"><span>Transactions</span><strong>@Model.TotalTransactions</strong></div>
+        <div class="metric success"><span>Success</span><strong>@Model.SuccessTransactions</strong></div>
+        <div class="metric danger"><span>Failed</span><strong>@Model.FailedTransactions</strong></div>
+    </div>
+
+    <div class="info-grid">
+        <article class="panel">
+            <h2>Account</h2>
+            <dl>
+                <dt>User Id</dt><dd>#@Model.UserId</dd>
+                <dt>Registered</dt><dd>@(Model.RegisteredAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")</dd>
+                <dt>Last Updated</dt><dd>@(Model.LastLoginAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")</dd>
+                <dt>Language</dt><dd>@Model.Language</dd>
+                <dt>Genre</dt><dd>@Model.Genre</dd>
+            </dl>
+        </article>
+
+        <article class="panel">
+            <h2>Roles</h2>
+            <div class="chip-list">
+                @if (Model.UserAccess.Any())
+                {
+                    foreach (var role in Model.UserAccess)
+                    {
+                        <span>@role</span>
+                    }
+                }
+                else
+                {
+                    <span>NO ROLE</span>
+                }
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2>Wallet</h2>
+            <dl>
+                <dt>Status</dt><dd>@Model.WalletStatus</dd>
+                <dt>Blocked</dt><dd>@CurrencyFormatter.FormatRupees(Model.BlockedBalance)</dd>
+                <dt>Credits</dt><dd>@CurrencyFormatter.FormatRupees(Model.WalletCredits)</dd>
+                <dt>Debits</dt><dd>@CurrencyFormatter.FormatRupees(Model.WalletDebits)</dd>
+                <dt>Loyalty</dt><dd>@Model.LoyaltyPoints points</dd>
+                <dt>Last Wallet Tx</dt><dd>@(Model.LastWalletTransactionAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")</dd>
+            </dl>
+        </article>
+
+        <article class="panel">
+            <h2>Address</h2>
+            <p class="address">@Model.Address</p>
+            <dl>
+                <dt>District</dt><dd>@Model.District</dd>
+                <dt>State</dt><dd>@Model.State</dd>
+                <dt>Country</dt><dd>@Model.Country</dd>
+                <dt>Pincode</dt><dd>@Model.Pincode</dd>
+            </dl>
+        </article>
+    </div>
+
+    <div class="ledger-grid">
+        <article class="panel ledger-panel">
+            <div class="panel-head">
+                <h2>Bookings</h2>
+                <input class="panel-search" data-target="booking-row" placeholder="Search bookings" />
+            </div>
+            <div class="scroll-list">
+                @foreach (var booking in Model.Bookings)
+                {
+                    <div class="ledger-row booking-row">
+                        <div>
+                            <strong>@booking.BookingRef</strong>
+                            <span>@booking.ShowTitle</span>
+                            <small>@booking.SeatNumbers</small>
+                        </div>
+                        <div>
+                            <strong>@CurrencyFormatter.FormatRupees(booking.PayableAmount ?? booking.TotalAmount)</strong>
+                            <span>@booking.BookingStatus</span>
+                            <small>@booking.BookedAt.ToString("dd MMM yyyy hh:mm tt")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="panel ledger-panel">
+            <div class="panel-head">
+                <h2>Transactions</h2>
+                <input class="panel-search" data-target="transaction-row" placeholder="Search transactions" />
+            </div>
+            <div class="scroll-list">
+                @foreach (var txn in Model.LastTransactions)
+                {
+                    <div class="ledger-row transaction-row">
+                        <div>
+                            <strong>@txn.TransactionRef</strong>
+                            <span>@txn.ShowTitle</span>
+                            <small>@txn.PaymentMethod / @txn.GatewayName</small>
+                        </div>
+                        <div>
+                            <strong>@CurrencyFormatter.FormatRupees(txn.TransactionAmount)</strong>
+                            <span>@txn.TransactionStatus</span>
+                            <small>@(txn.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="panel ledger-panel activity-wide">
+            <div class="panel-head">
+                <h2>Activity</h2>
+                <input class="panel-search" data-target="activity-row" placeholder="Search activity" />
+            </div>
+            <div class="scroll-list">
+                @foreach (var activity in Model.RecentActivities)
+                {
+                    <div class="activity-row activity-item">@activity</div>
+                }
+            </div>
+        </article>
+    </div>
 </section>
-@* CSS starts here *@
+
 <style>
-    .access-list{
-    margin-top:12px;
-    padding-left:18px;
-}
-
-.access-list li{
-    margin-bottom:12px;
-    color:#475569;
-    font-size:15px;
-    font-weight:600;
-}
-
-.admin-user-page{
-    padding:24px;
-    background:#f1f5f9;
-    min-height:100vh;
-    color:#0f172a;
-}
-
-/* TOP BAR */
-
-.top-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:24px;
-}
-
-.top-bar h1{
-    font-size:42px;
-    font-weight:700;
-    color:#0f172a;
-}
-
-.back-btn{
-    padding:12px 18px;
-    background:#2563eb;
-    color:white;
-    border-radius:10px;
-    text-decoration:none;
-    font-weight:600;
-    transition:0.3s;
-    box-shadow:0 4px 12px rgba(37,99,235,0.2);
-}
-
-.back-btn:hover{
-    background:#1d4ed8;
-    color:white;
-}
-
-/* PROFILE */
-
-.profile-card{
-    display:flex;
-    gap:24px;
-    align-items:center;
-    background:white;
-    padding:28px;
-    border-radius:22px;
-    margin-bottom:24px;
-    border:1px solid #dbeafe;
-    box-shadow:0 10px 30px rgba(15,23,42,0.08);
-}
-
-.profile-image{
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    object-fit:cover;
-    border:5px solid #dbeafe;
-}
-
-.profile-info h2{
-    margin-bottom:10px;
-    font-size:38px;
-    color:#0f172a;
-}
-
-.profile-info p{
-    margin-bottom:8px;
-    color:#475569;
-    font-size:16px;
-}
-
-.status-badge{
-    display:inline-block;
-    margin-top:12px;
-    background:#dcfce7;
-    color:#166534;
-    padding:8px 16px;
-    border-radius:999px;
-    font-size:14px;
-    font-weight:700;
-}
-
-/* STATS */
-
-.stats-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:18px;
-    margin-bottom:24px;
-}
-
-.card{
-    background:white;
-    padding:24px;
-    border-radius:18px;
-    border:1px solid #e2e8f0;
-    box-shadow:0 4px 14px rgba(15,23,42,0.06);
-}
-
-.card span{
-    color:#64748b;
-    font-size:15px;
-    font-weight:600;
-}
-
-.card strong{
-    display:block;
-    margin-top:14px;
-    font-size:40px;
-    font-weight:700;
-    color:#0f172a;
-}
-
-.success{
-    border-left:5px solid #22c55e;
-}
-
-.danger{
-    border-left:5px solid #ef4444;
-}
-
-.warning{
-    border-left:5px solid #f59e0b;
-}
-
-/* DETAILS */
-
-.details-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:18px;
-    margin-bottom:24px;
-}
-
-.detail-card{
-    background:white;
-    padding:24px;
-    border-radius:20px;
-    border:1px solid #dbeafe;
-    box-shadow:0 10px 25px rgba(15,23,42,0.06);
-}
-
-.detail-card h3{
-    margin-bottom:18px;
-    font-size:28px;
-    color:#0f172a;
-}
-
-.detail-card p{
-    margin-bottom:14px;
-    color:#475569;
-    line-height:1.7;
-}
-
-.detail-card strong{
-    color:#0f172a;
-}
-
-/* ACTIVITY */
-
-.activity-card{
-    background:white;
-    padding:24px;
-    border-radius:20px;
-    border:1px solid #dbeafe;
-    box-shadow:0 10px 25px rgba(15,23,42,0.06);
-}
-
-.activity-card h3{
-    margin-bottom:18px;
-    font-size:30px;
-    color:#0f172a;
-}
-
-.activity-card ul{
-    margin-top:14px;
-    padding-left:20px;
-}
-
-.activity-card li{
-    margin-bottom:14px;
-    color:#475569;
-    font-size:16px;
-}
-
-/* MOBILE */
-
-@@media(max-width:900px){
-
-    .stats-grid,
-    .details-grid{
-        grid-template-columns:1fr;
-    }
-
-    .profile-card{
-        flex-direction:column;
-        text-align:center;
-    }
-
-    .top-bar{
-        flex-direction:column;
-        gap:16px;
-        align-items:flex-start;
-    }
-
-    .card strong{
-        font-size:32px;
-    }
-
-}
-
+.user-cinema-page{padding:24px;color:#111827;background:#f4f7fb;min-height:100vh}
+.user-hero{min-height:280px;border-radius:8px;padding:24px;background:linear-gradient(rgba(17,24,39,.38),rgba(17,24,39,.62)),url('/uploads/381e3cae-7c15-4976-8b3e-3b7e7f5a0684.jpeg');background-size:cover;background-position:center;color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 24px 70px rgba(15,23,42,.22)}
+.hero-actions{display:flex;gap:10px;justify-content:flex-end}
+.icon-action{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;text-decoration:none;font-weight:900;border:1px solid rgba(255,255,255,.35)}
+.icon-action.danger{background:rgba(220,38,38,.76)}
+.identity-strip{display:flex;align-items:flex-end;gap:20px}
+.avatar{width:118px;height:118px;border-radius:50%;object-fit:cover;border:4px solid rgba(255,255,255,.8);box-shadow:0 16px 34px rgba(0,0,0,.28)}
+.avatar-initial{display:grid;place-items:center;background:#f59e0b;color:#111827;font-size:4rem;font-weight:950}
+.eyebrow{font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.user-hero h1{margin:6px 0;font-size:clamp(2.4rem,6vw,5rem);font-weight:950;color:#fff}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px}
+.hero-meta span,.status{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:850}
+.status.good{background:#16a34a;color:#fff}.status.bad{background:#dc2626;color:#fff}
+.metric-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:18px 0}
+.metric,.panel{border:1px solid #dbe3ef;border-radius:8px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.08)}
+.metric{padding:16px}.metric span{display:block;color:#64748b;font-weight:850;font-size:.78rem;text-transform:uppercase}.metric strong{display:block;margin-top:8px;font-size:1.45rem;font-weight:950}.metric.success{border-left:5px solid #16a34a}.metric.danger{border-left:5px solid #dc2626}
+.info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.panel{padding:18px}.panel h2{margin:0 0 14px;font-size:1.05rem;font-weight:950}
+dl{display:grid;grid-template-columns:110px minmax(0,1fr);gap:9px;margin:0}dt{color:#64748b;font-weight:850}dd{margin:0;font-weight:850;overflow-wrap:anywhere}.address{font-weight:850;color:#334155}
+.chip-list{display:flex;flex-wrap:wrap;gap:8px}.chip-list span{padding:8px 10px;border-radius:999px;background:#111827;color:#fff;font-weight:850;font-size:.8rem}
+.ledger-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.activity-wide{grid-column:1/-1}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.panel-search{min-width:210px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-weight:800}
+.scroll-list{max-height:360px;overflow:auto;display:grid;gap:10px;padding-right:4px}
+.ledger-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,auto);gap:12px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc}
+.ledger-row strong,.ledger-row span,.ledger-row small{display:block}.ledger-row span{color:#475569;font-weight:800}.ledger-row small{color:#64748b;font-weight:750}
+.activity-item{padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-weight:800;color:#334155}
+@@media(max-width:1100px){.metric-grid,.info-grid,.ledger-grid{grid-template-columns:1fr 1fr}.activity-wide{grid-column:1/-1}}
+@@media(max-width:720px){.metric-grid,.info-grid,.ledger-grid{grid-template-columns:1fr}.identity-strip{align-items:flex-start;flex-direction:column}.panel-head{align-items:stretch;flex-direction:column}.panel-search{min-width:0;width:100%}}
 </style>
+
+<script>
+document.querySelectorAll('.panel-search').forEach(input => {
+    input.addEventListener('input', () => {
+        const term = input.value.toLowerCase();
+        document.querySelectorAll('.' + input.dataset.target).forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    });
+});
+</script>

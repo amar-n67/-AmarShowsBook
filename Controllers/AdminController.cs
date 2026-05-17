@@ -1473,13 +1473,17 @@ public IActionResult UserDetails(long id)
 
     // =====================================================
     // HUMAN COMMENT:
-    // LOAD LAST 5 TRANSACTIONS
+    // LOAD TRANSACTIONS AND BOOKINGS
     // =====================================================
 
     var transactions = _context.VwBookingTransactionSummaries
         .Where(x => x.UserId == id)
         .OrderByDescending(x => x.BookingCreatedAt)
-        .Take(5)
+        .ToList();
+
+    var bookings = _context.VwBookingCompleteDetails
+        .Where(x => x.UserId == id)
+        .OrderByDescending(x => x.BookedAt)
         .ToList();
 
     // =====================================================
@@ -1638,6 +1642,27 @@ public IActionResult UserDetails(long id)
         WalletBalance =
             wallet?.WalletBalance ?? 0,
 
+        BlockedBalance =
+            wallet?.BlockedBalance ?? 0,
+
+        WalletCredits =
+            wallet?.TotalCredits ?? 0,
+
+        WalletDebits =
+            wallet?.TotalDebits ?? 0,
+
+        LoyaltyPoints =
+            wallet?.LoyaltyPoints ?? 0,
+
+        WalletStatus =
+            wallet?.WalletStatus ?? "NA",
+
+        TotalWalletTransactions =
+            wallet?.TotalWalletTransactions ?? 0,
+
+        LastWalletTransactionAt =
+            wallet?.LastTransactionAt,
+
         // =====================================================
         // HUMAN COMMENT:
         // TRANSACTION STATS
@@ -1668,6 +1693,8 @@ public IActionResult UserDetails(long id)
         // =====================================================
 
         LastTransactions = transactions,
+
+        Bookings = bookings,
 
         // =====================================================
         // HUMAN COMMENT:

@@ -543,12 +543,20 @@ a {
 }
 
 .film-avatar {
+    display: grid;
+    place-items: center;
     width: 42px;
     height: 42px;
     border: 2px solid var(--app-accent);
     border-radius: 50%;
     object-fit: cover;
     box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+}
+
+.film-avatar-initial {
+    background: var(--app-accent);
+    color: #111827;
+    font-weight: 950;
 }
 
 .film-nav-btn {
@@ -993,6 +1001,9 @@ z-index:9999;">
 
 @{
     var isLoggedIn = Context.Session.GetString("UserEmail") != null;
+    var sessionDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
+    var sessionInitial = sessionDisplayName.Trim()[0].ToString().ToUpperInvariant();
+    var sessionProfileImage = Context.Session.GetString("ProfileImage");
 }
 
     <div class="film-menu">
@@ -1025,11 +1036,16 @@ z-index:9999;">
                         </div>
                     </div>
 
-                    <img src="@(!string.IsNullOrEmpty(Context.Session.GetString("ProfileImage"))
-                        ? Context.Session.GetString("ProfileImage")
-                        : "/uploads/default.png")"
-                         class="film-avatar"
-                         alt="Profile image" />
+                    @if (!string.IsNullOrEmpty(sessionProfileImage))
+                    {
+                        <img src="@sessionProfileImage"
+                             class="film-avatar"
+                             alt="Profile image" />
+                    }
+                    else
+                    {
+                        <div class="film-avatar film-avatar-initial">@sessionInitial</div>
+                    }
                 </div>
 
                 <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile">My Profile</a>

@@ -1,8 +1,15 @@
 @model BookingDraft
+@using AmarShowsBook.Helpers
 
 @{
     var schedule = ViewBag.Schedule;
     var user = ViewBag.User;
+    var wallet = ViewBag.Wallet as AmarShowsBook.Models.Admin.VwWalletSummary;
+    var walletAmountUsed = ViewBag.WalletAmountUsed as decimal? ?? 0;
+    var usableWallet = wallet?.WalletStatus == "ACTIVE"
+        ? Math.Max(0, wallet.WalletBalance - wallet.BlockedBalance)
+        : 0;
+    var payableAmount = Math.Max(0, Model.TotalAmount - walletAmountUsed);
 
     string title =
     schedule?.Movie?.Title
@@ -148,6 +155,52 @@ background:linear-gradient(
 background:#777;
 }
 
+.cancel-btn{
+background:#dc2626;
+}
+
+.wallet-panel{
+margin-top:22px;
+padding:18px;
+border:1px solid #dbeafe;
+border-radius:18px;
+background:#f8fafc;
+}
+
+.wallet-panel h3{
+margin:0 0 12px;
+color:#0f172a;
+}
+
+.wallet-form{
+display:flex;
+gap:10px;
+margin-top:14px;
+}
+
+.wallet-form input{
+flex:1;
+padding:12px 14px;
+border:1px solid #cbd5e1;
+border-radius:12px;
+font-weight:800;
+}
+
+.wallet-form button{
+border:0;
+padding:12px 18px;
+border-radius:12px;
+background:#0f766e;
+color:#fff;
+font-weight:900;
+}
+
+.amount-breakdown{
+margin-top:12px;
+display:grid;
+gap:8px;
+}
+
 </style>
 
 
@@ -164,6 +217,13 @@ background:#777;
 </div>
 
 <div class="ticket-body">
+
+@if(TempData["Success"]!=null)
+{
+<div class="alert alert-success">
+@TempData["Success"]
+</div>
+}
 
 <div class="detail-row">
 <div class="label">
@@ -259,8 +319,45 @@ Amount
 </div>
 
 <div class="value amount">
-₹@Model.TotalAmount
+@CurrencyFormatter.FormatRupees(Model.TotalAmount)
 </div>
+</div>
+
+<div class="wallet-panel">
+<h3>
+Wallet
+</h3>
+
+<div class="amount-breakdown">
+<div>
+Available:
+<strong>@CurrencyFormatter.FormatRupees(usableWallet)</strong>
+</div>
+<div>
+Wallet Used:
+<strong>@CurrencyFormatter.FormatRupees(walletAmountUsed)</strong>
+</div>
+<div>
+Payable:
+<strong>@CurrencyFormatter.FormatRupees(payableAmount)</strong>
+</div>
+</div>
+
+<form class="wallet-form" method="post" action="/Booking/ApplyWallet">
+@Html.AntiForgeryToken()
+<input type="hidden" name="bookingId" value="@Model.Id" />
+<input
+type="number"
+name="walletAmount"
+min="0"
+step="0.01"
+max="@Math.Min(usableWallet, Model.TotalAmount)"
+value="@walletAmountUsed"
+placeholder="Wallet amount" />
+<button type="submit">
+Apply
+</button>
+</form>
 </div>
 
 
@@ -289,8 +386,16 @@ href="javascript:history.back()">
 
 </a>
 
+<a
+class="btn cancel-btn"
+href="/Home/Index">
+
+Cancel
+
+</a>
 
 <button
+type="button"
 class="btn pay-btn"
 onclick="location.href='/Booking/Payment?bookingId=@Model.Id'">
 

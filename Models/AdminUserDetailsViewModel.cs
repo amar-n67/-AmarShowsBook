@@ -54,6 +54,13 @@ namespace AmarShowsBook.Models.ViewModels
         // =====================================================
 
         public decimal WalletBalance { get; set; }
+        public decimal BlockedBalance { get; set; }
+        public decimal WalletCredits { get; set; }
+        public decimal WalletDebits { get; set; }
+        public int LoyaltyPoints { get; set; }
+        public string? WalletStatus { get; set; }
+        public int TotalWalletTransactions { get; set; }
+        public DateTime? LastWalletTransactionAt { get; set; }
 
         public int TotalTransactions { get; set; }
 
@@ -80,6 +87,9 @@ public List<VwBookingTransactionSummary>
             LastTransactions { get; set; }
 
                 = new();
+
+        public List<VwBookingCompleteDetails> Bookings { get; set; }
+            = new();
 
         public List<string>
 

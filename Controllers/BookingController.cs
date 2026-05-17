@@ -1,4 +1,5 @@
 using AmarShowsBook.Data;
+using AmarShowsBook.Helpers;
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
@@ -307,6 +308,17 @@ Details(long id)
     ViewBag.User=
     user;
 
+    var wallet =
+    await _context.VwWalletSummaries
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x=>x.UserId==booking.UserId);
+
+    ViewBag.Wallet=
+    wallet;
+
+    ViewBag.WalletAmountUsed=
+    GetWalletUsage(booking.Id);
+
     return View(
     booking);
 }
@@ -326,7 +338,67 @@ Details(long id)
             if(booking==null)
                 return NotFound();
 
+            var walletAmountUsed =
+            GetWalletUsage(booking.Id);
+
+            ViewBag.WalletAmountUsed =
+            walletAmountUsed;
+
+            ViewBag.PayableAmount =
+            Math.Max(0,booking.TotalAmount-walletAmountUsed);
+
             return View(booking);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ApplyWallet(
+        long bookingId,
+        decimal walletAmount)
+        {
+            var booking =
+            await _context.BookingDrafts
+            .FindAsync(bookingId);
+
+            if(booking==null)
+            {
+                return NotFound();
+            }
+
+            var userIdText =
+            HttpContext.Session.GetString("UserId");
+
+            if(!long.TryParse(userIdText,out var userId) || userId!=booking.UserId)
+            {
+                return RedirectToAction("Login","Auth");
+            }
+
+            var wallet =
+            await _context.VwWalletSummaries
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x=>x.UserId==booking.UserId);
+
+            var usableWallet =
+            wallet?.WalletStatus=="ACTIVE"
+            ? Math.Max(0,wallet.WalletBalance-wallet.BlockedBalance)
+            : 0;
+
+            var appliedAmount =
+            Math.Min(
+            Math.Max(0,walletAmount),
+            Math.Min(usableWallet,booking.TotalAmount));
+
+            HttpContext.Session.SetString(
+            GetWalletUsageSessionKey(booking.Id),
+            appliedAmount.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+            TempData["Success"] =
+            appliedAmount>0
+            ? $"Wallet amount applied: {CurrencyFormatter.FormatRupees(appliedAmount)}"
+            : "Wallet amount removed.";
+
+            return RedirectToAction(
+            "Details",
+            new { id=booking.Id });
         }
 // ==========================================
 // MY BOOKINGS
@@ -456,7 +528,7 @@ public IActionResult MyBookings()
         //     return View(
         //     booking);
         // }
-        public async Task<IActionResult>
+public async Task<IActionResult>
 MobilePay(string token)
 {
     var session=
@@ -509,6 +581,27 @@ MobilePay(string token)
     return View(
     booking);
 }
+
+private string GetWalletUsageSessionKey(long bookingId)
+{
+    return $"WalletUse_{bookingId}";
+}
+
+private decimal GetWalletUsage(long bookingId)
+{
+    var value =
+    HttpContext.Session.GetString(
+    GetWalletUsageSessionKey(bookingId));
+
+    return decimal.TryParse(
+    value,
+    System.Globalization.NumberStyles.Number,
+    System.Globalization.CultureInfo.InvariantCulture,
+    out var amount)
+    ? Math.Max(0,amount)
+    : 0;
+}
+
 private async Task GenerateSeats(
 int scheduleId,
 string type)
@@ -615,8 +708,36 @@ string type)
 
 private async Task<Booking> FinalizeBookingPayment(
 BookingDraft draft,
-string paymentMethod)
+string paymentMethod,
+decimal walletAmountUsed)
 {
+    walletAmountUsed =
+    Math.Min(
+    Math.Max(0,walletAmountUsed),
+    draft.TotalAmount);
+
+    var payableAmount =
+    Math.Max(0,draft.TotalAmount-walletAmountUsed);
+
+    if(walletAmountUsed>0)
+    {
+        var wallet =
+        await _context.VwWalletSummaries
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x=>x.UserId==draft.UserId);
+
+        var usableWallet =
+        wallet?.WalletStatus=="ACTIVE"
+        ? Math.Max(0,wallet.WalletBalance-wallet.BlockedBalance)
+        : 0;
+
+        if(usableWallet<walletAmountUsed)
+        {
+            throw new InvalidOperationException(
+            "Wallet balance is not available for this booking.");
+        }
+    }
+
     var existingBooking =
     await _context.Bookings
     .FirstOrDefaultAsync(
@@ -645,7 +766,7 @@ string paymentMethod)
                 UserId=draft.UserId,
                 TransactionType="BOOKING",
                 PaymentMethod=paymentMethod,
-                Amount=draft.TotalAmount,
+                Amount=payableAmount>0 ? payableAmount : draft.TotalAmount,
                 Currency="INR",
                 Status="SUCCESS",
                 GatewayName=paymentMethod=="QR" ? "QR" : "DUMMY_GATEWAY",
@@ -673,6 +794,9 @@ string paymentMethod)
         existingBooking.TransactionId=existingTransaction.Id;
         existingBooking.PaymentStatus="SUCCESS";
         existingBooking.BookingStatus="CONFIRMED";
+        existingBooking.OriginalAmount=draft.TotalAmount;
+        existingBooking.PayableAmount=payableAmount;
+        existingBooking.WalletAmountUsed=walletAmountUsed;
         var repairedAt =
         DateTime.SpecifyKind(
         DateTime.UtcNow,
@@ -682,6 +806,12 @@ string paymentMethod)
         existingBooking.ConfirmedAt ??= repairedAt;
 
         await _context.SaveChangesAsync();
+
+        await DebitWalletForBooking(
+        draft,
+        existingBooking,
+        existingTransaction,
+        walletAmountUsed);
 
         return existingBooking;
     }
@@ -738,9 +868,10 @@ string paymentMethod)
         IsDeleted=false,
         OriginalAmount=draft.TotalAmount,
         DiscountAmount=0,
-        PayableAmount=draft.TotalAmount,
+        PayableAmount=payableAmount,
         TaxAmount=0,
         ConvenienceFee=0,
+        WalletAmountUsed=walletAmountUsed,
         PaymentStatus="SUCCESS",
         ConfirmedAt=now
     };
@@ -755,7 +886,7 @@ string paymentMethod)
         UserId=draft.UserId,
         TransactionType="BOOKING",
         PaymentMethod=paymentMethod,
-        Amount=draft.TotalAmount,
+        Amount=payableAmount>0 ? payableAmount : draft.TotalAmount,
         Currency="INR",
         Status="SUCCESS",
         GatewayName=paymentMethod=="QR" ? "QR" : "DUMMY_GATEWAY",
@@ -781,6 +912,12 @@ string paymentMethod)
 
     booking.TransactionId=transaction.Id;
     booking.UpdatedAt=now;
+
+    await DebitWalletForBooking(
+    draft,
+    booking,
+    transaction,
+    walletAmountUsed);
 
     var bookingItem =
     new BookingItem
@@ -858,6 +995,96 @@ string paymentMethod)
 
     return booking;
 }
+
+private async Task DebitWalletForBooking(
+BookingDraft draft,
+Booking booking,
+Transaction transaction,
+decimal walletAmountUsed)
+{
+    if(walletAmountUsed<=0)
+    {
+        return;
+    }
+
+    var now =
+    DateTime.SpecifyKind(
+    DateTime.UtcNow,
+    DateTimeKind.Unspecified);
+
+    var reference =
+    $"WLT-{booking.Id}-{transaction.Id}";
+
+    var insertedRows =
+    await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO wallet_transactions
+(
+    wallet_id,
+    user_id,
+    booking_id,
+    transaction_id,
+    transaction_ref,
+    transaction_type,
+    entry_type,
+    amount,
+    opening_balance,
+    closing_balance,
+    remarks,
+    transaction_status,
+    created_at,
+    created_by,
+    description,
+    status,
+    reference_type,
+    reference_id,
+    balance_before,
+    balance_after,
+    payment_method,
+    gateway_name,
+    gateway_reference,
+    is_deleted
+)
+SELECT
+    uw.id,
+    {draft.UserId},
+    {booking.Id},
+    {transaction.Id},
+    {reference},
+    'BOOKING',
+    'DEBIT',
+    {walletAmountUsed},
+    uw.wallet_balance,
+    uw.wallet_balance - {walletAmountUsed},
+    'Wallet used for ticket booking',
+    'SUCCESS',
+    {now},
+    {draft.UserId.ToString()},
+    'Wallet debit for booking payment',
+    'SUCCESS',
+    'BOOKING',
+    {booking.Id},
+    uw.wallet_balance,
+    uw.wallet_balance - {walletAmountUsed},
+    'WALLET',
+    'WALLET',
+    {transaction.TransactionRef ?? reference},
+    false
+FROM user_wallets uw
+WHERE uw.user_id = {draft.UserId}
+  AND uw.wallet_status = 'ACTIVE'
+  AND uw.wallet_balance >= {walletAmountUsed}
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM wallet_transactions wt
+      WHERE wt.booking_id = {booking.Id}
+        AND wt.transaction_type = 'BOOKING'
+        AND wt.entry_type = 'DEBIT'
+        AND wt.is_deleted = false
+  );");
+
+    _ = insertedRows;
+}
 // ==========================================
 // APPROVE QR PAYMENT
 // ==========================================
@@ -906,7 +1133,8 @@ ApprovePayment(string token)
         var confirmedBooking =
         await FinalizeBookingPayment(
         booking,
-        "QR");
+        "QR",
+        GetWalletUsage(booking.Id));
 
         _context.BookingTransactions.Add(
 
@@ -944,6 +1172,9 @@ ApprovePayment(string token)
     }
 
     await _context.SaveChangesAsync();
+
+    HttpContext.Session.Remove(
+    GetWalletUsageSessionKey(booking.Id));
 
     return Json(new
     {
@@ -1096,7 +1327,8 @@ CheckPaymentStatus(long bookingId)
                 var confirmedBooking =
                 await FinalizeBookingPayment(
                 booking,
-                request.PaymentMethod);
+                request.PaymentMethod,
+                GetWalletUsage(booking.Id));
 
                 var transaction=
                 new BookingTransaction
@@ -1141,6 +1373,9 @@ CheckPaymentStatus(long bookingId)
 
             await _context
             .SaveChangesAsync();
+
+            HttpContext.Session.Remove(
+            GetWalletUsageSessionKey(booking.Id));
 
             return Json(new
             {
