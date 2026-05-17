@@ -40,7 +40,24 @@ public async Task<IActionResult> Seats(int id)
     if(schedule==null)
         return NotFound();
 
+var expiredLocks=
 
+await _context.SeatLocks
+.Where(
+x=>
+x.LockStatus=="LOCKED"
+&&
+x.ExpiresAt<DateTime.UtcNow
+)
+.ToListAsync();
+
+if(expiredLocks.Any())
+{
+    _context.SeatLocks
+    .RemoveRange(expiredLocks);
+
+    await _context.SaveChangesAsync();
+}
     // ==================================
     // Create seats for this schedule only
     // ==================================
@@ -90,15 +107,30 @@ public async Task<IActionResult> Seats(int id)
 
         Category=s.SeatCategory,
 
-        IsBooked=
-        lockSeat!=null
-        &&
-        lockSeat.LockStatus=="CONFIRMED",
+IsBooked=
 
-        IsLocked=
-        lockSeat!=null
-        &&
-        lockSeat.LockStatus=="LOCKED"
+_context.BookingDrafts.Any(
+b=>
+b.ScheduleId==id
+&&
+b.Status=="CONFIRMED"
+&&
+(","+b.SeatNumbers+",")
+.Contains(
+","+
+s.SeatRow+
+s.SeatNumber+
+","
+)
+),
+
+IsLocked=
+
+lockSeat!=null
+&&
+lockSeat.LockStatus=="LOCKED"
+&&
+lockSeat.ExpiresAt>DateTime.UtcNow
     }
 
     ).ToListAsync();
@@ -113,8 +145,7 @@ public async Task<IActionResult> Seats(int id)
         // ==========================================
 
         [HttpPost]
-        public async Task<IActionResult>
-        LockSeats(
+        public async Task<IActionResult>LockSeats(
         [FromBody]
         SeatLockRequest request)
         {
@@ -126,65 +157,81 @@ public async Task<IActionResult> Seats(int id)
             {
                 bool exists=
 
-                await _context.SeatLocks.AnyAsync(
-                x=>
+await _context.SeatLocks.AnyAsync(
+x=>
+x.ScheduleId==
+request.ScheduleId
+&&
+x.ScreenSeatId==
+seatId
+&&
+x.LockStatus=="LOCKED"
+&&
+x.ExpiresAt>DateTime.UtcNow
+);
 
-                x.ScheduleId==
-                request.ScheduleId
+var seat=
 
-                &&
+await _context.ScreenSeats
+.FirstOrDefaultAsync(
+x=>x.Id==seatId
+);
 
-                x.ScreenSeatId==
-                seatId
+string seatName=
+seat.SeatRow+
+seat.SeatNumber;
 
-                &&
 
-                (
-                x.LockStatus=="LOCKED"
-                ||
-                x.LockStatus=="CONFIRMED"
-                ));
+bool alreadyBooked=
 
-                if(exists)
-                {
-                    return Json(new
-                    {
-                        success=false,
-                        message="Seat already booked"
-                    });
-                }
+await _context.BookingDrafts
+.AnyAsync(
+x=>
+x.ScheduleId==
+request.ScheduleId
+&&
+x.Status=="CONFIRMED"
+&&
+x.SeatNumbers.Contains(
+seatName
+)
+);
+
+
+if(exists||alreadyBooked)
+{
+    return Json(
+    new
+    {
+        success=false,
+        message=
+        "Seat unavailable"
+    });
+}
 
                 _context.SeatLocks.Add(
-
                 new SeatLock
                 {
-                    UserId=userId,
-                    ScheduleId=request.ScheduleId,
-                    ScreenSeatId=seatId,
-                    LockedAt=DateTime.UtcNow,
-                    ExpiresAt=DateTime.UtcNow.AddMinutes(5),
-                    LockStatus="LOCKED"
+                    ScheduleId=
+                    request.ScheduleId,
+
+                    ScreenSeatId=
+                    seatId,
+
+                    UserId=
+                    userId,
+
+                    LockStatus=
+                    "LOCKED",
+
+                    ExpiresAt=
+                    DateTime.UtcNow
+                    .AddMinutes(5)
                 });
             }
 
             await _context.SaveChangesAsync();
 
-            // var booking=
-            // new BookingDraft
-            // {
-            //     UserId=userId,
-            //     ScheduleId=request.ScheduleId,
-            //     SeatNumbers=
-            //     string.Join(",",request.SeatIds),
-
-            //     TotalAmount=
-            //     request.TotalAmount,
-
-            //     Status="PENDING",
-
-            //     CreatedAt=
-            //     DateTime.UtcNow
-            // };
             var seatNames=
 
 await _context.ScreenSeats
@@ -230,45 +277,7 @@ new BookingDraft
             });
         }
 
-// ==========================================
-// BOOKING DETAILS
-// ==========================================
-
-// public async Task<IActionResult>
-// Details(long id)
-// {
-//     var booking =
-
-//     await _context
-//     .BookingDrafts
-//     .FirstOrDefaultAsync(
-//     x=>x.Id==id);
-
-//     if(booking==null)
-//     {
-//         return NotFound();
-//     }
-
-//     var schedule=
-
-//     await _context
-//     .ShowSchedules
-//     .Include(x=>x.Movie)
-//     .Include(x=>x.StandupShow)
-//     .Include(x=>x.LiveStream)
-//     .Include(x=>x.Location)
-//     .FirstOrDefaultAsync(
-//     x=>x.Id==
-//     booking.ScheduleId);
-
-//     ViewBag.Schedule=
-//     schedule;
-
-//     return View(
-//     booking);
-// }
-public async Task<IActionResult>
-Details(long id)
+public async Task<IActionResult>Details(long id)
 {
     var booking=
 
@@ -389,9 +398,26 @@ public IActionResult MyBookings()
                 url
             });
         }
+        [HttpPost]
+public async Task<IActionResult>
+ReleaseExpiredLocks()
+{
+    var expired=
 
+    await _context.SeatLocks
+    .Where(
+    x=>
+    x.ExpiresAt<DateTime.UtcNow
+    )
+    .ToListAsync();
 
+    _context.SeatLocks
+    .RemoveRange(expired);
 
+    await _context.SaveChangesAsync();
+
+    return Ok();
+}
         // ==========================================
         // CREATE QR IMAGE
         // ==========================================
@@ -417,37 +443,7 @@ public IActionResult MyBookings()
             bytes,
             "image/png");
         }
-
-
-
-        // ==========================================
-        // MOBILE PAYMENT PAGE
-        // ==========================================
-
-        // public async Task<IActionResult>
-        // MobilePay(string token)
-        // {
-        //     var session=
-
-        //     await _context
-        //     .PaymentSessions
-        //     .FirstOrDefaultAsync(
-        //     x=>x.SessionToken==token);
-
-        //     if(session==null)
-        //         return NotFound();
-
-        //     var booking=
-
-        //     await _context
-        //     .BookingDrafts
-        //     .FindAsync(
-        //     session.BookingId);
-
-        //     return View(
-        //     booking);
-        // }
-        public async Task<IActionResult>
+       public async Task<IActionResult>
 MobilePay(string token)
 {
     var session=
@@ -643,6 +639,22 @@ ApprovePayment(string token)
 
     booking.Status=
     "CONFIRMED";
+    var locks=
+
+await _context.SeatLocks
+.Where(
+x=>
+x.ScheduleId==
+booking.ScheduleId
+&&
+x.UserId==
+booking.UserId
+)
+.ToListAsync();
+
+_context.SeatLocks.RemoveRange(
+locks
+);
 
     session.Status="SUCCESS";
 

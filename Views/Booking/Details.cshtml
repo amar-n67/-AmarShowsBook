@@ -1,23 +1,61 @@
 @model BookingDraft
 
 @{
-    var schedule=ViewBag.Schedule;
-    var user=ViewBag.User;
+    var schedule = ViewBag.Schedule;
+    var user = ViewBag.User;
 
-    string title="";
+    string title =
+    schedule?.Movie?.Title
+    ??
+    schedule?.StandupShow?.Title
+    ??
+    schedule?.LiveStream?.Title
+    ??
+    "Unknown Show";
 
-    if(schedule.Movie!=null)
-    {
-        title=schedule.Movie.Title;
-    }
-    else if(schedule.StandupShow!=null)
-    {
-        title=schedule.StandupShow.Title;
-    }
-    else if(schedule.LiveStream!=null)
-    {
-        title=schedule.LiveStream.Title;
-    }
+
+    string theater =
+    schedule?.Location?.Area
+    ??
+    "Unknown Theater";
+
+
+    string location =
+
+    schedule?.Location!=null
+
+    ?
+
+    $"{schedule.Location.State}, {schedule.Location.Country}"
+
+    :
+
+    "Location unavailable";
+
+
+    string email =
+    user?.Email
+    ??
+    "Not Available";
+
+
+    string mobile =
+    user?.Mobile
+    ??
+    "Not Available";
+
+
+    string showTime =
+
+    schedule?.StartTime!=null
+    ?
+
+    schedule.StartTime.ToString(
+    "dd MMM yyyy hh:mm tt")
+
+    :
+
+    "N/A";
 }
 
 <style>
@@ -166,7 +204,7 @@ Show Time
 </div>
 
 <div class="value">
-@schedule.StartTime
+@showTime
 </div>
 </div>
 
@@ -177,7 +215,7 @@ Theater
 </div>
 
 <div class="value">
-@schedule.Location.Area
+@theater
 </div>
 </div>
 
@@ -188,8 +226,7 @@ Location
 </div>
 
 <div class="value">
-@schedule.Location.State,
-@schedule.Location.Country
+@location
 </div>
 </div>
 
@@ -200,7 +237,7 @@ Email
 </div>
 
 <div class="value">
-@user.Email
+@email
 </div>
 </div>
 
@@ -211,7 +248,7 @@ Mobile
 </div>
 
 <div class="value">
-@user.Mobile
+@mobile
 </div>
 </div>
 
