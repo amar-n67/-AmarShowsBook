@@ -78,6 +78,8 @@ Migrations/
  20260516100949_AddBookingFlow.Designer.cs
  20260516130932_AddPaymentSession.cs
  20260516130932_AddPaymentSession.Designer.cs
+ 20260517073401_SyncScreenSeats.cs
+ 20260517073401_SyncScreenSeats.Designer.cs
  ApplicationDbContextModelSnapshot.cs
 Models/Admin/
  ActivityLog.cs
@@ -108,6 +110,7 @@ Models/
  PaymentSession.cs
  Refund.cs
  Region.cs
+ Screen.cs
  ScreenSeat.cs
  SeatLock.cs
  ShowSchedule.cs

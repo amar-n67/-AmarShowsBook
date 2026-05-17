@@ -32,7 +32,7 @@ public DbSet<DummyCard> DummyCards { get; set; }
 
         public DbSet<User> Users { get; set; }
         public DbSet<ScreenSeat> ScreenSeats { get; set; }
-
+        public DbSet<Screen> Screens { get; set; }
         public DbSet<DeletedUser> DeletedUsers { get; set; }
 
         public DbSet<ActivityLog> ActivityLogs { get; set; }
@@ -54,6 +54,7 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<District> Districts { get; set; }
 
         public DbSet<Region> Regions { get; set; }
+        
 
         // =====================================================
         // USER ROLE ACCESS TABLES
@@ -114,164 +115,246 @@ public DbSet<DummyCard> DummyCards { get; set; }
         // =====================================================
 
         protected override void OnModelCreating(
-            ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<ScreenSeat>()
-    .HasOne(x => x.Schedule)
-    .WithMany(x => x.Seats)
-    .HasForeignKey(x => x.ScheduleId);
-
-            modelBuilder.Entity<HomeShowViewModel>()
-    .HasNoKey()
-    .ToView("vw_home_show_listing");
-    
-            base.OnModelCreating(modelBuilder);
+ModelBuilder modelBuilder)
+{
+    // =========================================
+    // TABLES
+    // =========================================
 
     modelBuilder.Entity<BookingDraft>()
-
         .ToTable("booking_drafts");
 
     modelBuilder.Entity<BookingTransaction>()
-
         .ToTable("booking_transactions");
 
     modelBuilder.Entity<DummyCard>()
-
         .ToTable("dummy_cards");
-            base.OnModelCreating(modelBuilder);
 
-            // =====================================================
-            // ACTIVITY LOG TABLE
-            // =====================================================
-            base.OnModelCreating(modelBuilder);
+    modelBuilder.Entity<Refund>()
+        .ToTable("refunds");
 
-    modelBuilder.Entity<Refund>().ToTable("refunds");
-            modelBuilder.Entity<ActivityLog>()
-                .ToTable("activity_logs");
-
-            // =====================================================
-            // ENTERPRISE ACTIVITY LOG VIEW
-            // =====================================================
-
-            modelBuilder.Entity<VwEnterpriseActivityLog>()
-                .HasNoKey()
-                .ToView("vw_enterprise_activity_logs");
-
-            // =====================================================
-            // ADMIN TRANSACTION VIEW
-            // =====================================================
-
-            modelBuilder.Entity<AdminTransactionViewModel>()
-                .HasNoKey()
-                .ToView("vw_admin_transaction_complete");
-
-            // =====================================================
-            // SHOW SCHEDULE RELATIONSHIPS
-            // =====================================================
-
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(x => x.Movie)
-                .WithMany()
-                .HasForeignKey(x => x.MovieId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(x => x.StandupShow)
-                .WithMany()
-                .HasForeignKey(x => x.StandupShowId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(x => x.LiveStream)
-                .WithMany()
-                .HasForeignKey(x => x.LiveStreamId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // =====================================================
-            // ADMIN SQL VIEW MAPPINGS
-            // =====================================================
-
-            modelBuilder.Entity<VwBookingCompleteDetails>()
-                .HasNoKey()
-                .ToView("vw_booking_complete_details");
-
-            modelBuilder.Entity<VwBookingTransactionSummary>()
-                .HasNoKey()
-                .ToView("vw_booking_transaction_summary");
-
-            modelBuilder.Entity<VwRefundSummary>()
-                .HasNoKey()
-                .ToView("vw_refund_summary");
-
-            modelBuilder.Entity<VwWalletSummary>()
-                .HasNoKey()
-                .ToView("vw_wallet_summary");
-
-            modelBuilder.Entity<VwNotificationCenter>()
-                .HasNoKey()
-                .ToView("vw_notification_center");
-
-            modelBuilder.Entity<VwInvoiceSummary>()
-                .HasNoKey()
-                .ToView("vw_invoice_summary");
-
-            modelBuilder.Entity<VwTicketValidationSummary>()
-                .HasNoKey()
-                .ToView("vw_ticket_validation_summary");
-
-            modelBuilder.Entity<VwUserAccessMatrix>()
-                .HasNoKey()
-                .ToView("vw_user_access_matrix");
-
-            modelBuilder.Entity<VwUserApplicationMenu>()
-                .HasNoKey()
-                .ToView("vw_user_application_menus");
-
-            modelBuilder.Entity<VwAdminUserManagement>()
-                .HasNoKey()
-                .ToView("vw_admin_user_management");
-                 base.OnModelCreating(modelBuilder);
-
-    modelBuilder.Entity<ScreenSeat>()
-
-        .ToTable("screen_seats");
+    modelBuilder.Entity<ActivityLog>()
+        .ToTable("activity_logs");
 
     modelBuilder.Entity<SeatLock>()
-
         .ToTable("seat_locks");
-        modelBuilder.Entity<HomeShowViewModel>(entity =>
-{
-    entity.HasNoKey();
 
-    entity.ToView("vw_home_show_listing");
 
-    entity.Property(e => e.ScheduleId)
-        .HasColumnName("schedule_id");
 
-    entity.Property(e => e.ShowType)
-        .HasColumnName("show_type");
+    // =========================================
+    // SCREEN
+    // =========================================
 
-    entity.Property(e => e.ShowId)
-        .HasColumnName("show_id");
+    modelBuilder.Entity<Screen>(entity =>
+    {
+        entity.ToTable("screens");
 
-    entity.Property(e => e.Title)
-        .HasColumnName("title");
+        entity.HasKey(x=>x.Id);
 
-    entity.Property(e => e.StartTime)
-        .HasColumnName("start_time");
+        entity.Property(x=>x.Id)
+            .HasColumnName("id");
 
-    entity.Property(e => e.EndTime)
-        .HasColumnName("end_time");
+        entity.Property(x=>x.VenueId)
+            .HasColumnName("venue_id");
 
-    entity.Property(e => e.Location)
-        .HasColumnName("location");
+        entity.Property(x=>x.ScreenCode)
+            .HasColumnName("screen_code");
 
-    entity.Property(e => e.State)
-        .HasColumnName("state");
+        entity.Property(x=>x.ScreenName)
+            .HasColumnName("screen_name");
 
-    entity.Property(e => e.Country)
-        .HasColumnName("country");
-});
-        }
+        entity.Property(x=>x.TotalSeats)
+            .HasColumnName("total_seats");
+
+        entity.Property(x=>x.ScreenType)
+            .HasColumnName("screen_type");
+
+        entity.Property(x=>x.AudioSystem)
+            .HasColumnName("audio_system");
+
+        entity.Property(x=>x.IsActive)
+            .HasColumnName("is_active");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnName("created_at");
+
+        entity.Property(x=>x.UpdatedAt)
+            .HasColumnName("updated_at");
+    });
+
+
+
+    // =========================================
+    // SCREEN SEATS
+    // =========================================
+
+    modelBuilder.Entity<ScreenSeat>(entity =>
+    {
+        entity.ToTable("screen_seats");
+
+        entity.HasKey(x=>x.Id);
+
+        entity.Property(x=>x.Id)
+            .HasColumnName("id");
+
+        entity.Property(x=>x.ScreenId)
+            .HasColumnName("screen_id");
+
+        entity.Property(x=>x.ScheduleId)
+            .HasColumnName("ScheduleId");
+
+        entity.Property(x=>x.SeatRow)
+            .HasColumnName("seat_row");
+
+        entity.Property(x=>x.SeatNumber)
+            .HasColumnName("seat_number");
+
+        entity.Property(x=>x.SeatCategory)
+            .HasColumnName("seat_category");
+
+        entity.Property(x=>x.SeatPrice)
+            .HasColumnName("seat_price");
+
+        entity.Property(x=>x.IsActive)
+            .HasColumnName("is_active");
+
+        entity.HasOne(x=>x.Screen)
+            .WithMany()
+            .HasForeignKey(x=>x.ScreenId);
+
+            
+    });
+
+
+
+    // =========================================
+    // SHOW RELATIONSHIPS
+    // =========================================
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.Movie)
+        .WithMany()
+        .HasForeignKey(x=>x.MovieId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.StandupShow)
+        .WithMany()
+        .HasForeignKey(x=>x.StandupShowId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.LiveStream)
+        .WithMany()
+        .HasForeignKey(x=>x.LiveStreamId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+
+
+    // =========================================
+    // VIEWS
+    // =========================================
+
+    modelBuilder.Entity<HomeShowViewModel>(entity =>
+    {
+        entity.HasNoKey();
+
+        entity.ToView(
+        "vw_home_show_listing");
+
+        entity.Property(x=>x.ScheduleId)
+            .HasColumnName("schedule_id");
+
+        entity.Property(x=>x.ShowType)
+            .HasColumnName("show_type");
+
+        entity.Property(x=>x.ShowId)
+            .HasColumnName("show_id");
+
+        entity.Property(x=>x.Title)
+            .HasColumnName("title");
+
+        entity.Property(x=>x.StartTime)
+            .HasColumnName("start_time");
+
+        entity.Property(x=>x.EndTime)
+            .HasColumnName("end_time");
+
+        entity.Property(x=>x.Location)
+            .HasColumnName("location");
+
+        entity.Property(x=>x.State)
+            .HasColumnName("state");
+
+        entity.Property(x=>x.Country)
+            .HasColumnName("country");
+    });
+
+
+    modelBuilder.Entity<VwEnterpriseActivityLog>()
+        .HasNoKey()
+        .ToView(
+        "vw_enterprise_activity_logs");
+
+    modelBuilder.Entity<AdminTransactionViewModel>()
+        .HasNoKey()
+        .ToView(
+        "vw_admin_transaction_complete");
+
+    modelBuilder.Entity<VwBookingCompleteDetails>()
+        .HasNoKey()
+        .ToView(
+        "vw_booking_complete_details");
+
+    modelBuilder.Entity<VwBookingTransactionSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_booking_transaction_summary");
+
+    modelBuilder.Entity<VwRefundSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_refund_summary");
+
+    modelBuilder.Entity<VwWalletSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_wallet_summary");
+
+    modelBuilder.Entity<VwNotificationCenter>()
+        .HasNoKey()
+        .ToView(
+        "vw_notification_center");
+
+    modelBuilder.Entity<VwInvoiceSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_invoice_summary");
+
+    modelBuilder.Entity<VwTicketValidationSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_ticket_validation_summary");
+
+    modelBuilder.Entity<VwUserAccessMatrix>()
+        .HasNoKey()
+        .ToView(
+        "vw_user_access_matrix");
+
+    modelBuilder.Entity<VwUserApplicationMenu>()
+        .HasNoKey()
+        .ToView(
+        "vw_user_application_menus");
+
+    modelBuilder.Entity<VwAdminUserManagement>()
+        .HasNoKey()
+        .ToView(
+        "vw_admin_user_management");
+
+
+
+    base.OnModelCreating(
+    modelBuilder);
+}
     }
 }

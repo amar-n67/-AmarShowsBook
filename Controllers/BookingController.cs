@@ -500,64 +500,108 @@ MobilePay(string token)
     return View(
     booking);
 }
-private async Task GenerateSeats(int scheduleId,string type)
+private async Task GenerateSeats(
+int scheduleId,
+string type)
 {
-    int totalSeats = type switch
-    {
-        "Movie" => 100,
-        "Standup" => 50,
-        "Live" => 20,
-        _ => 30
-    };
-
-    // get an existing screen
-    var screenId=
+    bool exists=
 
     await _context.ScreenSeats
-    .Select(x=>x.ScreenId)
+    .AnyAsync(
+    x=>x.ScheduleId==scheduleId);
+
+    if(exists)
+        return;
+
+
+    var screen=
+
+    await _context.Screens
+    .Where(
+    x=>x.IsActive)
     .FirstOrDefaultAsync();
 
-    // fallback if nothing exists
-    if(screenId==0)
+    if(screen==null)
     {
-        screenId=1;
+        throw new Exception(
+        "No active screen found");
     }
+
+
+    var rows=
+    new List<string>
+    {
+        "A","B","C",
+        "D","E","F","G"
+    };
 
     var seats=
     new List<ScreenSeat>();
 
 
-    for(int i=1;i<=totalSeats;i++)
+    foreach(var row in rows)
     {
-        seats.Add(
-        new ScreenSeat
+        for(int i=1;i<=10;i++)
         {
-            ScheduleId=scheduleId,
+            string category;
+            decimal price;
 
-            ScreenId=screenId,
 
-            SeatRow=
-            ((char)
-            (65+((i-1)/10)))
-            .ToString(),
+            if(row=="A" || row=="B")
+            {
+                category="Premium";
+                price=350;
+            }
+            else if(
+            row=="C"
+            ||
+            row=="D"
+            ||
+            row=="E")
+            {
+                category="Gold";
+                price=250;
+            }
+            else
+            {
+                category="Silver";
+                price=150;
+            }
 
-            SeatNumber=
-            ((i-1)%10+1)
-            .ToString(),
 
-            SeatCategory=
-            "Regular",
+            seats.Add(
+            new ScreenSeat
+            {
+                ScheduleId=
+                scheduleId,
 
-            SeatPrice=
-            150,
+                ScreenId=
+                screen.Id,
 
-            IsActive=true
-        });
+                SeatRow=
+                row,
+
+                SeatNumber=
+                i.ToString(),
+
+                SeatCategory=
+                category,
+
+                SeatPrice=
+                price,
+
+                IsActive=
+                true
+            });
+        }
     }
 
-    _context.ScreenSeats.AddRange(seats);
+    await _context
+    .ScreenSeats
+    .AddRangeAsync(seats);
 
-    await _context.SaveChangesAsync();
+    await _context
+    .SaveChangesAsync();
 }
 // ==========================================
 // APPROVE QR PAYMENT

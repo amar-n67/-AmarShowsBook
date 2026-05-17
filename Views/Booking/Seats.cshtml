@@ -217,17 +217,49 @@ Gold/Premium
 
 <div>
 
+<div>
+
 <span>
-
 Selected Seats
-
 </span>
 
 <strong id="selectedSeats">
-
 None
+</strong>
+
+</div>
+
+<br>
+
+<div>
+
+<span>
+Seat Price
+</span>
+
+<strong id="seatPrice">
+₹0
+</strong>
+
+</div>
+
+<br>
+
+<div>
+
+<span>
+Total Amount
+</span>
+
+<strong
+id="totalAmount"
+style="font-size:20px;color:#22c55e">
+
+₹0
 
 </strong>
+
+</div>
 
 </div>
 
@@ -240,6 +272,8 @@ onclick="nextStep()">
 Next
 
 </button>
+
+</div>
 
 
 </div>
@@ -505,183 +539,209 @@ gap:20px;
 
 
 
-
 <script>
 
-const maxSeatLimit=
-
-@(User.IsInRole("Admin")
-?999
-:6);
-
+const maxSeatLimit =
+@(User.IsInRole("Admin") ? 999 : 6);
 
 
 function toggleSeat(button)
 {
+    if(
+        button.classList.contains("booked")
+        ||
+        button.classList.contains("locked")
+    )
+    {
+        return;
+    }
 
-if(
-button.classList.contains(
-"booked")
-||
-button.classList.contains(
-"locked")
-)
-{
-return;
-}
+    let selected =
+    document.querySelectorAll(
+    ".seat-btn.selected"
+    );
 
+    if(
+        !button.classList.contains("selected")
+        &&
+        selected.length >= maxSeatLimit
+    )
+    {
+        showCinemaPopup(
+        `Maximum ${maxSeatLimit} seats allowed`,
+        "error"
+        );
 
-let selected=
+        return;
+    }
 
-document.querySelectorAll(
-".seat-btn.selected"
-);
+    button.classList.toggle(
+    "selected"
+    );
 
-
-if(
-!button.classList.contains(
-"selected"
-)
-&&
-selected.length>=
-maxSeatLimit
-)
-{
-showCinemaPopup(
-`Maximum ${maxSeatLimit} seats allowed`,
-"error"
-);
-
-return;
-}
-
-
-button.classList.toggle(
-"selected"
-);
-
-
-updateSeatDisplay();
-
+    updateSeatDisplay();
 }
 
 
 
 function updateSeatDisplay()
 {
+    let selected =
 
-let seats=
-
-Array.from(
-
-document.querySelectorAll(
-".seat-btn.selected"
-)
-
-)
-
-.map(
-
-x=>x.dataset.name
-
-);
+    Array.from(
+    document.querySelectorAll(
+    ".seat-btn.selected"
+    ));
 
 
-document.getElementById(
-"selectedSeats"
-)
+    let seatNames =
 
-.innerText=
+    selected.map(
+    x => x.dataset.name
+    );
 
-seats.length
-?
-seats.join(", ")
-:
-"None";
 
+    let prices =
+
+    selected.map(
+    x => parseFloat(
+    x.dataset.price || 0
+    )
+    );
+
+
+    let total =
+
+    prices.reduce(
+    (a,b)=>a+b,
+    0
+    );
+
+
+    document.getElementById(
+    "selectedSeats"
+    ).innerText =
+
+    seatNames.length
+    ?
+    seatNames.join(", ")
+    :
+    "None";
+
+
+    document.getElementById(
+    "seatPrice"
+    ).innerText =
+
+    prices.length
+    ?
+    "₹" + prices.join(", ₹")
+    :
+    "₹0";
+
+
+    document.getElementById(
+    "totalAmount"
+    ).innerText =
+
+    "₹" + total;
 }
-
 
 
 
 function nextStep()
 {
+    let selectedSeats =
 
-let seatIds=
-
-Array.from(
-document.querySelectorAll(
-".seat-btn.selected"
-)
-)
-
-.map(
-x=>x.dataset.id
-);
+    Array.from(
+    document.querySelectorAll(
+    ".seat-btn.selected"
+    ));
 
 
-if(!seatIds.length)
-{
-showCinemaPopup(
-"Please select seats",
-"error"
-);
+    let seatIds =
 
-return;
-}
+    selectedSeats.map(
+    x=>x.dataset.id
+    );
 
 
-
-fetch(
-"/Booking/LockSeats",
-{
-
-method:"POST",
-
-headers:
-{
-"Content-Type":
-"application/json"
-},
-
-body:
-JSON.stringify(
-{
-scheduleId:
-@Model.Id,
-
-seatIds:
-seatIds
-})
-
-})
-
-.then(
-x=>x.json()
-)
-
-.then(
-result=>
-{
-    if(result.success)
+    if(!seatIds.length)
     {
         showCinemaPopup(
-        "Seats Locked",
-        "success"
-        );
-
-        window.location=
-        "/Booking/Details?id="
-        +result.bookingId;
-    }
-    else
-    {
-        showCinemaPopup(
-        result.message,
+        "Please select seats",
         "error"
         );
+
+        return;
     }
-});
+
+
+    let total =
+
+    selectedSeats.reduce(
+    (sum,x)=>
+
+    sum +
+
+    parseFloat(
+    x.dataset.price || 0
+    ),
+
+    0
+    );
+
+
+    fetch(
+    "/Booking/LockSeats",
+    {
+
+        method:"POST",
+
+        headers:
+        {
+            "Content-Type":
+            "application/json"
+        },
+
+        body:
+        JSON.stringify(
+        {
+            scheduleId:@Model.Id,
+
+            seatIds:seatIds,
+
+            totalAmount:total
+        })
+
+    })
+
+    .then(
+    x=>x.json()
+    )
+
+    .then(
+    result=>
+    {
+        if(result.success)
+        {
+            showCinemaPopup(
+            "Seats Locked",
+            "success"
+            );
+
+            window.location =
+            "/Booking/Details?id="
+            + result.bookingId;
+        }
+        else
+        {
+            showCinemaPopup(
+            result.message,
+            "error"
+            );
+        }
+    });
 
 }
 
