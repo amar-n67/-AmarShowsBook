@@ -2,7 +2,7 @@ namespace AmarShowsBook.Models
 {
     public class ScreenSeat
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         public long ScreenId { get; set; }
         public Screen Screen { get; set; }

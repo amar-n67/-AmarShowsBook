@@ -37,18 +37,19 @@ namespace AmarShowsBook.Controllers
 
             // Human Comment:
             // User id is the stable lookup key; email remains as a compatibility fallback.
-            var userId = int.TryParse(userIdText, out var parsedUserId)
+            var userId = long.TryParse(userIdText, out var parsedUserId)
                 ? parsedUserId
                 : 0;
 
-            var transactions = _context
+            var transactions = await _context
                 .VwBookingTransactionSummaries
                 .AsNoTracking()
                 .Where(x =>
-                    (userId > 0 && x.UserId == userId) ||
-                    x.UserEmail.ToLower() == userEmail.ToLower())
+                    x.TransactionId != null &&
+                    ((userId > 0 && x.UserId == userId) ||
+                    x.UserEmail.ToLower() == userEmail.ToLower()))
                 .OrderByDescending(x => x.BookingCreatedAt)
-                .ToList();
+                .ToListAsync();
 
             // Log successful transaction page access
             await _activityLogger.LogAsync(

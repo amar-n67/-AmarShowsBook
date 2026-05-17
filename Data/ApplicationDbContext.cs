@@ -21,6 +21,12 @@ namespace AmarShowsBook.Data
         public DbSet<BookingDraft> BookingDrafts { get; set; }
         public DbSet<PaymentSession> PaymentSessions { get; set; }
 
+        public DbSet<Booking> Bookings { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<BookingItem> BookingItems { get; set; }
+        public DbSet<BookingSeat> BookingSeats { get; set; }
+        public DbSet<Ticket> Tickets { get; set; }
+
 public DbSet<BookingTransaction> BookingTransactions { get; set; }
 
 public DbSet<SeatLock> SeatLocks { get; set; }
@@ -136,33 +142,75 @@ ModelBuilder modelBuilder)
     modelBuilder.Entity<ActivityLog>()
         .ToTable("activity_logs");
 
-    modelBuilder.Entity<SeatLock>(entity =>
-{
-    entity.ToTable("seat_locks");
+    modelBuilder.Entity<SeatLock>()
+        .ToTable("seat_locks");
 
-    entity.HasKey(x=>x.Id);
+    modelBuilder.Entity<Booking>(entity =>
+    {
+        entity.ToTable("bookings");
 
-    entity.Property(x=>x.Id)
-        .HasColumnName("id");
+        entity.Property(x=>x.BookedAt)
+            .HasColumnType("timestamp without time zone");
 
-    entity.Property(x=>x.UserId)
-        .HasColumnName("user_id");
+        entity.Property(x=>x.ConfirmedAt)
+            .HasColumnType("timestamp without time zone");
 
-    entity.Property(x=>x.ScheduleId)
-        .HasColumnName("schedule_id");
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
 
-    entity.Property(x=>x.ScreenSeatId)
-        .HasColumnName("screen_seat_id");
+        entity.Property(x=>x.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+    });
 
-    entity.Property(x=>x.LockedAt)
-        .HasColumnName("locked_at");
+    modelBuilder.Entity<Transaction>(entity =>
+    {
+        entity.ToTable("transactions");
 
-    entity.Property(x=>x.ExpiresAt)
-        .HasColumnName("expires_at");
+        entity.Property(x=>x.InitiatedAt)
+            .HasColumnType("timestamp without time zone");
 
-    entity.Property(x=>x.LockStatus)
-        .HasColumnName("lock_status");
-});
+        entity.Property(x=>x.CompletedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+    });
+
+    modelBuilder.Entity<BookingItem>(entity =>
+    {
+        entity.ToTable("booking_items");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+    });
+
+    modelBuilder.Entity<BookingSeat>(entity =>
+    {
+        entity.ToTable("booking_seats");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+    });
+
+    modelBuilder.Entity<Ticket>(entity =>
+    {
+        entity.ToTable("tickets");
+
+        entity.Property(x=>x.IssuedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.QrGeneratedAt)
+            .HasColumnType("timestamp without time zone");
+    });
 
 
 

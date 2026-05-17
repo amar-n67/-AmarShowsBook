@@ -8,13 +8,13 @@ namespace AmarShowsBook.Models
     public class VwBookingTransactionSummary
     {
         [Column("booking_id")]
-        public int BookingId { get; set; }
+        public long BookingId { get; set; }
 
         [Column("booking_ref")]
         public string BookingRef { get; set; }
 
         [Column("user_id")]
-        public int UserId { get; set; }
+        public long UserId { get; set; }
 
         [Column("user_name")]
         public string UserName { get; set; }
@@ -35,7 +35,7 @@ namespace AmarShowsBook.Models
         public decimal TotalAmount { get; set; }
 
         [Column("transaction_id")]
-        public int? TransactionId { get; set; }
+        public long? TransactionId { get; set; }
 
         [Column("transaction_ref")]
         public string TransactionRef { get; set; }

@@ -262,6 +262,7 @@ width="250"/>
 
 
 <button
+type="button"
 id="payButton"
 class="pay-btn"
 onclick="pay()">
@@ -358,6 +359,16 @@ async function toggleQR()
 
 async function pay()
 {
+    const payButton =
+    document.getElementById(
+    "payButton");
+
+    payButton.disabled =
+    true;
+
+    payButton.innerText =
+    "Processing...";
+
     let paymentMethod=
 
     document.querySelector(
@@ -365,40 +376,60 @@ async function pay()
     ).value;
 
 
-    let response=
-
-    await fetch(
-    "/Booking/CompletePayment",
+    try
     {
-        method:"POST",
+        let response=
 
-        headers:
+        await fetch(
+        "/Booking/CompletePayment",
         {
-            "Content-Type":
-            "application/json"
-        },
+            method:"POST",
 
-        body:
-        JSON.stringify(
+            headers:
+            {
+                "Content-Type":
+                "application/json"
+            },
+
+            body:
+            JSON.stringify(
+            {
+                bookingId:@Model.Id,
+                paymentMethod:paymentMethod
+            })
+        });
+
+        let result=
+        await response.json();
+
+
+        if(result.success)
         {
-            bookingId:@Model.Id,
-            paymentMethod:paymentMethod
-        })
-    });
+            window.location=
+            "/Booking/Confirmation?bookingId=@Model.Id";
+        }
+        else
+        {
+            alert(
+            result.message || "Transaction Failed");
 
-    let result=
-    await response.json();
+            payButton.disabled =
+            false;
 
-
-    if(result.success)
-    {
-        window.location=
-        "/Booking/Confirmation?bookingId=@Model.Id";
+            payButton.innerText =
+            "Pay Now";
+        }
     }
-    else
+    catch(error)
     {
         alert(
-        "Transaction Failed");
+        "Payment could not be completed. Please try again.");
+
+        payButton.disabled =
+        false;
+
+        payButton.innerText =
+        "Pay Now";
     }
 }
 

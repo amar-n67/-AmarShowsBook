@@ -54,19 +54,39 @@
 
                     <h2>@booking.ShowTitle</h2>
 
+                    <p class="booking-show">
+                        @booking.ShowType at @booking.LocationName
+                    </p>
+
                     <div class="booking-meta">
                         <div>
                             <span>Amount Paid</span>
-                            <strong>@CurrencyFormatter.FormatRupees(booking.TotalAmount)</strong>
+                            <strong>@CurrencyFormatter.FormatRupees(booking.PayableAmount ?? booking.TotalAmount)</strong>
                         </div>
                         <div>
                             <span>Payment</span>
                             <strong>@booking.PaymentStatus</strong>
                         </div>
+                        <div>
+                            <span>Seats</span>
+                            <strong>@booking.SeatNumbers</strong>
+                        </div>
+                        <div>
+                            <span>Tickets</span>
+                            <strong>@booking.TotalTickets</strong>
+                        </div>
+                        <div>
+                            <span>Method</span>
+                            <strong>@booking.PaymentMethod</strong>
+                        </div>
+                        <div>
+                            <span>Transaction</span>
+                            <strong>@booking.TransactionRef</strong>
+                        </div>
                     </div>
 
                     <p class="booking-date">
-                        @booking.BookedAt.ToString("dd MMM yyyy")
+                        @booking.StartTime.ToString("dd MMM yyyy, hh:mm tt")
                     </p>
 
                 </article>
@@ -139,7 +159,8 @@
 .booking-summary span,
 .booking-summary small,
 .booking-meta span,
-.booking-date {
+.booking-date,
+.booking-show {
     color: var(--app-muted);
 }
 
@@ -220,10 +241,14 @@
 }
 
 .booking-card h2 {
-    min-height: 58px;
     margin: 0;
     font-size: 1.2rem;
     font-weight: 900;
+}
+
+.booking-show {
+    margin: 0;
+    font-weight: 800;
 }
 
 .booking-meta {
