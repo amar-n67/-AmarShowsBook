@@ -149,9 +149,33 @@ LockSeats([FromBody] SeatLockRequest request)
 {
     try
     {
-        long userId =
-        Convert.ToInt64(
-        HttpContext.Session.GetString("UserId"));
+        var userSession = 
+HttpContext.Session
+.GetString("UserId");
+
+if(string.IsNullOrEmpty(userSession))
+{
+    return Json(new
+    {
+        success=false,
+        message="Session expired. Login again."
+    });
+}
+
+long userId=
+Convert.ToInt64(userSession);
+
+if(userId<=0)
+{
+    return Json(new
+    {
+        success=false,
+        message="Invalid user"
+    });
+}
+
+Console.WriteLine(
+$"Current UserId={userId}");
 
         var now = DateTime.SpecifyKind(
     DateTime.UtcNow,
@@ -720,63 +744,101 @@ ApprovePayment(string token)
         });
     }
 
-    booking.Status="CONFIRMED";
-var tempLocks=
+//     booking.Status="CONFIRMED";
+// var tempLocks=
 
-await _context.SeatLocks
-.Where(
-x=>
-x.ScheduleId==
-booking.ScheduleId
-&&
-x.UserId==
-booking.UserId
-)
-.ToListAsync();
+// await _context.SeatLocks
+// .Where(
+// x=>
+// x.ScheduleId==
+// booking.ScheduleId
+// &&
+// x.UserId==
+// booking.UserId
+// )
+// .ToListAsync();
 
 
-if(tempLocks.Any())
+// if(tempLocks.Any())
+// {
+//     _context.SeatLocks
+//     .RemoveRange(
+//     tempLocks
+//     );
+// }
+
+//     session.Status="SUCCESS";
+
+//     _context.BookingTransactions.Add(
+
+//     new BookingTransaction
+//     {
+//         BookingId=
+//         booking.Id,
+
+//         TransactionRef=
+//         Guid.NewGuid().ToString(),
+
+//         PaymentMethod=
+//         "QR",
+
+//         Amount=
+//         booking.TotalAmount,
+
+//         PaymentStatus=
+//         "SUCCESS",
+
+//         CreatedAt=
+//         DateTime.UtcNow,
+
+//         PaidAt=
+//         DateTime.UtcNow
+//     });
+
+//     await _context.SaveChangesAsync();
+
+//     return Json(new
+//     {
+//         success=true
+//     });
+session.Status="SUCCESS";
+
+_context.BookingTransactions.Add(
+new BookingTransaction
 {
-    _context.SeatLocks
-    .RemoveRange(
-    tempLocks
-    );
-}
+    BookingId=booking.Id,
 
-    session.Status="SUCCESS";
+    TransactionRef=
+    Guid.NewGuid().ToString(),
 
-    _context.BookingTransactions.Add(
+    PaymentMethod="QR",
 
-    new BookingTransaction
-    {
-        BookingId=
-        booking.Id,
+    Amount=
+    booking.TotalAmount,
 
-        TransactionRef=
-        Guid.NewGuid().ToString(),
+    PaymentStatus=
+    "SUCCESS",
 
-        PaymentMethod=
-        "QR",
+    CreatedAt=
+    DateTime.UtcNow,
 
-        Amount=
-        booking.TotalAmount,
+    PaidAt=
+    DateTime.UtcNow
+});
 
-        PaymentStatus=
-        "SUCCESS",
+await _context.SaveChangesAsync();
 
-        CreatedAt=
-        DateTime.UtcNow,
 
-        PaidAt=
-        DateTime.UtcNow
-    });
+// call procedure that moves data
+await _context.Database
+.ExecuteSqlInterpolatedAsync(
+$@"CALL sp_complete_booking({booking.Id})"
+);
 
-    await _context.SaveChangesAsync();
-
-    return Json(new
-    {
-        success=true
-    });
+return Json(new
+{
+    success=true
+});
 }
 
 
