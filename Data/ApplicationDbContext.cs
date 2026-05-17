@@ -136,8 +136,33 @@ ModelBuilder modelBuilder)
     modelBuilder.Entity<ActivityLog>()
         .ToTable("activity_logs");
 
-    modelBuilder.Entity<SeatLock>()
-        .ToTable("seat_locks");
+    modelBuilder.Entity<SeatLock>(entity =>
+{
+    entity.ToTable("seat_locks");
+
+    entity.HasKey(x=>x.Id);
+
+    entity.Property(x=>x.Id)
+        .HasColumnName("id");
+
+    entity.Property(x=>x.UserId)
+        .HasColumnName("user_id");
+
+    entity.Property(x=>x.ScheduleId)
+        .HasColumnName("schedule_id");
+
+    entity.Property(x=>x.ScreenSeatId)
+        .HasColumnName("screen_seat_id");
+
+    entity.Property(x=>x.LockedAt)
+        .HasColumnName("locked_at");
+
+    entity.Property(x=>x.ExpiresAt)
+        .HasColumnName("expires_at");
+
+    entity.Property(x=>x.LockStatus)
+        .HasColumnName("lock_status");
+});
 
 
 
