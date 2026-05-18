@@ -1,4 +1,5 @@
 using AmarShowsBook.Data;
+using AmarShowsBook.Filters;
 using AmarShowsBook.Models;
 using AmarShowsBook.Services;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,16 @@ var builder = WebApplication.CreateBuilder(args);
 // Services
 // ========================================
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<SessionAuthorizeFilter>();
+builder.Services.AddScoped<ActivityLoggingFilter>();
+builder.Services.AddScoped<BookingStepValidationFilter>();
+
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<SessionAuthorizeFilter>();
+    options.Filters.Add<BookingStepValidationFilter>();
+    options.Filters.Add<ActivityLoggingFilter>();
+});
 
 builder.Services.AddSingleton<OtpDeliveryService>();
 

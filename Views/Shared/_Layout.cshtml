@@ -1366,6 +1366,52 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 </script>
 
+<script>
+(function () {
+    const isLoggedIn = @isLoggedIn.ToString().ToLowerInvariant();
+
+    if (!isLoggedIn || !navigator.sendBeacon) {
+        return;
+    }
+
+    function textOf(element) {
+        return (element.innerText || element.value || element.getAttribute("aria-label") || element.title || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 250);
+    }
+
+    function sendClickLog(element) {
+        const payload = {
+            eventType: "click",
+            elementType: element.tagName,
+            text: textOf(element),
+            href: element.href || element.getAttribute("href"),
+            path: window.location.pathname,
+            id: element.id || "",
+            name: element.name || "",
+            cssClass: element.className || ""
+        };
+
+        const body = new Blob([JSON.stringify(payload)], {
+            type: "application/json"
+        });
+
+        navigator.sendBeacon("/Activity/ClientEvent", body);
+    }
+
+    document.addEventListener("click", function (event) {
+        const target = event.target.closest("a,button,input[type='button'],input[type='submit'],input[type='checkbox'],input[type='radio'],select,[data-log-click]");
+
+        if (!target) {
+            return;
+        }
+
+        sendClickLog(target);
+    }, true);
+})();
+</script>
+
 @RenderSection("Scripts", required: false)
 
 <script>
