@@ -211,3 +211,4 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.pdb
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.genruntimeconfig.cache
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/ref/AmarShowsBook.dll
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/compressed/vpyns0121u-{0}-d75o877q8r-d75o877q8r.gz

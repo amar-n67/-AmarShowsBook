@@ -171,6 +171,383 @@ body{
     box-shadow:
     0px 10px 20px rgba(0,0,0,.2);
 }
+<style>
+
+:root{
+
+--bg:#f5f7fb;
+--card:#fff;
+
+--text:#111827;
+--muted:#6b7280;
+
+--primary:#4f46e5;
+--success:#16a34a;
+
+--border:#e5e7eb;
+
+}
+
+body{
+
+background:var(--bg);
+
+font-family:Segoe UI,sans-serif;
+
+color:var(--text);
+
+}
+
+
+.payment-container{
+
+max-width:750px;
+
+margin:40px auto;
+
+padding:20px;
+
+animation:fadeUp .5s;
+
+}
+
+
+.payment-card{
+
+background:var(--card);
+
+border-radius:25px;
+
+padding:30px;
+
+border:1px solid var(--border);
+
+box-shadow:
+
+0 15px 40px rgba(0,0,0,.06);
+
+}
+
+
+
+.payment-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding-bottom:20px;
+
+margin-bottom:25px;
+
+border-bottom:1px solid var(--border);
+
+}
+
+
+.payment-header h2{
+
+margin:0;
+
+font-size:28px;
+
+font-weight:800;
+
+}
+
+
+.amount-box{
+
+padding:25px;
+
+border-radius:18px;
+
+background:#fafafa;
+
+text-align:center;
+
+margin-bottom:25px;
+
+border:1px solid var(--border);
+
+}
+
+
+.amount-box h3{
+
+margin:0;
+
+font-size:14px;
+
+color:var(--muted);
+
+margin-bottom:10px;
+
+}
+
+
+.amount{
+
+font-size:35px;
+
+font-weight:900;
+
+color:var(--primary);
+
+}
+
+
+.wallet-applied{
+
+margin-top:10px;
+
+color:var(--success);
+
+font-weight:700;
+
+}
+
+
+
+/* payment cards */
+
+.payment-grid{
+
+display:grid;
+
+grid-template-columns:
+1fr 1fr;
+
+gap:15px;
+
+margin-bottom:20px;
+
+}
+
+
+.payment-option{
+
+padding:18px;
+
+border-radius:16px;
+
+background:#fafafa;
+
+border:1px solid var(--border);
+
+cursor:pointer;
+
+transition:.3s;
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+font-weight:700;
+
+}
+
+
+.payment-option:hover{
+
+transform:translateY(-3px);
+
+border-color:var(--primary);
+
+}
+
+
+.payment-option input{
+
+accent-color:var(--primary);
+
+transform:scale(1.2);
+
+}
+
+
+
+/* QR */
+
+#qrSection{
+
+display:none;
+
+margin-top:25px;
+
+padding:25px;
+
+text-align:center;
+
+background:#fafafa;
+
+border-radius:20px;
+
+border:1px solid var(--border);
+
+animation:fadeUp .4s;
+
+}
+
+
+#qrImage{
+
+border-radius:18px;
+
+padding:10px;
+
+background:white;
+
+border:1px solid var(--border);
+
+}
+
+
+.scan-text{
+
+margin-top:15px;
+
+font-size:14px;
+
+font-weight:700;
+
+color:var(--muted);
+
+}
+
+
+
+/* button */
+
+.pay-btn{
+
+width:100%;
+
+padding:16px;
+
+border:none;
+
+border-radius:15px;
+
+margin-top:25px;
+
+background:
+
+linear-gradient(
+135deg,
+#4f46e5,
+#6366f1
+);
+
+color:white;
+
+font-size:16px;
+
+font-weight:800;
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+
+.pay-btn:hover{
+
+transform:
+
+translateY(-2px);
+
+box-shadow:
+
+0 10px 25px rgba(79,70,229,.25);
+
+}
+
+
+.pay-btn:disabled{
+
+opacity:.7;
+
+cursor:not-allowed;
+
+}
+
+
+
+/* animation */
+
+@@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:
+translateY(15px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:
+translateY(0);
+
+}
+
+}
+
+
+/* mobile */
+
+@@media(max-width:768px){
+
+.payment-container{
+
+padding:12px;
+
+}
+
+
+.payment-card{
+
+padding:20px;
+
+}
+
+
+.payment-header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+gap:10px;
+
+}
+
+
+.payment-grid{
+
+grid-template-columns:1fr;
+
+}
+
+
+.amount{
+
+font-size:28px;
+
+}
+
+
+}
 
 </style>
 
@@ -183,33 +560,54 @@ body{
 <div class="payment-header">
 
 <h2>
-💳 Payment Gateway
+
+💳 Payment
+
 </h2>
+
+<div style="color:#6b7280">
+
+Booking #@Model.Id
+
+</div>
 
 </div>
 
 
-<div class="payment-body">
-
 <div class="amount-box">
 
 <h3>
-Total Amount
+
+Total Payable
+
 </h3>
 
 <div class="amount">
-@CurrencyFormatter.FormatRupees(payableAmount)
+
+@CurrencyFormatter.FormatRupees(
+payableAmount
+)
+
 </div>
 
 @if(walletAmountUsed>0)
 {
 <div class="wallet-applied">
-Wallet used: @CurrencyFormatter.FormatRupees(walletAmountUsed)
+
+Wallet used:
+
+@CurrencyFormatter.FormatRupees(
+walletAmountUsed
+)
+
 </div>
 }
 
 </div>
 
+
+
+<div class="payment-grid">
 
 <label class="payment-option">
 
@@ -218,9 +616,9 @@ type="radio"
 name="pay"
 value="UPI"
 checked
-onchange="toggleQR()"/>
+onchange="toggleQR()" />
 
-UPI Payment
+📱 UPI
 
 </label>
 
@@ -231,9 +629,9 @@ UPI Payment
 type="radio"
 name="pay"
 value="CARD"
-onchange="toggleQR()"/>
+onchange="toggleQR()" />
 
-Card Payment
+💳 Card
 
 </label>
 
@@ -244,9 +642,9 @@ Card Payment
 type="radio"
 name="pay"
 value="NETBANKING"
-onchange="toggleQR()"/>
+onchange="toggleQR()" />
 
-Net Banking
+🏦 Net Banking
 
 </label>
 
@@ -257,11 +655,13 @@ Net Banking
 type="radio"
 name="pay"
 value="QR"
-onchange="toggleQR()"/>
+onchange="toggleQR()" />
 
-QR Scan Payment
+🔳 QR Scan
 
 </label>
+
+</div>
 
 
 
@@ -269,35 +669,32 @@ QR Scan Payment
 
 <img
 id="qrImage"
-width="250"/>
+width="220" />
 
 <div class="scan-text">
 
-📱 Scan QR from your mobile
+Scan QR using any UPI app
 
 </div>
 
 </div>
+
 
 
 <button
-type="button"
 id="payButton"
 class="pay-btn"
+type="button"
 onclick="pay()">
 
-Pay Now
+Proceed Payment
 
 </button>
 
-</div>
 
 </div>
 
 </div>
-
-
-
 <script>
 
 let statusChecker=null;
