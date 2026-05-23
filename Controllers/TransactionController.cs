@@ -67,5 +67,45 @@ namespace AmarShowsBook.Controllers
 
             return View(transactions);
         }
+
+        public async Task<IActionResult> Details(long id)
+        {
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var userIdText = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrWhiteSpace(userEmail))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var userId = long.TryParse(userIdText, out var parsedUserId)
+                ? parsedUserId
+                : 0;
+
+            var transaction = await _context
+                .VwBookingTransactionSummaries
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.TransactionId == id &&
+                    ((userId > 0 && x.UserId == userId) ||
+                    x.UserEmail.ToLower() == userEmail.ToLower()));
+
+            if (transaction == null)
+            {
+                return NotFound();
+            }
+
+            await _activityLogger.LogAsync(
+                action: "VIEW_TRANSACTION_DETAILS",
+                module: "TRANSACTION",
+                entityType: "TRANSACTION",
+                entityId: id <= int.MaxValue ? (int)id : null,
+                description: "User viewed transaction details",
+                status: "SUCCESS",
+                isError: 0
+            );
+
+            return View(transaction);
+        }
     }
 }

@@ -105,7 +105,8 @@ public async Task<IActionResult> Index(string type = "Movie")
 
 var schedules = await _context.HomeShows
     .Where(x => x.ShowType == type)
-    .OrderBy(x => x.StartTime)
+    .Where(x => x.StartTime >= DateTime.UtcNow)
+    .OrderByDescending(x => x.StartTime)
     .ToListAsync();
 
 var vm = new HomeViewModel

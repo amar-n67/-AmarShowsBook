@@ -12,6 +12,7 @@
             <th>Status</th>
             <th>Method</th>
             <th>Date</th>
+            <th>Action</th>
         </tr>
     </thead>
 
@@ -37,6 +38,17 @@
 
             <td>
                 @item.BookingCreatedAt
+            </td>
+
+            <td>
+                @if (item.TransactionId.HasValue)
+                {
+                    <a class="btn btn-primary btn-sm" href="/Transaction/Details/@item.TransactionId.Value">View</a>
+                }
+                else
+                {
+                    <span class="text-muted">NA</span>
+                }
             </td>
 
         </tr>

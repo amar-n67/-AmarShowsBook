@@ -922,6 +922,110 @@ select option {
 footer {
     color: var(--app-muted) !important;
 }
+
+.app-page-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 18px;
+    padding: 12px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+}
+
+.app-page-tool-actions,
+.app-page-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-page-search {
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.app-page-search input {
+    max-width: 360px;
+}
+
+.app-tool-btn {
+    min-height: 38px;
+    border-radius: 8px;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.app-search-hidden {
+    display: none !important;
+}
+
+@@media (max-width: 760px) {
+    .app-page-tools,
+    .app-page-search {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .app-page-tool-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-page-search input {
+        max-width: none;
+        width: 100%;
+    }
+}
+
+@@media print {
+    header,
+    footer,
+    .app-page-tools,
+    .film-navbar,
+    .btn,
+    button,
+    .no-print,
+    .pagination-area,
+    .admin-actions,
+    .admin-search {
+        display: none !important;
+    }
+
+    html,
+    body {
+        background: #fff !important;
+        color: #111 !important;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .card,
+    .show-card,
+    .booking-card,
+    .transaction-table-wrap,
+    .table-wrapper,
+    .admin-detail-panel,
+    .transaction-detail-hero {
+        box-shadow: none !important;
+        border-color: #cbd5e1 !important;
+        break-inside: avoid;
+    }
+
+    a {
+        color: #111 !important;
+        text-decoration: none !important;
+    }
+}
 </style>
 
 </head>
@@ -1062,6 +1166,24 @@ z-index:9999;">
 
 <!-- ================= BODY ================= -->
 <div class="container mt-5">
+    @if (isLoggedIn)
+    {
+        <div class="app-page-tools no-print">
+            <div class="app-page-tool-actions">
+                <button type="button" class="btn btn-secondary app-tool-btn" onclick="appBack()">Back</button>
+                <button type="button" class="btn btn-primary app-tool-btn" onclick="window.print()">Print</button>
+            </div>
+
+            <form class="app-page-search" role="search" onsubmit="return false;">
+                <label for="appPageSearch" class="visually-hidden">Search this page</label>
+                <input id="appPageSearch"
+                       class="form-control"
+                       type="search"
+                       placeholder="Search this page" />
+                <button type="button" class="btn btn-secondary app-tool-btn" onclick="clearAppSearch()">Clear</button>
+            </form>
+        </div>
+    }
     @RenderBody()
 </div>
 
@@ -1112,6 +1234,49 @@ function togglePassword(fieldId, button) {
     var toggleButton = button || document.querySelector('[data-password-toggle="' + fieldId + '"]');
     setPasswordToggleState(toggleButton, shouldShow);
 }
+</script>
+
+<script>
+function appBack() {
+    if (window.history.length > 1) {
+        window.history.back();
+        return;
+    }
+
+    window.location.href = "/Home/Index";
+}
+
+function clearAppSearch() {
+    const input = document.getElementById("appPageSearch");
+    if (!input) return;
+
+    input.value = "";
+    filterCurrentPage("");
+    input.focus();
+}
+
+function filterCurrentPage(term) {
+    const query = String(term || "").trim().toLowerCase();
+    const rows = document.querySelectorAll("tbody tr");
+    const cards = document.querySelectorAll(".show-card, .booking-card, .transaction-stat, .stat-card, .wallet-card, .admin-detail-panel, [data-admin-searchable]");
+
+    rows.forEach(row => {
+        row.classList.toggle("app-search-hidden", query.length > 0 && !row.innerText.toLowerCase().includes(query));
+    });
+
+    cards.forEach(card => {
+        card.classList.toggle("app-search-hidden", query.length > 0 && !card.innerText.toLowerCase().includes(query));
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("appPageSearch");
+    if (!input) return;
+
+    input.addEventListener("input", function () {
+        filterCurrentPage(input.value);
+    });
+});
 </script>
 
 <!-- ✅ DATE + TIME -->

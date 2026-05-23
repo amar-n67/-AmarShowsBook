@@ -464,7 +464,7 @@ FailedRefunds =
 
                 var query = _context.VwWalletSummaries
                     .AsNoTracking()
-                    .OrderBy(x => x.UserName);
+                    .OrderByDescending(x => x.LastTransactionAt);
 
                 var totalCount = await query.CountAsync();
 

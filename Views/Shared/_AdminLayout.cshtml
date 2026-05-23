@@ -58,6 +58,25 @@
                 ☰ Menu
             </button>
 
+            <button class="admin-icon-btn no-print"
+                    type="button"
+                    onclick="adminBack()">
+                Back
+            </button>
+
+            <button class="admin-icon-btn no-print"
+                    type="button"
+                    onclick="window.print()">
+                Print
+            </button>
+
+            <div class="admin-theme-switcher no-print" aria-label="Theme selector">
+                <button type="button" data-admin-theme="system" onclick="setAdminTheme('system')">System</button>
+                <button type="button" data-admin-theme="dark" onclick="setAdminTheme('dark')">Dark</button>
+                <button type="button" data-admin-theme="white" onclick="setAdminTheme('white')">White</button>
+                <button type="button" data-admin-theme="cinema" onclick="setAdminTheme('cinema')">Cinema</button>
+            </div>
+
             <!-- Human Comment: Shared admin search filters visible tables and dashboard cards on the current page. -->
             <form class="admin-search" role="search" onsubmit="return false;">
                 <label for="adminPageSearch" class="visually-hidden">Search this page</label>
@@ -80,6 +99,37 @@
 </div>
 
 <script src="~/js/admin/admin-dashboard.js"></script>
+<script>
+(function () {
+    function markAdminTheme(choice) {
+        document.querySelectorAll("[data-admin-theme]").forEach(button => {
+            button.classList.toggle("active", button.dataset.adminTheme === choice);
+        });
+    }
+
+    window.setAdminTheme = function (choice) {
+        const theme = choice || "cinema";
+        localStorage.setItem("amarShowsTheme", theme);
+        localStorage.setItem("amarShowsThemeVersion", "3");
+        document.documentElement.dataset.theme = theme;
+        markAdminTheme(theme);
+    };
+
+    window.adminBack = function () {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        window.location.href = "/Admin/Dashboard";
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const saved = localStorage.getItem("amarShowsTheme") || "cinema";
+        window.setAdminTheme(saved);
+    });
+})();
+</script>
 @await RenderSectionAsync("Scripts", required: false)
 
 </body>
