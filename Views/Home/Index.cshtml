@@ -70,19 +70,111 @@
             @foreach (var item in Model.HomeShows)
 {
     var showRegion =
-        $"{item.Location}, {item.State}, {item.Country}";
+    $"{item.Location}, {item.State}, {item.Country}";
 
-                <article class="show-card">
-                    <div class="show-card-top">
-                        <span>@item.ShowType</span>
-                        <strong>@item.StartTime.ToString("hh:mm tt")</strong>
-                    </div>
-                    <h2>@(item.Title ?? "Untitled Show")</h2>
-                    <p>Camera opens at @item.StartTime.ToString("dd MMM yyyy, hh:mm tt")</p>
-                    <p class="show-region">@showRegion</p>
-                    <a class="btn btn-primary" href="/Booking/Seats/@item.ScheduleId">Book The Seat</a>
-                </article>
+<article class="show-card">
+
+    <div class="main-poster">
+
+        <img class="hero-image"
+             src="@(string.IsNullOrEmpty(item.PosterUrl)
+             ? "/images/default1.jpg"
+             : item.PosterUrl)" />
+
+        <div class="poster-overlay">
+
+            <span class="show-type">
+                @item.ShowType
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="card-body">
+
+        <h2 class="movie-title">
+
+            @(item.Title ?? "Untitled Show")
+
+        </h2>
+
+
+        <div class="image-strip">
+
+            <img class="swap-image active"
+                 src="@(string.IsNullOrEmpty(item.PosterUrl)
+                 ? "/images/default1.jpg"
+                 : item.PosterUrl)" />
+
+            @if(!string.IsNullOrEmpty(item.Images))
+            {
+                @foreach(var img in item.Images.Split(
+                ',',
+                StringSplitOptions.RemoveEmptyEntries))
+                {
+                    <img class="swap-image"
+                         src="@img.Trim()" />
+                }
             }
+
+        </div>
+
+
+        <div class="movie-details">
+
+            <p>
+
+                📅
+                @item.StartTime.ToString(
+                "dd MMM yyyy")
+
+            </p>
+
+            <p>
+
+                ⏰
+                @item.StartTime.ToString(
+                "hh:mm tt")
+
+            </p>
+
+            <p class="show-region">
+
+                📍 @showRegion
+
+            </p>
+
+        </div>
+
+
+        <div class="card-actions">
+
+            <a
+            class="btn btn-secondary trailer-btn"
+            data-url="@item.TrailerUrl">
+
+            ▶ Watch Trailer
+
+            </a>
+
+
+            <a
+            class="btn btn-primary"
+            href="/Booking/Seats/@item.ScheduleId">
+
+            🎟 Book Seat
+
+            </a>
+
+        </div>
+
+    </div>
+
+</article>
+
+}
         }
     </div>
 </section>
@@ -270,7 +362,121 @@
         min-width: 0;
     }
 }
-</style>
+.main-poster{
+
+height:260px;
+overflow:hidden;
+position:relative;
+border-radius:20px;
+margin-bottom:15px;
+
+}
+
+.hero-image{
+
+width:100%;
+height:100%;
+object-fit:cover;
+
+}
+
+.poster-overlay{
+
+position:absolute;
+bottom:0;
+left:0;
+right:0;
+padding:15px;
+
+background:
+linear-gradient(
+transparent,
+rgba(0,0,0,.8)
+);
+
+}
+
+.show-type{
+
+padding:6px 15px;
+border-radius:30px;
+background:#ff4757;
+color:white;
+font-weight:bold;
+
+}
+
+.movie-title{
+
+font-size:1.5rem;
+margin-bottom:15px;
+font-weight:700;
+
+}
+
+.image-strip{
+
+position:relative;
+height:120px;
+overflow:hidden;
+border-radius:12px;
+margin-bottom:15px;
+
+}
+
+.swap-image{
+
+position:absolute;
+width:100%;
+height:100%;
+object-fit:cover;
+
+opacity:0;
+transition:1s;
+
+}
+
+.swap-image.active{
+
+opacity:1;
+
+}
+
+.movie-details{
+
+display:grid;
+gap:8px;
+margin-bottom:20px;
+
+}
+
+.card-actions{
+
+display:flex;
+gap:10px;
+
+}
+
+.show-card{
+
+padding:18px;
+border-radius:25px;
+backdrop-filter:blur(20px);
+
+transition:.4s;
+
+}
+
+.show-card:hover{
+
+transform:
+translateY(-10px)
+scale(1.02);
+
+}
+</style> 
+
+
 
 <script>
 function showLocationError(message) {
@@ -384,6 +590,130 @@ async function loadDistricts() {
         showLocationError("Could not load regions. Please try again.");
     }
 }
+document.querySelectorAll(
 
-document.addEventListener("DOMContentLoaded", loadCountries);
+".image-strip"
+
+)
+
+.forEach(slider=>{
+
+const images=
+
+slider.querySelectorAll(
+
+".swap-image"
+
+);
+
+let current=0;
+
+setInterval(()=>{
+
+images[current]
+
+.classList.remove(
+
+"active"
+
+);
+
+current=
+
+(current+1)
+
+%
+
+images.length;
+
+images[current]
+
+.classList.add(
+
+"active"
+
+);
+
+},2500);
+
+});
+
+document.addEventListener(
+"DOMContentLoaded",
+()=>{
+
+loadCountries();
+
+document
+.querySelectorAll(".image-strip")
+.forEach(slider=>{
+
+let images=
+slider.querySelectorAll(
+".swap-image"
+);
+
+if(images.length<=1)
+return;
+
+let current=0;
+
+setInterval(()=>{
+
+images[current]
+.classList.remove(
+"active"
+);
+
+current=
+(current+1)
+%
+images.length;
+
+images[current]
+.classList.add(
+"active"
+);
+
+},3000);
+
+});
+
+
+document
+.querySelectorAll(
+".trailer-btn"
+)
+.forEach(button=>{
+
+button.addEventListener(
+"click",
+()=>{
+
+let url=
+button.dataset.url;
+
+if(
+url &&
+url!=="#"
+)
+{
+window.open(
+url,
+"_blank"
+);
+}
+else
+{
+alert(
+"Trailer coming soon"
+);
+}
+
+});
+
+});
+
+});
+
 </script>

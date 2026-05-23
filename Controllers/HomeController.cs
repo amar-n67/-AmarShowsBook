@@ -103,16 +103,49 @@ public async Task<IActionResult> Index(string type = "Movie")
     _ => "Movie"
 };
 
+// var schedules = await _context.HomeShows
+//     .Where(x => x.ShowType == type)
+//     .Where(x => x.StartTime >= DateTime.UtcNow)
+//     .OrderByDescending(x => x.StartTime)
+//     .ToListAsync();
+
+// var vm = new HomeViewModel
+// {
+//     HomeShows = schedules
+// };
+
 var schedules = await _context.HomeShows
     .Where(x => x.ShowType == type)
     .Where(x => x.StartTime >= DateTime.UtcNow)
     .OrderByDescending(x => x.StartTime)
+    .Select(x => new HomeShowViewModel
+    {
+        ScheduleId = x.ScheduleId,
+
+        Title = x.Title,
+        Description = x.Description,
+
+        PosterUrl = x.PosterUrl,
+        Images = x.Images,
+        TrailerUrl = x.TrailerUrl,
+
+        StartTime = x.StartTime,
+        EndTime = x.EndTime,
+
+        Location = x.Location,
+        State = x.State,
+        Country = x.Country,
+
+        ShowType = x.ShowType
+    })
     .ToListAsync();
 
 var vm = new HomeViewModel
 {
     HomeShows = schedules
 };
+
+
         await _activityLogger.LogAsync(
             userId: user?.Id,
             action: "VIEW_HOME",
