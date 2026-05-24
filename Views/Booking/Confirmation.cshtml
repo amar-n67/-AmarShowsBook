@@ -2,439 +2,542 @@
 
 @{
     var schedule = ViewBag.Schedule;
+    var seatCount = Model.SeatNumbers.Split(',').Length;
+    var seatPrice = Model.TotalAmount / seatCount;
 }
 
 <style>
 
 :root{
-
---bg:#f5f7fb;
---card:#fff;
-
---text:#111827;
+--primary:#ff2d55;
+--bg:#f4f6ff;
 --muted:#6b7280;
-
---success:#16a34a;
---danger:#dc2626;
-
---border:#e5e7eb;
-
 }
 
 body{
 
-background:var(--bg);
+margin:0;
+padding:20px;
 
 font-family:Segoe UI,sans-serif;
 
-overflow-x:hidden;
-
-}
-
-
-
-.ticket-container{
-
-max-width:750px;
-
-margin:40px auto;
-
-padding:20px;
-
-animation:fadeUp .6s;
-
-position:relative;
-
-}
-
-
-
-.ticket-card{
-
-background:var(--card);
-
-border-radius:25px;
+background:
+linear-gradient(
+135deg,
+#ececf8,
+#f8f8ff
+);
 
 overflow:hidden;
 
-border:1px solid var(--border);
+}
+
+
+/* wrapper */
+
+.ticket-wrapper{
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+min-height:90vh;
+}
+
+
+/* ticket */
+
+.ticket{
+
+width:950px;
+
+display:grid;
+
+grid-template-columns:
+2fr 1fr;
+
+background:white;
+
+border-radius:30px;
+
+overflow:hidden;
+
+position:relative;
 
 box-shadow:
-0 15px 40px rgba(0,0,0,.06);
+0 20px 50px rgba(0,0,0,.1);
 
+animation:
+floatTicket 4s infinite ease-in-out;
+}
+
+
+/* side holes */
+
+.ticket::before,
+.ticket::after{
+
+content:"";
+
+position:absolute;
+
+width:50px;
+height:50px;
+
+border-radius:50%;
+
+background:var(--bg);
+
+top:50%;
+
+transform:
+translateY(-50%);
+}
+
+.ticket::before{
+
+left:-25px;
+}
+
+.ticket::after{
+
+right:-25px;
 }
 
 
 
-.ticket-header{
+/* LEFT */
 
-padding:35px;
+.left{
+
+padding:25px 30px;
+
+position:relative;
+}
+
+
+/* title */
+
+.header{
+
+padding:18px;
 
 text-align:center;
 
-position:relative;
+background:
+linear-gradient(
+135deg,
+#ff2d55,
+#d10045
+);
 
 color:white;
 
-overflow:hidden;
+font-size:26px;
+
+font-weight:900;
+
+letter-spacing:5px;
+
+border-radius:20px;
+
+margin-bottom:25px;
+}
+
+
+/* movie */
+
+.movie-section{
+
+display:flex;
+
+gap:20px;
+}
+
+
+.poster{
+
+width:180px;
+height:180px;
+
+border-radius:20px;
+
+object-fit:cover;
+
+aspect-ratio:1/1;
+
+box-shadow:
+0 10px 20px rgba(0,0,0,.15);
+
+transition:.4s;
+
+}
+
+.poster:hover{
+
+transform:
+scale(1.05);
 
 }
 
 
-.success{
-
-background:
-linear-gradient(
-135deg,
-#16a34a,
-#22c55e
-);
-
-}
-
-
-.failed{
-
-background:
-linear-gradient(
-135deg,
-#dc2626,
-#ef4444
-);
-
-animation:shake .6s;
-
-}
-
-
-.ticket-header h2{
+.movie-info h1{
 
 margin:0;
 
-font-size:30px;
+font-size:36px;
 
-font-weight:800;
+font-weight:900;
+}
 
+.movie-info p{
+
+margin-top:10px;
+
+font-size:16px;
+
+color:var(--muted);
 }
 
 
+/* separator */
 
-.icon{
+.ticket-line{
 
-font-size:60px;
+margin:25px 0;
 
-margin-bottom:15px;
-
-animation:bounce 1.2s infinite;
-
+border-top:
+3px dashed #ddd;
 }
 
 
+/* rows */
 
-.ticket-body{
-
-padding:30px;
-
-}
-
-
-
-.row{
+.data-row{
 
 display:flex;
 
 justify-content:space-between;
 
-padding:16px 0;
-
-border-bottom:1px solid var(--border);
-
+padding:14px 0;
 }
-
 
 .label{
 
-font-size:14px;
+font-size:18px;
 
-font-weight:600;
+color:#777;
 
-color:var(--muted);
-
+font-weight:700;
 }
-
 
 .value{
 
-font-size:16px;
+font-size:20px;
 
-font-weight:700;
-
+font-weight:900;
 }
 
 
-.amount{
 
-font-size:28px;
+/* total row */
+
+.bottom{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-top:25px;
+}
+
+.total{
+
+font-size:45px;
+
+font-weight:900;
+
+color:var(--primary);
+}
+
+
+
+/* download */
+
+.download-btn{
+
+border:none;
+
+padding:14px 25px;
+
+border-radius:14px;
+
+font-size:16px;
 
 font-weight:800;
 
-color:#4f46e5;
-
-}
-
-
-
-.reason{
-
-margin-top:25px;
-
-padding:14px;
-
-border-radius:14px;
-
-background:#fef2f2;
-
-color:#dc2626;
-
-font-weight:700;
-
-}
-
-
-
-.action{
-
-margin-top:30px;
-
-text-align:center;
-
-}
-
-
-.action-btn{
-
-display:inline-block;
-
-padding:14px 30px;
-
-border-radius:14px;
-
-font-weight:700;
-
-text-decoration:none;
+cursor:pointer;
 
 color:white;
 
-transition:.3s;
+background:
+linear-gradient(
+135deg,
+#ff2d55,
+#ff005d
+);
 
+transition:.4s;
 }
 
-
-.booking-btn{
-
-background:#4f46e5;
-
-}
-
-
-.retry-btn{
-
-background:#dc2626;
-
-}
-
-
-.action-btn:hover{
+.download-btn:hover{
 
 transform:
-translateY(-3px);
+translateY(-4px);
 
 box-shadow:
-0 10px 20px rgba(0,0,0,.15);
-
+0 10px 25px rgba(255,0,90,.25);
 }
 
 
 
-/* CONFETTI */
+/* RIGHT */
 
-.confetti{
+.right{
+
+padding:25px;
+
+background:#fafafa;
+
+position:relative;
+
+}
+
+
+/* center dashed line */
+
+.right::before{
+
+content:"";
 
 position:absolute;
 
-width:10px;
+left:0;
+top:0;
 
-height:10px;
+height:100%;
 
-top:-20px;
-
-animation:fall 4s linear infinite;
-
+border-left:
+3px dashed #ddd;
 }
 
 
-.confetti:nth-child(1){
+/* middle cuts */
 
-left:10%;
-background:#ff595e;
-animation-delay:0s;
+.right::after{
 
-}
+content:"";
 
-.confetti:nth-child(2){
+position:absolute;
 
-left:30%;
-background:#ffca3a;
-animation-delay:.5s;
+left:-25px;
+top:50%;
 
-}
+width:50px;
+height:50px;
 
-.confetti:nth-child(3){
+background:var(--bg);
 
-left:50%;
-background:#8ac926;
-animation-delay:1s;
-
-}
-
-.confetti:nth-child(4){
-
-left:70%;
-background:#1982c4;
-animation-delay:1.5s;
-
-}
-
-.confetti:nth-child(5){
-
-left:90%;
-background:#6a4c93;
-animation-delay:2s;
-
-}
-
-
-
-/* animations */
-
-@@keyframes fall{
-
-0%{
+border-radius:50%;
 
 transform:
-translateY(-50px)
-rotate(0deg);
-
-opacity:1;
-
-}
-
-100%{
-
-transform:
-translateY(700px)
-rotate(720deg);
-
-opacity:0;
-
-}
-
-}
-
-
-@@keyframes bounce{
-
-0%,100%{
-
-transform:translateY(0);
-
-}
-
-50%{
-
-transform:translateY(-8px);
-
-}
-
-}
-
-
-@@keyframes shake{
-
-0%,100%{
-
-transform:translateX(0);
-
-}
-
-25%{
-
-transform:translateX(-8px);
-
-}
-
-75%{
-
-transform:translateX(8px);
-
-}
-
-}
-
-
-@@keyframes fadeUp{
-
-from{
-
-opacity:0;
-
-transform:
-translateY(25px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:
-translateY(0);
-
-}
-
+translateY(-50%);
 }
 
 
 
-@@media(max-width:768px){
+/* cards */
 
-.ticket-container{
+.info-card{
+
+display:flex;
+
+gap:12px;
 
 padding:12px;
 
+margin-bottom:15px;
+
+background:white;
+
+border-radius:15px;
+
+box-shadow:
+0 5px 10px rgba(0,0,0,.05);
 }
 
 
-.ticket-body{
+.icon{
 
-padding:20px;
+width:45px;
+height:45px;
+
+display:flex;
+
+justify-content:center;
+align-items:center;
+
+border-radius:50%;
+
+background:
+linear-gradient(
+135deg,
+#ff2d55,
+#ff005d
+);
+
+font-size:20px;
+
+color:white;
+}
+
+.side-label{
+
+font-size:12px;
+
+color:#888;
+}
+
+.side-value{
+
+font-size:15px;
+
+font-weight:800;
+}
+
+
+/* QR */
+
+.qr{
+
+margin-top:20px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+flex:1;
+}
+
+
+.qr img{
+
+width:220px;
+height:220px;
+
+padding:18px;
+
+background:white;
+
+border-radius:22px;
+
+object-fit:contain;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,.12);
+
+transition:.4s;
+
+animation:
+qrPulse 3s infinite;
+}
+
+
+.qr img:hover{
+
+transform:
+scale(1.05);
+}
+
+
+@@keyframes qrPulse{
+
+50%{
+
+transform:
+translateY(-5px);
+}
 
 }
 
 
-.row{
+/* animation */
+
+@@keyframes floatTicket{
+
+50%{
+
+transform:
+translateY(-8px);
+
+}
+
+}
+
+
+/* print */
+
+@@media print{
+
+body{
+background:white;
+}
+
+.download-btn{
+
+display:none;
+}
+
+}
+
+
+/* responsive */
+
+@@media(max-width:900px){
+
+body{
+
+overflow:auto;
+}
+
+.ticket{
+
+grid-template-columns:1fr;
+}
+
+.right::before{
+
+display:none;
+}
+
+.movie-section{
 
 flex-direction:column;
 
-gap:6px;
+align-items:center;
 
+text-align:center;
 }
 
+.bottom{
 
-.ticket-header h2{
+flex-direction:column;
 
-font-size:24px;
-
+gap:20px;
 }
 
 }
@@ -442,127 +545,215 @@ font-size:24px;
 </style>
 
 
+<div class="ticket-wrapper">
 
-<div class="ticket-container">
+<div class="ticket">
 
-@if(Model.Status=="CONFIRMED")
-{
+<div class="left">
 
-<div class="confetti"></div>
-<div class="confetti"></div>
-<div class="confetti"></div>
-<div class="confetti"></div>
-<div class="confetti"></div>
+<div class="header">
 
-}
-
-<div class="ticket-card">
-
-<div class="ticket-header @(Model.Status=="CONFIRMED" ? "success":"failed")">
-
-@if(Model.Status=="CONFIRMED")
-{
-<div class="icon">
-🎉
-</div>
-
-<h2>
-
-Booking Successful
-
-</h2>
-}
-else
-{
-<div class="icon">
-❌
-</div>
-
-<h2>
-
-Booking Failed
-
-</h2>
-}
+🎟 TICKET BOOKED
 
 </div>
 
 
+<div class="movie-section">
 
-<div class="ticket-body">
+<img
+class="poster"
+src="https://picsum.photos/300/400?random=@Model.Id"
+/>
 
-<div class="row">
-<div class="label">Booking Id</div>
-<div class="value">#@Model.Id</div>
+<div class="movie-info">
+
+<h1>
+
+@(schedule?.Movie?.Title
+?? schedule?.StandupShow?.Title
+?? schedule?.LiveStream?.Title
+?? "Show")
+
+</h1>
+
+<p>
+📍 @schedule.Location.Area,
+@schedule.Location.State
+</p>
+
+<p>
+📅 @schedule.StartTime.ToString("dd MMM yyyy")
+</p>
+
+<p>
+🕒 @schedule.StartTime.ToString("hh:mm tt")
+</p>
+
 </div>
 
-<div class="row">
-<div class="label">Seats</div>
-<div class="value">@Model.SeatNumbers</div>
 </div>
 
-<div class="row">
-<div class="label">Amount</div>
-<div class="value amount">
+
+<div class="ticket-line"></div>
+
+
+<div class="data-row">
+
+<div class="label">
+
+💺 Seats
+
+</div>
+
+<div class="value">
+
+@Model.SeatNumbers
+
+</div>
+
+</div>
+
+
+<div class="data-row">
+
+<div class="label">
+
+💰 Seat Price
+
+</div>
+
+<div class="value">
+
+₹@seatPrice
+
+</div>
+
+</div>
+
+
+<div class="bottom">
+
+<div>
+
+<div class="label">
+
+TOTAL
+
+</div>
+
+<div class="total">
+
 ₹@Model.TotalAmount
-</div>
-</div>
-
-<div class="row">
-<div class="label">Venue</div>
-<div class="value">
-@schedule.Location.Area
-</div>
-</div>
-
-<div class="row">
-<div class="label">Location</div>
-<div class="value">
-@schedule.Location.State,
-@schedule.Location.Country
-</div>
-</div>
-
-<div class="row">
-<div class="label">Show Time</div>
-<div class="value">
-@schedule.StartTime
-</div>
-</div>
-
-@if(Model.Status!="CONFIRMED")
-{
-<div class="reason">
-
-Reason:
-Transaction Failed
 
 </div>
-}
+
+</div>
+
+<button
+class="download-btn"
+onclick="window.print()">
+
+⬇ Download Ticket
+
+</button>
+
+</div>
+
+</div>
 
 
-<div class="action">
 
-@if(Model.Status=="CONFIRMED")
-{
-<a
-class="action-btn booking-btn"
-href="/Booking/MyBookings">
+<div class="right">
 
-View My Bookings
+<div class="info-card">
 
-</a>
-}
-else
-{
-<a
-class="action-btn retry-btn"
-href="/Booking/Payment?bookingId=@Model.Id">
+<div class="icon">
+🆔
+</div>
 
-Retry Payment
+<div>
 
-</a>
-}
+<div class="side-label">
+Booking Id
+</div>
+
+<div class="side-value">
+#@Model.Id
+</div>
+
+</div>
+
+</div>
+
+
+<div class="info-card">
+
+<div class="icon">
+📧
+</div>
+
+<div>
+
+<div class="side-label">
+Email
+</div>
+
+<div class="side-value">
+@(ViewBag.Email ?? "Not Available")
+</div>
+
+</div>
+
+</div>
+
+
+<div class="info-card">
+
+<div class="icon">
+📱
+</div>
+
+<div>
+
+<div class="side-label">
+Phone
+</div>
+
+<div class="side-value">
+@(ViewBag.Phone ?? "Not Available")
+</div>
+
+</div>
+
+</div>
+
+
+<div class="info-card">
+
+<div class="icon">
+📅
+</div>
+
+<div>
+
+<div class="side-label">
+Booking Date
+</div>
+
+<div class="side-value">
+@DateTime.Now.ToString("dd MMM yyyy")
+</div>
+
+</div>
+
+</div>
+
+
+<div class="qr">
+
+<img
+src="/Booking/CreateQR?text=@Model.Id"
+/>
 
 </div>
 
