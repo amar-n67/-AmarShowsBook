@@ -7,7 +7,13 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls(
 
+    "http://localhost:5089",
+
+    "http://0.0.0.0:5089"
+
+);
 // ========================================
 // Services
 // ========================================

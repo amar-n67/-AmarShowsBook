@@ -55,6 +55,9 @@ public class Booking
     [Column("discount_amount")]
     public decimal? DiscountAmount { get; set; }
 
+    [Column("coupon_id")]
+    public long? CouponId { get; set; }
+
     [Column("payable_amount")]
     public decimal? PayableAmount { get; set; }
 

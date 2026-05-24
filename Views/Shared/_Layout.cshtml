@@ -926,18 +926,17 @@ footer {
 .app-page-tools {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 12px;
     margin: 0 0 18px;
-    padding: 12px;
-    border: 1px solid var(--app-input-border);
-    border-radius: 8px;
-    background: var(--app-card);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--app-card-text);
-    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+    box-shadow: none;
 }
 
-.app-page-tool-actions,
 .app-page-search {
     display: flex;
     align-items: center;
@@ -945,12 +944,38 @@ footer {
 }
 
 .app-page-search {
-    flex: 1;
-    justify-content: flex-end;
+    width: min(100%, 420px);
+    padding: 8px 10px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 999px;
+    background: var(--app-card);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
 }
 
 .app-page-search input {
-    max-width: 360px;
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.app-search-mark {
+    color: var(--app-muted);
+    font-weight: 900;
+}
+
+.app-search-clear {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--app-input-disabled) 76%, transparent);
+    color: var(--app-card-text);
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1;
 }
 
 .app-tool-btn {
@@ -968,12 +993,6 @@ footer {
     .app-page-tools,
     .app-page-search {
         align-items: stretch;
-        flex-direction: column;
-    }
-
-    .app-page-tool-actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .app-page-search input {
@@ -1169,18 +1188,18 @@ z-index:9999;">
     @if (isLoggedIn)
     {
         <div class="app-page-tools no-print">
-            <div class="app-page-tool-actions">
-                <button type="button" class="btn btn-secondary app-tool-btn" onclick="appBack()">Back</button>
-                <button type="button" class="btn btn-primary app-tool-btn" onclick="window.print()">Print</button>
-            </div>
-
             <form class="app-page-search" role="search" onsubmit="return false;">
                 <label for="appPageSearch" class="visually-hidden">Search this page</label>
+                <span class="app-search-mark" aria-hidden="true">⌕</span>
                 <input id="appPageSearch"
-                       class="form-control"
                        type="search"
                        placeholder="Search this page" />
-                <button type="button" class="btn btn-secondary app-tool-btn" onclick="clearAppSearch()">Clear</button>
+                <button type="button"
+                        class="app-search-clear"
+                        onclick="clearAppSearch()"
+                        title="Clear search">
+                    ×
+                </button>
             </form>
         </div>
     }

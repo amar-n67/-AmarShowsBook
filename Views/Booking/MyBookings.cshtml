@@ -1,27 +1,26 @@
 @model List<AmarShowsBook.Models.VwBookingCompleteDetails>
 @using AmarShowsBook.Helpers
+@using System.Net
 
 @{
     ViewData["Title"] = "My Bookings";
-    var totalSpend = Model.Sum(x => x.TotalAmount);
+    var totalSpend = Model.Sum(x => x.PayableAmount ?? x.TotalAmount);
     var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" || x.PaymentStatus == "SUCCESS");
+    var now = DateTime.UtcNow;
+    var publicBaseUrl = ViewBag.PublicBaseUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
 }
+
 @if(TempData["Success"]!=null)
 {
-<div class="alert alert-success">
-
-@TempData["Success"]
-
-</div>
+    <div class="alert alert-success">@TempData["Success"]</div>
 }
 
 <section class="my-bookings-page">
-
     <div class="booking-header">
         <div>
             <span class="booking-kicker">Booking History</span>
             <h1>My Bookings</h1>
-            <p>Your booked shows, payment status, and ticket references are arranged like a clean show reel.</p>
+            <p>Your booked shows, payment status, ticket QR, and receipts in one place.</p>
         </div>
         <div class="booking-summary">
             <span>Total Spend</span>
@@ -32,7 +31,7 @@
 
     @if (!Model.Any())
     {
-        <div class="empty-booking">
+        <div class="empty-booking" data-admin-searchable>
             <h2>No bookings found</h2>
             <p>You have not booked any shows yet.</p>
         </div>
@@ -40,36 +39,50 @@
     else
     {
         <div class="booking-grid">
-
             @foreach (var booking in Model)
             {
-                <article class="booking-card">
+                var isExpired = booking.StartTime < now;
+                var statusClass = booking.IsError == 1 ? "failed" : isExpired ? "expired" : "success";
+                var statusText = isExpired ? "EXPIRED" : booking.BookingStatus;
+                var ticketUrl = $"{publicBaseUrl}/Booking/TicketByBooking/{booking.BookingId}";
+                var printUrl = $"{ticketUrl}?print=1";
 
+                <article class="booking-card" data-admin-searchable>
                     <div class="booking-top">
-                        <span class="booking-status @(booking.IsError == 1 ? "failed" : "success")">
-                            @booking.BookingStatus
-                        </span>
+                        <span class="booking-status @statusClass">@statusText</span>
                         <strong>@booking.BookingRef</strong>
                     </div>
 
-                    <h2>@booking.ShowTitle</h2>
-
-                    <p class="booking-show">
-                        @booking.ShowType at @booking.LocationName
-                    </p>
+                    <div class="booking-main">
+                        <div>
+                            <h2>@booking.ShowTitle</h2>
+                            <p class="booking-show">@booking.ShowType at @booking.LocationName</p>
+                        </div>
+                        <div class="booking-qr">
+                            <img src="/Booking/CreateQR?text=@WebUtility.UrlEncode(ticketUrl)" alt="Ticket QR for @booking.BookingRef" />
+                        </div>
+                    </div>
 
                     <div class="booking-meta">
+                        <div>
+                            <span>Show Time</span>
+                            <strong>@booking.StartTime.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                        </div>
+                        <div>
+                            <span>Booked At</span>
+                            <strong>@booking.BookedAt.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                        </div>
                         <div>
                             <span>Amount Paid</span>
                             <strong>@CurrencyFormatter.FormatRupees(booking.PayableAmount ?? booking.TotalAmount)</strong>
                         </div>
                         <div>
                             <span>Payment</span>
-                            <strong>@booking.PaymentStatus</strong>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.PaymentStatus) ? "NA" : booking.PaymentStatus)</strong>
                         </div>
                         <div>
                             <span>Seats</span>
-                            <strong>@booking.SeatNumbers</strong>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.SeatNumbers) ? "NA" : booking.SeatNumbers)</strong>
                         </div>
                         <div>
                             <span>Tickets</span>
@@ -77,28 +90,33 @@
                         </div>
                         <div>
                             <span>Method</span>
-                            <strong>@booking.PaymentMethod</strong>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.PaymentMethod) ? "NA" : booking.PaymentMethod)</strong>
+                        </div>
+                        <div>
+                            <span>Gateway</span>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.GatewayName) ? "NA" : booking.GatewayName)</strong>
                         </div>
                         <div>
                             <span>Transaction</span>
-                            <strong>@booking.TransactionRef</strong>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.TransactionRef) ? "NA" : booking.TransactionRef)</strong>
+                        </div>
+                        <div>
+                            <span>Confirmed</span>
+                            <strong>@(booking.ConfirmedAt?.ToString("dd MMM yyyy, hh:mm tt") ?? "Pending")</strong>
                         </div>
                     </div>
 
-                    <p class="booking-date">
-                        @booking.StartTime.ToString("dd MMM yyyy, hh:mm tt")
-                    </p>
-
+                    <div class="booking-actions no-print">
+                        <a class="btn btn-primary" href="@ticketUrl">View Ticket</a>
+                        <a class="btn btn-secondary" href="@printUrl">Download</a>
+                    </div>
                 </article>
             }
-
         </div>
     }
-
 </section>
 
 <style>
-
 .my-bookings-page {
     padding-bottom: 40px;
 }
@@ -108,20 +126,13 @@
     justify-content: space-between;
     align-items: flex-end;
     gap: 18px;
-    min-height: 240px;
+    min-height: 220px;
     padding: 28px;
     border-radius: 8px;
     margin-bottom: 18px;
-
     background:
         repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px),
-        linear-gradient(
-            135deg,
-            rgba(255,242,199,0.94),
-            rgba(245,178,196,0.86),
-            rgba(146,229,221,0.86)
-        );
-
+        linear-gradient(135deg, rgba(255,242,199,0.94), rgba(245,178,196,0.86), rgba(146,229,221,0.86));
     color: #231f20;
     box-shadow: 0 22px 64px rgba(35,31,32,0.22);
 }
@@ -136,7 +147,7 @@
 .booking-header h1 {
     margin: 8px 0;
     color: #231f20;
-    font-size: clamp(2.8rem, 7vw, 5.8rem);
+    font-size: clamp(2.5rem, 6vw, 5.2rem);
     font-weight: 900;
 }
 
@@ -159,7 +170,6 @@
 .booking-summary span,
 .booking-summary small,
 .booking-meta span,
-.booking-date,
 .booking-show {
     color: var(--app-muted);
 }
@@ -187,7 +197,7 @@
 
 .booking-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
+    grid-template-columns: repeat(2, minmax(0,1fr));
     gap: 18px;
 }
 
@@ -199,10 +209,8 @@
     padding: 18px;
     border-radius: 8px;
     border: 1px solid var(--app-input-border);
-
     background: var(--app-card);
     color: var(--app-card-text);
-
     box-shadow: 0 14px 28px rgba(0,0,0,0.12);
 }
 
@@ -214,8 +222,11 @@
     background: linear-gradient(90deg, var(--app-accent), var(--app-accent-strong), var(--app-primary));
 }
 
-.booking-top {
+.booking-top,
+.booking-main,
+.booking-actions {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
 }
@@ -240,15 +251,33 @@
     background: var(--app-danger);
 }
 
+.booking-status.expired {
+    background: #6b7280;
+}
+
 .booking-card h2 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: 900;
 }
 
 .booking-show {
-    margin: 0;
+    margin: 4px 0 0;
     font-weight: 800;
+}
+
+.booking-qr {
+    flex: 0 0 auto;
+    padding: 8px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+}
+
+.booking-qr img {
+    display: block;
+    width: 96px;
+    height: 96px;
 }
 
 .booking-meta {
@@ -258,6 +287,7 @@
 }
 
 .booking-meta div {
+    min-width: 0;
     padding: 12px;
     border-radius: 8px;
     background: color-mix(in srgb, var(--app-input-disabled) 72%, transparent);
@@ -273,32 +303,32 @@
 }
 
 .booking-meta strong {
+    display: block;
     font-weight: 900;
+    overflow-wrap: anywhere;
 }
 
-.booking-date {
-    margin: 0;
-    font-weight: 800;
+.booking-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 .empty-booking {
     padding: 34px;
     border-radius: 8px;
     text-align: center;
-
     background: var(--app-card);
 }
 
 @@media (max-width: 900px) {
-
     .booking-grid {
-        grid-template-columns: repeat(2, minmax(0,1fr));
+        grid-template-columns: 1fr;
     }
 }
 
 @@media (max-width: 640px) {
-
-    .booking-header {
+    .booking-header,
+    .booking-main {
         align-items: stretch;
         flex-direction: column;
     }
@@ -308,9 +338,13 @@
         text-align: left;
     }
 
-    .booking-grid {
+    .booking-meta {
         grid-template-columns: 1fr;
     }
-}
 
+    .booking-qr img {
+        width: 132px;
+        height: 132px;
+    }
+}
 </style>

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using AmarShowsBook.Services;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -212,6 +213,8 @@ HttpContext.Session.SetString(
             HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
             HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
 
+            await CreditFirstLoginWalletBonus(user.Id,user.Email);
+
             await _activityLogger.LogAsync(
                 userId: user.Id,
                 action: "LOGIN",
@@ -248,7 +251,95 @@ HttpContext.Session.SetString(
         ViewBag.Error = "The projector had a technical pause. Please try login again.";
         return View();
     }
-}
+	}
+
+        private async Task CreditFirstLoginWalletBonus(
+        int userId,
+        string userEmail)
+        {
+            var reference =
+            $"FIRSTLOGIN-10000-{userId}";
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO user_wallets
+(
+    user_id,
+    wallet_balance,
+    blocked_balance,
+    loyalty_points,
+    wallet_status,
+    created_at,
+    updated_at
+)
+VALUES
+(
+    {userId},
+    0,
+    0,
+    0,
+    'ACTIVE',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO wallet_transactions
+(
+    wallet_id,
+    user_id,
+    transaction_ref,
+    transaction_type,
+    entry_type,
+    amount,
+    opening_balance,
+    closing_balance,
+    remarks,
+    transaction_status,
+    created_at,
+    created_by,
+    description,
+    status,
+    reference_type,
+    reference_id,
+    balance_before,
+    balance_after,
+    payment_method,
+    gateway_name,
+    gateway_reference,
+    is_deleted
+)
+SELECT
+    uw.id,
+    {userId},
+    {reference},
+    'BONUS',
+    'CREDIT',
+    10000,
+    uw.wallet_balance,
+    uw.wallet_balance + 10000,
+    'First login welcome bonus',
+    'SUCCESS',
+    CURRENT_TIMESTAMP,
+    {userEmail},
+    'Automatic first login wallet credit',
+    'SUCCESS',
+    'USER',
+    {userId},
+    uw.wallet_balance,
+    uw.wallet_balance + 10000,
+    'SYSTEM',
+    'SYSTEM',
+    {reference},
+    false
+FROM user_wallets uw
+WHERE uw.user_id = {userId}
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM wallet_transactions wt
+      WHERE wt.transaction_ref = {reference}
+  );");
+        }
 
         [HttpPost]
         public IActionResult CloseApplication()

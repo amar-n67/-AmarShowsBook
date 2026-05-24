@@ -1,9 +1,14 @@
 @model BookingDraft
+@using System.Net
 
 @{
     var schedule = ViewBag.Schedule;
+    var user = ViewBag.User as AmarShowsBook.Models.User;
     var seatCount = Model.SeatNumbers.Split(',').Length;
     var seatPrice = Model.TotalAmount / seatCount;
+    var ticketUrl = ViewBag.TicketUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}/Booking/Ticket/{Model.Id}";
+    var title = schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Show";
+    var venue = schedule?.Location == null ? "Venue to be announced" : $"{schedule.Location.Area}, {schedule.Location.State}";
 }
 
 <style>
@@ -28,7 +33,7 @@ linear-gradient(
 #f8f8ff
 );
 
-overflow:hidden;
+overflow:auto;
 
 }
 
@@ -42,6 +47,7 @@ justify-content:center;
 align-items:center;
 
 min-height:90vh;
+padding:16px 0 36px;
 }
 
 
@@ -292,6 +298,32 @@ linear-gradient(
 transition:.4s;
 }
 
+.ticket-action-row{
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+}
+
+.my-bookings-btn{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+border:1px solid #d7dbe4;
+padding:14px 25px;
+border-radius:14px;
+font-size:16px;
+font-weight:800;
+text-decoration:none;
+color:#20212a;
+background:#fff;
+transition:.4s;
+}
+
+.my-bookings-btn:hover{
+transform:translateY(-4px);
+box-shadow:0 10px 25px rgba(0,0,0,.12);
+}
+
 .download-btn:hover{
 
 transform:
@@ -502,6 +534,10 @@ background:white;
 display:none;
 }
 
+.my-bookings-btn{
+display:none;
+}
+
 }
 
 
@@ -569,24 +605,20 @@ src="https://picsum.photos/300/400?random=@Model.Id"
 
 <h1>
 
-@(schedule?.Movie?.Title
-?? schedule?.StandupShow?.Title
-?? schedule?.LiveStream?.Title
-?? "Show")
+@title
 
 </h1>
 
 <p>
-📍 @schedule.Location.Area,
-@schedule.Location.State
+📍 @venue
 </p>
 
 <p>
-📅 @schedule.StartTime.ToString("dd MMM yyyy")
+📅 @(schedule?.StartTime.ToString("dd MMM yyyy") ?? "TBA")
 </p>
 
 <p>
-🕒 @schedule.StartTime.ToString("hh:mm tt")
+🕒 @(schedule?.StartTime.ToString("hh:mm tt") ?? "TBA")
 </p>
 
 </div>
@@ -649,6 +681,8 @@ TOTAL
 
 </div>
 
+<div class="ticket-action-row no-print">
+
 <button
 class="download-btn"
 onclick="window.print()">
@@ -656,6 +690,16 @@ onclick="window.print()">
 ⬇ Download Ticket
 
 </button>
+
+<a
+class="my-bookings-btn"
+href="/Booking/MyBookings">
+
+My Bookings
+
+</a>
+
+</div>
 
 </div>
 
@@ -699,7 +743,7 @@ Email
 </div>
 
 <div class="side-value">
-@(ViewBag.Email ?? "Not Available")
+@(user?.Email ?? ViewBag.Email ?? "Not Available")
 </div>
 
 </div>
@@ -720,7 +764,7 @@ Phone
 </div>
 
 <div class="side-value">
-@(ViewBag.Phone ?? "Not Available")
+@(user?.Mobile ?? ViewBag.Phone ?? "Not Available")
 </div>
 
 </div>
@@ -752,7 +796,7 @@ Booking Date
 <div class="qr">
 
 <img
-src="/Booking/CreateQR?text=@Model.Id"
+src="/Booking/CreateQR?text=@WebUtility.UrlEncode(ticketUrl)"
 />
 
 </div>
@@ -760,5 +804,14 @@ src="/Booking/CreateQR?text=@Model.Id"
 </div>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("print") === "1") {
+        window.print();
+    }
+});
+</script>
 
 </div>

@@ -22,6 +22,12 @@
     var couponDiscount =
     ViewBag.CouponDiscount as decimal? ?? 0;
 
+    var couponCode =
+    ViewBag.CouponCode as string ?? "";
+
+    var availableCoupons =
+    ViewBag.AvailableCoupons as List<string> ?? new List<string>();
+
     var finalPayable =
     Math.Max(
     0,
@@ -339,6 +345,23 @@ cursor:pointer;
 
 }
 
+.coupon-hints{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-top:14px;
+}
+
+.coupon-hints button{
+border:1px solid var(--border);
+border-radius:999px;
+padding:8px 12px;
+background:white;
+color:var(--text);
+font-weight:800;
+cursor:pointer;
+}
+
 
 
 .price-breakdown{
@@ -550,6 +573,16 @@ text-align:center;
 
 <div class="booking-container">
 
+@if(TempData["Success"]!=null)
+{
+<div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if(TempData["Error"]!=null)
+{
+<div class="alert alert-danger">@TempData["Error"]</div>
+}
+
 <div class="booking-card">
 
 <div class="booking-header">
@@ -698,6 +731,7 @@ value="@Model.Id"/>
 <input
 type="text"
 name="couponCode"
+value="@couponCode"
 placeholder="Enter coupon code"/>
 
 <button>
@@ -707,6 +741,16 @@ Apply
 </button>
 
 </form>
+
+@if(availableCoupons.Any())
+{
+<div class="coupon-hints">
+@foreach(var coupon in availableCoupons)
+{
+    <button type="button" onclick="fillCoupon('@coupon.Split(" - ")[0]')">@coupon</button>
+}
+</div>
+}
 
 </div>
 
@@ -795,6 +839,16 @@ function goBack(e)
         ? "&refresh=" + Date.now()
         : "?refresh=" + Date.now()
     );
+}
+
+function fillCoupon(code)
+{
+    const input = document.querySelector('input[name="couponCode"]');
+    if(input)
+    {
+        input.value = code;
+        input.focus();
+    }
 }
 
 </script>

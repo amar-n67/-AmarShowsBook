@@ -29,6 +29,12 @@ as List<AmarShowsBook.Models.ViewModels.SeatVM>;
 var availableDates=
 ViewBag.AvailableDates
 as List<AmarShowsBook.Models.ShowSchedule>;
+
+var trailerUrl=
+ViewBag.TrailerUrl as string;
+
+var trailerStartSeconds=
+ViewBag.TrailerStartSeconds as int? ?? 0;
 }
 
 <section class="booking-page">
@@ -112,13 +118,22 @@ availableDates
 </div>
 }
 
-<div class="screen-line">
+<div class="screen-line @(string.IsNullOrWhiteSpace(trailerUrl) ? "" : "has-trailer")"
+     data-trailer-url="@trailerUrl"
+     data-trailer-start="@trailerStartSeconds">
 
 <span>
 
 SCREEN
 
 </span>
+
+<iframe
+id="seatTrailerFrame"
+title="Show trailer preview"
+allow="autoplay; encrypted-media"
+allowfullscreen>
+</iframe>
 
 </div>
 
@@ -474,7 +489,7 @@ margin:60px auto;
 
 width:80%;
 
-height:120px;
+min-height:120px;
 
 border-top-left-radius:100%;
 
@@ -501,6 +516,10 @@ transparent
 box-shadow:
 
 0 0 40px rgba(255,0,0,.3);
+
+position:relative;
+
+overflow:hidden;
 }
 
 .screen-line span{
@@ -510,6 +529,42 @@ font-size:50px;
 font-weight:800;
 
 letter-spacing:8px;
+
+position:relative;
+
+z-index:2;
+}
+
+.screen-line iframe{
+display:none;
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+border:0;
+opacity:.42;
+filter:saturate(1.1) contrast(1.08);
+pointer-events:none;
+}
+
+.screen-line.has-trailer{
+height:260px;
+border-radius:28px 28px 90% 90% / 28px 28px 18% 18%;
+border:1px solid rgba(255,255,255,.18);
+background:#05070c;
+box-shadow:0 20px 70px rgba(255,45,85,.22);
+}
+
+.screen-line.has-trailer iframe{
+display:block;
+}
+
+.screen-line.has-trailer::after{
+content:"";
+position:absolute;
+inset:0;
+background:linear-gradient(180deg, rgba(7,9,15,.12), rgba(7,9,15,.72));
+z-index:1;
 }
 
 
@@ -1284,6 +1339,56 @@ min-width:90px;
 </style>
 
 <script>
+
+function getYoutubeId(url)
+{
+    if(!url)
+    {
+        return "";
+    }
+
+    try
+    {
+        const parsedUrl = new URL(url);
+
+        if(parsedUrl.hostname.includes("youtu.be"))
+        {
+            return parsedUrl.pathname.substring(1);
+        }
+
+        if(parsedUrl.pathname.includes("/embed/"))
+        {
+            return parsedUrl.pathname.split("/embed/")[1].split("/")[0];
+        }
+
+        return parsedUrl.searchParams.get("v") || "";
+    }
+    catch
+    {
+        return "";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const screen = document.querySelector(".screen-line.has-trailer");
+    const frame = document.getElementById("seatTrailerFrame");
+
+    if(!screen || !frame)
+    {
+        return;
+    }
+
+    const videoId = getYoutubeId(screen.dataset.trailerUrl);
+
+    if(!videoId)
+    {
+        screen.classList.remove("has-trailer");
+        return;
+    }
+
+    const start = parseInt(screen.dataset.trailerStart || "0", 10);
+    frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&start=${Math.max(0,start)}`;
+});
 
 const maxSeatLimit=
 @(User.IsInRole("Admin") ? 999 : 6);

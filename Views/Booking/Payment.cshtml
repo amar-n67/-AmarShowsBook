@@ -3,6 +3,7 @@
 
 @{
     var walletAmountUsed = ViewBag.WalletAmountUsed as decimal? ?? 0;
+    var couponDiscount = ViewBag.CouponDiscount as decimal? ?? 0;
     var payableAmount = ViewBag.PayableAmount as decimal? ?? Model.TotalAmount;
 }
 
@@ -654,6 +655,19 @@ Wallet used:
 
 @CurrencyFormatter.FormatRupees(
 walletAmountUsed
+)
+
+</div>
+}
+
+@if(couponDiscount>0)
+{
+<div class="wallet-applied">
+
+Coupon discount:
+
+@CurrencyFormatter.FormatRupees(
+couponDiscount
 )
 
 </div>

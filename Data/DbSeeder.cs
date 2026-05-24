@@ -1,4 +1,5 @@
 using AmarShowsBook.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 
@@ -167,8 +168,157 @@ if (!context.Districts.Any())
         new District { Name = "Mumbai", StateId = mh.Id },
         new District { Name = "Pune", StateId = mh.Id }
     );
-    context.SaveChanges();
+context.SaveChanges();
 }
+
+context.Database.ExecuteSqlRaw(@"
+INSERT INTO public.coupons
+(
+    coupon_code,
+    coupon_name,
+    description,
+    discount_type,
+    discount_value,
+    minimum_booking_amount,
+    maximum_discount_amount,
+    usage_limit,
+    usage_per_user,
+    valid_from,
+    valid_to,
+    coupon_status,
+    created_by,
+    updated_by
+)
+VALUES
+(
+    'WELCOME10',
+    'Welcome 10 Percent',
+    '10 percent off on any booking',
+    'PERCENTAGE',
+    10,
+    100,
+    300,
+    10000,
+    5,
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    CURRENT_TIMESTAMP + INTERVAL '365 days',
+    'ACTIVE',
+    'SYSTEM',
+    'SYSTEM'
+),
+(
+    'FLAT100',
+    'Flat 100 Off',
+    'Flat 100 rupees off on bookings above 300',
+    'FLAT',
+    100,
+    300,
+    100,
+    10000,
+    3,
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    CURRENT_TIMESTAMP + INTERVAL '365 days',
+    'ACTIVE',
+    'SYSTEM',
+    'SYSTEM'
+),
+(
+    'MOVIE25',
+    'Movie 25 Percent',
+    '25 percent off on movie bookings',
+    'PERCENTAGE',
+    25,
+    500,
+    250,
+    10000,
+    2,
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    CURRENT_TIMESTAMP + INTERVAL '365 days',
+    'ACTIVE',
+    'SYSTEM',
+    'SYSTEM'
+)
+ON CONFLICT (coupon_code) DO UPDATE
+SET coupon_name=EXCLUDED.coupon_name,
+    description=EXCLUDED.description,
+    discount_type=EXCLUDED.discount_type,
+    discount_value=EXCLUDED.discount_value,
+    minimum_booking_amount=EXCLUDED.minimum_booking_amount,
+    maximum_discount_amount=EXCLUDED.maximum_discount_amount,
+    usage_limit=EXCLUDED.usage_limit,
+    usage_per_user=EXCLUDED.usage_per_user,
+    valid_to=EXCLUDED.valid_to,
+    coupon_status='ACTIVE',
+    updated_at=CURRENT_TIMESTAMP,
+    updated_by='SYSTEM';
+
+INSERT INTO public.user_wallets
+(
+    user_id,
+    wallet_balance,
+    blocked_balance,
+    loyalty_points,
+    wallet_status
+)
+SELECT u.""Id"", 0, 0, 0, 'ACTIVE'
+FROM public.""Users"" u
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO public.wallet_transactions
+(
+    wallet_id,
+    user_id,
+    transaction_ref,
+    transaction_type,
+    entry_type,
+    amount,
+    opening_balance,
+    closing_balance,
+    remarks,
+    transaction_status,
+    created_at,
+    created_by,
+    description,
+    status,
+    reference_type,
+    reference_id,
+    balance_before,
+    balance_after,
+    payment_method,
+    gateway_name,
+    gateway_reference,
+    is_deleted
+)
+SELECT
+    uw.id,
+    uw.user_id,
+    'EXISTING-USER-1000-' || uw.user_id,
+    'BONUS',
+    'CREDIT',
+    1000,
+    uw.wallet_balance,
+    uw.wallet_balance + 1000,
+    'Existing registered user bonus',
+    'SUCCESS',
+    CURRENT_TIMESTAMP,
+    'SYSTEM',
+    'One-time existing user wallet credit',
+    'SUCCESS',
+    'USER',
+    uw.user_id,
+    uw.wallet_balance,
+    uw.wallet_balance + 1000,
+    'SYSTEM',
+    'SYSTEM',
+    'EXISTING-USER-1000-' || uw.user_id,
+    false
+FROM public.user_wallets uw
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.wallet_transactions wt
+    WHERE wt.transaction_ref = 'EXISTING-USER-1000-' || uw.user_id
+);");
         }
     }
 }

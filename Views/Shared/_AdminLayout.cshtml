@@ -58,11 +58,14 @@
                 ☰ Menu
             </button>
 
-            <button class="admin-icon-btn no-print"
-                    type="button"
-                    onclick="adminBack()">
-                Back
-            </button>
+            @if(currentAction!="Dashboard")
+            {
+                <button class="admin-icon-btn no-print"
+                        type="button"
+                        onclick="adminBack()">
+                    Back
+                </button>
+            }
 
             <button class="admin-icon-btn no-print"
                     type="button"

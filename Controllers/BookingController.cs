@@ -6,6 +6,9 @@ using AmarShowsBook.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace AmarShowsBook.Controllers
 {
@@ -21,7 +24,105 @@ namespace AmarShowsBook.Controllers
             _context = context;
             _activityLogger = activityLogger;
         }
+public async Task<IActionResult> Ticket(long id)
+{
+    var booking = await _context.BookingDrafts
+        .FirstOrDefaultAsync(x => x.Id == id);
 
+    if (booking == null)
+        return NotFound();
+
+    var schedule = await _context.ShowSchedules
+        .Include(x=>x.Movie)
+        .Include(x=>x.StandupShow)
+        .Include(x=>x.LiveStream)
+        .Include(x=>x.Location)
+        .FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
+
+    ViewBag.Schedule = schedule;
+    ViewBag.User = await _context.Users.FirstOrDefaultAsync(x=>x.Id==booking.UserId);
+    ViewBag.TicketUrl = BuildAbsoluteUrl($"/Booking/Ticket/{booking.Id}");
+
+    return View("MobileTicket", booking);
+}
+
+[Route("Booking/TicketByBooking/{id:long}")]
+public async Task<IActionResult> TicketByBooking(long id)
+{
+    var bookingSummary =
+    await _context.VwBookingCompleteDetails
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x=>x.BookingId==id);
+
+    if(bookingSummary==null)
+    {
+        return NotFound();
+    }
+
+    var userIdText =
+    HttpContext.Session.GetString("UserId");
+
+    if(long.TryParse(userIdText,out var currentUserId)
+        && currentUserId!=bookingSummary.UserId
+        && !User.IsInRole("Admin"))
+    {
+        return Forbid();
+    }
+
+    var confirmedBooking =
+    await _context.Bookings
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x=>x.Id==id);
+
+    var confirmedScheduleId =
+    confirmedBooking?.ScheduleId;
+
+    var schedule =
+    await _context.ShowSchedules
+    .Include(x=>x.Movie)
+    .Include(x=>x.StandupShow)
+    .Include(x=>x.LiveStream)
+    .Include(x=>x.Location)
+    .FirstOrDefaultAsync(x=>
+        confirmedScheduleId.HasValue
+        ? x.Id==confirmedScheduleId.Value
+        : x.StartTime==bookingSummary.StartTime);
+
+    if(schedule==null)
+    {
+        schedule =
+        await _context.ShowSchedules
+        .Include(x=>x.Movie)
+        .Include(x=>x.StandupShow)
+        .Include(x=>x.LiveStream)
+        .Include(x=>x.Location)
+        .OrderByDescending(x=>x.StartTime)
+        .FirstOrDefaultAsync();
+    }
+
+    var user =
+    await _context.Users
+    .FirstOrDefaultAsync(x=>x.Id==bookingSummary.UserId);
+
+    var ticket =
+    new BookingDraft
+    {
+        Id=id,
+        UserId=bookingSummary.UserId,
+        ScheduleId=schedule?.Id ?? 0,
+        SeatNumbers=bookingSummary.SeatNumbers ?? "",
+        TotalAmount=bookingSummary.PayableAmount ?? bookingSummary.TotalAmount,
+        Status=bookingSummary.BookingStatus,
+        CreatedAt=bookingSummary.BookedAt
+    };
+
+    ViewBag.Schedule=schedule;
+    ViewBag.User=user;
+    ViewBag.BookingRef=bookingSummary.BookingRef;
+    ViewBag.TicketUrl=BuildAbsoluteUrl($"/Booking/TicketByBooking/{id}");
+
+    return View("MobileTicket",ticket);
+}
 
         // ==========================================
         // SEATS
@@ -155,6 +256,24 @@ public async Task<IActionResult> Seats(int id)
     ).ToListAsync();
 
     ViewBag.Seats=seats;
+
+    var listing =
+    await _context.HomeShows
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x=>x.ScheduleId==id);
+
+    ViewBag.TrailerUrl=listing?.TrailerUrl;
+
+    var durationMinutes =
+    schedule.Movie?.Duration
+    ?? schedule.StandupShow?.Duration
+    ?? schedule.LiveStream?.Duration
+    ?? 0;
+
+    ViewBag.TrailerStartSeconds =
+    durationMinutes>2
+    ? Random.Shared.Next(15,Math.Max(16,(durationMinutes*60)-60))
+    : 0;
 
     return View(schedule);
 }
@@ -369,6 +488,16 @@ Details(long id)
     ViewBag.WalletAmountUsed=
     GetWalletUsage(booking.Id);
 
+    ViewBag.CouponDiscount=
+    GetCouponDiscount(booking.Id);
+
+    ViewBag.CouponCode=
+    HttpContext.Session.GetString(
+    GetCouponCodeSessionKey(booking.Id));
+
+    ViewBag.AvailableCoupons=
+    await GetActiveCouponSummaries();
+
     return View(
     booking);
 }
@@ -394,8 +523,14 @@ Details(long id)
             ViewBag.WalletAmountUsed =
             walletAmountUsed;
 
+            var couponDiscount =
+            GetCouponDiscount(booking.Id);
+
+            ViewBag.CouponDiscount =
+            couponDiscount;
+
             ViewBag.PayableAmount =
-            Math.Max(0,booking.TotalAmount-walletAmountUsed);
+            Math.Max(0,booking.TotalAmount-walletAmountUsed-couponDiscount);
 
             return View(booking);
         }
@@ -474,9 +609,13 @@ public IActionResult MyBookings()
     x=>x.BookedAt)
     .ToList();
 
+    ViewBag.PublicBaseUrl=
+    GetPublicBaseUrl();
+
     return View(
     bookings);
 }
+
 
 
         // ==========================================
@@ -508,15 +647,11 @@ public IActionResult MyBookings()
 
             await _context.SaveChangesAsync();
 
-            // var url=
-
-            // $"{Request.Scheme}://{Request.Host}/Booking/MobilePay?token={token}";
-            string ip = "192.168.1.2"; // replace with your Mac IP
-
-            var url =
-            $"http://{ip}:5089/Booking/MobilePay?token={token}";
+            var url=
+            BuildAbsoluteUrl($"/Booking/MobilePay?token={Uri.EscapeDataString(token)}");
             return Json(new
             {
+                success=true,
                 url
             });
         }
@@ -637,6 +772,21 @@ private string GetWalletUsageSessionKey(long bookingId)
     return $"WalletUse_{bookingId}";
 }
 
+private string GetCouponDiscountSessionKey(long bookingId)
+{
+    return $"CouponDiscount_{bookingId}";
+}
+
+private string GetCouponCodeSessionKey(long bookingId)
+{
+    return $"CouponCode_{bookingId}";
+}
+
+private string GetCouponIdSessionKey(long bookingId)
+{
+    return $"CouponId_{bookingId}";
+}
+
 private decimal GetWalletUsage(long bookingId)
 {
     var value =
@@ -650,6 +800,242 @@ private decimal GetWalletUsage(long bookingId)
     out var amount)
     ? Math.Max(0,amount)
     : 0;
+}
+
+private decimal GetCouponDiscount(long bookingId)
+{
+    var value =
+    HttpContext.Session.GetString(
+    GetCouponDiscountSessionKey(bookingId));
+
+    return decimal.TryParse(
+    value,
+    System.Globalization.NumberStyles.Number,
+    System.Globalization.CultureInfo.InvariantCulture,
+    out var amount)
+    ? Math.Max(0,amount)
+    : 0;
+}
+
+private long? GetCouponId(long bookingId)
+{
+    var value =
+    HttpContext.Session.GetString(
+    GetCouponIdSessionKey(bookingId));
+
+    return long.TryParse(value,out var couponId)
+    ? couponId
+    : null;
+}
+
+private async Task<List<string>> GetActiveCouponSummaries()
+{
+    var coupons =
+    new List<string>();
+
+    var connection =
+    _context.Database.GetDbConnection();
+
+    if(connection.State!=System.Data.ConnectionState.Open)
+    {
+        await connection.OpenAsync();
+    }
+
+    await using var command =
+    connection.CreateCommand();
+
+    command.CommandText = @"
+SELECT coupon_code, discount_type, discount_value
+FROM coupons
+WHERE coupon_status='ACTIVE'
+  AND valid_from <= CURRENT_TIMESTAMP
+  AND valid_to >= CURRENT_TIMESTAMP
+ORDER BY id
+LIMIT 6;";
+
+    await using var reader =
+    await command.ExecuteReaderAsync();
+
+    while(await reader.ReadAsync())
+    {
+        var code=reader.GetString(0);
+        var type=reader.GetString(1);
+        var value=reader.GetDecimal(2);
+        var label=type=="PERCENTAGE" ? $"{value:0}% off" : CurrencyFormatter.FormatRupees(value);
+        coupons.Add($"{code} - {label}");
+    }
+
+    return coupons;
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> ApplyCoupon(
+long bookingId,
+string couponCode)
+{
+    var booking =
+    await _context.BookingDrafts
+    .FirstOrDefaultAsync(x=>x.Id==bookingId);
+
+    if(booking==null)
+    {
+        return NotFound();
+    }
+
+    if(string.IsNullOrWhiteSpace(couponCode))
+    {
+        HttpContext.Session.Remove(GetCouponDiscountSessionKey(bookingId));
+        HttpContext.Session.Remove(GetCouponCodeSessionKey(bookingId));
+        HttpContext.Session.Remove(GetCouponIdSessionKey(bookingId));
+        TempData["Success"]="Coupon removed.";
+        return RedirectToAction("Details",new { id=bookingId });
+    }
+
+    var schedule =
+    await _context.ShowSchedules
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
+
+    var connection =
+    _context.Database.GetDbConnection();
+
+    if(connection.State!=System.Data.ConnectionState.Open)
+    {
+        await connection.OpenAsync();
+    }
+
+    await using var command =
+    connection.CreateCommand();
+
+    command.CommandText = @"
+SELECT
+    c.id,
+    c.coupon_code,
+    c.discount_type,
+    c.discount_value,
+    COALESCE(c.minimum_booking_amount,0) AS minimum_booking_amount,
+    c.maximum_discount_amount,
+    c.usage_limit,
+    COALESCE(c.usage_per_user,1) AS usage_per_user,
+    COALESCE(c.used_count,0) AS used_count,
+    c.valid_from,
+    c.valid_to,
+    c.coupon_status,
+    c.applicable_show_type,
+    (
+        SELECT count(*)
+        FROM coupon_usage cu
+        WHERE cu.coupon_id=c.id
+          AND cu.user_id=@user_id
+          AND cu.usage_status='SUCCESS'
+    ) AS user_used_count
+FROM coupons c
+WHERE lower(c.coupon_code)=lower(@coupon_code)
+LIMIT 1;";
+
+    var codeParameter =
+    command.CreateParameter();
+    codeParameter.ParameterName="@coupon_code";
+    codeParameter.Value=couponCode.Trim();
+    command.Parameters.Add(codeParameter);
+
+    var userParameter =
+    command.CreateParameter();
+    userParameter.ParameterName="@user_id";
+    userParameter.Value=booking.UserId;
+    command.Parameters.Add(userParameter);
+
+    await using var reader =
+    await command.ExecuteReaderAsync();
+
+    if(!await reader.ReadAsync())
+    {
+        TempData["Error"]="Coupon code was not found.";
+        return RedirectToAction("Details",new { id=bookingId });
+    }
+
+    var couponId=reader.GetInt64(0);
+    var dbCode=reader.GetString(1);
+    var discountType=reader.GetString(2);
+    var discountValue=reader.GetDecimal(3);
+    var minimumAmount=reader.GetDecimal(4);
+    var maxDiscount=reader.IsDBNull(5) ? (decimal?)null : reader.GetDecimal(5);
+    var usageLimit=reader.IsDBNull(6) ? (int?)null : reader.GetInt32(6);
+    var usagePerUser=reader.GetInt32(7);
+    var usedCount=reader.GetInt32(8);
+    var validFrom=reader.GetDateTime(9);
+    var validTo=reader.GetDateTime(10);
+    var status=reader.GetString(11);
+    var applicableShowType=reader.IsDBNull(12) ? null : reader.GetString(12);
+    var userUsedCount=reader.GetInt64(13);
+
+    var now =
+    DateTime.SpecifyKind(DateTime.UtcNow,DateTimeKind.Unspecified);
+
+    if(status!="ACTIVE" || validFrom>now || validTo<now)
+    {
+        TempData["Error"]="Coupon is not active.";
+        return RedirectToAction("Details",new { id=bookingId });
+    }
+
+    if(booking.TotalAmount<minimumAmount)
+    {
+        TempData["Error"]=$"Coupon requires minimum booking amount {CurrencyFormatter.FormatRupees(minimumAmount)}.";
+        return RedirectToAction("Details",new { id=bookingId });
+    }
+
+    if(usageLimit.HasValue && usedCount>=usageLimit.Value)
+    {
+        TempData["Error"]="Coupon usage limit is over.";
+        return RedirectToAction("Details",new { id=bookingId });
+    }
+
+    if(userUsedCount>=usagePerUser)
+    {
+        TempData["Error"]="You have already used this coupon.";
+        return RedirectToAction("Details",new { id=bookingId });
+    }
+
+    if(!string.IsNullOrWhiteSpace(applicableShowType)
+        && !string.Equals(applicableShowType,schedule?.Type,StringComparison.OrdinalIgnoreCase))
+    {
+        TempData["Error"]="Coupon is not valid for this show type.";
+        return RedirectToAction("Details",new { id=bookingId });
+    }
+
+    var discount =
+    discountType switch
+    {
+        "PERCENTAGE" => booking.TotalAmount * discountValue / 100,
+        "FLAT" => discountValue,
+        "CASHBACK" => 0,
+        _ => 0
+    };
+
+    if(maxDiscount.HasValue)
+    {
+        discount=Math.Min(discount,maxDiscount.Value);
+    }
+
+    discount=Math.Min(Math.Max(0,discount),booking.TotalAmount);
+
+    HttpContext.Session.SetString(
+    GetCouponDiscountSessionKey(bookingId),
+    discount.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    HttpContext.Session.SetString(
+    GetCouponCodeSessionKey(bookingId),
+    dbCode);
+
+    HttpContext.Session.SetString(
+    GetCouponIdSessionKey(bookingId),
+    couponId.ToString());
+
+    TempData["Success"]=
+    $"Coupon {dbCode} applied: {CurrencyFormatter.FormatRupees(discount)} off.";
+
+    return RedirectToAction("Details",new { id=bookingId });
 }
 
 private async Task GenerateSeats(
@@ -759,15 +1145,22 @@ string type)
 private async Task<Booking> FinalizeBookingPayment(
 BookingDraft draft,
 string paymentMethod,
-decimal walletAmountUsed)
+decimal walletAmountUsed,
+decimal couponDiscount,
+long? couponId)
 {
+    couponDiscount =
+    Math.Min(
+    Math.Max(0,couponDiscount),
+    draft.TotalAmount);
+
     walletAmountUsed =
     Math.Min(
     Math.Max(0,walletAmountUsed),
-    draft.TotalAmount);
+    Math.Max(0,draft.TotalAmount-couponDiscount));
 
     var payableAmount =
-    Math.Max(0,draft.TotalAmount-walletAmountUsed);
+    Math.Max(0,draft.TotalAmount-couponDiscount-walletAmountUsed);
 
     if(walletAmountUsed>0)
     {
@@ -845,8 +1238,10 @@ decimal walletAmountUsed)
         existingBooking.PaymentStatus="SUCCESS";
         existingBooking.BookingStatus="CONFIRMED";
         existingBooking.OriginalAmount=draft.TotalAmount;
+        existingBooking.DiscountAmount=couponDiscount;
         existingBooking.PayableAmount=payableAmount;
         existingBooking.WalletAmountUsed=walletAmountUsed;
+        existingBooking.CouponId=couponId;
         var repairedAt =
         DateTime.SpecifyKind(
         DateTime.UtcNow,
@@ -862,6 +1257,13 @@ decimal walletAmountUsed)
         existingBooking,
         existingTransaction,
         walletAmountUsed);
+
+        await RecordCouponUsage(
+        draft,
+        existingBooking,
+        existingTransaction,
+        couponId,
+        couponDiscount);
 
         return existingBooking;
     }
@@ -917,11 +1319,12 @@ decimal walletAmountUsed)
         UpdatedBy=user?.Email,
         IsDeleted=false,
         OriginalAmount=draft.TotalAmount,
-        DiscountAmount=0,
+        DiscountAmount=couponDiscount,
         PayableAmount=payableAmount,
         TaxAmount=0,
         ConvenienceFee=0,
         WalletAmountUsed=walletAmountUsed,
+        CouponId=couponId,
         PaymentStatus="SUCCESS",
         ConfirmedAt=now
     };
@@ -968,6 +1371,13 @@ decimal walletAmountUsed)
     booking,
     transaction,
     walletAmountUsed);
+
+    await RecordCouponUsage(
+    draft,
+    booking,
+    transaction,
+    couponId,
+    couponDiscount);
 
     var bookingItem =
     new BookingItem
@@ -1057,11 +1467,6 @@ decimal walletAmountUsed)
         return;
     }
 
-    var now =
-    DateTime.SpecifyKind(
-    DateTime.UtcNow,
-    DateTimeKind.Unspecified);
-
     var reference =
     $"WLT-{booking.Id}-{transaction.Id}";
 
@@ -1107,7 +1512,7 @@ SELECT
     uw.wallet_balance - {walletAmountUsed},
     'Wallet used for ticket booking',
     'SUCCESS',
-    {now},
+    CURRENT_TIMESTAMP,
     {draft.UserId.ToString()},
     'Wallet debit for booking payment',
     'SUCCESS',
@@ -1134,6 +1539,66 @@ WHERE uw.user_id = {draft.UserId}
   );");
 
     _ = insertedRows;
+}
+
+private async Task RecordCouponUsage(
+BookingDraft draft,
+Booking booking,
+Transaction transaction,
+long? couponId,
+decimal couponDiscount)
+{
+    if(!couponId.HasValue || couponDiscount<=0)
+    {
+        return;
+    }
+
+    await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO coupon_usage
+(
+    coupon_id,
+    booking_id,
+    transaction_id,
+    user_id,
+    coupon_code,
+    original_amount,
+    discount_amount,
+    final_amount,
+    usage_status,
+    used_at
+)
+SELECT
+    c.id,
+    {booking.Id},
+    {transaction.Id},
+    {draft.UserId},
+    c.coupon_code,
+    {draft.TotalAmount},
+    {couponDiscount},
+    {Math.Max(0,draft.TotalAmount-couponDiscount-booking.WalletAmountUsed.GetValueOrDefault())},
+    'SUCCESS',
+    CURRENT_TIMESTAMP
+FROM coupons c
+WHERE c.id = {couponId.Value}
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM coupon_usage cu
+      WHERE cu.booking_id = {booking.Id}
+        AND cu.coupon_id = c.id
+        AND cu.usage_status = 'SUCCESS'
+  );
+
+UPDATE coupons c
+SET used_count =
+    (
+        SELECT count(*)
+        FROM coupon_usage cu
+        WHERE cu.coupon_id = c.id
+          AND cu.usage_status = 'SUCCESS'
+    ),
+    updated_at = CURRENT_TIMESTAMP
+WHERE c.id = {couponId.Value};");
 }
 // ==========================================
 // APPROVE QR PAYMENT
@@ -1184,7 +1649,9 @@ ApprovePayment(string token)
         await FinalizeBookingPayment(
         booking,
         "QR",
-        GetWalletUsage(booking.Id));
+        GetWalletUsage(booking.Id),
+        GetCouponDiscount(booking.Id),
+        GetCouponId(booking.Id));
 
         _context.BookingTransactions.Add(
 
@@ -1225,6 +1692,12 @@ ApprovePayment(string token)
 
     HttpContext.Session.Remove(
     GetWalletUsageSessionKey(booking.Id));
+    HttpContext.Session.Remove(
+    GetCouponDiscountSessionKey(booking.Id));
+    HttpContext.Session.Remove(
+    GetCouponCodeSessionKey(booking.Id));
+    HttpContext.Session.Remove(
+    GetCouponIdSessionKey(booking.Id));
 
     return Json(new
     {
@@ -1378,7 +1851,9 @@ CheckPaymentStatus(long bookingId)
                 await FinalizeBookingPayment(
                 booking,
                 request.PaymentMethod,
-                GetWalletUsage(booking.Id));
+                GetWalletUsage(booking.Id),
+                GetCouponDiscount(booking.Id),
+                GetCouponId(booking.Id));
 
                 var transaction=
                 new BookingTransaction
@@ -1426,6 +1901,12 @@ CheckPaymentStatus(long bookingId)
 
             HttpContext.Session.Remove(
             GetWalletUsageSessionKey(booking.Id));
+            HttpContext.Session.Remove(
+            GetCouponDiscountSessionKey(booking.Id));
+            HttpContext.Session.Remove(
+            GetCouponCodeSessionKey(booking.Id));
+            HttpContext.Session.Remove(
+            GetCouponIdSessionKey(booking.Id));
 
             return Json(new
             {
@@ -1466,6 +1947,15 @@ Confirmation(long bookingId)
     ViewBag.Schedule=
     schedule;
 
+    var user =
+    await _context.Users
+    .FirstOrDefaultAsync(x=>x.Id==booking.UserId);
+
+    ViewBag.User=user;
+    ViewBag.Email=user?.Email;
+    ViewBag.Phone=user?.Mobile;
+    ViewBag.TicketUrl=BuildAbsoluteUrl($"/Booking/Ticket/{booking.Id}");
+
     return View(
     booking);
 }
@@ -1495,6 +1985,71 @@ CheckQRStatus(long bookingId)
     {
         status=session.Status
     });
+}
+
+private string BuildAbsoluteUrl(string pathAndQuery)
+{
+    return $"{GetPublicBaseUrl()}{pathAndQuery}";
+}
+
+private string GetPublicBaseUrl()
+{
+    var host =
+    Request.Host;
+
+    var hostName =
+    host.Host;
+
+    var isLoopback =
+    string.Equals(hostName,"localhost",StringComparison.OrdinalIgnoreCase)
+    || string.Equals(hostName,"127.0.0.1",StringComparison.OrdinalIgnoreCase)
+    || string.Equals(hostName,"::1",StringComparison.OrdinalIgnoreCase);
+
+    if(!isLoopback)
+    {
+        return $"{Request.Scheme}://{host}";
+    }
+
+    var lanIp =
+    GetLocalLanIpAddress();
+
+    if(string.IsNullOrWhiteSpace(lanIp))
+    {
+        return $"{Request.Scheme}://{host}";
+    }
+
+    return $"{Request.Scheme}://{lanIp}:{host.Port ?? 5089}";
+}
+
+private static string? GetLocalLanIpAddress()
+{
+    foreach(var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+    {
+        if(networkInterface.OperationalStatus!=OperationalStatus.Up)
+        {
+            continue;
+        }
+
+        var properties =
+        networkInterface.GetIPProperties();
+
+        foreach(var address in properties.UnicastAddresses)
+        {
+            if(address.Address.AddressFamily!=AddressFamily.InterNetwork)
+            {
+                continue;
+            }
+
+            if(IPAddress.IsLoopback(address.Address))
+            {
+                continue;
+            }
+
+            return address.Address.ToString();
+        }
+    }
+
+    return null;
 }
     }
 }
