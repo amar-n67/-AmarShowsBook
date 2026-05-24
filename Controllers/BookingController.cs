@@ -128,10 +128,32 @@ public async Task<IActionResult> TicketByBooking(long id)
         // SEATS
         // ==========================================
 
-        [Route("Booking/Seats/{id}")]
-public async Task<IActionResult> Seats(int id)
+ [Route("Booking/Seats/{id?}")]
+public async Task<IActionResult> Seats(int? id)
 {
-    var schedule =
+    ShowSchedule? schedule;
+
+    // If no id passed -> automatically select nearest/current show
+    if(!id.HasValue)
+    {
+        schedule =
+        await _context.ShowSchedules
+        .Include(x=>x.Movie)
+        .Include(x=>x.StandupShow)
+        .Include(x=>x.LiveStream)
+        .Include(x=>x.Location)
+        .Where(x=>x.StartTime >= DateTime.UtcNow)
+        .OrderBy(x=>x.StartTime)
+        .FirstOrDefaultAsync();
+
+        if(schedule == null)
+            return NotFound();
+
+        return Redirect(
+        $"/Booking/Seats/{schedule.Id}");
+    }
+
+    schedule =
     await _context.ShowSchedules
     .Include(x=>x.Movie)
     .Include(x=>x.StandupShow)
@@ -141,147 +163,147 @@ public async Task<IActionResult> Seats(int id)
 
     if(schedule==null)
         return NotFound();
+
+
+
     var availableDates =
-
     await _context.ShowSchedules
-
     .Where(x=>
 
-        x.Type==schedule.Type
+        x.StartTime >= DateTime.UtcNow
 
         &&
 
-        x.StartTime>=DateTime.UtcNow
+        x.Type == schedule.Type
 
         &&
 
         (
 
             (schedule.Type=="Movie"
-
             &&
-
             x.MovieId==schedule.MovieId)
 
             ||
 
             (schedule.Type=="Standup"
-
             &&
-
             x.StandupShowId==
-
             schedule.StandupShowId)
 
             ||
 
             (schedule.Type=="Live"
-
             &&
-
             x.LiveStreamId==
-
             schedule.LiveStreamId)
 
         )
 
     )
-
-    .OrderBy(
-
-    x=>x.StartTime)
-
+    .OrderBy(x=>x.StartTime)
     .ToListAsync();
 
-    ViewBag.AvailableDates=
 
+
+    ViewBag.AvailableDates =
     availableDates;
 
-    // ==================================
-    // Create seats for this schedule only
-    // ==================================
 
-    bool seatsExist=
 
+    bool seatsExist =
     await _context.ScreenSeats
-    .AnyAsync(
-    x=>x.ScheduleId==id);
+    .AnyAsync(x=>x.ScheduleId==schedule.Id);
 
     if(!seatsExist)
     {
         await GenerateSeats(
-        id,
+        schedule.Id,
         schedule.Type);
     }
 
 
-    // ==================================
-    // Load only this schedule seats
-    // ==================================
 
-    var seats=
+    var seats =
+    await
+    (
+        from s in _context.ScreenSeats
 
-    await(
+        where s.ScheduleId==schedule.Id
 
-    from s in _context.ScreenSeats
+        join l in _context.SeatLocks
+        on s.Id equals l.ScreenSeatId
+        into lockGroup
 
-    where s.ScheduleId==id
+        from lockSeat in
+        lockGroup.DefaultIfEmpty()
 
-    join l in _context.SeatLocks
-    on s.Id equals l.ScreenSeatId
-    into lockGroup
+        select new SeatVM
+        {
+            SeatId=s.Id,
 
-    from lockSeat in
-    lockGroup.DefaultIfEmpty()
+            Row=s.SeatRow,
 
-    select new SeatVM
-    {
-        SeatId=s.Id,
+            Number=s.SeatNumber,
 
-        Row=s.SeatRow,
+            Price=s.SeatPrice,
 
-        Number=s.SeatNumber,
+            Category=s.SeatCategory,
 
-        Price=s.SeatPrice,
+            IsBooked=
+            lockSeat!=null
+            &&
+            lockSeat.LockStatus=="CONFIRMED",
 
-        Category=s.SeatCategory,
-
-        IsBooked=
-        lockSeat!=null
-        &&
-        lockSeat.LockStatus=="CONFIRMED",
-
-        IsLocked=
-        lockSeat!=null
-        &&
-        lockSeat.LockStatus=="LOCKED"
-    }
+            IsLocked=
+            lockSeat!=null
+            &&
+            lockSeat.LockStatus=="LOCKED"
+        }
 
     ).ToListAsync();
 
-    ViewBag.Seats=seats;
+
+
+    ViewBag.Seats = seats;
+
+
 
     var listing =
     await _context.HomeShows
     .AsNoTracking()
-    .FirstOrDefaultAsync(x=>x.ScheduleId==id);
+    .FirstOrDefaultAsync(
+    x=>x.ScheduleId==schedule.Id);
 
-    ViewBag.TrailerUrl=listing?.TrailerUrl;
+    ViewBag.TrailerUrl=
+    listing?.TrailerUrl;
+
+
 
     var durationMinutes =
     schedule.Movie?.Duration
-    ?? schedule.StandupShow?.Duration
-    ?? schedule.LiveStream?.Duration
-    ?? 0;
+    ??
+    schedule.StandupShow?.Duration
+    ??
+    schedule.LiveStream?.Duration
+    ??
+    0;
 
     ViewBag.TrailerStartSeconds =
     durationMinutes>2
-    ? Random.Shared.Next(15,Math.Max(16,(durationMinutes*60)-60))
-    : 0;
+    ?
+    Random.Shared.Next(
+    15,
+    Math.Max(
+    16,
+    (durationMinutes*60)-60))
+    :
+    0;
+
+
 
     return View(schedule);
 }
-
         // ==========================================
         // LOCK SEATS
         // ==========================================

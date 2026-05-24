@@ -79,36 +79,27 @@ Seat Shot
 
 </div>
 
-@* <div class="show-dates">
-
-@foreach(var show in
-((List<AmarShowsBook.Models.ShowSchedule>)
-ViewBag.AvailableDates)
-.GroupBy(x=>x.StartTime.Date)
-.Select(x=>x.First()))
-{
-    <a
-    class="date-chip @(show.Id==Model.Id ? "active":"")"
-    href="/Booking/Seats/@show.Id">
-
-    @show.StartTime.ToString("dd MMM")
-
-    </a>
+@{
+    var currentDate =
+    Model.StartTime.Date;
 }
 
-</div> *@
-@if(availableDates!=null && availableDates.Any())
+@if(availableDates != null && availableDates.Any())
 {
 <div class="show-dates">
 
 @foreach(var show in
 availableDates
-.Where(x=>x.StartTime>=DateTime.UtcNow)
+.Where(x=>x.StartTime >= DateTime.UtcNow)
 .GroupBy(x=>x.StartTime.Date)
-.Select(x=>x.First()))
+.Select(x=>x.First())
+.OrderBy(x=>x.StartTime))
 {
+    bool activeDate =
+    show.StartTime.Date == currentDate;
+
     <a
-    class="date-chip @(show.Id==Model.Id ? "active":"")"
+    class="date-chip @(activeDate ? "active":"")"
     href="/Booking/Seats/@show.Id">
 
         @show.StartTime.ToString("dd MMM")
@@ -118,7 +109,6 @@ availableDates
 
 </div>
 }
-
 <div class="screen-line @(string.IsNullOrWhiteSpace(trailerUrl) ? "" : "has-trailer")"
      data-trailer-url="@trailerUrl"
      data-trailer-start="@trailerStartSeconds">
