@@ -8,226 +8,235 @@
 
 <style>
 
-body{
-    background:#f4f6f9;
-}
-
-.payment-container{
-    width:700px;
-    margin:40px auto;
-}
-
-.payment-card{
-
-    background:white;
-
-    border-radius:25px;
-
-    overflow:hidden;
-
-    box-shadow:
-    0px 10px 30px rgba(0,0,0,.15);
-}
-
-.payment-header{
-
-    background:
-    linear-gradient(
-    135deg,
-    #6a11cb,
-    #2575fc);
-
-    color:white;
-
-    padding:30px;
-
-    text-align:center;
-}
-
-.payment-header h2{
-    margin:0;
-    font-size:30px;
-}
-
-.payment-body{
-    padding:30px;
-}
-
-.amount-box{
-
-    text-align:center;
-
-    background:#f7f9fc;
-
-    padding:20px;
-
-    border-radius:15px;
-
-    margin-bottom:25px;
-}
-
-.amount-box h3{
-    margin:0;
-    color:#666;
-}
-
-.amount{
-
-    font-size:35px;
-
-    font-weight:bold;
-
-    color:#0d6efd;
-}
-
-.wallet-applied{
-    margin-top:8px;
-    color:#16a34a;
-    font-weight:800;
-}
-
-.payment-option{
-
-    border:1px solid #ddd;
-
-    padding:15px;
-
-    border-radius:12px;
-
-    margin-bottom:15px;
-
-    cursor:pointer;
-
-    transition:.3s;
-}
-
-.payment-option:hover{
-    background:#f3f7ff;
-}
-
-#qrSection{
-
-    margin-top:20px;
-
-    text-align:center;
-
-    display:none;
-}
-
-#qrImage{
-
-    border:8px solid #eee;
-
-    border-radius:15px;
-
-    padding:10px;
-
-    background:white;
-}
-
-.scan-text{
-
-    margin-top:15px;
-
-    font-weight:bold;
-
-    color:#666;
-}
-
-.pay-btn{
-
-    width:100%;
-
-    border:none;
-
-    padding:15px;
-
-    font-size:18px;
-
-    border-radius:40px;
-
-    cursor:pointer;
-
-    color:white;
-
-    font-weight:bold;
-
-    margin-top:25px;
-
-    background:
-    linear-gradient(
-    135deg,
-    #28a745,
-    #0d6efd);
-
-    transition:.3s;
-}
-
-.pay-btn:hover{
-
-    transform:
-    translateY(-2px);
-
-    box-shadow:
-    0px 10px 20px rgba(0,0,0,.2);
-}
-
 :root{
-
---bg:#f5f7fb;
---card:#fff;
-
+--bg:#f4f7fc;
+--card:rgba(255,255,255,.92);
+--primary:#ff2d55;
+--primary2:#7d4dff;
+--success:#16db65;
 --text:#111827;
 --muted:#6b7280;
-
---primary:#4f46e5;
---success:#16a34a;
-
---border:#e5e7eb;
-
+--border:rgba(0,0,0,.08);
 }
 
 body{
-
-background:var(--bg);
-
+margin:0;
 font-family:Segoe UI,sans-serif;
-
 color:var(--text);
+overflow-x:hidden;
+
+background:
+linear-gradient(
+135deg,
+#eef2ff,
+#fdf2f8,
+#f8fafc
+);
+}
+
+
+/* animated moving light */
+
+body::before{
+
+content:"";
+
+position:fixed;
+
+width:200%;
+height:200%;
+
+top:-50%;
+left:-50%;
+
+background:
+conic-gradient(
+from 0deg,
+rgba(255,45,85,.08),
+transparent,
+rgba(125,77,255,.06),
+transparent
+);
+
+animation:
+rotateBg 25s linear infinite;
+
+pointer-events:none;
+
+z-index:-2;
+}
+
+
+/* floating circles */
+
+body::after{
+
+content:"";
+
+position:fixed;
+
+width:100%;
+height:100%;
+
+background:
+
+radial-gradient(
+circle,
+rgba(255,45,85,.12) 0,
+transparent 10%
+),
+
+radial-gradient(
+circle,
+rgba(125,77,255,.08) 0,
+transparent 8%
+);
+
+background-size:
+250px 250px,
+300px 300px;
+
+animation:
+floatDots 15s linear infinite;
+
+pointer-events:none;
+
+z-index:-1;
+}
+
+
+@@keyframes rotateBg{
+
+100%{
+
+transform:
+rotate(360deg);
 
 }
 
+}
+
+
+@@keyframes floatDots{
+
+0%{
+
+background-position:
+0 0,
+0 0;
+}
+
+100%{
+
+background-position:
+500px 600px,
+-500px 400px;
+}
+
+}
+
+
+/* container */
 
 .payment-container{
 
-max-width:750px;
+max-width:850px;
 
-margin:40px auto;
+margin:auto;
 
-padding:20px;
+padding:50px 20px;
 
-animation:fadeUp .5s;
-
+animation:
+fadeUp .8s;
 }
 
 
+/* card */
+
 .payment-card{
 
-background:var(--card);
+background:
+var(--card);
 
-border-radius:25px;
+backdrop-filter:
+blur(30px);
 
-padding:30px;
+border-radius:30px;
 
-border:1px solid var(--border);
+padding:35px;
+
+border:
+1px solid var(--border);
 
 box-shadow:
 
-0 15px 40px rgba(0,0,0,.06);
+0 15px 40px rgba(0,0,0,.08),
+0 0 25px rgba(255,45,85,.08);
+
+overflow:hidden;
+
+position:relative;
+
+animation:
+cardGlow 5s infinite alternate;
+}
+
+
+@@keyframes cardGlow{
+
+100%{
+
+box-shadow:
+
+0 20px 60px rgba(255,45,85,.12),
+0 0 40px rgba(125,77,255,.08);
+
+}
 
 }
 
 
+/* top animated line */
+
+.payment-card::before{
+
+content:"";
+
+position:absolute;
+
+top:0;
+left:0;
+
+width:100%;
+height:5px;
+
+background:
+linear-gradient(
+90deg,
+#ff2d55,
+#7d4dff,
+#00cfff,
+#ff2d55
+);
+
+background-size:300%;
+
+animation:
+moveGradient 5s linear infinite;
+}
+
+@@keyframes moveGradient{
+
+100%{
+
+background-position:
+300%;
+}
+
+}
+
+
+/* header */
 
 .payment-header{
 
@@ -241,133 +250,149 @@ padding-bottom:20px;
 
 margin-bottom:25px;
 
-border-bottom:1px solid var(--border);
-
+border-bottom:
+1px solid #eee;
 }
-
 
 .payment-header h2{
 
 margin:0;
 
-font-size:28px;
+font-size:32px;
 
-font-weight:800;
-
+font-weight:900;
 }
 
+
+/* amount box */
 
 .amount-box{
 
-padding:25px;
+padding:30px;
 
-border-radius:18px;
-
-background:#fafafa;
+border-radius:25px;
 
 text-align:center;
 
-margin-bottom:25px;
+background:
 
-border:1px solid var(--border);
+linear-gradient(
+145deg,
+white,
+#fafafa
+);
 
+border:1px solid #ececec;
+
+margin-bottom:30px;
+
+transition:.4s;
 }
 
+.amount-box:hover{
 
-.amount-box h3{
-
-margin:0;
-
-font-size:14px;
-
-color:var(--muted);
-
-margin-bottom:10px;
-
+transform:
+translateY(-5px);
 }
 
 
 .amount{
 
-font-size:35px;
+font-size:50px;
 
 font-weight:900;
 
 color:var(--primary);
 
+text-shadow:
+
+0 0 15px rgba(255,45,85,.2);
+
+animation:
+pulseAmount 2s infinite;
 }
 
+@@keyframes pulseAmount{
+
+50%{
+
+transform:
+scale(1.04);
+}
+
+}
 
 .wallet-applied{
 
-margin-top:10px;
-
-color:var(--success);
+margin-top:12px;
 
 font-weight:700;
 
+color:var(--success);
 }
 
 
-
-/* payment cards */
+/* payment methods */
 
 .payment-grid{
 
 display:grid;
 
 grid-template-columns:
-1fr 1fr;
+repeat(2,1fr);
 
-gap:15px;
-
-margin-bottom:20px;
-
+gap:18px;
 }
 
 
 .payment-option{
 
-padding:18px;
+padding:22px;
 
-border-radius:16px;
+border-radius:20px;
 
-background:#fafafa;
+background:white;
 
-border:1px solid var(--border);
-
-cursor:pointer;
-
-transition:.3s;
+border:1px solid #ececec;
 
 display:flex;
 
 align-items:center;
 
-gap:12px;
+gap:15px;
 
-font-weight:700;
+font-weight:800;
 
+cursor:pointer;
+
+transition:.4s;
+
+transform-style:preserve-3d;
 }
-
 
 .payment-option:hover{
 
-transform:translateY(-3px);
+transform:
 
-border-color:var(--primary);
+translateY(-10px)
+rotateX(8deg);
 
+box-shadow:
+
+0 15px 30px rgba(0,0,0,.08);
+
+border-color:
+var(--primary);
 }
 
 
 .payment-option input{
 
-accent-color:var(--primary);
-
 transform:scale(1.2);
 
+accent-color:
+var(--primary);
 }
-
 
 
 /* QR */
@@ -376,109 +401,164 @@ transform:scale(1.2);
 
 display:none;
 
-margin-top:25px;
+margin-top:30px;
 
 padding:25px;
 
+border-radius:25px;
+
+background:white;
+
+border:1px solid #eee;
+
 text-align:center;
 
-background:#fafafa;
-
-border-radius:20px;
-
-border:1px solid var(--border);
-
-animation:fadeUp .4s;
-
+animation:
+fadeUp .5s;
 }
 
-
 #qrImage{
-
-border-radius:18px;
 
 padding:10px;
 
 background:white;
 
-border:1px solid var(--border);
+border-radius:18px;
+
+box-shadow:
+
+0 10px 30px rgba(0,0,0,.1);
+
+animation:
+floatQR 3s ease infinite;
+}
+
+@@keyframes floatQR{
+
+50%{
+
+transform:
+translateY(-10px);
 
 }
 
+}
 
 .scan-text{
 
 margin-top:15px;
 
-font-size:14px;
-
 font-weight:700;
 
-color:var(--muted);
+color:#666;
+}
+
+/* buttons container */
+
+.action-buttons{
+
+display:flex;
+gap:15px;
+margin-top:35px;
 
 }
 
 
+/* cancel button */
 
-/* button */
+.cancel-btn{
 
-.pay-btn{
+flex:1;
 
-width:100%;
-
-padding:16px;
+padding:18px;
 
 border:none;
 
-border-radius:15px;
-
-margin-top:25px;
+border-radius:20px;
 
 background:
-
 linear-gradient(
-135deg,
-#4f46e5,
-#6366f1
+90deg,
+#ff4d4d,
+#d10035
 );
 
 color:white;
 
-font-size:16px;
+font-size:18px;
 
-font-weight:800;
+font-weight:900;
 
 cursor:pointer;
 
-transition:.3s;
+transition:.4s;
 
 }
 
+.cancel-btn:hover{
+
+transform:
+translateY(-5px);
+
+box-shadow:
+0 15px 35px rgba(255,0,50,.3);
+
+}
+
+
+/* pay button */
+
+.pay-btn{
+
+flex:2;
+
+padding:18px;
+
+border:none;
+
+border-radius:20px;
+
+background:
+linear-gradient(
+90deg,
+#ff2d55,
+#7d4dff
+);
+
+color:white;
+
+font-size:18px;
+
+font-weight:900;
+
+cursor:pointer;
+
+transition:.4s;
+
+animation:
+pulseBtn 2s infinite;
+
+}
 
 .pay-btn:hover{
 
 transform:
-
-translateY(-2px);
+translateY(-5px);
 
 box-shadow:
+0 15px 35px rgba(255,45,85,.25);
 
-0 10px 25px rgba(79,70,229,.25);
+}
+@@keyframes pulseBtn{
+
+50%{
+
+transform:
+scale(1.02);
+}
 
 }
 
-
-.pay-btn:disabled{
-
-opacity:.7;
-
-cursor:not-allowed;
-
-}
-
-
-
-/* animation */
 
 @@keyframes fadeUp{
 
@@ -487,7 +567,7 @@ from{
 opacity:0;
 
 transform:
-translateY(15px);
+translateY(30px);
 
 }
 
@@ -507,49 +587,26 @@ translateY(0);
 
 @@media(max-width:768px){
 
-.payment-container{
+.payment-grid{
 
-padding:12px;
-
+grid-template-columns:1fr;
 }
-
-
-.payment-card{
-
-padding:20px;
-
-}
-
 
 .payment-header{
 
 flex-direction:column;
 
-align-items:flex-start;
-
-gap:10px;
-
+gap:15px;
 }
-
-
-.payment-grid{
-
-grid-template-columns:1fr;
-
-}
-
 
 .amount{
 
-font-size:28px;
-
+font-size:36px;
 }
-
 
 }
 
 </style>
-
 
 
 <div class="payment-container">
@@ -677,8 +734,16 @@ Scan QR using any UPI app
 </div>
 
 </div>
+<div class="action-buttons">
 
+<button
+type="button"
+class="cancel-btn"
+onclick="cancelBooking()">
 
+❌ Cancel
+
+</button>
 
 <button
 id="payButton"
@@ -686,13 +751,11 @@ class="pay-btn"
 type="button"
 onclick="pay()">
 
-Proceed Payment
+Proceed Payment →
 
 </button>
 
-
 </div>
-
 </div>
 <script>
 
@@ -810,12 +873,14 @@ catch(error)
         "payButton")
         .style.display="block";
 
-        clearInterval(
-        statusChecker);
+        if(statusChecker)
+{
+    clearInterval(
+    statusChecker
+    );
+}
     }
 }
-
-
 
 async function pay()
 {
@@ -920,5 +985,48 @@ async function checkQRStatus()
         "/Booking/Confirmation?bookingId=@Model.Id";
     }
 }
+function cancelBooking()
+{
+    let confirmCancel=
+    confirm(
+    "Do you want to cancel booking?"
+    );
 
+    if(!confirmCancel)
+    {
+        return;
+    }
+
+    sessionStorage.setItem(
+    "refreshHome",
+    "true"
+    );
+
+    window.location.href=
+    "/Home/Index";
+}
+
+
+/* refresh home page automatically */
+
+window.addEventListener(
+"load",
+function()
+{
+    if(
+        sessionStorage.getItem(
+        "refreshHome"
+        )
+    )
+    {
+        sessionStorage.removeItem(
+        "refreshHome"
+        );
+
+        setTimeout(
+        ()=>location.reload(),
+        100
+        );
+    }
+});
 </script>
