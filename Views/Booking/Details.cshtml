@@ -759,14 +759,12 @@ finalPayable)
 </div>
 
 </div>
-
-
-
 <div class="actions">
 
 <a
 class="btn back-btn"
-href="javascript:history.back()">
+href="#"
+onclick="goBack(event)">
 
 Back
 
@@ -783,6 +781,20 @@ Proceed Payment
 
 </div>
 
-</div>
 
-</div>
+<script>
+
+function goBack(e)
+{
+    e.preventDefault();
+
+    window.location.href=
+    document.referrer +
+    (
+        document.referrer.includes("?")
+        ? "&refresh=" + Date.now()
+        : "?refresh=" + Date.now()
+    );
+}
+
+</script>
