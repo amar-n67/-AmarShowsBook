@@ -67,14 +67,21 @@
         }
         else
         {
-            @foreach (var item in Model.HomeShows)
+            @* @foreach (var item in Model.HomeShows) *@
+            @* @foreach (var item in Model.HomeShows
+.GroupBy(x => x.ShowId)
+.Select(x => x.First())) *@
+@foreach (var item in Model.HomeShows
+.Where(x => x.ScheduleId > 0)
+.GroupBy(x => x.ShowId)
+.Select(x => x.First()))
 {
     var showRegion =
     $"{item.Location}, {item.State}, {item.Country}";
 
-<article class="show-card">
-
-    <div class="card-body">
+<article class="show-card"
+onclick="location.href='/Booking/Seats/@item.ScheduleId'">
+  <div class="card-body">
 
         <h2 class="movie-title">
 
@@ -127,30 +134,37 @@
 
 
 <div class="card-actions">
-
     @* <a
-    class="btn trailer-btn"
-    data-url="@item.TrailerUrl">
-
-   ▶ Trailer
-
-    </a> *@
-    <a
 class="btn trailer-btn"
 data-url="@item.TrailerUrl"
 href="javascript:void(0)">
 
 ▶ Trailer
 
+</a> *@
+<a
+class="btn trailer-btn"
+data-url="@item.TrailerUrl"
+href="#"
+onclick="event.preventDefault();event.stopPropagation();">
+
+▶ Trailer
 </a>
 
-    <a
+     @* <a
     class="btn btn-primary"
     href="/Booking/Seats/@item.ScheduleId">
-
+    
     Book Ticket
 
-    </a>
+    </a>  *@
+<a
+class="btn btn-primary"
+href="/Booking/Seats/@item.ScheduleId"
+onclick="event.stopPropagation();">
+
+Book Ticket
+</a>
 
 </div>
 
@@ -185,6 +199,9 @@ href="javascript:void(0)">
 </section>
 
 <style>
+    .show-card{
+cursor:pointer;
+}
     .trailer-modal{
 
 display:none;
@@ -543,164 +560,295 @@ transform:translateY(-10px) scale(1.02);
 </style> 
 
 <script>
-function showLocationError(message) {
-    if (typeof showCinemaPopup === "function") {
-        showCinemaPopup(message, "error");
+
+function closeTrailer()
+{
+    document
+    .getElementById("trailerFrame")
+    .src="";
+
+    document
+    .getElementById("trailerModal")
+    .style.display="none";
+}
+
+function showLocationError(message)
+{
+    if(typeof showCinemaPopup==="function")
+    {
+        showCinemaPopup(
+        message,
+        "error"
+        );
         return;
     }
 
     alert(message);
 }
 
-function setSelectOptions(selectId, options, placeholder, selectedName) {
-    const select = document.getElementById(selectId);
-    select.innerHTML = `<option value="">${placeholder}</option>`;
+function setSelectOptions(
+selectId,
+options,
+placeholder,
+selectedName
+)
+{
+    const select=
+    document.getElementById(
+    selectId
+    );
 
-    options.forEach(item => {
-        const option = document.createElement("option");
-        const optionName = item.name || item;
+    select.innerHTML=
+    `<option value="">
+    ${placeholder}
+    </option>`;
 
-        option.value = optionName;
-        option.dataset.id = item.id || "";
-        option.dataset.hasData = item.id ? "true" : "false";
-        option.dataset.name = optionName;
-        option.textContent = item.name || item;
+    options.forEach(item=>{
 
-        if (selectedName && optionName.toLowerCase() === selectedName.toLowerCase()) {
-            option.selected = true;
+        const option=
+        document.createElement(
+        "option"
+        );
+
+        const optionName=
+        item.name || item;
+
+        option.value=
+        optionName;
+
+        option.dataset.id=
+        item.id || "";
+
+        option.dataset.hasData=
+        item.id
+        ?
+        "true"
+        :
+        "false";
+
+        option.dataset.name=
+        optionName;
+
+        option.textContent=
+        optionName;
+
+        if(
+        selectedName &&
+        optionName
+        .toLowerCase()
+        ===
+        selectedName
+        .toLowerCase()
+        )
+        {
+            option.selected=true;
         }
 
-        select.appendChild(option);
+        select.appendChild(
+        option
+        );
+
     });
 }
 
-async function loadCountries() {
-    try {
-        const response = await fetch("/Home/GetCountries");
 
-        if (!response.ok) {
-            throw new Error("Country request failed");
+async function loadCountries()
+{
+    try
+    {
+        const response=
+        await fetch(
+        "/Home/GetCountries"
+        );
+
+        if(!response.ok)
+        {
+            throw new Error(
+            "Country request failed"
+            );
         }
 
-        const countries = await response.json();
-        const india = countries.find(country => country.name && country.name.toLowerCase() === "india");
-        const selectedCountryName = india ? india.name : "";
+        const countries=
+        await response.json();
 
-        setSelectOptions("country", countries, "Select Country", selectedCountryName);
+        const india=
+        countries.find(
+        x=>
+        x.name &&
+        x.name
+        .toLowerCase()
+        ===
+        "india"
+        );
 
-        if (india && india.id) {
+        const selectedCountryName=
+        india
+        ?
+        india.name
+        :
+        "";
+
+        setSelectOptions(
+        "country",
+        countries,
+        "Select Country",
+        selectedCountryName
+        );
+
+        if(
+        india &&
+        india.id
+        )
+        {
             await loadStates();
         }
-    } catch {
-        setSelectOptions("country", [], "Select Country");
-        setSelectOptions("state", [], "Select State");
-        setSelectOptions("district", [], "Select Region");
-        showLocationError("Could not load countries. Please try again.");
+
+    }
+    catch
+    {
+        setSelectOptions(
+        "country",
+        [],
+        "Select Country"
+        );
+
+        setSelectOptions(
+        "state",
+        [],
+        "Select State"
+        );
+
+        setSelectOptions(
+        "district",
+        [],
+        "Select Region"
+        );
+
+        showLocationError(
+        "Could not load countries."
+        );
     }
 }
 
-async function loadStates() {
-    const countrySelect = document.getElementById("country");
-    const selectedCountry = countrySelect.options[countrySelect.selectedIndex];
-    const countryId = selectedCountry ? selectedCountry.dataset.id : "";
 
-    setSelectOptions("district", [], "Select Region");
 
-    if (!countryId) {
-        setSelectOptions("state", [], selectedCountry && selectedCountry.value ? "No states available" : "Select State");
+async function loadStates()
+{
+    const countrySelect=
+    document.getElementById(
+    "country"
+    );
+
+    const selectedCountry=
+    countrySelect.options[
+    countrySelect.selectedIndex
+    ];
+
+    const countryId=
+    selectedCountry
+    ?
+    selectedCountry.dataset.id
+    :
+    "";
+
+    setSelectOptions(
+    "district",
+    [],
+    "Select Region"
+    );
+
+    if(!countryId)
+    {
+        setSelectOptions(
+        "state",
+        [],
+        "Select State"
+        );
+
         return;
     }
 
-    setSelectOptions("state", [], "Loading states...");
+    try
+    {
+        const response=
+        await fetch(
+        `/Home/GetStates?countryId=${countryId}`
+        );
 
-    try {
-        const response = await fetch(`/Home/GetStates?countryId=${encodeURIComponent(countryId)}`);
+        const states=
+        await response.json();
 
-        if (!response.ok) {
-            throw new Error("State request failed");
-        }
-
-        const states = await response.json();
-        setSelectOptions("state", states, states.length ? "Select State" : "No states available");
-    } catch {
-        setSelectOptions("state", [], "Select State");
-        showLocationError("Could not load states. Please try again.");
+        setSelectOptions(
+        "state",
+        states,
+        "Select State"
+        );
+    }
+    catch
+    {
+        showLocationError(
+        "Could not load states."
+        );
     }
 }
 
-async function loadDistricts() {
-    const stateSelect = document.getElementById("state");
-    const selectedState = stateSelect.options[stateSelect.selectedIndex];
-    const stateId = selectedState ? selectedState.dataset.id : "";
 
-    if (!stateId) {
-        setSelectOptions("district", [], "Select Region");
+
+async function loadDistricts()
+{
+    const stateSelect=
+    document.getElementById(
+    "state"
+    );
+
+    const selectedState=
+    stateSelect.options[
+    stateSelect.selectedIndex
+    ];
+
+    const stateId=
+    selectedState
+    ?
+    selectedState.dataset.id
+    :
+    "";
+
+    if(!stateId)
+    {
+        setSelectOptions(
+        "district",
+        [],
+        "Select Region"
+        );
+
         return;
     }
 
-    setSelectOptions("district", [], "Loading regions...");
+    try
+    {
+        const response=
+        await fetch(
+        `/Home/GetDistricts?stateId=${stateId}`
+        );
 
-    try {
-        const response = await fetch(`/Home/GetDistricts?stateId=${encodeURIComponent(stateId)}`);
+        const districts=
+        await response.json();
 
-        if (!response.ok) {
-            throw new Error("Region request failed");
-        }
-
-        const districts = await response.json();
-        setSelectOptions("district", districts, districts.length ? "Select Region" : "No regions available");
-    } catch {
-        setSelectOptions("district", [], "Select Region");
-        showLocationError("Could not load regions. Please try again.");
+        setSelectOptions(
+        "district",
+        districts,
+        "Select Region"
+        );
+    }
+    catch
+    {
+        showLocationError(
+        "Could not load regions."
+        );
     }
 }
-document.querySelectorAll(
 
-".image-strip"
 
-)
-
-.forEach(slider=>{
-
-const images=
-
-slider.querySelectorAll(
-
-".swap-image"
-
-);
-
-let current=0;
-
-setInterval(()=>{
-
-images[current]
-
-.classList.remove(
-
-"active"
-
-);
-
-current=
-
-(current+1)
-
-%
-
-images.length;
-
-images[current]
-
-.classList.add(
-
-"active"
-
-);
-
-},2500);
-
-});
 
 document.addEventListener(
 "DOMContentLoaded",
@@ -708,16 +856,22 @@ document.addEventListener(
 
 loadCountries();
 
+
+
 document
-.querySelectorAll(".image-strip")
+.querySelectorAll(
+".image-strip"
+)
 .forEach(slider=>{
 
-let images=
+const images=
 slider.querySelectorAll(
 ".swap-image"
 );
 
-if(images.length<=1)
+if(
+images.length<=1
+)
 return;
 
 let current=0;
@@ -730,7 +884,9 @@ images[current]
 );
 
 current=
-(current+1)
+(
+current+1
+)
 %
 images.length;
 
@@ -744,7 +900,8 @@ images[current]
 });
 
 
-@* document
+
+document
 .querySelectorAll(
 ".trailer-btn"
 )
@@ -752,60 +909,48 @@ images[current]
 
 button.addEventListener(
 "click",
-()=>{
+(event)=>{
+
+event.preventDefault();
+
+event.stopPropagation();
 
 let url=
 button.dataset.url;
 
 if(
-url &&
-url!=="#"
+!url ||
+url=="#"
 )
-{
-window.open(
-url,
-"_blank"
-);
-}
-else
 {
 alert(
 "Trailer coming soon"
 );
-}
 
-});
-
-}); *@
-document
-.querySelectorAll(".trailer-btn")
-.forEach(button=>{
-
-button.addEventListener(
-"click",
-()=>{
-
-let url=
-button.dataset.url;
-
-if(!url || url=="#")
-{
-alert("Trailer coming soon");
 return;
 }
 
 let videoId="";
 
-if(url.includes("watch?v="))
+try
 {
-videoId=
-url.split("watch?v=")[1]
-.split("&")[0];
+    let parsedUrl=
+    new URL(url);
+
+    if(parsedUrl.hostname.includes("youtu.be"))
+    {
+        videoId=
+        parsedUrl.pathname.substring(1);
+    }
+    else
+    {
+        videoId=
+        parsedUrl.searchParams.get("v");
+    }
 }
-else if(url.includes("youtu.be/"))
+catch
 {
-videoId=
-url.split("youtu.be/")[1];
+    console.log("Invalid trailer url");
 }
 
 if(videoId)
@@ -829,29 +974,19 @@ document
 
 });
 
-function closeTrailer()
-{
-document
-.getElementById(
-"trailerFrame"
-)
-.src="";
+
 
 document
 .getElementById(
 "trailerModal"
 )
-.style.display=
-"none";
-}
-document
-.getElementById("trailerModal")
 .addEventListener(
 "click",
 function(e){
 
 if(
-e.target.id==="trailerModal"
+e.target.id===
+"trailerModal"
 )
 {
 closeTrailer();

@@ -114,37 +114,70 @@ public async Task<IActionResult> Index(string type = "Movie")
 //     HomeShows = schedules
 // };
 
+// var schedules = await _context.HomeShows
+//     .Where(x => x.ShowType == type)
+//     .Where(x => x.StartTime >= DateTime.UtcNow)
+//     .OrderByDescending(x => x.StartTime)
+//     .Select(x => new HomeShowViewModel
+//     {
+//         ScheduleId = x.ScheduleId,
+
+//         Title = x.Title,
+//         Description = x.Description,
+
+//         PosterUrl = x.PosterUrl,
+//         Images = x.Images,
+//         TrailerUrl = x.TrailerUrl,
+
+//         StartTime = x.StartTime,
+//         EndTime = x.EndTime,
+
+//         Location = x.Location,
+//         State = x.State,
+//         Country = x.Country,
+
+//         ShowType = x.ShowType
+//     })
+//     .ToListAsync();
+
 var schedules = await _context.HomeShows
-    .Where(x => x.ShowType == type)
-    .Where(x => x.StartTime >= DateTime.UtcNow)
-    .OrderByDescending(x => x.StartTime)
-    .Select(x => new HomeShowViewModel
-    {
-        ScheduleId = x.ScheduleId,
+.Where(x => x.ShowType == type)
+.Where(x => x.StartTime >= DateTime.UtcNow)
+.OrderBy(x => x.StartTime)
+.Select(x => new HomeShowViewModel
+{
+    ScheduleId = x.ScheduleId, // REQUIRED
 
-        Title = x.Title,
-        Description = x.Description,
+    ShowId = x.ShowId,
 
-        PosterUrl = x.PosterUrl,
-        Images = x.Images,
-        TrailerUrl = x.TrailerUrl,
+    ShowType = x.ShowType,
 
-        StartTime = x.StartTime,
-        EndTime = x.EndTime,
+    Title = x.Title,
 
-        Location = x.Location,
-        State = x.State,
-        Country = x.Country,
+    Description = x.Description,
 
-        ShowType = x.ShowType
-    })
-    .ToListAsync();
+    PosterUrl = x.PosterUrl,
+
+    Images = x.Images,
+
+    TrailerUrl = x.TrailerUrl,
+
+    StartTime = x.StartTime,
+
+    EndTime = x.EndTime,
+
+    Location = x.Location,
+
+    State = x.State,
+
+    Country = x.Country
+})
+.ToListAsync();
 
 var vm = new HomeViewModel
 {
     HomeShows = schedules
 };
-
 
         await _activityLogger.LogAsync(
             userId: user?.Id,
@@ -258,7 +291,19 @@ var vm = new HomeViewModel
                 return StatusCode(500, new { message = "Failed to load countries." });
             }
         }
+public async Task<IActionResult> ShowDates(
+int id,
+string type)
+{
+    var dates = await _context.HomeShows
+        .Where(x =>
+            x.ShowId == id &&
+            x.ShowType == type)
+        .OrderBy(x=>x.StartTime)
+        .ToListAsync();
 
+    return View(dates);
+}
         [HttpGet]
         public async Task<IActionResult> GetStates(int countryId)
         {

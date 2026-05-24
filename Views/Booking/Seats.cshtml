@@ -19,9 +19,16 @@
     :
     $"{Model.Location.Area}, {Model.Location.State}, {Model.Location.Country}";
 
-    var seats=
+    @* var seats=
     ViewBag.Seats
-    as List<AmarShowsBook.Models.ViewModels.SeatVM>;
+    as List<AmarShowsBook.Models.ViewModels.SeatVM>; *@
+    var seats=
+ViewBag.Seats
+as List<AmarShowsBook.Models.ViewModels.SeatVM>;
+
+var availableDates=
+ViewBag.AvailableDates
+as List<AmarShowsBook.Models.ShowSchedule>;
 }
 
 <section class="booking-page">
@@ -66,7 +73,44 @@ Seat Shot
 
 </div>
 
+@* <div class="show-dates">
 
+@foreach(var show in
+((List<AmarShowsBook.Models.ShowSchedule>)
+ViewBag.AvailableDates)
+.GroupBy(x=>x.StartTime.Date)
+.Select(x=>x.First()))
+{
+    <a
+    class="date-chip @(show.Id==Model.Id ? "active":"")"
+    href="/Booking/Seats/@show.Id">
+
+    @show.StartTime.ToString("dd MMM")
+
+    </a>
+}
+
+</div> *@
+@if(availableDates!=null && availableDates.Any())
+{
+<div class="show-dates">
+
+@foreach(var show in
+availableDates
+.GroupBy(x=>x.StartTime.Date)
+.Select(x=>x.First()))
+{
+    <a
+    class="date-chip @(show.Id==Model.Id ? "active":"")"
+    href="/Booking/Seats/@show.Id">
+
+        @show.StartTime.ToString("dd MMM")
+
+    </a>
+}
+
+</div>
+}
 
 <div class="screen-line">
 
@@ -509,6 +553,48 @@ text-align:center;
 width:58px;
 height:58px;
 }
+
+}
+.show-dates{
+
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+justify-content:center;
+
+margin:0 0 35px 0;
+
+}
+
+.date-chip{
+
+padding:12px 18px;
+
+border-radius:30px;
+
+background:#2a2a3d;
+
+color:white;
+
+text-decoration:none;
+
+border:1px solid #444;
+
+transition:.3s;
+
+}
+
+.date-chip:hover{
+
+transform:translateY(-3px);
+
+}
+
+.date-chip.active{
+
+background:#ff4757;
+
+font-weight:700;
 
 }
 </style>

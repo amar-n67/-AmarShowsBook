@@ -27,9 +27,14 @@ namespace AmarShowsBook.Controllers
         // SEATS
         // ==========================================
 
-        [Route("Booking/Seats/{id}")]
+ // ==========================================
+// SEATS
+// ==========================================
+
+[Route("Booking/Seats/{id}")]
 public async Task<IActionResult> Seats(int id)
 {
+    // Load selected schedule
     var schedule =
     await _context.ShowSchedules
     .Include(x=>x.Movie)
@@ -39,14 +44,58 @@ public async Task<IActionResult> Seats(int id)
     .FirstOrDefaultAsync(x=>x.Id==id);
 
     if(schedule==null)
+    {
         return NotFound();
+    }
 
 
     // ==================================
-    // Create seats for this schedule only
+    // Load all dates for same show/movie
     // ==================================
 
-    bool seatsExist=
+    var availableDates =
+    await _context.ShowSchedules
+    .Where(x=>
+
+        x.Type==schedule.Type
+
+        &&
+
+        (
+
+            (schedule.Type=="Movie"
+            &&
+            x.MovieId==schedule.MovieId)
+
+            ||
+
+            (schedule.Type=="Standup"
+            &&
+            x.StandupShowId==
+            schedule.StandupShowId)
+
+            ||
+
+            (schedule.Type=="Live"
+            &&
+            x.LiveStreamId==
+            schedule.LiveStreamId)
+
+        )
+
+    )
+    .OrderBy(x=>x.StartTime)
+    .ToListAsync();
+
+    ViewBag.AvailableDates =
+    availableDates;
+
+
+    // ==================================
+    // Create seats only if missing
+    // ==================================
+
+    bool seatsExist =
 
     await _context.ScreenSeats
     .AnyAsync(
@@ -61,50 +110,54 @@ public async Task<IActionResult> Seats(int id)
 
 
     // ==================================
-    // Load only this schedule seats
+    // Load seats for selected date
     // ==================================
 
-    var seats=
+    var seats =
 
-    await(
+    await
+    (
 
-    from s in _context.ScreenSeats
+        from s in _context.ScreenSeats
 
-    where s.ScheduleId==id
+        where s.ScheduleId==id
 
-    join l in _context.SeatLocks
-    on s.Id equals l.ScreenSeatId
-    into lockGroup
+        join l in _context.SeatLocks
+        on s.Id equals l.ScreenSeatId
+        into lockGroup
 
-    from lockSeat in
-    lockGroup.DefaultIfEmpty()
+        from lockSeat in
+        lockGroup.DefaultIfEmpty()
 
-    select new SeatVM
-    {
-        SeatId=s.Id,
+        select new SeatVM
+        {
+            SeatId=s.Id,
 
-        Row=s.SeatRow,
+            Row=s.SeatRow,
 
-        Number=s.SeatNumber,
+            Number=s.SeatNumber,
 
-        Price=s.SeatPrice,
+            Price=s.SeatPrice,
 
-        Category=s.SeatCategory,
+            Category=s.SeatCategory,
 
-        IsBooked=
-        lockSeat!=null
-        &&
-        lockSeat.LockStatus=="CONFIRMED",
+            IsBooked=
+            lockSeat!=null
+            &&
+            lockSeat.LockStatus=="CONFIRMED",
 
-        IsLocked=
-        lockSeat!=null
-        &&
-        lockSeat.LockStatus=="LOCKED"
-    }
+            IsLocked=
+            lockSeat!=null
+            &&
+            lockSeat.LockStatus=="LOCKED"
+        }
 
-    ).ToListAsync();
+    )
+    .ToListAsync();
 
-    ViewBag.Seats=seats;
+    ViewBag.Seats =
+    seats;
+
 
     return View(schedule);
 }
