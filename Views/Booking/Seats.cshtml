@@ -103,6 +103,7 @@ ViewBag.AvailableDates)
 
 @foreach(var show in
 availableDates
+.Where(x=>x.StartTime>=DateTime.UtcNow)
 .GroupBy(x=>x.StartTime.Date)
 .Select(x=>x.First()))
 {

@@ -141,13 +141,17 @@ public async Task<IActionResult> Seats(int id)
 
     if(schedule==null)
         return NotFound();
-  var availableDates =
+    var availableDates =
 
     await _context.ShowSchedules
 
     .Where(x=>
 
         x.Type==schedule.Type
+
+        &&
+
+        x.StartTime>=DateTime.UtcNow
 
         &&
 

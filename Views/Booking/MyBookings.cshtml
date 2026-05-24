@@ -45,7 +45,8 @@
                 var statusClass = booking.IsError == 1 ? "failed" : isExpired ? "expired" : "success";
                 var statusText = isExpired ? "EXPIRED" : booking.BookingStatus;
                 var ticketUrl = $"{publicBaseUrl}/Booking/TicketByBooking/{booking.BookingId}";
-                var printUrl = $"{ticketUrl}?print=1";
+                var ticketPath = $"/Booking/TicketByBooking/{booking.BookingId}";
+                var printPath = $"{ticketPath}?print=1";
 
                 <article class="booking-card" data-admin-searchable>
                     <div class="booking-top">
@@ -107,8 +108,8 @@
                     </div>
 
                     <div class="booking-actions no-print">
-                        <a class="btn btn-primary" href="@ticketUrl">View Ticket</a>
-                        <a class="btn btn-secondary" href="@printUrl">Download</a>
+                        <a class="btn btn-primary" href="@ticketPath">View Ticket</a>
+                        <a class="btn btn-secondary" href="@printPath">Download</a>
                     </div>
                 </article>
             }
