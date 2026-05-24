@@ -171,7 +171,6 @@ body{
     box-shadow:
     0px 10px 20px rgba(0,0,0,.2);
 }
-<style>
 
 :root{
 
@@ -722,7 +721,7 @@ async function toggleQR()
         .style.display="none";
 
 
-        let response=
+        @* let response=
 
         await fetch(
         "/Booking/GenerateQR?bookingId=@Model.Id"
@@ -739,7 +738,52 @@ async function toggleQR()
         "/Booking/CreateQR?text="
         +
         encodeURIComponent(
-        result.url);
+        result.url); *@
+
+        try
+{
+    let response=
+
+    await fetch(
+    "/Booking/GenerateQR?bookingId=@Model.Id"
+    );
+
+    if(!response.ok)
+    {
+        throw new Error(
+        "QR generation failed"
+        );
+    }
+
+    let result=
+    await response.json();
+
+    if(!result.success)
+    {
+        throw new Error(
+        "QR generation failed"
+        );
+    }
+
+    document
+    .getElementById(
+    "qrImage"
+    )
+    .src=
+    "/Booking/CreateQR?text="
+    +
+    encodeURIComponent(
+    result.url
+    );
+}
+catch(error)
+{
+    console.log(error);
+
+    alert(
+    "Unable to generate QR"
+    );
+}
 
 
         if(statusChecker)
