@@ -1,0 +1,119 @@
+@model AmarShowsBook.Models.ViewModels.ManageShowsViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Manage Shows";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Manage Shows</h1>
+            <p>Add movies, standup and live shows with theater, screen, date, time and seats.</p>
+        </div>
+        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
+    </div>
+
+    @if(TempData["Success"]!=null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if(TempData["Error"]!=null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="admin-detail-panel mb-4" data-admin-searchable>
+        <h2 class="h5 mb-3">Schedule Show</h2>
+        <form asp-action="CreateManagedShow" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-md-2">
+                <label class="form-label">Type</label>
+                <select name="Type" class="form-select">
+                    <option value="Movie">Movie</option>
+                    <option value="Standup">Standup</option>
+                    <option value="Live">Live</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Show Name</label>
+                <input name="Title" class="form-control" required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Director/Host</label>
+                <input name="SecondaryName" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date Time</label>
+                <input name="StartTime" class="form-control" type="datetime-local" required />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">Minutes</label>
+                <input name="Duration" class="form-control" type="number" min="15" value="120" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Seats</label>
+                <input name="TotalSeats" class="form-control" type="number" min="10" value="70" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Location</label>
+                <select name="LocationId" class="form-select" required>
+                    <option value="">Select location</option>
+                    @foreach(var location in Model.Locations)
+                    {
+                        <option value="@location.Id">@location.Area, @location.State, @location.Country</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Theater</label>
+                <select name="VenueId" class="form-select" required>
+                    @foreach(var venue in Model.Venues)
+                    {
+                        <option value="@venue.Id">@venue.VenueName, @venue.City</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Screen</label>
+                <select name="ScreenId" class="form-select" required>
+                    @foreach(var screen in Model.Screens)
+                    {
+                        <option value="@screen.Id">@screen.ScreenName (@screen.TotalSeats seats)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card p-4">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Show</th>
+                    <th>Type</th>
+                    <th>Date Time</th>
+                    <th>Location</th>
+                    <th>Screen</th>
+                    <th>Seats</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var schedule in Model.Schedules)
+                {
+                    var title = schedule.Movie?.Title ?? schedule.StandupShow?.Title ?? schedule.LiveStream?.Title ?? "Untitled";
+                    <tr data-admin-searchable>
+                        <td><strong>@title</strong></td>
+                        <td>@schedule.Type</td>
+                        <td>@schedule.StartTime.ToString("dd MMM yyyy hh:mm tt")</td>
+                        <td>@schedule.Location?.Area, @schedule.Location?.State</td>
+                        <td>@(schedule.Screen?.ScreenName ?? "Not assigned")</td>
+                        <td>@(schedule.Screen?.TotalSeats.ToString() ?? "Auto")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

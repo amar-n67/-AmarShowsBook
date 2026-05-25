@@ -23,5 +23,7 @@ namespace AmarShowsBook.Models
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public string Type { get; set; } // Movie / Standup / Live
+        public long? ScreenId { get; set; }
+        public Screen? Screen { get; set; }
     }
 }

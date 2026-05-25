@@ -3,9 +3,18 @@
 @{
 var schedule=ViewBag.Schedule;
 var user=ViewBag.User as AmarShowsBook.Models.User;
+var summary=ViewBag.BookingSummary as AmarShowsBook.Models.VwBookingCompleteDetails;
+var transaction=ViewBag.Transaction as AmarShowsBook.Models.Transaction;
+var tickets=ViewBag.Tickets as List<AmarShowsBook.Models.Ticket> ?? new List<AmarShowsBook.Models.Ticket>();
+var screen=ViewBag.Screen as Screen;
+var venueInfo=ViewBag.Venue as AmarShowsBook.Models.Venue;
 var bookingRef=ViewBag.BookingRef as string ?? $"#{Model.Id}";
 var title = schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Show";
-var venue = schedule?.Location?.Area ?? "Venue to be announced";
+var venue = venueInfo!=null
+    ? $"{venueInfo.VenueName}, {venueInfo.Address}, {venueInfo.City}, {venueInfo.State}"
+    : schedule?.Location?.Area ?? "Venue to be announced";
+var amount = summary?.PayableAmount ?? summary?.TotalAmount ?? Model.TotalAmount;
+var status = summary?.BookingStatus ?? Model.Status;
 }
 
 <style>
@@ -80,15 +89,11 @@ padding:25px;
 }
 
 
-.poster{
-
-width:100%;
-
-height:220px;
-
+.ticket-stub{
+border:1px dashed #ffb3c3;
 border-radius:20px;
-
-object-fit:cover;
+padding:18px;
+background:#fff7fa;
 }
 
 
@@ -199,10 +204,20 @@ translateY(0);
 
 <div class="content">
 
-<img
-class="poster"
-src="https://picsum.photos/400/400?random=@Model.Id"
-/>
+<div class="ticket-stub">
+<div class="row">
+<span>Status</span>
+<span>@status</span>
+</div>
+<div class="row">
+<span>Show Type</span>
+<span>@(summary?.ShowType ?? schedule?.Type ?? "Show")</span>
+</div>
+<div class="row">
+<span>Screen</span>
+<span>@(screen?.ScreenName ?? "Screen TBA")</span>
+</div>
+</div>
 
 <div class="title">
 
@@ -277,10 +292,37 @@ src="https://picsum.photos/400/400?random=@Model.Id"
 
 </div>
 
+<div class="row">
+
+<span>Transaction</span>
+
+<span>@(transaction?.TransactionRef ?? summary?.TransactionRef ?? "N/A")</span>
+
+</div>
+
+<div class="row">
+
+<span>Payment</span>
+
+<span>@(transaction?.PaymentMethod ?? summary?.PaymentMethod ?? "N/A")</span>
+
+</div>
+
+@if(tickets.Any())
+{
+<div class="row">
+
+<span>Tickets</span>
+
+<span>@string.Join(", ", tickets.Select(x=>x.TicketNumber))</span>
+
+</div>
+}
+
 
 <div class="total">
 
-₹@Model.TotalAmount
+₹@amount
 
 </div>
 

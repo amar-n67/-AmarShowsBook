@@ -26,5 +26,6 @@ public string? TrailerUrl { get; set; }
         public string State { get; set; }
 
         public string Country { get; set; }
+        public string? TheaterDetails { get; set; }
     }
 }

@@ -1,0 +1,55 @@
+AmarShowsBook RBAC implementation notes
+
+Roles already defined in the roles table:
+AMAR_SUPER_ADMIN, AMAR_ADMIN, AMAR_OPERATIONS_MANAGER, AMAR_BOOKING_MANAGER,
+AMAR_PAYMENT_MANAGER, AMAR_REFUND_MANAGER, AMAR_CONTENT_MANAGER,
+AMAR_NOTIFICATION_MANAGER, AMAR_ANALYTICS_MANAGER, AMAR_SUPPORT_EXECUTIVE,
+AMAR_SCANNER_OPERATOR and AMAR_USER.
+
+Core services:
+- Services/RbacService.cs checks vw_user_access_matrix by UserId, ModuleCode and ActionType.
+- Helpers/RbacAuthorizationHelper.cs reads the logged in session user and calls RbacService.
+- appsettings DeveloperSettings:BypassRBAC can bypass checks during development.
+
+Admin pages implemented:
+- /Admin/Roles loads roles from roles and can create/update custom roles.
+- /Admin/Permissions seeds application_modules and common permissions when opened, then manages records in permissions and role_permissions.
+- /Admin/UserAccess assigns/removes roles for users through user_role_mappings.
+- /Admin/ManageShows creates Movie, StandupShow or LiveStream content, creates ShowSchedules with screen_id, generates screen_seats and makes those schedules appear on Home/Index.
+
+Permission modules and action mapping:
+- ADMIN VIEW: Admin dashboard access.
+- USER VIEW, UPDATE, DISABLE, GRANT_ACCESS: users, profiles, disable/grant access and role assignment workflows.
+- ROLE VIEW, CREATE, UPDATE, DELETE: role definition workflows.
+- PERMISSION VIEW, CREATE, ASSIGN: permission creation and role-permission assignment.
+- SHOW VIEW, CREATE, UPDATE, DELETE: manage movies, standup shows, live shows, show date/time, seats, theater and screen.
+- BOOKING VIEW, PRINT, CANCEL: bookings, ticket pages, print/download and customer/admin cancellation.
+- PAYMENT VIEW, REFUND: transactions and payment history.
+- REFUND VIEW, APPROVE, REJECT, RETRY: admin refund approval workflow.
+- WALLET VIEW, UPDATE: wallet dashboard and wallet balance transaction workflows.
+- COUPON VIEW, CREATE, UPDATE, DELETE: coupon management records.
+- NOTIFICATION VIEW, UPDATE: templates and notification center.
+- ANALYTICS VIEW: reporting/dashboard access.
+- SUPPORT VIEW: support and customer issue investigation.
+- SCANNER VALIDATE: ticket validation at venue entry.
+- DEVELOPER EDIT: developer/editor only features.
+
+Booking cancellation:
+- Booking/MyBookings posts to Booking/CancelBooking.
+- Cancellation is blocked after show start time, when already cancelled, or when the booking is not confirmed/paid.
+- A refund row is created in refunds for every accepted cancellation.
+- Wallet amount used is credited back through wallet_transactions immediately.
+- UPI, QR, wallet and generic API-source refunds are marked SUCCESS automatically in this local implementation.
+- Card, net banking and bank-like methods remain PENDING for /Admin/Refunds approval.
+
+Theater data:
+- Venue and screen data come from venues and screens.
+- ShowSchedules.screen_id links a schedule to its screen.
+- Booking/Seats, Booking/Details, Booking/TicketByBooking, Booking/MyBookings and Home/Index display theater/screen details from the database when linked.
+
+Developer checklist for adding new protected buttons/pages:
+1. Add or reuse a module in application_modules.
+2. Add a permission in permissions using MODULE_ACTION format.
+3. Grant it to roles from /Admin/Permissions.
+4. In the controller action, call RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "MODULE", "ACTION").
+5. For a view-only button, hide/disable the control using the same module/action decision passed via ViewBag or a view model.

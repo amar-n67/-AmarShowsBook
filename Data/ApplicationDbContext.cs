@@ -39,6 +39,7 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<ScreenSeat> ScreenSeats { get; set; }
         public DbSet<Screen> Screens { get; set; }
+        public DbSet<Venue> Venues { get; set; }
         public DbSet<DeletedUser> DeletedUsers { get; set; }
 
         public DbSet<ActivityLog> ActivityLogs { get; set; }
@@ -71,6 +72,9 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<Role> Roles { get; set; }
 
         public DbSet<Permission> Permissions { get; set; }
+        public DbSet<ApplicationModule> ApplicationModules { get; set; }
+        public DbSet<ApplicationMenu> ApplicationMenus { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
 
         // =====================================================
         // ADMIN SQL VIEW TABLES
@@ -163,6 +167,12 @@ ModelBuilder modelBuilder)
 
         entity.Property(x=>x.WalletAmountUsed)
             .HasColumnName("wallet_amount_used");
+    });
+
+    modelBuilder.Entity<Venue>(entity =>
+    {
+        entity.ToTable("venues");
+        entity.HasKey(x=>x.Id);
     });
 
     modelBuilder.Entity<Transaction>(entity =>
@@ -258,6 +268,24 @@ ModelBuilder modelBuilder)
             .HasColumnName("updated_at");
     });
 
+    modelBuilder.Entity<ApplicationModule>(entity =>
+    {
+        entity.ToTable("application_modules");
+        entity.HasKey(x=>x.Id);
+    });
+
+    modelBuilder.Entity<ApplicationMenu>(entity =>
+    {
+        entity.ToTable("application_menus");
+        entity.HasKey(x=>x.Id);
+    });
+
+    modelBuilder.Entity<RolePermission>(entity =>
+    {
+        entity.ToTable("role_permissions");
+        entity.HasKey(x=>x.Id);
+    });
+
 
 
     // =========================================
@@ -308,6 +336,13 @@ ModelBuilder modelBuilder)
     // =========================================
 
     modelBuilder.Entity<ShowSchedule>()
+        .ToTable("ShowSchedules");
+
+    modelBuilder.Entity<ShowSchedule>()
+        .Property(x=>x.ScreenId)
+        .HasColumnName("screen_id");
+
+    modelBuilder.Entity<ShowSchedule>()
         .HasOne(x=>x.Movie)
         .WithMany()
         .HasForeignKey(x=>x.MovieId)
@@ -323,6 +358,18 @@ ModelBuilder modelBuilder)
         .HasOne(x=>x.LiveStream)
         .WithMany()
         .HasForeignKey(x=>x.LiveStreamId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.Location)
+        .WithMany()
+        .HasForeignKey(x=>x.LocationId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.Screen)
+        .WithMany()
+        .HasForeignKey(x=>x.ScreenId)
         .OnDelete(DeleteBehavior.Restrict);
 
 
@@ -364,6 +411,8 @@ ModelBuilder modelBuilder)
 
         entity.Property(x=>x.Country)
             .HasColumnName("country");
+
+        entity.Ignore(x=>x.TheaterDetails);
     });
 
 

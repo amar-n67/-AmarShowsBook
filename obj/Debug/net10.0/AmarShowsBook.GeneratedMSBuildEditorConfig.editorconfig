@@ -50,6 +50,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vSW52b2ljZXMvSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Admin/ManageShows.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vTWFuYWdlU2hvd3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Admin/Notifications.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vTm90aWZpY2F0aW9ucy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

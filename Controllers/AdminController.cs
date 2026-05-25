@@ -165,7 +165,84 @@ FailedRefunds =
 
      public IActionResult Roles()
         {
-            return View();
+            var roles = _context.Roles
+                .AsNoTracking()
+                .OrderBy(x => x.Id)
+                .ToList();
+
+            return View(roles);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateRole(string roleCode, string roleName, string? roleDescription)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "ROLE", "CREATE"))
+            {
+                TempData["Error"] = "You do not have permission to create roles.";
+                return RedirectToAction(nameof(Roles));
+            }
+
+            roleCode = NormalizeCode(roleCode);
+            roleName = (roleName ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(roleCode) || string.IsNullOrWhiteSpace(roleName))
+            {
+                TempData["Error"] = "Role code and role name are required.";
+                return RedirectToAction(nameof(Roles));
+            }
+
+            if (await _context.Roles.AnyAsync(x => x.RoleCode == roleCode))
+            {
+                TempData["Error"] = "Role code already exists.";
+                return RedirectToAction(nameof(Roles));
+            }
+
+            var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.Roles.Add(new Role
+            {
+                RoleCode = roleCode,
+                RoleName = roleName,
+                RoleDescription = roleDescription?.Trim(),
+                IsSystemRole = false,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+                CreatedBy = HttpContext.Session.GetString("UserName") ?? "Admin",
+                UpdatedBy = HttpContext.Session.GetString("UserName") ?? "Admin"
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Role created successfully.";
+            return RedirectToAction(nameof(Roles));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateRole(long id, string roleName, string? roleDescription, bool isActive)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "ROLE", "UPDATE"))
+            {
+                TempData["Error"] = "You do not have permission to edit roles.";
+                return RedirectToAction(nameof(Roles));
+            }
+
+            var role = await _context.Roles.FirstOrDefaultAsync(x => x.Id == id);
+            if (role == null)
+            {
+                TempData["Error"] = "Role not found.";
+                return RedirectToAction(nameof(Roles));
+            }
+
+            role.RoleName = (roleName ?? role.RoleName).Trim();
+            role.RoleDescription = roleDescription?.Trim();
+            role.IsActive = isActive;
+            role.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            role.UpdatedBy = HttpContext.Session.GetString("UserName") ?? "Admin";
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Role updated successfully.";
+            return RedirectToAction(nameof(Roles));
         }
 
         // =====================================================
@@ -177,7 +254,223 @@ FailedRefunds =
 
       public IActionResult Permissions()
         {
-            return View();
+            EnsurePermissionSeedData();
+
+            ViewBag.Roles = _context.Roles
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.RoleName)
+                .ToList();
+
+            ViewBag.Modules = _context.ApplicationModules
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.DisplayOrder)
+                .ThenBy(x => x.ModuleName)
+                .ToList();
+
+            ViewBag.RolePermissionIds = _context.RolePermissions
+                .AsNoTracking()
+                .Select(x => $"{x.RoleId}:{x.PermissionId}")
+                .ToHashSet();
+
+            var permissions = _context.Permissions
+                .AsNoTracking()
+                .OrderBy(x => x.ModuleId)
+                .ThenBy(x => x.ActionType)
+                .ToList();
+
+            return View(permissions);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePermission(
+            long moduleId,
+            string permissionCode,
+            string permissionName,
+            string actionType,
+            string? description)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "PERMISSION", "CREATE"))
+            {
+                TempData["Error"] = "You do not have permission to create permissions.";
+                return RedirectToAction(nameof(Permissions));
+            }
+
+            permissionCode = NormalizeCode(permissionCode);
+            actionType = NormalizeCode(actionType);
+
+            if (moduleId <= 0 || string.IsNullOrWhiteSpace(permissionCode) || string.IsNullOrWhiteSpace(permissionName))
+            {
+                TempData["Error"] = "Module, permission code and permission name are required.";
+                return RedirectToAction(nameof(Permissions));
+            }
+
+            if (await _context.Permissions.AnyAsync(x => x.PermissionCode == permissionCode))
+            {
+                TempData["Error"] = "Permission code already exists.";
+                return RedirectToAction(nameof(Permissions));
+            }
+
+            _context.Permissions.Add(new Permission
+            {
+                ModuleId = moduleId,
+                PermissionCode = permissionCode,
+                PermissionName = permissionName.Trim(),
+                ActionType = actionType,
+                Description = description?.Trim() ?? string.Empty,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Permission created successfully.";
+            return RedirectToAction(nameof(Permissions));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleRolePermission(long roleId, long permissionId, bool grant)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "PERMISSION", "ASSIGN"))
+            {
+                TempData["Error"] = "You do not have permission to assign permissions.";
+                return RedirectToAction(nameof(Permissions));
+            }
+
+            var mapping = await _context.RolePermissions
+                .FirstOrDefaultAsync(x => x.RoleId == roleId && x.PermissionId == permissionId);
+
+            if (grant && mapping == null)
+            {
+                long? grantedBy = null;
+                if (long.TryParse(HttpContext.Session.GetString("UserId"), out var currentUserId))
+                {
+                    grantedBy = currentUserId;
+                }
+
+                _context.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = roleId,
+                    PermissionId = permissionId,
+                    GrantedBy = grantedBy,
+                    GrantedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                });
+            }
+            else if (!grant && mapping != null)
+            {
+                _context.RolePermissions.Remove(mapping);
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = grant ? "Permission granted." : "Permission removed.";
+            return RedirectToAction(nameof(Permissions));
+        }
+
+        public async Task<IActionResult> ManageShows()
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "SHOW", "VIEW"))
+            {
+                return RedirectToAction("Dashboard");
+            }
+
+            var model = new ManageShowsViewModel
+            {
+                Schedules = await _context.ShowSchedules
+                    .Include(x => x.Movie)
+                    .Include(x => x.StandupShow)
+                    .Include(x => x.LiveStream)
+                    .Include(x => x.Location)
+                    .Include(x => x.Screen)
+                    .OrderByDescending(x => x.StartTime)
+                    .Take(100)
+                    .ToListAsync(),
+                Locations = await _context.Locations.AsNoTracking().OrderBy(x => x.Area).ToListAsync(),
+                Venues = await _context.Venues.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.VenueName).ToListAsync(),
+                Screens = await _context.Screens.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.ScreenName).ToListAsync()
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateManagedShow(ManageShowCreateViewModel request)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "SHOW", "CREATE"))
+            {
+                TempData["Error"] = "You do not have permission to create shows.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Title) || request.LocationId <= 0 || request.ScreenId <= 0)
+            {
+                TempData["Error"] = "Show title, location and screen are required.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            var duration = Math.Clamp(request.Duration, 15, 600);
+            var type = request.Type switch
+            {
+                "Standup" => "Standup",
+                "Live" => "Live",
+                _ => "Movie"
+            };
+
+            var schedule = new ShowSchedule
+            {
+                LocationId = request.LocationId,
+                ScreenId = request.ScreenId,
+                StartTime = request.StartTime,
+                EndTime = request.StartTime.AddMinutes(duration),
+                Type = type
+            };
+
+            if (type == "Movie")
+            {
+                var movie = new Movie
+                {
+                    Title = request.Title.Trim(),
+                    Director = request.SecondaryName?.Trim(),
+                    Producer = request.SecondaryName?.Trim() ?? "Admin",
+                    Cast = "TBA",
+                    Duration = duration
+                };
+                _context.Movies.Add(movie);
+                await _context.SaveChangesAsync();
+                schedule.MovieId = movie.Id;
+            }
+            else if (type == "Standup")
+            {
+                var show = new StandupShow
+                {
+                    Title = request.Title.Trim(),
+                    Comedian = request.SecondaryName?.Trim() ?? "TBA",
+                    Duration = duration
+                };
+                _context.StandupShows.Add(show);
+                await _context.SaveChangesAsync();
+                schedule.StandupShowId = show.Id;
+            }
+            else
+            {
+                var live = new LiveStream
+                {
+                    Title = request.Title.Trim(),
+                    Host = request.SecondaryName?.Trim() ?? "TBA",
+                    Duration = duration
+                };
+                _context.LiveStreams.Add(live);
+                await _context.SaveChangesAsync();
+                schedule.LiveStreamId = live.Id;
+            }
+
+            _context.ShowSchedules.Add(schedule);
+            await _context.SaveChangesAsync();
+            await GenerateManagedSeats(schedule.Id, request.ScreenId, request.TotalSeats);
+
+            TempData["Success"] = "Show scheduled successfully.";
+            return RedirectToAction(nameof(ManageShows));
         }
 
         public IActionResult Users(int page = 1)
@@ -2091,6 +2384,133 @@ public IActionResult RevokeUser(int id)
     _context.SaveChanges();
 
     return RedirectToAction("Users");
+}
+
+private string NormalizeCode(string? value)
+{
+    return (value ?? string.Empty)
+        .Trim()
+        .ToUpperInvariant()
+        .Replace(" ", "_")
+        .Replace("-", "_");
+}
+
+private void EnsurePermissionSeedData()
+{
+    var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+    var modules = new[]
+    {
+        ("ADMIN", "Admin Dashboard", "/Admin/Dashboard", 10),
+        ("USER", "Users and Profiles", "/Admin/Users", 20),
+        ("ROLE", "Roles", "/Admin/Roles", 30),
+        ("PERMISSION", "Permissions", "/Admin/Permissions", 40),
+        ("SHOW", "Manage Shows", "/Admin/ManageShows", 50),
+        ("BOOKING", "Bookings and Tickets", "/Admin/Bookings", 60),
+        ("PAYMENT", "Payments", "/Admin/Transactions", 70),
+        ("REFUND", "Refunds", "/Admin/Refunds", 80),
+        ("WALLET", "Wallets", "/Admin/Wallets", 90),
+        ("COUPON", "Coupons", "/Admin/Coupons", 100),
+        ("NOTIFICATION", "Notifications", "/Admin/Notifications", 110),
+        ("ANALYTICS", "Analytics", "/Admin/Dashboard", 120),
+        ("SUPPORT", "Support", "/Admin/UserAccess", 130),
+        ("SCANNER", "Ticket Scanner", "/Admin/Security", 140),
+        ("DEVELOPER", "Developer Editor", "/Admin/Permissions", 150)
+    };
+
+    foreach (var module in modules)
+    {
+        if (!_context.ApplicationModules.Any(x => x.ModuleCode == module.Item1))
+        {
+            _context.ApplicationModules.Add(new ApplicationModule
+            {
+                ModuleCode = module.Item1,
+                ModuleName = module.Item2,
+                RoutePath = module.Item3,
+                IconName = module.Item1.ToLowerInvariant(),
+                DisplayOrder = module.Item4,
+                IsActive = true,
+                CreatedAt = now
+            });
+        }
+    }
+
+    _context.SaveChanges();
+
+    var permissions = new[]
+    {
+        ("ADMIN", "VIEW"), ("USER", "VIEW"), ("USER", "UPDATE"), ("USER", "DISABLE"), ("USER", "GRANT_ACCESS"),
+        ("ROLE", "VIEW"), ("ROLE", "CREATE"), ("ROLE", "UPDATE"), ("ROLE", "DELETE"),
+        ("PERMISSION", "VIEW"), ("PERMISSION", "CREATE"), ("PERMISSION", "ASSIGN"),
+        ("SHOW", "VIEW"), ("SHOW", "CREATE"), ("SHOW", "UPDATE"), ("SHOW", "DELETE"),
+        ("BOOKING", "VIEW"), ("BOOKING", "PRINT"), ("BOOKING", "CANCEL"),
+        ("PAYMENT", "VIEW"), ("PAYMENT", "REFUND"),
+        ("REFUND", "VIEW"), ("REFUND", "APPROVE"), ("REFUND", "REJECT"), ("REFUND", "RETRY"),
+        ("WALLET", "VIEW"), ("WALLET", "UPDATE"),
+        ("COUPON", "VIEW"), ("COUPON", "CREATE"), ("COUPON", "UPDATE"), ("COUPON", "DELETE"),
+        ("NOTIFICATION", "VIEW"), ("NOTIFICATION", "UPDATE"),
+        ("ANALYTICS", "VIEW"), ("SUPPORT", "VIEW"), ("SCANNER", "VALIDATE"), ("DEVELOPER", "EDIT")
+    };
+
+    var moduleLookup = _context.ApplicationModules.ToDictionary(x => x.ModuleCode, x => x.Id);
+
+    foreach (var permission in permissions)
+    {
+        var code = $"{permission.Item1}_{permission.Item2}";
+        if (!_context.Permissions.Any(x => x.PermissionCode == code) && moduleLookup.TryGetValue(permission.Item1, out var moduleId))
+        {
+            _context.Permissions.Add(new Permission
+            {
+                ModuleId = moduleId,
+                PermissionCode = code,
+                PermissionName = $"{permission.Item1} {permission.Item2}".Replace("_", " "),
+                ActionType = permission.Item2,
+                Description = $"Allows {permission.Item2.ToLowerInvariant()} access for {permission.Item1}.",
+                CreatedAt = now
+            });
+        }
+    }
+
+    _context.SaveChanges();
+}
+
+private async Task GenerateManagedSeats(int scheduleId, long screenId, int totalSeats)
+{
+    if (await _context.ScreenSeats.AnyAsync(x => x.ScheduleId == scheduleId))
+    {
+        return;
+    }
+
+    totalSeats = Math.Clamp(totalSeats, 10, 500);
+    var seatsPerRow = 10;
+    var rows = (int)Math.Ceiling(totalSeats / (double)seatsPerRow);
+    var seats = new List<ScreenSeat>();
+
+    for (var rowIndex = 0; rowIndex < rows; rowIndex++)
+    {
+        var rowName = ((char)('A' + rowIndex)).ToString();
+        var seatsInRow = Math.Min(seatsPerRow, totalSeats - (rowIndex * seatsPerRow));
+
+        for (var seatNumber = 1; seatNumber <= seatsInRow; seatNumber++)
+        {
+            var category = rowIndex < 2 ? "Premium" : rowIndex < 5 ? "Gold" : "Silver";
+            var price = category == "Premium" ? 350 : category == "Gold" ? 250 : 150;
+
+            seats.Add(new ScreenSeat
+            {
+                ScheduleId = scheduleId,
+                ScreenId = screenId,
+                SeatRow = rowName,
+                SeatNumber = seatNumber.ToString(),
+                SeatCategory = category,
+                SeatPrice = price,
+                IsActive = true
+            });
+        }
+    }
+
+    _context.ScreenSeats.AddRange(seats);
+    await _context.SaveChangesAsync();
 }
 
     }

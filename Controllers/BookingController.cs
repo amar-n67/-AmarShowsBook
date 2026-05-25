@@ -35,11 +35,13 @@ public async Task<IActionResult> Ticket(long id)
     var schedule = await _context.ShowSchedules
         .Include(x=>x.Movie)
         .Include(x=>x.StandupShow)
-        .Include(x=>x.LiveStream)
-        .Include(x=>x.Location)
-        .FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
+    .Include(x=>x.LiveStream)
+    .Include(x=>x.Location)
+    .Include(x=>x.Screen)
+    .FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
 
     ViewBag.Schedule = schedule;
+    await SetTheaterViewBag(schedule);
     ViewBag.User = await _context.Users.FirstOrDefaultAsync(x=>x.Id==booking.UserId);
     ViewBag.TicketUrl = BuildAbsoluteUrl($"/Booking/Ticket/{booking.Id}");
 
@@ -83,6 +85,7 @@ public async Task<IActionResult> TicketByBooking(long id)
     .Include(x=>x.StandupShow)
     .Include(x=>x.LiveStream)
     .Include(x=>x.Location)
+    .Include(x=>x.Screen)
     .FirstOrDefaultAsync(x=>
         confirmedScheduleId.HasValue
         ? x.Id==confirmedScheduleId.Value
@@ -96,6 +99,7 @@ public async Task<IActionResult> TicketByBooking(long id)
         .Include(x=>x.StandupShow)
         .Include(x=>x.LiveStream)
         .Include(x=>x.Location)
+        .Include(x=>x.Screen)
         .OrderByDescending(x=>x.StartTime)
         .FirstOrDefaultAsync();
     }
@@ -103,6 +107,22 @@ public async Task<IActionResult> TicketByBooking(long id)
     var user =
     await _context.Users
     .FirstOrDefaultAsync(x=>x.Id==bookingSummary.UserId);
+
+    var confirmedTransactionId = confirmedBooking?.TransactionId;
+    var transaction =
+    await _context.Transactions
+    .AsNoTracking()
+    .Where(x=>x.BookingId==id || (confirmedTransactionId.HasValue && x.Id==confirmedTransactionId.Value))
+    .OrderByDescending(x=>x.CompletedAt)
+    .ThenByDescending(x=>x.CreatedAt)
+    .FirstOrDefaultAsync();
+
+    var tickets =
+    await _context.Tickets
+    .AsNoTracking()
+    .Where(x=>x.BookingId==id)
+    .OrderBy(x=>x.SeatNumber)
+    .ToListAsync();
 
     var ticket =
     new BookingDraft
@@ -117,8 +137,12 @@ public async Task<IActionResult> TicketByBooking(long id)
     };
 
     ViewBag.Schedule=schedule;
+    await SetTheaterViewBag(schedule);
     ViewBag.User=user;
     ViewBag.BookingRef=bookingSummary.BookingRef;
+    ViewBag.BookingSummary=bookingSummary;
+    ViewBag.Transaction=transaction;
+    ViewBag.Tickets=tickets;
     ViewBag.TicketUrl=BuildAbsoluteUrl($"/Booking/TicketByBooking/{id}");
 
     return View("MobileTicket",ticket);
@@ -159,6 +183,7 @@ public async Task<IActionResult> Seats(int? id)
     .Include(x=>x.StandupShow)
     .Include(x=>x.LiveStream)
     .Include(x=>x.Location)
+    .Include(x=>x.Screen)
     .FirstOrDefaultAsync(x=>x.Id==id);
 
     if(schedule==null)
@@ -208,6 +233,7 @@ public async Task<IActionResult> Seats(int? id)
 
     ViewBag.AvailableDates =
     availableDates;
+    await SetTheaterViewBag(schedule);
 
 
 
@@ -485,6 +511,7 @@ Details(long id)
     .Include(x=>x.StandupShow)
     .Include(x=>x.LiveStream)
     .Include(x=>x.Location)
+    .Include(x=>x.Screen)
     .FirstOrDefaultAsync(
     x=>x.Id==booking.ScheduleId);
 
@@ -499,6 +526,7 @@ Details(long id)
 
     ViewBag.Schedule=
     schedule;
+    await SetTheaterViewBag(schedule);
 
     ViewBag.User=
     user;
@@ -615,7 +643,7 @@ Details(long id)
 // MY BOOKINGS
 // ==========================================
 
-public IActionResult MyBookings()
+public async Task<IActionResult> MyBookings()
 {
     var userIdText =
     HttpContext.Session.GetString("UserId");
@@ -627,19 +655,176 @@ public IActionResult MyBookings()
 
     var bookings=
 
-    _context
+    await _context
     .VwBookingCompleteDetails
     .AsNoTracking()
     .Where(x=>x.UserId==userId)
     .OrderByDescending(
     x=>x.BookedAt)
-    .ToList();
+    .ToListAsync();
+
+    var bookingIds = bookings.Select(x=>x.BookingId).ToList();
+
+    var venueLookup =
+    (
+        await
+        (
+            from booking in _context.Bookings.AsNoTracking()
+            join schedule in _context.ShowSchedules.AsNoTracking()
+                on booking.ScheduleId equals schedule.Id
+            join screen in _context.Screens.AsNoTracking()
+                on schedule.ScreenId equals screen.Id into screenGroup
+            from screen in screenGroup.DefaultIfEmpty()
+            join venue in _context.Venues.AsNoTracking()
+                on screen.VenueId equals venue.Id into venueGroup
+            from venue in venueGroup.DefaultIfEmpty()
+            where bookingIds.Contains(booking.Id)
+            select new
+            {
+                booking.Id,
+                VenueName = venue!=null ? venue.VenueName : null,
+                ScreenName = screen!=null ? screen.ScreenName : null,
+                Address = venue!=null ? venue.Address : null,
+                City = venue!=null ? venue.City : null
+            }
+        ).ToListAsync()
+    ).ToDictionary(
+        x=>x.Id,
+        x=>string.Join(" / ",new[] { x.VenueName, x.ScreenName, x.Address, x.City }
+            .Where(value=>!string.IsNullOrWhiteSpace(value))));
+
+    ViewBag.BookingVenues=venueLookup;
 
     ViewBag.PublicBaseUrl=
     GetPublicBaseUrl();
 
     return View(
     bookings);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
+{
+    var userIdText = HttpContext.Session.GetString("UserId");
+
+    if(!long.TryParse(userIdText,out var userId))
+    {
+        return RedirectToAction("Login","Auth");
+    }
+
+    var booking = await _context.Bookings.FirstOrDefaultAsync(x=>x.Id==bookingId && x.UserId==userId);
+    if(booking==null)
+    {
+        TempData["Error"]="Booking not found.";
+        return RedirectToAction(nameof(MyBookings));
+    }
+
+    var schedule = await _context.ShowSchedules.FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
+    var now = DateTime.SpecifyKind(DateTime.UtcNow,DateTimeKind.Unspecified);
+
+    if(schedule==null || schedule.StartTime<=DateTime.UtcNow || booking.BookingStatus=="CANCELLED")
+    {
+        TempData["Error"]="Cancellation is not allowed for this booking.";
+        return RedirectToAction(nameof(MyBookings));
+    }
+
+    if(booking.BookingStatus!="CONFIRMED" && booking.PaymentStatus!="SUCCESS")
+    {
+        TempData["Error"]="Only confirmed paid bookings can be cancelled.";
+        return RedirectToAction(nameof(MyBookings));
+    }
+
+    var transaction = await _context.Transactions
+    .Where(x=>x.BookingId==booking.Id || x.Id==booking.TransactionId)
+    .OrderByDescending(x=>x.CompletedAt)
+    .ThenByDescending(x=>x.CreatedAt)
+    .FirstOrDefaultAsync();
+
+    if(transaction==null)
+    {
+        TempData["Error"]="Payment transaction was not found for this booking.";
+        return RedirectToAction(nameof(MyBookings));
+    }
+
+    await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+    booking.BookingStatus="CANCELLED";
+    booking.PaymentStatus="REFUND_PENDING";
+    booking.RefundStatus="PENDING";
+    booking.CancelledAt=now;
+    booking.CancellationReason=string.IsNullOrWhiteSpace(reason) ? "Cancelled by customer" : reason.Trim();
+    booking.UpdatedAt=now;
+
+    var refundAmount = Math.Max(0,booking.PayableAmount ?? booking.TotalAmount);
+    var walletAmount = Math.Max(0,booking.WalletAmountUsed ?? 0);
+    var refundMethod = ResolveRefundMethod(transaction.PaymentMethod, walletAmount, refundAmount);
+    var refundStatus = ShouldAutoRefund(refundMethod) ? "SUCCESS" : "PENDING";
+
+    var refund = new Refund
+    {
+        booking_id=booking.Id,
+        transaction_id=transaction.Id,
+        user_id=booking.UserId,
+        refund_ref=$"RFD-{booking.Id}-{now:yyyyMMddHHmmssfff}",
+        refund_amount=refundAmount + walletAmount,
+        refund_reason=booking.CancellationReason,
+        refund_status=refundStatus,
+        refund_method=refundMethod,
+        gateway_refund_id=refundStatus=="SUCCESS" ? $"AUTO-{Guid.NewGuid():N}" : null,
+        requested_at=now,
+        processed_at=refundStatus=="SUCCESS" ? now : null,
+        created_at=now,
+        updated_at=now,
+        workflow_action=refundStatus=="SUCCESS" ? "AUTO_REFUNDED" : "CUSTOMER_CANCELLED",
+        admin_notes=refundStatus=="SUCCESS"
+            ? "Refund completed automatically for wallet/UPI/API-supported source."
+            : "Refund case raised for admin approval."
+    };
+
+    _context.Refunds.Add(refund);
+    await _context.SaveChangesAsync();
+
+    if(walletAmount>0)
+    {
+        await CreditWalletRefund(booking,transaction,refund,walletAmount);
+    }
+
+    transaction.RefundStatus=refundStatus;
+    transaction.RefundedAmount=(transaction.RefundedAmount ?? 0) + refund.refund_amount;
+    transaction.UpdatedAt=now;
+
+    var tickets = await _context.Tickets.Where(x=>x.BookingId==booking.Id).ToListAsync();
+    foreach(var ticket in tickets)
+    {
+        ticket.TicketStatus="CANCELLED";
+        ticket.UpdatedAt=now;
+    }
+
+    var bookingSeats = await _context.BookingSeats.Where(x=>x.BookingId==booking.Id).ToListAsync();
+    foreach(var seat in bookingSeats)
+    {
+        seat.BookingStatus="CANCELLED";
+    }
+
+    var seatIds = bookingSeats.Select(x=>x.ScreenSeatId).ToList();
+    var locks = await _context.SeatLocks
+    .Where(x=>x.ScheduleId==booking.ScheduleId && seatIds.Contains(x.ScreenSeatId))
+    .ToListAsync();
+
+    foreach(var seatLock in locks)
+    {
+        seatLock.LockStatus="RELEASED";
+    }
+
+    await _context.SaveChangesAsync();
+    await dbTransaction.CommitAsync();
+
+    TempData["Success"] = refundStatus=="SUCCESS"
+        ? "Booking cancelled and refund processed."
+        : "Booking cancelled. Refund case has been raised for admin approval.";
+
+    return RedirectToAction(nameof(MyBookings));
 }
 
 
@@ -769,6 +954,7 @@ MobilePay(string token)
     .Include(x=>x.StandupShow)
     .Include(x=>x.LiveStream)
     .Include(x=>x.Location)
+    .Include(x=>x.Screen)
     .FirstOrDefaultAsync(
     x=>x.Id==
     booking.ScheduleId);
@@ -785,6 +971,7 @@ MobilePay(string token)
 
     ViewBag.Schedule=
     schedule;
+    await SetTheaterViewBag(schedule);
 
     ViewBag.User=
     user;
@@ -1966,12 +2153,14 @@ Confirmation(long bookingId)
     .Include(x=>x.StandupShow)
     .Include(x=>x.LiveStream)
     .Include(x=>x.Location)
+    .Include(x=>x.Screen)
     .FirstOrDefaultAsync(
     x=>x.Id==
     booking.ScheduleId);
 
     ViewBag.Schedule=
     schedule;
+    await SetTheaterViewBag(schedule);
 
     var user =
     await _context.Users
@@ -2011,6 +2200,149 @@ CheckQRStatus(long bookingId)
     {
         status=session.Status
     });
+}
+
+private async Task SetTheaterViewBag(ShowSchedule? schedule)
+{
+    Screen? screen = schedule?.Screen;
+
+    if(screen==null && schedule?.ScreenId!=null)
+    {
+        screen = await _context.Screens
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x=>x.Id==schedule.ScreenId.Value);
+    }
+
+    Venue? venue = null;
+
+    if(screen!=null)
+    {
+        venue = await _context.Venues
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x=>x.Id==screen.VenueId);
+    }
+
+    ViewBag.Screen=screen;
+    ViewBag.Venue=venue;
+}
+
+private string ResolveRefundMethod(string? paymentMethod, decimal walletAmount, decimal sourceAmount)
+{
+    var method = (paymentMethod ?? string.Empty).Trim().ToUpperInvariant();
+
+    if(walletAmount>0 && sourceAmount<=0)
+    {
+        return "WALLET";
+    }
+
+    if(method.Contains("UPI"))
+    {
+        return walletAmount>0 ? "WALLET_UPI" : "UPI";
+    }
+
+    if(method=="QR")
+    {
+        return walletAmount>0 ? "WALLET_QR" : "QR";
+    }
+
+    if(method.Contains("WALLET"))
+    {
+        return "WALLET";
+    }
+
+    if(method.Contains("CARD") || method.Contains("NET") || method.Contains("BANK"))
+    {
+        return method;
+    }
+
+    return walletAmount>0 ? "WALLET_SOURCE" : "SOURCE";
+}
+
+private bool ShouldAutoRefund(string refundMethod)
+{
+    var method = refundMethod.ToUpperInvariant();
+    return method.Contains("WALLET") || method=="UPI" || method=="QR" || method=="SOURCE";
+}
+
+private async Task CreditWalletRefund(
+Booking booking,
+Transaction transaction,
+Refund refund,
+decimal amount)
+{
+    if(amount<=0)
+    {
+        return;
+    }
+
+    var reference = $"WLR-{booking.Id}-{refund.id}";
+
+    await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO wallet_transactions
+(
+    wallet_id,
+    user_id,
+    booking_id,
+    transaction_id,
+    refund_id,
+    transaction_ref,
+    transaction_type,
+    entry_type,
+    amount,
+    opening_balance,
+    closing_balance,
+    remarks,
+    transaction_status,
+    created_at,
+    created_by,
+    description,
+    status,
+    reference_type,
+    reference_id,
+    balance_before,
+    balance_after,
+    payment_method,
+    gateway_name,
+    gateway_reference,
+    is_deleted
+)
+SELECT
+    uw.id,
+    {booking.UserId},
+    {booking.Id},
+    {transaction.Id},
+    {refund.id},
+    {reference},
+    'REFUND',
+    'CREDIT',
+    {amount},
+    uw.wallet_balance,
+    uw.wallet_balance + {amount},
+    'Wallet refund for cancelled booking',
+    'SUCCESS',
+    CURRENT_TIMESTAMP,
+    {booking.UserId.ToString()},
+    'Wallet credit after booking cancellation',
+    'SUCCESS',
+    'REFUND',
+    {refund.id},
+    uw.wallet_balance,
+    uw.wallet_balance + {amount},
+    'WALLET',
+    'WALLET',
+    {refund.refund_ref},
+    false
+FROM user_wallets uw
+WHERE uw.user_id = {booking.UserId}
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM wallet_transactions wt
+      WHERE wt.refund_id = {refund.id}
+        AND wt.transaction_type = 'REFUND'
+        AND wt.entry_type = 'CREDIT'
+        AND wt.is_deleted = false
+  );");
 }
 
 private string BuildAbsoluteUrl(string pathAndQuery)

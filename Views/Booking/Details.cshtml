@@ -5,6 +5,8 @@
     var schedule = ViewBag.Schedule;
     var user = ViewBag.User;
     var wallet = ViewBag.Wallet as AmarShowsBook.Models.Admin.VwWalletSummary;
+    var screen = ViewBag.Screen as Screen;
+    var venueInfo = ViewBag.Venue as AmarShowsBook.Models.Venue;
 
     var walletAmountUsed =
     ViewBag.WalletAmountUsed as decimal? ?? 0;
@@ -46,11 +48,17 @@
     "Unknown Show";
 
     string theater =
+    venueInfo?.VenueName
+    ??
     schedule?.Location?.Area
     ??
     "Unknown Theater";
 
     string location =
+    venueInfo!=null
+    ?
+    $"{venueInfo.Address}, {venueInfo.City}, {venueInfo.State}, {venueInfo.Country}"
+    :
     schedule?.Location!=null
     ?
     $"{schedule.Location.State}, {schedule.Location.Country}"
@@ -624,6 +632,11 @@ Booking #@Model.Id
 <div class="info-box">
 <div class="label">Theater</div>
 <div class="value">@theater</div>
+</div>
+
+<div class="info-box">
+<div class="label">Screen</div>
+<div class="value">@(screen?.ScreenName ?? "Screen TBA")</div>
 </div>
 
 <div class="info-box">

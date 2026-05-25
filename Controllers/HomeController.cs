@@ -179,6 +179,35 @@ var vm = new HomeViewModel
     HomeShows = schedules
 };
 
+var scheduleIds = schedules.Select(x => x.ScheduleId).ToList();
+var theaterLookup = await
+(
+    from schedule in _context.ShowSchedules.AsNoTracking()
+    join screen in _context.Screens.AsNoTracking()
+        on schedule.ScreenId equals screen.Id into screenGroup
+    from screen in screenGroup.DefaultIfEmpty()
+    join venue in _context.Venues.AsNoTracking()
+        on screen.VenueId equals venue.Id into venueGroup
+    from venue in venueGroup.DefaultIfEmpty()
+    where scheduleIds.Contains(schedule.Id)
+    select new
+    {
+        schedule.Id,
+        TheaterDetails = venue == null
+            ? null
+            : string.Join(" / ", new[] { venue.VenueName, screen.ScreenName, venue.Address, venue.City }
+                .Where(value => !string.IsNullOrWhiteSpace(value)))
+    }
+).ToDictionaryAsync(x => x.Id, x => x.TheaterDetails);
+
+foreach (var show in schedules)
+{
+    if (theaterLookup.TryGetValue(show.ScheduleId, out var theaterDetails))
+    {
+        show.TheaterDetails = theaterDetails;
+    }
+}
+
         await _activityLogger.LogAsync(
             userId: user?.Id,
             action: "VIEW_HOME",

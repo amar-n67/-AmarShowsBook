@@ -35,6 +35,17 @@ ViewBag.TrailerUrl as string;
 
 var trailerStartSeconds=
 ViewBag.TrailerStartSeconds as int? ?? 0;
+
+var screen=
+ViewBag.Screen as Screen;
+
+var venueInfo=
+ViewBag.Venue as AmarShowsBook.Models.Venue;
+
+var theaterDetails =
+venueInfo!=null
+? $"{venueInfo.VenueName} / {screen?.ScreenName ?? "Screen TBA"} / {venueInfo.Address}, {venueInfo.City}"
+: location;
 }
 
 <section class="booking-page">
@@ -60,7 +71,7 @@ Seat Shot
 @Model.Type /
 @Model.StartTime.ToString("dd MMM yyyy, hh:mm tt")
 /
-@location
+@theaterDetails
 
 </p>
 
@@ -113,11 +124,11 @@ availableDates
      data-trailer-url="@trailerUrl"
      data-trailer-start="@trailerStartSeconds">
 
-<span>
+@* <span>
 
 SCREEN
 
-</span>
+</span> *@
 
 <iframe
 id="seatTrailerFrame"

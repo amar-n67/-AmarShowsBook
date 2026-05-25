@@ -78,4 +78,13 @@ public class Booking
 
     [Column("confirmed_at")]
     public DateTime? ConfirmedAt { get; set; }
+
+    [Column("cancelled_at")]
+    public DateTime? CancelledAt { get; set; }
+
+    [Column("cancellation_reason")]
+    public string? CancellationReason { get; set; }
+
+    [Column("refund_status")]
+    public string? RefundStatus { get; set; }
 }

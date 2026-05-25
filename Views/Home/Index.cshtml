@@ -77,7 +77,9 @@
 .Select(x => x.First()))
 {
     var showRegion =
-    $"{item.Location}, {item.State}, {item.Country}";
+    string.IsNullOrWhiteSpace(item.TheaterDetails)
+    ? $"{item.Location}, {item.State}, {item.Country}"
+    : item.TheaterDetails;
 
 <article class="show-card"
 onclick="location.href='/Booking/Seats/@item.ScheduleId'">
