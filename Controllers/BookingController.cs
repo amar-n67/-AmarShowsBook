@@ -721,7 +721,7 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     }
 
     var schedule = await _context.ShowSchedules.FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
-    var now = DateTime.SpecifyKind(DateTime.UtcNow,DateTimeKind.Unspecified);
+    var now = DateTime.UtcNow;
 
     if(schedule==null || schedule.StartTime<=DateTime.UtcNow || booking.BookingStatus=="CANCELLED")
     {
@@ -1183,8 +1183,7 @@ LIMIT 1;";
     var applicableShowType=reader.IsDBNull(12) ? null : reader.GetString(12);
     var userUsedCount=reader.GetInt64(13);
 
-    var now =
-    DateTime.SpecifyKind(DateTime.UtcNow,DateTimeKind.Unspecified);
+var now = DateTime.UtcNow;
 
     if(status!="ACTIVE" || validFrom>now || validTo<now)
     {
@@ -1411,9 +1410,7 @@ long? couponId)
         if(existingTransaction==null)
         {
             var nowForMissingTransaction =
-            DateTime.SpecifyKind(
-            DateTime.UtcNow,
-            DateTimeKind.Unspecified);
+DateTime.UtcNow;
 
             existingTransaction =
             new Transaction
@@ -1456,9 +1453,7 @@ long? couponId)
         existingBooking.WalletAmountUsed=walletAmountUsed;
         existingBooking.CouponId=couponId;
         var repairedAt =
-        DateTime.SpecifyKind(
-        DateTime.UtcNow,
-        DateTimeKind.Unspecified);
+        DateTime.UtcNow;
 
         existingBooking.UpdatedAt=repairedAt;
         existingBooking.ConfirmedAt ??= repairedAt;
@@ -1485,9 +1480,7 @@ long? couponId)
     await _context.Database.BeginTransactionAsync();
 
     var now =
-    DateTime.SpecifyKind(
-    DateTime.UtcNow,
-    DateTimeKind.Unspecified);
+    DateTime.UtcNow;
 
     var seatLabels =
     draft.SeatNumbers

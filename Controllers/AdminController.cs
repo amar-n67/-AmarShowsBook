@@ -198,7 +198,7 @@ FailedRefunds =
                 return RedirectToAction(nameof(Roles));
             }
 
-            var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+          var now = DateTime.UtcNow;
             _context.Roles.Add(new Role
             {
                 RoleCode = roleCode,
@@ -237,7 +237,7 @@ FailedRefunds =
             role.RoleName = (roleName ?? role.RoleName).Trim();
             role.RoleDescription = roleDescription?.Trim();
             role.IsActive = isActive;
-            role.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            role.UpdatedAt = DateTime.UtcNow;
             role.UpdatedBy = HttpContext.Session.GetString("UserName") ?? "Admin";
 
             await _context.SaveChangesAsync();
@@ -320,7 +320,7 @@ FailedRefunds =
                 PermissionName = permissionName.Trim(),
                 ActionType = actionType,
                 Description = description?.Trim() ?? string.Empty,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                CreatedAt = DateTime.UtcNow
             });
 
             await _context.SaveChangesAsync();
@@ -354,7 +354,7 @@ FailedRefunds =
                     RoleId = roleId,
                     PermissionId = permissionId,
                     GrantedBy = grantedBy,
-                    GrantedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    GrantedAt = DateTime.UtcNow
                 });
             }
             else if (!grant && mapping != null)
@@ -417,14 +417,15 @@ FailedRefunds =
                 _ => "Movie"
             };
 
-            var schedule = new ShowSchedule
-            {
-                LocationId = request.LocationId,
-                ScreenId = request.ScreenId,
-                StartTime = request.StartTime,
-                EndTime = request.StartTime.AddMinutes(duration),
-                Type = type
-            };
+           var schedule = new ShowSchedule
+{
+    LocationId = request.LocationId,
+    ScreenId = request.ScreenId,
+    StartTime = request.StartTime.ToUniversalTime(),
+    EndTime = request.StartTime.ToUniversalTime()
+                                .AddMinutes(duration),
+    Type = type
+};
 
             if (type == "Movie")
             {
@@ -2397,7 +2398,7 @@ private string NormalizeCode(string? value)
 
 private void EnsurePermissionSeedData()
 {
-    var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+    var now = DateTime.UtcNow;
 
     var modules = new[]
     {
@@ -2430,7 +2431,7 @@ private void EnsurePermissionSeedData()
                 IconName = module.Item1.ToLowerInvariant(),
                 DisplayOrder = module.Item4,
                 IsActive = true,
-                CreatedAt = now
+                CreatedAt = DateTime.UtcNow
             });
         }
     }

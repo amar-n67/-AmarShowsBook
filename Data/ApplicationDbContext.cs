@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.Admin;
 using AmarShowsBook.Models.ViewModels;
@@ -481,5 +480,7 @@ ModelBuilder modelBuilder)
     base.OnModelCreating(
     modelBuilder);
 }
+
     }
+    
 }
