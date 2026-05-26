@@ -752,9 +752,9 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     booking.BookingStatus="CANCELLED";
     booking.PaymentStatus="REFUND_PENDING";
     booking.RefundStatus="PENDING";
-    booking.CancelledAt=now;
+    booking.CancelledAt=DateTime.UtcNow;
     booking.CancellationReason=string.IsNullOrWhiteSpace(reason) ? "Cancelled by customer" : reason.Trim();
-    booking.UpdatedAt=now;
+    booking.UpdatedAt=DateTime.UtcNow;
 
     var refundAmount = Math.Max(0,booking.PayableAmount ?? booking.TotalAmount);
     var walletAmount = Math.Max(0,booking.WalletAmountUsed ?? 0);
@@ -766,16 +766,16 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
         booking_id=booking.Id,
         transaction_id=transaction.Id,
         user_id=booking.UserId,
-        refund_ref=$"RFD-{booking.Id}-{now:yyyyMMddHHmmssfff}",
+        refund_ref=$"RFD-{booking.Id}-{DateTime.UtcNow:yyyyMMddHHmmssfff}",
         refund_amount=refundAmount + walletAmount,
         refund_reason=booking.CancellationReason,
         refund_status=refundStatus,
         refund_method=refundMethod,
         gateway_refund_id=refundStatus=="SUCCESS" ? $"AUTO-{Guid.NewGuid():N}" : null,
-        requested_at=now,
-        processed_at=refundStatus=="SUCCESS" ? now : null,
-        created_at=now,
-        updated_at=now,
+        requested_at=DateTime.UtcNow,
+        processed_at=refundStatus=="SUCCESS" ? DateTime.UtcNow : null,
+        created_at=DateTime.UtcNow,
+        updated_at=DateTime.UtcNow,
         workflow_action=refundStatus=="SUCCESS" ? "AUTO_REFUNDED" : "CUSTOMER_CANCELLED",
         admin_notes=refundStatus=="SUCCESS"
             ? "Refund completed automatically for wallet/UPI/API-supported source."
@@ -792,13 +792,13 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
 
     transaction.RefundStatus=refundStatus;
     transaction.RefundedAmount=(transaction.RefundedAmount ?? 0) + refund.refund_amount;
-    transaction.UpdatedAt=now;
+    transaction.UpdatedAt=DateTime.UtcNow;
 
     var tickets = await _context.Tickets.Where(x=>x.BookingId==booking.Id).ToListAsync();
     foreach(var ticket in tickets)
     {
         ticket.TicketStatus="CANCELLED";
-        ticket.UpdatedAt=now;
+        ticket.UpdatedAt=DateTime.UtcNow;
     }
 
     var bookingSeats = await _context.BookingSeats.Where(x=>x.BookingId==booking.Id).ToListAsync();

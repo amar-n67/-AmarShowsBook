@@ -18,6 +18,7 @@ public class Booking
 
     [Column("schedule_id")]
     public int ScheduleId { get; set; }
+    
 
     [Column("booking_status")]
     public string BookingStatus { get; set; } = "PENDING";
