@@ -1,5 +1,24 @@
 ﻿@model AmarShowsBook.Models.ViewModels.HomeViewModel
 
+
+<div class="theme-toolbar">
+
+<button id="themeToggle"
+class="theme-btn">
+
+🌙 Dark Mode
+
+</button>
+
+<a href="/Home/Index"
+class="back-btn">
+
+← Back
+
+</a>
+
+</div>
+
 @{
     ViewData["Title"] = "showTime";
     var selectedType = Context.Request.Query["type"].ToString();
@@ -19,6 +38,20 @@
             <h1>showTime</h1>
             <p>@userName, your @userLanguage track and @userGenre mood are on the board.</p>
         </div>
+        @* //added developer profile *@
+    <div class="showtime-ticket">
+    
+
+    <a asp-controller="Developer"
+       asp-action="Index"
+       class="profile-btn">
+
+        👤 Profile
+
+    </a>
+
+</div>
+        @* // *@
         <div class="showtime-ticket">
             <span>@userLanguage</span>
             <strong>@userGenre</strong>
@@ -558,6 +591,39 @@ transition:.4s;
 
 .show-card:hover{
 transform:translateY(-10px) scale(1.02);
+}
+@* add developer profile button styles *@
+.top-profile-actions{
+display:flex;
+flex-direction:column;
+gap:12px;
+align-items:flex-end;
+}
+
+.profile-btn,
+.exit-btn{
+padding:12px 22px;
+border-radius:12px;
+text-decoration:none;
+font-weight:700;
+transition:.3s;
+width:150px;
+text-align:center;
+}
+
+.profile-btn{
+background:#2f80ed;
+color:white;
+}
+
+.exit-btn{
+background:#ff4757;
+color:white;
+}
+
+.profile-btn:hover,
+.exit-btn:hover{
+transform:translateY(-3px);
 }
 </style> 
 

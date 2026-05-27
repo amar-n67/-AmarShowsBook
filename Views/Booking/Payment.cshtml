@@ -778,8 +778,9 @@ let statusChecker=null;
 
 async function toggleQR()
 {
-    let paymentMethod=
+    console.log("toggle fired");
 
+    let paymentMethod=
     document.querySelector(
     'input[name="pay"]:checked'
     ).value;
@@ -798,29 +799,9 @@ async function toggleQR()
         .style.display="none";
 
 
-        @* let response=
-
-        await fetch(
-        "/Booking/GenerateQR?bookingId=@Model.Id"
-        );
-
-        let result=
-        await response.json();
-
-
-        document
-        .getElementById(
-        "qrImage")
-        .src=
-        "/Booking/CreateQR?text="
-        +
-        encodeURIComponent(
-        result.url); *@
-
         try
 {
     let response=
-
     await fetch(
     "/Booking/GenerateQR?bookingId=@Model.Id"
     );
@@ -835,9 +816,15 @@ async function toggleQR()
     let result=
     await response.json();
 
+    console.log(
+    "QR response:",
+    result
+    );
+
     if(!result.success)
     {
         throw new Error(
+        result.message ||
         "QR generation failed"
         );
     }
@@ -855,10 +842,14 @@ async function toggleQR()
 }
 catch(error)
 {
-    console.log(error);
+    console.log(
+    "QR ERROR:",
+    error
+    );
 
     alert(
-    "Unable to generate QR"
+    "QR ERROR: " +
+    error.message
     );
 }
 

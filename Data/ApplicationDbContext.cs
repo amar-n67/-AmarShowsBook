@@ -16,6 +16,7 @@ namespace AmarShowsBook.Data
             : base(options)
         {
         }
+        public DbSet<DeveloperVM> DeveloperProfiles { get; set; }
     public DbSet<HomeShowViewModel> HomeShows { get; set; }
         public DbSet<BookingDraft> BookingDrafts { get; set; }
         public DbSet<PaymentSession> PaymentSessions { get; set; }
@@ -129,7 +130,21 @@ ModelBuilder modelBuilder)
     // =========================================
     // TABLES
     // =========================================
+ base.OnModelCreating(modelBuilder);
 
+    modelBuilder.Entity<DeveloperVM>(entity =>
+
+    {
+
+        entity.HasNoKey();
+
+        entity.ToView(
+
+        "vwDeveloperProfile"
+
+        );
+
+    });
     modelBuilder.Entity<BookingDraft>()
         .ToTable("booking_drafts");
 

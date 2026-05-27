@@ -1,0 +1,510 @@
+@model AmarShowsBook.Models.ViewModels.DeveloperVM
+
+@{
+    ViewData["Title"]="Developer Profile";
+}
+
+<section class="developer-page">
+
+<div class="developer-hero">
+
+<div class="profile-left">
+
+<img class="profile-image"
+src="@(string.IsNullOrEmpty(Model.ProfileImage)
+?"/images/default-user.png"
+:Model.ProfileImage)" />
+
+<h1>@Model.FullName</h1>
+
+<p class="bio">
+
+@(Model.Bio ?? "Creative Full Stack Developer")
+
+</p>
+
+<div class="experience-badge">
+
+⭐ @Model.ExperienceYears Years Experience
+
+</div>
+
+</div>
+
+
+<div class="profile-right">
+
+<div class="social-grid">
+
+<a href="@Model.GitHubUrl" target="_blank">
+GitHub
+</a>
+
+<a href="@Model.LinkedInUrl" target="_blank">
+LinkedIn
+</a>
+
+<a href="@Model.TwitterUrl" target="_blank">
+Twitter
+</a>
+
+<a href="@Model.InstagramUrl" target="_blank">
+Instagram
+</a>
+
+<a href="@Model.FacebookUrl" target="_blank">
+Facebook
+</a>
+
+<a href="@Model.YoutubeUrl" target="_blank">
+YouTube
+</a>
+
+<a href="@Model.WebsiteUrl" target="_blank">
+Website
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="developer-grid">
+
+<div class="dev-card">
+
+<h2>📧 Basic Information</h2>
+
+<div class="detail-item">
+<strong>Email</strong>
+<span>@Model.Email</span>
+</div>
+
+<div class="detail-item">
+<strong>Phone</strong>
+<span>@Model.Phone</span>
+</div>
+
+<div class="detail-item">
+<strong>Address</strong>
+<span>@Model.Address</span>
+</div>
+
+</div>
+
+
+
+<div class="dev-card">
+
+<h2>🛠 Skills</h2>
+
+<p>
+
+@Model.Skills
+
+</p>
+
+</div>
+
+
+<div class="dev-card">
+
+<h2>🎓 Education</h2>
+
+<p>
+
+@Model.Education
+
+</p>
+
+</div>
+
+
+
+<div class="dev-card">
+
+<h2>🚀 Projects</h2>
+
+<p>
+
+@Model.Projects
+
+</p>
+
+</div>
+
+
+
+<div class="dev-card">
+
+<h2>⚡ Technologies</h2>
+
+<p>
+
+@Model.Technologies
+
+</p>
+
+</div>
+
+
+
+<div class="dev-card">
+
+<h2>🏆 Achievements</h2>
+
+<p>
+
+@Model.Achievements
+
+</p>
+
+</div>
+
+</div>
+
+
+
+<div class="resume-section">
+
+@if(!string.IsNullOrEmpty(Model.ResumeUrl))
+{
+<a href="@Model.ResumeUrl"
+target="_blank"
+class="resume-btn">
+
+📄 Download Resume
+
+</a>
+}
+
+<a href="/Home/Index"
+class="back-btn">
+
+⬅ Back
+
+</a>
+
+</div>
+
+</section>
+
+
+
+<style>
+
+.developer-page{
+
+padding:30px;
+min-height:100vh;
+
+background:
+linear-gradient(
+135deg,
+#0f172a,
+#1e293b,
+#111827
+);
+
+color:white;
+}
+
+
+.developer-hero{
+
+display:flex;
+justify-content:space-between;
+gap:40px;
+
+padding:35px;
+
+border-radius:25px;
+
+background:rgba(
+255,
+255,
+255,
+0.05
+);
+
+backdrop-filter:blur(20px);
+
+margin-bottom:30px;
+}
+
+
+.profile-left{
+
+text-align:center;
+width:300px;
+}
+
+
+.profile-image{
+
+width:180px;
+height:180px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:6px solid #ff4757;
+
+box-shadow:
+0 0 30px
+rgba(
+255,
+71,
+87,
+0.5
+);
+}
+
+
+.profile-left h1{
+
+margin-top:15px;
+
+font-size:2rem;
+font-weight:800;
+}
+
+
+.bio{
+
+opacity:.8;
+margin-top:10px;
+}
+
+
+.experience-badge{
+
+margin-top:15px;
+
+padding:12px;
+
+background:#ff4757;
+
+border-radius:20px;
+
+font-weight:700;
+}
+
+
+
+.profile-right{
+
+flex:1;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+
+.social-grid{
+
+display:grid;
+
+grid-template-columns:
+repeat(
+3,
+1fr
+);
+
+gap:15px;
+width:100%;
+}
+
+
+.social-grid a{
+
+padding:15px;
+
+border-radius:15px;
+
+text-decoration:none;
+
+color:white;
+
+background:
+rgba(
+255,
+255,
+255,
+0.07
+);
+
+text-align:center;
+
+font-weight:700;
+
+transition:.4s;
+}
+
+.social-grid a:hover{
+
+transform:translateY(-5px);
+
+background:#ff4757;
+}
+
+
+
+.developer-grid{
+
+display:grid;
+
+grid-template-columns:
+repeat(
+2,
+1fr
+);
+
+gap:20px;
+}
+
+
+.dev-card{
+
+padding:25px;
+
+border-radius:25px;
+
+background:
+rgba(
+255,
+255,
+255,
+0.05
+);
+
+backdrop-filter:blur(20px);
+
+transition:.4s;
+}
+
+
+.dev-card:hover{
+
+transform:
+translateY(-8px);
+
+box-shadow:
+0 15px 30px
+rgba(
+0,
+0,
+0,
+0.3
+);
+
+}
+
+
+.dev-card h2{
+
+margin-bottom:20px;
+
+color:#ff4757;
+}
+
+
+.detail-item{
+
+display:flex;
+
+justify-content:space-between;
+
+padding:12px 0;
+
+border-bottom:
+1px solid
+rgba(
+255,
+255,
+255,
+0.1
+);
+}
+
+
+.resume-section{
+
+margin-top:40px;
+
+display:flex;
+
+justify-content:center;
+
+gap:15px;
+}
+
+
+.resume-btn,
+.back-btn{
+
+padding:15px 30px;
+
+border-radius:15px;
+
+text-decoration:none;
+
+font-weight:700;
+
+color:white;
+
+transition:.4s;
+}
+
+
+.resume-btn{
+
+background:#2f80ed;
+}
+
+
+.back-btn{
+
+background:#ff4757;
+}
+
+
+.resume-btn:hover,
+.back-btn:hover{
+
+transform:
+translateY(-5px);
+}
+
+
+
+@@media(max-width:768px)
+{
+
+.developer-hero{
+
+flex-direction:column;
+}
+
+.social-grid{
+
+grid-template-columns:
+repeat(
+2,
+1fr
+);
+}
+
+.developer-grid{
+
+grid-template-columns:
+1fr;
+}
+
+}
+
+</style>
