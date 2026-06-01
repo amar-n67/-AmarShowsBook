@@ -7,13 +7,19 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls(
+// builder.WebHost.UseUrls(
 
-    "http://localhost:5089",
+//     "http://localhost:5089",
 
-    "http://0.0.0.0:5089"
+//     "http://0.0.0.0:5089"
 
-);
+// );
+// var port = Environment.GetEnvironmentVariable("PORT") ?? "5089";
+
+// builder.WebHost.UseUrls(
+//     $"http://0.0.0.0:{port}"
+// );
+
 // ========================================
 // Services
 // ========================================
