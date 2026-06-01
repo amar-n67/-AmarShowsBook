@@ -7,6 +7,7 @@ using AmarShowsBook.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
@@ -420,6 +421,13 @@ FailedRefunds =
             }
 
             await EnsureAdminShowInfrastructure();
+            var resolvedScreenId = await ResolveManagedScreenId(request.VenueId, request.ScreenId);
+            if (resolvedScreenId <= 0)
+            {
+                TempData["Error"] = "Please select a valid theater and screen.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+            request.ScreenId = resolvedScreenId;
 
             var duration = Math.Clamp(request.Duration, 15, 600);
             var type = request.Type switch
@@ -431,21 +439,29 @@ FailedRefunds =
 
             var startTimes = BuildManagedShowStartTimes(request);
             var created = 0;
+            var metadata = NormalizeManagedShowMetadata(
+                request.SecondaryName,
+                request.Cast,
+                request.Description,
+                request.PosterUrl,
+                request.Images,
+                request.TrailerUrl,
+                request.ImdbRating);
 
             if (type == "Movie")
             {
                 var movie = new Movie
                 {
                     Title = request.Title.Trim(),
-                    Director = request.SecondaryName?.Trim(),
-                    Producer = request.SecondaryName?.Trim() ?? "Admin",
-                    Cast = string.IsNullOrWhiteSpace(request.Cast) ? "TBA" : request.Cast.Trim(),
+                    Director = metadata.SecondaryName,
+                    Producer = metadata.SecondaryName ?? "Admin",
+                    Cast = metadata.Cast ?? "TBA",
                     Duration = duration,
-                    Description = request.Description?.Trim(),
-                    PosterUrl = request.PosterUrl?.Trim(),
-                    Images = request.Images?.Trim(),
-                    TrailerUrl = request.TrailerUrl?.Trim(),
-                    ImdbRating = request.ImdbRating
+                    Description = metadata.Description,
+                    PosterUrl = metadata.PosterUrl,
+                    Images = metadata.Images,
+                    TrailerUrl = metadata.TrailerUrl,
+                    ImdbRating = metadata.ImdbRating
                 };
                 _context.Movies.Add(movie);
                 await _context.SaveChangesAsync();
@@ -465,12 +481,12 @@ FailedRefunds =
                 var show = new StandupShow
                 {
                     Title = request.Title.Trim(),
-                    Comedian = request.SecondaryName?.Trim() ?? "TBA",
+                    Comedian = metadata.SecondaryName ?? "TBA",
                     Duration = duration,
-                    Description = request.Description?.Trim(),
-                    PosterUrl = request.PosterUrl?.Trim(),
-                    Images = request.Images?.Trim(),
-                    TrailerUrl = request.TrailerUrl?.Trim()
+                    Description = metadata.Description,
+                    PosterUrl = metadata.PosterUrl,
+                    Images = metadata.Images,
+                    TrailerUrl = metadata.TrailerUrl
                 };
                 _context.StandupShows.Add(show);
                 await _context.SaveChangesAsync();
@@ -490,12 +506,12 @@ FailedRefunds =
                 var live = new LiveStream
                 {
                     Title = request.Title.Trim(),
-                    Host = request.SecondaryName?.Trim() ?? "TBA",
+                    Host = metadata.SecondaryName ?? "TBA",
                     Duration = duration,
-                    Description = request.Description?.Trim(),
-                    PosterUrl = request.PosterUrl?.Trim(),
-                    Images = request.Images?.Trim(),
-                    TrailerUrl = request.TrailerUrl?.Trim()
+                    Description = metadata.Description,
+                    PosterUrl = metadata.PosterUrl,
+                    Images = metadata.Images,
+                    TrailerUrl = metadata.TrailerUrl
                 };
                 _context.LiveStreams.Add(live);
                 await _context.SaveChangesAsync();
@@ -512,6 +528,98 @@ FailedRefunds =
             }
 
             TempData["Success"] = $"{created} show time(s) scheduled successfully.";
+            return RedirectToAction(nameof(ManageShows));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateManagedShow(ManageShowUpdateViewModel request)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "SHOW", "UPDATE"))
+            {
+                TempData["Error"] = "You do not have permission to edit shows.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            if (request.Id <= 0 || string.IsNullOrWhiteSpace(request.Title) || request.LocationId <= 0 || request.ScreenId <= 0)
+            {
+                TempData["Error"] = "Show title, location and screen are required.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            await EnsureAdminShowInfrastructure();
+
+            var schedule = await _context.ShowSchedules
+                .Include(x => x.Movie)
+                .Include(x => x.StandupShow)
+                .Include(x => x.LiveStream)
+                .FirstOrDefaultAsync(x => x.Id == request.Id);
+
+            if (schedule == null)
+            {
+                TempData["Error"] = "Show schedule not found.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            var resolvedScreenId = await ResolveManagedScreenId(request.VenueId, request.ScreenId);
+            if (resolvedScreenId <= 0)
+            {
+                TempData["Error"] = "Please select a valid theater and screen.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            var duration = Math.Clamp(request.Duration, 15, 600);
+            var startTime = DateTime.SpecifyKind(request.StartTime, DateTimeKind.Local).ToUniversalTime();
+            var metadata = NormalizeManagedShowMetadata(
+                request.SecondaryName,
+                request.Cast,
+                request.Description,
+                request.PosterUrl,
+                request.Images,
+                request.TrailerUrl,
+                request.ImdbRating);
+
+            schedule.LocationId = request.LocationId;
+            schedule.ScreenId = resolvedScreenId;
+            schedule.StartTime = startTime;
+            schedule.EndTime = startTime.AddMinutes(duration);
+
+            if (schedule.Movie != null)
+            {
+                schedule.Movie.Title = request.Title.Trim();
+                schedule.Movie.Director = metadata.SecondaryName;
+                schedule.Movie.Producer = metadata.SecondaryName ?? schedule.Movie.Producer ?? "Admin";
+                schedule.Movie.Cast = metadata.Cast ?? "TBA";
+                schedule.Movie.Duration = duration;
+                schedule.Movie.Description = metadata.Description;
+                schedule.Movie.PosterUrl = metadata.PosterUrl;
+                schedule.Movie.Images = metadata.Images;
+                schedule.Movie.TrailerUrl = metadata.TrailerUrl;
+                schedule.Movie.ImdbRating = metadata.ImdbRating;
+            }
+            else if (schedule.StandupShow != null)
+            {
+                schedule.StandupShow.Title = request.Title.Trim();
+                schedule.StandupShow.Comedian = metadata.SecondaryName ?? "TBA";
+                schedule.StandupShow.Duration = duration;
+                schedule.StandupShow.Description = metadata.Description;
+                schedule.StandupShow.PosterUrl = metadata.PosterUrl;
+                schedule.StandupShow.Images = metadata.Images;
+                schedule.StandupShow.TrailerUrl = metadata.TrailerUrl;
+            }
+            else if (schedule.LiveStream != null)
+            {
+                schedule.LiveStream.Title = request.Title.Trim();
+                schedule.LiveStream.Host = metadata.SecondaryName ?? "TBA";
+                schedule.LiveStream.Duration = duration;
+                schedule.LiveStream.Description = metadata.Description;
+                schedule.LiveStream.PosterUrl = metadata.PosterUrl;
+                schedule.LiveStream.Images = metadata.Images;
+                schedule.LiveStream.TrailerUrl = metadata.TrailerUrl;
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Show updated successfully.";
             return RedirectToAction(nameof(ManageShows));
         }
 
@@ -2779,6 +2887,92 @@ private static List<DateTime> BuildManagedShowStartTimes(ManageShowCreateViewMod
         .ToList();
 }
 
+private async Task<long> ResolveManagedScreenId(long venueId, long screenId)
+{
+    if (venueId > 0)
+    {
+        var selectedScreen = await _context.Screens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == screenId && x.VenueId == venueId && x.IsActive);
+
+        if (selectedScreen != null)
+        {
+            return selectedScreen.Id;
+        }
+
+        return await _context.Screens
+            .AsNoTracking()
+            .Where(x => x.VenueId == venueId && x.IsActive)
+            .OrderBy(x => x.ScreenName)
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync();
+    }
+
+    return await _context.Screens
+        .AsNoTracking()
+        .Where(x => x.Id == screenId && x.IsActive)
+        .Select(x => x.Id)
+        .FirstOrDefaultAsync();
+}
+
+private ManagedShowMetadata NormalizeManagedShowMetadata(
+    string? secondaryName,
+    string? cast,
+    string? description,
+    string? posterUrl,
+    string? images,
+    string? trailerUrl,
+    decimal? imdbRating)
+{
+    return new ManagedShowMetadata
+    {
+        SecondaryName = CleanText(secondaryName),
+        Cast = CleanText(cast),
+        Description = CleanText(description),
+        PosterUrl = CleanText(posterUrl),
+        Images = CleanText(images),
+        TrailerUrl = CleanText(trailerUrl),
+        ImdbRating = NormalizeImdbRating(imdbRating)
+    };
+}
+
+private decimal? NormalizeImdbRating(decimal? imdbRating)
+{
+    if (!imdbRating.HasValue && Request.HasFormContentType)
+    {
+        var rawRating = Request.Form["ImdbRating"].ToString();
+        if (decimal.TryParse(rawRating, NumberStyles.Number, CultureInfo.InvariantCulture, out var invariantRating) ||
+            decimal.TryParse(rawRating, NumberStyles.Number, CultureInfo.CurrentCulture, out invariantRating))
+        {
+            imdbRating = invariantRating;
+        }
+    }
+
+    if (!imdbRating.HasValue)
+    {
+        return null;
+    }
+
+    return Math.Clamp(imdbRating.Value, 0m, 10m);
+}
+
+private static string? CleanText(string? value)
+{
+    var cleaned = value?.Trim();
+    return string.IsNullOrWhiteSpace(cleaned) ? null : cleaned;
+}
+
+private sealed class ManagedShowMetadata
+{
+    public string? SecondaryName { get; init; }
+    public string? Cast { get; init; }
+    public string? Description { get; init; }
+    public string? PosterUrl { get; init; }
+    public string? Images { get; init; }
+    public string? TrailerUrl { get; init; }
+    public decimal? ImdbRating { get; init; }
+}
+
 private async Task<List<Dictionary<string, string>>> BuildNotificationSystemEvents()
 {
     var events = new List<Dictionary<string, string>>();
@@ -2921,7 +3115,7 @@ SELECT
     COALESCE(m.""PosterUrl"", st.""PosterUrl"", ls.""PosterUrl"") AS ""PosterUrl"",
     COALESCE(m.""Images"", st.""Images"", ls.""Images"") AS ""Images"",
     COALESCE(m.""TrailerUrl"", st.""TrailerUrl"", ls.""TrailerUrl"") AS ""TrailerUrl"",
-    m.""Director"" AS director,
+    COALESCE(m.""Director"", st.""Comedian"", ls.""Host"") AS director,
     m.""Cast"" AS cast,
     m.""ImdbRating"" AS imdb_rating,
     v.venue_name,

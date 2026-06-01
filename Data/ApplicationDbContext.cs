@@ -472,6 +472,18 @@ modelBuilder.Entity<Booking>(entity =>
         entity.Property(x=>x.Title)
             .HasColumnName("title");
 
+        entity.Property(x=>x.Description)
+            .HasColumnName("Description");
+
+        entity.Property(x=>x.PosterUrl)
+            .HasColumnName("PosterUrl");
+
+        entity.Property(x=>x.Images)
+            .HasColumnName("Images");
+
+        entity.Property(x=>x.TrailerUrl)
+            .HasColumnName("TrailerUrl");
+
         entity.Property(x=>x.StartTime)
             .HasColumnName("start_time");
 

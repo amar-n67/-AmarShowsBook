@@ -51,16 +51,17 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="cinema"] {
-    --admin-ink: #fff8ed;
-    --admin-muted: #d4bdab;
-    --admin-panel: rgba(31, 26, 38, 0.94);
-    --admin-panel-strong: #282131;
-    --admin-line: rgba(244, 200, 106, 0.18);
-    --admin-gold: #f4c86a;
-    --admin-rose: #d96c4f;
-    --admin-teal: #56b7a6;
-    --admin-night: #121017;
-    --admin-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+    color-scheme: dark;
+    --admin-ink: #fff7e8;
+    --admin-muted: #d7c1ad;
+    --admin-panel: rgba(25, 22, 34, 0.95);
+    --admin-panel-strong: #211c2b;
+    --admin-line: rgba(255, 209, 102, 0.22);
+    --admin-gold: #ffd166;
+    --admin-rose: #e2554f;
+    --admin-teal: #32d1c0;
+    --admin-night: #0d0b12;
+    --admin-shadow: 0 22px 56px rgba(0, 0, 0, 0.38);
 }
 
 * {
@@ -82,6 +83,79 @@ body {
     font-size: 0.95rem;
 }
 
+body,
+.admin-main,
+.admin-page,
+.card,
+.admin-detail-panel,
+.table,
+.table td,
+.table th,
+.modal-content,
+.dropdown-menu,
+.list-group-item {
+    color: var(--admin-ink) !important;
+}
+
+.text-dark,
+.text-body,
+.fw-semibold.text-dark {
+    color: var(--admin-ink) !important;
+}
+
+.text-muted,
+.form-text {
+    color: var(--admin-muted) !important;
+}
+
+.bg-light,
+.table-light,
+.card-header,
+.modal-header,
+.modal-footer {
+    background: var(--admin-panel-strong) !important;
+    color: var(--admin-ink) !important;
+    border-color: var(--admin-line) !important;
+}
+
+.bg-dark {
+    background: var(--admin-night) !important;
+}
+
+.form-control,
+.form-select,
+.input-group-text,
+input,
+select,
+textarea {
+    background-color: var(--admin-panel-strong) !important;
+    color: var(--admin-ink) !important;
+    border-color: var(--admin-line) !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--admin-muted) !important;
+    opacity: 1;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    background-color: var(--admin-panel-strong) !important;
+    color: var(--admin-ink) !important;
+    border-color: var(--admin-teal) !important;
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--admin-teal) 24%, transparent) !important;
+}
+
+select option {
+    background: var(--admin-panel-strong);
+    color: var(--admin-ink);
+}
+
 html[data-theme="white"] body {
     background: linear-gradient(125deg, #f8fafc, #eef2ff 52%, #ecfeff);
 }
@@ -95,8 +169,10 @@ html[data-theme="dark"] body {
 }
 
 html[data-theme="cinema"] body {
-    background: radial-gradient(circle at top left, rgba(244, 200, 106, 0.18), transparent 34%),
-        linear-gradient(125deg, #121017, #24182a 52%, #3c2631);
+    background:
+        radial-gradient(circle at 15% 5%, rgba(255, 209, 102, 0.22), transparent 34%),
+        radial-gradient(circle at 82% 18%, rgba(50, 209, 192, 0.16), transparent 28%),
+        linear-gradient(125deg, #0d0b12, #24162e 52%, #4f2538);
 }
 
 .admin-wrapper {
@@ -127,8 +203,8 @@ html[data-theme="system"] .admin-sidebar {
 
 html[data-theme="cinema"] .admin-sidebar {
     background:
-        linear-gradient(180deg, rgba(18, 16, 23, 0.98), rgba(89, 48, 74, 0.98), rgba(179, 107, 63, 0.88)),
-        repeating-linear-gradient(90deg, rgba(244,200,106,0.05) 0 8px, transparent 8px 18px);
+        linear-gradient(180deg, rgba(13, 11, 18, 0.99), rgba(42, 27, 52, 0.98), rgba(142, 54, 79, 0.94), rgba(216, 140, 61, 0.88)),
+        repeating-linear-gradient(90deg, rgba(255, 209, 102, 0.06) 0 8px, transparent 8px 18px);
 }
 
 .admin-wrapper.nav-collapsed .admin-sidebar {
@@ -521,6 +597,48 @@ html[data-theme="white"] .admin-topbar {
     background: var(--admin-night) !important;
     color: white !important;
     box-shadow: 0 10px 24px rgba(23,25,35,0.16);
+}
+
+.btn-outline-dark,
+.btn-outline-secondary {
+    border-color: var(--admin-line) !important;
+    background: color-mix(in srgb, var(--admin-panel-strong) 82%, transparent) !important;
+    color: var(--admin-ink) !important;
+}
+
+.btn-outline-dark:hover,
+.btn-outline-secondary:hover {
+    border-color: var(--admin-rose) !important;
+    background: var(--admin-rose) !important;
+    color: white !important;
+}
+
+.btn-primary {
+    background: var(--admin-rose) !important;
+    border-color: var(--admin-rose) !important;
+    color: white !important;
+}
+
+.btn-outline-primary {
+    border-color: var(--admin-rose) !important;
+    color: var(--admin-rose) !important;
+}
+
+.btn-outline-primary:hover {
+    background: var(--admin-rose) !important;
+    color: white !important;
+}
+
+.alert-success {
+    background: color-mix(in srgb, var(--admin-teal) 20%, var(--admin-panel-strong)) !important;
+    border-color: color-mix(in srgb, var(--admin-teal) 46%, var(--admin-line)) !important;
+    color: var(--admin-ink) !important;
+}
+
+.alert-danger {
+    background: color-mix(in srgb, var(--admin-rose) 20%, var(--admin-panel-strong)) !important;
+    border-color: color-mix(in srgb, var(--admin-rose) 46%, var(--admin-line)) !important;
+    color: var(--admin-ink) !important;
 }
 
 .btn-dark:hover,

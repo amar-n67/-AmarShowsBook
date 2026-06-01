@@ -30,3 +30,21 @@ public class ManageShowCreateViewModel
     public decimal GoldPrice { get; set; } = 250;
     public decimal PremiumPrice { get; set; } = 350;
 }
+
+public class ManageShowUpdateViewModel
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? SecondaryName { get; set; }
+    public string? Cast { get; set; }
+    public string? Description { get; set; }
+    public string? PosterUrl { get; set; }
+    public string? Images { get; set; }
+    public string? TrailerUrl { get; set; }
+    public decimal? ImdbRating { get; set; }
+    public int Duration { get; set; } = 120;
+    public DateTime StartTime { get; set; }
+    public int LocationId { get; set; }
+    public long VenueId { get; set; }
+    public long ScreenId { get; set; }
+}

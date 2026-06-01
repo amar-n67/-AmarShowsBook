@@ -659,12 +659,13 @@ public async Task<IActionResult> MyBookings()
         return RedirectToAction("Login","Auth");
     }
 
+    var now = DateTime.UtcNow;
     var bookings=
 
     await _context
     .VwBookingCompleteDetails
     .AsNoTracking()
-    .Where(x=>x.UserId==userId)
+    .Where(x=>x.UserId==userId && x.StartTime>=now)
     .OrderBy(
     x=>x.StartTime)
     .ThenByDescending(

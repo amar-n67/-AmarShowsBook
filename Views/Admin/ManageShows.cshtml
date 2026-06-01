@@ -91,7 +91,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">Theater</label>
-                <select name="VenueId" class="form-select" required id="venueSelect">
+                <select name="VenueId" class="form-select js-venue-select" required id="venueSelect">
                     @foreach(var venue in Model.Venues)
                     {
                         <option value="@venue.Id">@venue.VenueName, @venue.City</option>
@@ -100,11 +100,11 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Screen</label>
-                <select name="ScreenId" class="form-select" required>
+                <select name="ScreenId" class="form-select js-screen-select" required>
                     @foreach(var screen in Model.Screens)
                     {
                         var venue = Model.Venues.FirstOrDefault(x => x.Id == screen.VenueId);
-                        <option value="@screen.Id">@screen.ScreenName - @(venue?.VenueName ?? "Venue")</option>
+                        <option value="@screen.Id" data-venue-id="@screen.VenueId">@screen.ScreenName - @(venue?.VenueName ?? "Venue")</option>
                     }
                 </select>
             </div>
@@ -157,6 +157,7 @@
                     <th>Type</th>
                     <th>Date Time</th>
                     <th>Location</th>
+                    <th>Theater</th>
                     <th>Screen</th>
                     <th>Seats</th>
                     <th>Trailer</th>
@@ -167,12 +168,22 @@
                 @foreach(var schedule in Model.Schedules)
                 {
                     var title = schedule.Movie?.Title ?? schedule.StandupShow?.Title ?? schedule.LiveStream?.Title ?? "Untitled";
+                    var secondary = schedule.Movie?.Director ?? schedule.StandupShow?.Comedian ?? schedule.LiveStream?.Host;
+                    var cast = schedule.Movie?.Cast;
+                    var description = schedule.Movie?.Description ?? schedule.StandupShow?.Description ?? schedule.LiveStream?.Description;
+                    var poster = schedule.Movie?.PosterUrl ?? schedule.StandupShow?.PosterUrl ?? schedule.LiveStream?.PosterUrl;
+                    var images = schedule.Movie?.Images ?? schedule.StandupShow?.Images ?? schedule.LiveStream?.Images;
                     var trailer = schedule.Movie?.TrailerUrl ?? schedule.StandupShow?.TrailerUrl ?? schedule.LiveStream?.TrailerUrl;
+                    var rating = schedule.Movie?.ImdbRating;
+                    var duration = schedule.Movie?.Duration ?? schedule.StandupShow?.Duration ?? schedule.LiveStream?.Duration ?? (int)Math.Max(15, (schedule.EndTime - schedule.StartTime).TotalMinutes);
+                    var venueId = schedule.Screen?.VenueId ?? 0;
+                    var venueName = Model.Venues.FirstOrDefault(x => x.Id == venueId)?.VenueName ?? "Not assigned";
                     <tr data-admin-searchable class="show-row" data-type="@schedule.Type">
                         <td><strong>@title</strong></td>
                         <td>@schedule.Type</td>
                         <td>@schedule.StartTime.ToString("dd MMM yyyy hh:mm tt")</td>
                         <td>@schedule.Location?.Area, @schedule.Location?.State</td>
+                        <td>@venueName</td>
                         <td>@(schedule.Screen?.ScreenName ?? "Not assigned")</td>
                         <td>@(seatCounts.TryGetValue(schedule.Id, out var seatCount) ? seatCount : 0)</td>
                         <td>
@@ -185,11 +196,92 @@
                                 <span class="text-muted">NA</span>
                             }
                         </td>
-                        <td class="text-end">
+                        <td class="text-end show-actions">
+                            <button class="btn btn-sm btn-outline-primary" type="button" onclick="toggleShowEditor(@schedule.Id)">Edit</button>
                             <form asp-action="DeleteManagedShow" method="post" onsubmit="return confirm('Delete this show schedule?');">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@schedule.Id" />
                                 <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr id="showEditor-@schedule.Id" class="show-edit-row d-none">
+                        <td colspan="9">
+                            <form asp-action="UpdateManagedShow" method="post" class="row g-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Id" value="@schedule.Id" />
+                                <div class="col-md-3">
+                                    <label class="form-label">Show Name</label>
+                                    <input name="Title" class="form-control" value="@title" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Director/Host</label>
+                                    <input name="SecondaryName" class="form-control" value="@secondary" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Cast</label>
+                                    <input name="Cast" class="form-control" value="@cast" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Date Time</label>
+                                    <input name="StartTime" class="form-control" type="datetime-local" value="@schedule.StartTime.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Minutes</label>
+                                    <input name="Duration" class="form-control" type="number" min="15" value="@duration" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Location</label>
+                                    <select name="LocationId" class="form-select" required>
+                                        @foreach(var location in Model.Locations)
+                                        {
+                                            <option value="@location.Id" selected="@(location.Id == schedule.LocationId)">@location.Area, @location.State, @location.Country</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Theater</label>
+                                    <select name="VenueId" class="form-select js-venue-select" required>
+                                        @foreach(var venue in Model.Venues)
+                                        {
+                                            <option value="@venue.Id" selected="@(venue.Id == venueId)">@venue.VenueName, @venue.City</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Screen</label>
+                                    <select name="ScreenId" class="form-select js-screen-select" required>
+                                        @foreach(var screen in Model.Screens)
+                                        {
+                                            var venue = Model.Venues.FirstOrDefault(x => x.Id == screen.VenueId);
+                                            <option value="@screen.Id" data-venue-id="@screen.VenueId" selected="@(screen.Id == schedule.ScreenId)">@screen.ScreenName - @(venue?.VenueName ?? "Venue")</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">IMDB Rating</label>
+                                    <input name="ImdbRating" class="form-control" type="number" min="0" max="10" step="0.1" value="@rating" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Poster URL</label>
+                                    <input name="PosterUrl" class="form-control" value="@poster" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Images</label>
+                                    <input name="Images" class="form-control" value="@images" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">YouTube Trailer Link</label>
+                                    <input name="TrailerUrl" class="form-control" value="@trailer" />
+                                </div>
+                                <div class="col-md-9">
+                                    <label class="form-label">Description</label>
+                                    <textarea name="Description" class="form-control" rows="1">@description</textarea>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                    <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleShowEditor(@schedule.Id)">Close</button>
+                                </div>
                             </form>
                         </td>
                     </tr>
@@ -229,4 +321,45 @@ function resetShowFilters() {
 
 showSearch?.addEventListener("input", applyShowFilters);
 showTypeFilter?.addEventListener("change", applyShowFilters);
+
+function toggleShowEditor(id) {
+    document.getElementById(`showEditor-${id}`)?.classList.toggle("d-none");
+}
+
+function syncScreensForVenue(venueSelect) {
+    const form = venueSelect.closest("form") || document;
+    const screenSelect = form.querySelector(".js-screen-select");
+    if (!screenSelect) return;
+
+    const venueId = venueSelect.value;
+    let firstVisible = "";
+    Array.from(screenSelect.options).forEach(option => {
+        const visible = !venueId || option.dataset.venueId === venueId;
+        option.hidden = !visible;
+        option.disabled = !visible;
+        if (visible && !firstVisible) firstVisible = option.value;
+    });
+
+    if (screenSelect.selectedOptions.length && screenSelect.selectedOptions[0].disabled) {
+        screenSelect.value = firstVisible;
+    }
+}
+
+document.querySelectorAll(".js-venue-select").forEach(select => {
+    syncScreensForVenue(select);
+    select.addEventListener("change", () => syncScreensForVenue(select));
+});
 </script>
+
+<style>
+.show-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.show-edit-row td {
+    background: color-mix(in srgb, var(--admin-panel) 88%, var(--admin-gold) 12%);
+    border-top: 0;
+}
+</style>

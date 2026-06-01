@@ -140,6 +140,8 @@ public async Task<IActionResult> Index(string type = "Movie")
 //     })
 //     .ToListAsync();
 
+await EnsureHomeShowListingView();
+
 var schedules = await _context.HomeShows
 .Where(x => x.ShowType == type)
 .Where(x => x.StartTime >= DateTime.UtcNow)
@@ -273,6 +275,64 @@ foreach (var show in schedules)
     }
 }
 // ====================== End of updated Index action ======================
+        private async Task EnsureHomeShowListingView()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""ImdbRating"" numeric(3,1);
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+
+CREATE OR REPLACE VIEW public.vw_home_show_listing AS
+SELECT
+    s.""Id"" AS schedule_id,
+    CASE
+        WHEN s.""MovieId"" IS NOT NULL THEN 'Movie'
+        WHEN s.""StandupShowId"" IS NOT NULL THEN 'Standup'
+        WHEN s.""LiveStreamId"" IS NOT NULL THEN 'Live'
+        ELSE COALESCE(NULLIF(s.""Type"", ''), 'Movie')
+    END AS show_type,
+    COALESCE(s.""MovieId"", s.""StandupShowId"", s.""LiveStreamId"", 0) AS show_id,
+    COALESCE(m.""Title"", st.""Title"", ls.""Title"", 'Untitled Show') AS title,
+    COALESCE(m.""Description"", st.""Description"", ls.""Description"",
+        CASE
+            WHEN m.""Id"" IS NOT NULL THEN concat_ws(' | ', NULLIF(m.""Director"", ''), NULLIF(m.""Producer"", ''), NULLIF(m.""Cast"", ''))
+            WHEN st.""Id"" IS NOT NULL THEN 'Comedian: ' || st.""Comedian""
+            WHEN ls.""Id"" IS NOT NULL THEN 'Host: ' || ls.""Host""
+            ELSE ''
+        END) AS ""Description"",
+    COALESCE(m.""PosterUrl"", st.""PosterUrl"", ls.""PosterUrl"") AS ""PosterUrl"",
+    COALESCE(m.""Images"", st.""Images"", ls.""Images"") AS ""Images"",
+    COALESCE(m.""TrailerUrl"", st.""TrailerUrl"", ls.""TrailerUrl"") AS ""TrailerUrl"",
+    COALESCE(m.""Director"", st.""Comedian"", ls.""Host"") AS director,
+    m.""Cast"" AS cast,
+    m.""ImdbRating"" AS imdb_rating,
+    v.venue_name,
+    sc.screen_name,
+    s.""StartTime"" AS start_time,
+    s.""EndTime"" AS end_time,
+    COALESCE(l.""Area"", '') AS location,
+    COALESCE(l.""State"", '') AS state,
+    COALESCE(l.""Country"", '') AS country
+FROM public.""ShowSchedules"" s
+LEFT JOIN public.""Movies"" m ON s.""MovieId"" = m.""Id""
+LEFT JOIN public.""StandupShows"" st ON s.""StandupShowId"" = st.""Id""
+LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id""
+LEFT JOIN public.""Locations"" l ON s.""LocationId"" = l.""Id""
+LEFT JOIN public.screens sc ON s.screen_id = sc.id
+LEFT JOIN public.venues v ON sc.venue_id = v.id;
+");
+        }
+
         // ================= PRIVACY =================
 
         public IActionResult Privacy()
