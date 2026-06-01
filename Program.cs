@@ -68,6 +68,7 @@ var connectionString =
 builder.Configuration.GetConnectionString(
 "DefaultConnection")
 ?? "";
+Console.WriteLine($"Connection string starts with: {connectionString[..Math.Min(30, connectionString.Length)]}");
 
 builder.Services.AddDbContext<ApplicationDbContext>(
 options=>
