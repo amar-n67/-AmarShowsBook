@@ -51,19 +51,23 @@ builder.Services.AddSession();
 // Database
 // ========================================
 
+// var connectionString =
+// builder.Configuration.GetConnectionString(
+// "DefaultConnection")
+// ?? "";
+
+// if(
+// !connectionString.Contains(
+// "Timeout=",
+// StringComparison.OrdinalIgnoreCase))
+// {
+//     connectionString+=
+//     ";Timeout=3;Command Timeout=5";
+// }
 var connectionString =
 builder.Configuration.GetConnectionString(
 "DefaultConnection")
 ?? "";
-
-if(
-!connectionString.Contains(
-"Timeout=",
-StringComparison.OrdinalIgnoreCase))
-{
-    connectionString+=
-    ";Timeout=3;Command Timeout=5";
-}
 
 builder.Services.AddDbContext<ApplicationDbContext>(
 options=>
