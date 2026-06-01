@@ -18,18 +18,34 @@
 # ENTRYPOINT ["dotnet", "AmarShowsBook.dll"]
 
 # FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+# FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
 
-WORKDIR /src
+# WORKDIR /src
 
-COPY . .
+# COPY . .
 
-RUN dotnet restore
+# RUN dotnet restore
 
-RUN dotnet publish -c Release -o /app/publish
+# RUN dotnet publish -c Release -o /app/publish
 
-# FROM mcr.microsoft.com/dotnet/aspnet:9.0
+# # FROM mcr.microsoft.com/dotnet/aspnet:9.0
+# FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview
+
+# WORKDIR /app
+
+# COPY --from=build /app/publish .
+
+# ENV ASPNETCORE_URLS=http://+:10000
+
+# EXPOSE 10000
+
+# ENTRYPOINT ["dotnet","AmarShowsBook.dll"]
+
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview
+
+RUN apt-get update && \
+    apt-get install -y libgssapi-krb5-2 && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
