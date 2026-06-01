@@ -1,3 +1,4 @@
+@inject AmarShowsBook.Services.RbacService RbacService
 <!DOCTYPE html>
 <html>
 <head>
@@ -21,6 +22,27 @@
 
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var userIdText = Context.Session.GetString("UserId");
+    var hasUserId = int.TryParse(userIdText, out var currentUserId);
+    Func<string, string, bool> canShowAdminNav = (module, action) =>
+        hasUserId && RbacService.HasPermission(currentUserId, module, action);
+    var adminNavItems = new[]
+    {
+        new { Action = "Dashboard", Label = "Dashboard", Url = "/Admin/Dashboard", Module = "ADMIN", Permission = "VIEW" },
+        new { Action = "Users", Label = "Users", Url = "/Admin/Users", Module = "USER", Permission = "VIEW" },
+        new { Action = "UserAccess", Label = "User Access", Url = "/Admin/UserAccess", Module = "USER", Permission = "GRANT_ACCESS" },
+        new { Action = "Roles", Label = "Roles", Url = "/Admin/Roles", Module = "ROLE", Permission = "VIEW" },
+        new { Action = "Permissions", Label = "Permissions", Url = "/Admin/Permissions", Module = "PERMISSION", Permission = "VIEW" },
+        new { Action = "ManageShows", Label = "Manage Shows", Url = "/Admin/ManageShows", Module = "SHOW", Permission = "VIEW" },
+        new { Action = "Bookings", Label = "Bookings", Url = "/Admin/Bookings", Module = "BOOKING", Permission = "VIEW" },
+        new { Action = "Transactions", Label = "Transactions", Url = "/Admin/Transactions", Module = "PAYMENT", Permission = "VIEW" },
+        new { Action = "Refunds", Label = "Refunds", Url = "/Admin/Refunds", Module = "REFUND", Permission = "VIEW" },
+        new { Action = "CouponUsage", Label = "Coupon Used", Url = "/Admin/CouponUsage", Module = "COUPON", Permission = "VIEW" },
+        new { Action = "Wallets", Label = "Wallets", Url = "/Admin/Wallets", Module = "WALLET", Permission = "VIEW" },
+        new { Action = "Notifications", Label = "Notifications", Url = "/Admin/Notifications", Module = "NOTIFICATION", Permission = "VIEW" },
+        new { Action = "ActivityLogs", Label = "Activity Logs", Url = "/Admin/ActivityLogs", Module = "ADMIN", Permission = "VIEW" },
+        new { Action = "Versions", Label = "Versions", Url = "/Admin/Versions", Module = "ADMIN", Permission = "VIEW" }
+    };
     var showAdminFilters = new[]
     {
         "Users","UserAccess","Roles","Permissions","Bookings",
@@ -42,20 +64,14 @@
 
         <nav class="admin-nav" aria-label="Admin navigation">
 
-            <a class="@(currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">Dashboard</a>
-            <a class="@(currentAction == "Users" ? "active" : "")" href="/Admin/Users">Users</a>
-            <a class="@(currentAction == "UserAccess" ? "active" : "")" href="/Admin/UserAccess">User Access</a>
-            <a class="@(currentAction == "Roles" ? "active" : "")" href="/Admin/Roles">Roles</a>
-            <a class="@(currentAction == "Permissions" ? "active" : "")" href="/Admin/Permissions">Permissions</a>
-            <a class="@(currentAction == "ManageShows" ? "active" : "")" href="/Admin/ManageShows">Manage Shows</a>
-            <a class="@(currentAction == "Bookings" ? "active" : "")" href="/Admin/Bookings">Bookings</a>
-            <a class="@(currentAction == "Transactions" ? "active" : "")" href="/Admin/Transactions">Transactions</a>
-            <a class="@(currentAction == "Refunds" ? "active" : "")" href="/Admin/Refunds">Refunds</a>
-            <a class="@(currentAction == "CouponUsage" ? "active" : "")" href="/Admin/CouponUsage">Coupon Used</a>
-            <a class="@(currentAction == "Wallets" ? "active" : "")" href="/Admin/Wallets">Wallets</a>
-            <a class="@(currentAction == "Notifications" ? "active" : "")" href="/Admin/Notifications">Notifications</a>
-            <a class="@(currentAction == "ActivityLogs" ? "active" : "")" href="/Admin/ActivityLogs">Activity Logs</a>
-            <a class="@(currentAction == "Versions" ? "active" : "")" href="/Admin/Versions">Versions</a>
+            @foreach (var item in adminNavItems.Where(x => canShowAdminNav(x.Module, x.Permission)))
+            {
+                var isActive = currentAction == item.Action ||
+                    (item.Action == "Transactions" && currentAction == "TransactionDetails") ||
+                    (item.Action == "Refunds" && currentAction == "RefundDetails");
+
+                <a class="@(isActive ? "active" : "")" href="@item.Url">@item.Label</a>
+            }
 
         </nav>
 

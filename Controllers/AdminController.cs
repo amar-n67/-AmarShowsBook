@@ -7,6 +7,7 @@ using AmarShowsBook.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Filters;
 using System.Globalization;
 
 namespace AmarShowsBook.Controllers
@@ -45,6 +46,29 @@ namespace AmarShowsBook.Controllers
             _context = context;
             _activityLogger = activityLogger;
             _rbacService = rbacService;
+        }
+
+        public override async Task OnActionExecutionAsync(
+            ActionExecutingContext context,
+            ActionExecutionDelegate next)
+        {
+            var actionName = context.ActionDescriptor.RouteValues["action"] ?? string.Empty;
+
+            if (TryGetAdminPermission(actionName, out var moduleCode, out var actionType))
+            {
+                await EnsureRbacInfrastructure();
+
+                if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, moduleCode, actionType))
+                {
+                    TempData["Error"] = "You do not have permission to access this admin feature.";
+                    context.Result = actionName == nameof(Dashboard)
+                        ? RedirectToAction("Index", "Home")
+                        : RedirectToAction(nameof(Dashboard));
+                    return;
+                }
+            }
+
+            await next();
         }
 
         // =====================================================
@@ -2462,6 +2486,7 @@ public IActionResult ToggleUserStatus(long id)
     return RedirectToAction("Users");
 }
 [HttpPost]
+[ValidateAntiForgeryToken]
 public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
 {
     // =====================================================
@@ -2486,7 +2511,8 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
 
     var roleExists =
         _context.Roles.Any(x =>
-            x.Id == request.RoleId);
+            x.Id == request.RoleId &&
+            x.IsActive);
 
     if (!roleExists)
     {
@@ -2572,6 +2598,7 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
     return RedirectToAction("UserAccess");
 }
 [HttpPost]
+[ValidateAntiForgeryToken]
 public async Task<IActionResult> RemoveUserRole(long userId, long roleId)
 {
     // =====================================================
@@ -2591,6 +2618,19 @@ public async Task<IActionResult> RemoveUserRole(long userId, long roleId)
             "Role mapping not found.";
 
         return RedirectToAction("UserAccess");
+    }
+
+    if (long.TryParse(HttpContext.Session.GetString("UserId"), out var currentUserId) &&
+        currentUserId == userId)
+    {
+        var activeRoleCount = _context.UserRoleMappings
+            .Count(x => x.UserId == userId && x.IsActive);
+
+        if (activeRoleCount <= 1)
+        {
+            TempData["Error"] = "You cannot remove your own last active role.";
+            return RedirectToAction("UserAccess");
+        }
     }
 
     // =====================================================
@@ -2765,6 +2805,155 @@ private string NormalizeCode(string? value)
         .Replace("-", "_");
 }
 
+private static bool TryGetAdminPermission(
+    string actionName,
+    out string moduleCode,
+    out string actionType)
+{
+    var map = new Dictionary<string, (string ModuleCode, string ActionType)>(StringComparer.OrdinalIgnoreCase)
+    {
+        [nameof(Dashboard)] = ("ADMIN", "VIEW"),
+        [nameof(ActivityLogs)] = ("ADMIN", "VIEW"),
+        [nameof(Versions)] = ("ADMIN", "VIEW"),
+        [nameof(CreateVersion)] = ("ADMIN", "VIEW"),
+        [nameof(CreateNextVersion)] = ("ADMIN", "VIEW"),
+        [nameof(AccessManagement)] = ("ADMIN", "VIEW"),
+        [nameof(Menus)] = ("ADMIN", "VIEW"),
+
+        [nameof(Users)] = ("USER", "VIEW"),
+        [nameof(UserDetails)] = ("USER", "VIEW"),
+        [nameof(DisableUser)] = ("USER", "DISABLE"),
+        [nameof(EnableUser)] = ("USER", "DISABLE"),
+        [nameof(ToggleUserStatus)] = ("USER", "DISABLE"),
+        [nameof(DeleteUser)] = ("USER", "DISABLE"),
+        [nameof(RevokeUser)] = ("USER", "DISABLE"),
+        [nameof(UserAccess)] = ("USER", "GRANT_ACCESS"),
+        [nameof(AddUserRole)] = ("USER", "GRANT_ACCESS"),
+        [nameof(RemoveUserRole)] = ("USER", "GRANT_ACCESS"),
+
+        [nameof(Roles)] = ("ROLE", "VIEW"),
+        [nameof(CreateRole)] = ("ROLE", "CREATE"),
+        [nameof(UpdateRole)] = ("ROLE", "UPDATE"),
+
+        [nameof(Permissions)] = ("PERMISSION", "VIEW"),
+        [nameof(CreatePermission)] = ("PERMISSION", "CREATE"),
+        [nameof(ToggleRolePermission)] = ("PERMISSION", "ASSIGN"),
+
+        [nameof(ManageShows)] = ("SHOW", "VIEW"),
+        [nameof(CreateManagedShow)] = ("SHOW", "CREATE"),
+        [nameof(UpdateManagedShow)] = ("SHOW", "UPDATE"),
+        [nameof(DeleteManagedShow)] = ("SHOW", "DELETE"),
+
+        [nameof(Bookings)] = ("BOOKING", "VIEW"),
+
+        [nameof(Transactions)] = ("PAYMENT", "VIEW"),
+        [nameof(TransactionDetails)] = ("PAYMENT", "VIEW"),
+
+        [nameof(Refunds)] = ("REFUND", "VIEW"),
+        [nameof(RefundDetails)] = ("REFUND", "VIEW"),
+        [nameof(ApproveRefund)] = ("REFUND", "APPROVE"),
+        [nameof(RejectRefund)] = ("REFUND", "REJECT"),
+        [nameof(RetryRefund)] = ("REFUND", "RETRY"),
+        [nameof(SaveRefundNotes)] = ("REFUND", "UPDATE"),
+        [nameof(ExportRefunds)] = ("REFUND", "VIEW"),
+
+        [nameof(Wallets)] = ("WALLET", "VIEW"),
+        [nameof(CouponUsage)] = ("COUPON", "VIEW"),
+        [nameof(Notifications)] = ("NOTIFICATION", "VIEW")
+    };
+
+    if (map.TryGetValue(actionName, out var permission))
+    {
+        moduleCode = permission.ModuleCode;
+        actionType = permission.ActionType;
+        return true;
+    }
+
+    moduleCode = string.Empty;
+    actionType = string.Empty;
+    return false;
+}
+
+private async Task EnsureRbacInfrastructure()
+{
+    EnsurePermissionSeedData();
+    EnsureDefaultRolePermissions();
+
+    await _context.Database.ExecuteSqlRawAsync(@"
+INSERT INTO public.user_role_mappings (user_id, role_id, assigned_by, assigned_at, is_active)
+SELECT u.""Id"", r.id, NULL, CURRENT_TIMESTAMP, true
+FROM public.""Users"" u
+JOIN public.roles r ON r.role_code = 'AMAR_USER'
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.user_role_mappings existing
+    WHERE existing.user_id = u.""Id""
+);
+
+CREATE OR REPLACE VIEW public.vw_user_access_matrix AS
+SELECT
+    u.""Id"" AS user_id,
+    u.""Name"" AS user_name,
+    u.""Email"" AS user_email,
+    r.role_code,
+    r.role_name,
+    am.module_code,
+    am.module_name,
+    p.permission_code,
+    p.permission_name,
+    p.action_type,
+    urm.assigned_at,
+    urm.is_active
+FROM public.""Users"" u
+JOIN public.user_role_mappings urm ON u.""Id"" = urm.user_id
+JOIN public.roles r ON urm.role_id = r.id
+JOIN public.role_permissions rp ON r.id = rp.role_id
+JOIN public.permissions p ON rp.permission_id = p.id
+JOIN public.application_modules am ON p.module_id = am.id
+WHERE urm.is_active = true
+  AND r.is_active = true
+  AND am.is_active = true;
+
+CREATE OR REPLACE VIEW public.vw_user_application_menus AS
+SELECT
+    u.""Id"" AS user_id,
+    u.""Name"" AS user_name,
+    r.role_code,
+    am.id AS menu_id,
+    am.module_code AS menu_code,
+    am.module_name AS menu_name,
+    NULL::bigint AS parent_menu_id,
+    NULL::varchar(255) AS parent_menu_name,
+    am.route_path,
+    am.icon_name,
+    1 AS menu_level,
+    am.display_order,
+    true AS can_view,
+    bool_or(p.action_type = 'CREATE') AS can_create,
+    bool_or(p.action_type = 'UPDATE') AS can_update,
+    bool_or(p.action_type = 'DELETE') AS can_delete
+FROM public.""Users"" u
+JOIN public.user_role_mappings urm ON u.""Id"" = urm.user_id
+JOIN public.roles r ON urm.role_id = r.id
+JOIN public.role_permissions rp ON r.id = rp.role_id
+JOIN public.permissions p ON rp.permission_id = p.id
+JOIN public.application_modules am ON p.module_id = am.id
+WHERE urm.is_active = true
+  AND r.is_active = true
+  AND am.is_active = true
+GROUP BY
+    u.""Id"",
+    u.""Name"",
+    r.role_code,
+    am.id,
+    am.module_code,
+    am.module_name,
+    am.route_path,
+    am.icon_name,
+    am.display_order;");
+}
+
 private void EnsurePermissionSeedData()
 {
     var now = DateTime.UtcNow;
@@ -2815,7 +3004,7 @@ private void EnsurePermissionSeedData()
         ("SHOW", "VIEW"), ("SHOW", "CREATE"), ("SHOW", "UPDATE"), ("SHOW", "DELETE"),
         ("BOOKING", "VIEW"), ("BOOKING", "PRINT"), ("BOOKING", "CANCEL"),
         ("PAYMENT", "VIEW"), ("PAYMENT", "REFUND"),
-        ("REFUND", "VIEW"), ("REFUND", "APPROVE"), ("REFUND", "REJECT"), ("REFUND", "RETRY"),
+        ("REFUND", "VIEW"), ("REFUND", "APPROVE"), ("REFUND", "REJECT"), ("REFUND", "RETRY"), ("REFUND", "UPDATE"),
         ("WALLET", "VIEW"), ("WALLET", "UPDATE"),
         ("COUPON", "VIEW"), ("COUPON", "CREATE"), ("COUPON", "UPDATE"), ("COUPON", "DELETE"),
         ("NOTIFICATION", "VIEW"), ("NOTIFICATION", "UPDATE"),
@@ -2837,6 +3026,106 @@ private void EnsurePermissionSeedData()
                 ActionType = permission.Item2,
                 Description = $"Allows {permission.Item2.ToLowerInvariant()} access for {permission.Item1}.",
                 CreatedAt = now
+            });
+        }
+    }
+
+	_context.SaveChanges();
+}
+
+private void EnsureDefaultRolePermissions()
+{
+    if (_context.RolePermissions.Any())
+    {
+        return;
+    }
+
+    var permissionLookup = _context.Permissions
+        .AsNoTracking()
+        .ToDictionary(x => x.PermissionCode, x => x.Id, StringComparer.OrdinalIgnoreCase);
+
+    var roleLookup = _context.Roles
+        .ToDictionary(x => x.RoleCode, x => x.Id, StringComparer.OrdinalIgnoreCase);
+
+    var grants = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["AMAR_SUPER_ADMIN"] = permissionLookup.Keys.ToArray(),
+        ["AMAR_ADMIN"] = permissionLookup.Keys.Where(x => !x.StartsWith("DEVELOPER_", StringComparison.OrdinalIgnoreCase)).ToArray(),
+        ["AMAR_OPERATIONS_MANAGER"] = new[]
+        {
+            "ADMIN_VIEW", "USER_VIEW", "SHOW_VIEW", "BOOKING_VIEW", "PAYMENT_VIEW", "REFUND_VIEW",
+            "WALLET_VIEW", "COUPON_VIEW", "NOTIFICATION_VIEW", "ANALYTICS_VIEW", "SUPPORT_VIEW"
+        },
+        ["AMAR_BOOKING_MANAGER"] = new[]
+        {
+            "ADMIN_VIEW", "BOOKING_VIEW", "BOOKING_PRINT", "BOOKING_CANCEL", "USER_VIEW", "SUPPORT_VIEW"
+        },
+        ["AMAR_PAYMENT_MANAGER"] = new[]
+        {
+            "ADMIN_VIEW", "PAYMENT_VIEW", "PAYMENT_REFUND", "BOOKING_VIEW", "WALLET_VIEW"
+        },
+        ["AMAR_REFUND_MANAGER"] = new[]
+        {
+            "ADMIN_VIEW", "REFUND_VIEW", "REFUND_APPROVE", "REFUND_REJECT", "REFUND_RETRY", "REFUND_UPDATE",
+            "PAYMENT_VIEW", "BOOKING_VIEW"
+        },
+        ["AMAR_CONTENT_MANAGER"] = new[]
+        {
+            "ADMIN_VIEW", "SHOW_VIEW", "SHOW_CREATE", "SHOW_UPDATE", "SHOW_DELETE",
+            "COUPON_VIEW", "COUPON_CREATE", "COUPON_UPDATE", "COUPON_DELETE"
+        },
+        ["AMAR_NOTIFICATION_MANAGER"] = new[]
+        {
+            "ADMIN_VIEW", "NOTIFICATION_VIEW", "NOTIFICATION_UPDATE", "USER_VIEW"
+        },
+        ["AMAR_ANALYTICS_MANAGER"] = new[]
+        {
+            "ADMIN_VIEW", "ANALYTICS_VIEW", "BOOKING_VIEW", "PAYMENT_VIEW", "REFUND_VIEW", "WALLET_VIEW"
+        },
+        ["AMAR_SUPPORT_EXECUTIVE"] = new[]
+        {
+            "ADMIN_VIEW", "SUPPORT_VIEW", "USER_VIEW", "BOOKING_VIEW", "PAYMENT_VIEW", "REFUND_VIEW"
+        },
+        ["AMAR_SCANNER_OPERATOR"] = new[]
+        {
+            "SCANNER_VALIDATE"
+        },
+        ["AMAR_USER"] = Array.Empty<string>(),
+        ["ADMIN"] = permissionLookup.Keys.Where(x => !x.StartsWith("DEVELOPER_", StringComparison.OrdinalIgnoreCase)).ToArray(),
+        ["USER"] = Array.Empty<string>()
+    };
+
+    long? grantedBy = null;
+    if (long.TryParse(HttpContext.Session.GetString("UserId"), out var currentUserId))
+    {
+        grantedBy = currentUserId;
+    }
+
+    foreach (var grant in grants)
+    {
+        if (!roleLookup.TryGetValue(grant.Key, out var roleId))
+        {
+            continue;
+        }
+
+        foreach (var permissionCode in grant.Value.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!permissionLookup.TryGetValue(permissionCode, out var permissionId))
+            {
+                continue;
+            }
+
+            if (_context.RolePermissions.Any(x => x.RoleId == roleId && x.PermissionId == permissionId))
+            {
+                continue;
+            }
+
+            _context.RolePermissions.Add(new RolePermission
+            {
+                RoleId = roleId,
+                PermissionId = permissionId,
+                GrantedBy = grantedBy,
+                GrantedAt = DateTime.UtcNow
             });
         }
     }

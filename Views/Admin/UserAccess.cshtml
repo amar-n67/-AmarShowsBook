@@ -1,5 +1,5 @@
 @model List<AmarShowsBook.Models.ViewModels.AdminUserRoleViewModel>
-@using AmarShowsBook.Models.Admin
+@using AmarShowsBook.Models
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -198,6 +198,7 @@
                         <form asp-action="AddUserRole"
                               method="post"
                               class="grant-role-form">
+                            @Html.AntiForgeryToken()
 
                             <input type="hidden"
                                    name="UserId"
@@ -215,7 +216,7 @@
                                 @foreach (var role in availableRoles)
                                 {
                                     <option value="@role.Id">
-                                        @role.RoleName
+                                        @role.RoleName (@role.RoleCode)
                                     </option>
                                 }
 
@@ -255,6 +256,7 @@
 
                                     <form asp-action="RemoveUserRole"
                                           method="post">
+                                        @Html.AntiForgeryToken()
 
                                         <input type="hidden"
                                                name="userId"
