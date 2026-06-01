@@ -1171,6 +1171,7 @@ z-index:9999;">
         isLoggedIn
         && !(currentController == "Developer" && currentAction == "Index")
         && !(currentController == "Home" && currentAction == "Index");
+        var currentVersion = "1.0.0";
     @* var currentVersion =
         AppDb.ApplicationVersions
         .OrderByDescending(x => x.IsCurrent)
