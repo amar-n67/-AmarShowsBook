@@ -1171,13 +1171,13 @@ z-index:9999;">
         isLoggedIn
         && !(currentController == "Developer" && currentAction == "Index")
         && !(currentController == "Home" && currentAction == "Index");
-    var currentVersion =
+    @* var currentVersion =
         AppDb.ApplicationVersions
         .OrderByDescending(x => x.IsCurrent)
         .ThenByDescending(x => x.UpdatedAt)
         .Select(x => x.VersionNumber)
         .FirstOrDefault()
-        ?? "1.0.0";
+        ?? "1.0.0"; *@
 }
 
     <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
