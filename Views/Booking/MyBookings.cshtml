@@ -128,7 +128,9 @@
                         <a class="btn btn-secondary" href="@printPath">Download</a>
                         @if(canCancel)
                         {
-                            <form asp-action="CancelBooking" asp-controller="Booking" method="post" class="cancel-form">
+                            <form asp-action="CancelBooking" asp-controller="Booking" method="post" class="cancel-form"
+                                  data-wallet="@booking.PayableAmount"
+                                  data-coupon="@booking.DiscountAmount">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="bookingId" value="@booking.BookingId" />
                                 <input type="hidden" name="reason" value="Cancelled by customer from My Bookings" />
@@ -387,3 +389,18 @@
     }
 }
 </style>
+
+<script>
+document.querySelectorAll(".cancel-form").forEach(form => {
+    form.addEventListener("submit", event => {
+        const coupon = Number(form.dataset.coupon || "0");
+        const message = coupon > 0
+            ? "Cancel this ticket? Coupon discount is not refundable. Paid amount and wallet-used amount will be refunded according to payment source."
+            : "Cancel this ticket? Paid amount and wallet-used amount will be refunded according to payment source.";
+
+        if (!confirm(message)) {
+            event.preventDefault();
+        }
+    });
+});
+</script>

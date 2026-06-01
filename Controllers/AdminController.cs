@@ -374,6 +374,8 @@ FailedRefunds =
                 return RedirectToAction("Dashboard");
             }
 
+            await EnsureAdminShowInfrastructure();
+
             var model = new ManageShowsViewModel
             {
                 Schedules = await _context.ShowSchedules
@@ -385,10 +387,18 @@ FailedRefunds =
                     .OrderByDescending(x => x.StartTime)
                     .Take(100)
                     .ToListAsync(),
-                Locations = await _context.Locations.AsNoTracking().OrderBy(x => x.Area).ToListAsync(),
+                Locations = await _context.Locations.AsNoTracking().OrderBy(x => x.State).ThenBy(x => x.Area).ToListAsync(),
                 Venues = await _context.Venues.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.VenueName).ToListAsync(),
-                Screens = await _context.Screens.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.ScreenName).ToListAsync()
+                Screens = await _context.Screens.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.VenueId).ThenBy(x => x.ScreenName).ToListAsync()
             };
+
+            var scheduleIds = model.Schedules.Select(x => x.Id).ToList();
+            ViewBag.ScheduleSeatCounts = await _context.ScreenSeats
+                .AsNoTracking()
+                .Where(x => scheduleIds.Contains(x.ScheduleId))
+                .GroupBy(x => x.ScheduleId)
+                .Select(x => new { ScheduleId = x.Key, Count = x.Count() })
+                .ToDictionaryAsync(x => x.ScheduleId, x => x.Count);
 
             return View(model);
         }
@@ -409,6 +419,8 @@ FailedRefunds =
                 return RedirectToAction(nameof(ManageShows));
             }
 
+            await EnsureAdminShowInfrastructure();
+
             var duration = Math.Clamp(request.Duration, 15, 600);
             var type = request.Type switch
             {
@@ -417,15 +429,8 @@ FailedRefunds =
                 _ => "Movie"
             };
 
-           var schedule = new ShowSchedule
-{
-    LocationId = request.LocationId,
-    ScreenId = request.ScreenId,
-    StartTime = request.StartTime.ToUniversalTime(),
-    EndTime = request.StartTime.ToUniversalTime()
-                                .AddMinutes(duration),
-    Type = type
-};
+            var startTimes = BuildManagedShowStartTimes(request);
+            var created = 0;
 
             if (type == "Movie")
             {
@@ -434,12 +439,26 @@ FailedRefunds =
                     Title = request.Title.Trim(),
                     Director = request.SecondaryName?.Trim(),
                     Producer = request.SecondaryName?.Trim() ?? "Admin",
-                    Cast = "TBA",
-                    Duration = duration
+                    Cast = string.IsNullOrWhiteSpace(request.Cast) ? "TBA" : request.Cast.Trim(),
+                    Duration = duration,
+                    Description = request.Description?.Trim(),
+                    PosterUrl = request.PosterUrl?.Trim(),
+                    Images = request.Images?.Trim(),
+                    TrailerUrl = request.TrailerUrl?.Trim(),
+                    ImdbRating = request.ImdbRating
                 };
                 _context.Movies.Add(movie);
                 await _context.SaveChangesAsync();
-                schedule.MovieId = movie.Id;
+
+                foreach (var startTime in startTimes)
+                {
+                    var schedule = CreateSchedule(request, type, duration, startTime);
+                    schedule.MovieId = movie.Id;
+                    _context.ShowSchedules.Add(schedule);
+                    await _context.SaveChangesAsync();
+                    await GenerateManagedSeats(schedule.Id, request.ScreenId, request.TotalSeats, request.SilverPrice, request.GoldPrice, request.PremiumPrice);
+                    created++;
+                }
             }
             else if (type == "Standup")
             {
@@ -447,11 +466,24 @@ FailedRefunds =
                 {
                     Title = request.Title.Trim(),
                     Comedian = request.SecondaryName?.Trim() ?? "TBA",
-                    Duration = duration
+                    Duration = duration,
+                    Description = request.Description?.Trim(),
+                    PosterUrl = request.PosterUrl?.Trim(),
+                    Images = request.Images?.Trim(),
+                    TrailerUrl = request.TrailerUrl?.Trim()
                 };
                 _context.StandupShows.Add(show);
                 await _context.SaveChangesAsync();
-                schedule.StandupShowId = show.Id;
+
+                foreach (var startTime in startTimes)
+                {
+                    var schedule = CreateSchedule(request, type, duration, startTime);
+                    schedule.StandupShowId = show.Id;
+                    _context.ShowSchedules.Add(schedule);
+                    await _context.SaveChangesAsync();
+                    await GenerateManagedSeats(schedule.Id, request.ScreenId, request.TotalSeats, request.SilverPrice, request.GoldPrice, request.PremiumPrice);
+                    created++;
+                }
             }
             else
             {
@@ -459,18 +491,62 @@ FailedRefunds =
                 {
                     Title = request.Title.Trim(),
                     Host = request.SecondaryName?.Trim() ?? "TBA",
-                    Duration = duration
+                    Duration = duration,
+                    Description = request.Description?.Trim(),
+                    PosterUrl = request.PosterUrl?.Trim(),
+                    Images = request.Images?.Trim(),
+                    TrailerUrl = request.TrailerUrl?.Trim()
                 };
                 _context.LiveStreams.Add(live);
                 await _context.SaveChangesAsync();
-                schedule.LiveStreamId = live.Id;
+
+                foreach (var startTime in startTimes)
+                {
+                    var schedule = CreateSchedule(request, type, duration, startTime);
+                    schedule.LiveStreamId = live.Id;
+                    _context.ShowSchedules.Add(schedule);
+                    await _context.SaveChangesAsync();
+                    await GenerateManagedSeats(schedule.Id, request.ScreenId, request.TotalSeats, request.SilverPrice, request.GoldPrice, request.PremiumPrice);
+                    created++;
+                }
             }
 
-            _context.ShowSchedules.Add(schedule);
-            await _context.SaveChangesAsync();
-            await GenerateManagedSeats(schedule.Id, request.ScreenId, request.TotalSeats);
+            TempData["Success"] = $"{created} show time(s) scheduled successfully.";
+            return RedirectToAction(nameof(ManageShows));
+        }
 
-            TempData["Success"] = "Show scheduled successfully.";
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteManagedShow(int id)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "SHOW", "DELETE"))
+            {
+                TempData["Error"] = "You do not have permission to delete shows.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            var schedule = await _context.ShowSchedules.FirstOrDefaultAsync(x => x.Id == id);
+            if (schedule == null)
+            {
+                TempData["Error"] = "Show schedule not found.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            var hasBookings = await _context.Bookings.AnyAsync(x => x.ScheduleId == id && x.BookingStatus != "CANCELLED");
+            if (hasBookings)
+            {
+                TempData["Error"] = "This show has active bookings and cannot be deleted.";
+                return RedirectToAction(nameof(ManageShows));
+            }
+
+            var locks = await _context.SeatLocks.Where(x => x.ScheduleId == id).ToListAsync();
+            var seats = await _context.ScreenSeats.Where(x => x.ScheduleId == id).ToListAsync();
+            _context.SeatLocks.RemoveRange(locks);
+            _context.ScreenSeats.RemoveRange(seats);
+            _context.ShowSchedules.Remove(schedule);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Show deleted successfully.";
             return RedirectToAction(nameof(ManageShows));
         }
 
@@ -810,6 +886,8 @@ FailedRefunds =
                     .Take(pageSize)
                     .ToListAsync();
 
+                ViewBag.SystemEvents = await BuildNotificationSystemEvents();
+
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
                 ViewBag.TotalRecords = totalCount;
@@ -826,6 +904,7 @@ FailedRefunds =
                 ViewBag.CurrentPage = 1;
                 ViewBag.TotalPages = 1;
                 ViewBag.TotalRecords = 0;
+                ViewBag.SystemEvents = new List<Dictionary<string, string>>();
 
                 return View(new List<VwNotificationCenter>());
             }
@@ -1735,6 +1814,95 @@ public IActionResult ExportRefunds()
     );
 }
 
+public async Task<IActionResult> CouponUsage(int page = 1)
+{
+    await EnsureAdminShowInfrastructure();
+
+    const int pageSize = 50;
+    page = Math.Max(page, 1);
+
+    var query = _context.VwCouponUsages
+        .AsNoTracking()
+        .OrderByDescending(x => x.UsedAt);
+
+    var totalCount = await query.CountAsync();
+    var rows = await query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+
+    ViewBag.CurrentPage = page;
+    ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+    ViewBag.TotalRecords = totalCount;
+
+    return View(rows);
+}
+
+public async Task<IActionResult> Versions()
+{
+    await EnsureAdminShowInfrastructure();
+
+    if (!await _context.ApplicationVersions.AnyAsync())
+    {
+        _context.ApplicationVersions.Add(new ApplicationVersion
+        {
+            VersionNumber = "1.0.0",
+            ReleaseTitle = "Initial application version",
+            ReleaseNotes = "Admin managed release record.",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedBy = HttpContext.Session.GetString("UserName") ?? "System",
+            IsCurrent = true
+        });
+        await _context.SaveChangesAsync();
+    }
+
+    var versions = await _context.ApplicationVersions
+        .AsNoTracking()
+        .OrderByDescending(x => x.IsCurrent)
+        .ThenByDescending(x => x.UpdatedAt)
+        .ToListAsync();
+
+    return View(versions);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CreateVersion(string versionNumber, string releaseTitle, string? releaseNotes, bool isCurrent)
+{
+    await EnsureAdminShowInfrastructure();
+
+    if (string.IsNullOrWhiteSpace(versionNumber) || string.IsNullOrWhiteSpace(releaseTitle))
+    {
+        TempData["Error"] = "Version number and title are required.";
+        return RedirectToAction(nameof(Versions));
+    }
+
+    if (isCurrent)
+    {
+        var current = await _context.ApplicationVersions.Where(x => x.IsCurrent).ToListAsync();
+        foreach (var item in current)
+        {
+            item.IsCurrent = false;
+        }
+    }
+
+    _context.ApplicationVersions.Add(new ApplicationVersion
+    {
+        VersionNumber = versionNumber.Trim(),
+        ReleaseTitle = releaseTitle.Trim(),
+        ReleaseNotes = releaseNotes?.Trim(),
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow,
+        CreatedBy = HttpContext.Session.GetString("UserName") ?? "Admin",
+        IsCurrent = isCurrent
+    });
+
+    await _context.SaveChangesAsync();
+    TempData["Success"] = "Application version saved.";
+    return RedirectToAction(nameof(Versions));
+}
+
 
 
 public IActionResult UserDetails(long id)
@@ -2124,8 +2292,7 @@ public IActionResult ToggleUserStatus(long id)
     return RedirectToAction("Users");
 }
 [HttpPost]
-[HttpPost]
-public IActionResult AddUserRole(UserRoleUpdateViewModel request)
+public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
 {
     // =====================================================
     // VALIDATE USER EXISTS
@@ -2189,11 +2356,13 @@ public IActionResult AddUserRole(UserRoleUpdateViewModel request)
             DateTime.UtcNow;
 
         existingMapping.AssignedBy =
-            Convert.ToInt64(
+            long.TryParse(HttpContext.Session.GetString("UserId"), out var currentUserId)
+                ? currentUserId
+                : null;
 
-        HttpContext.Session.GetString("UserId"));
+        await UpsertUserRoleTable(request.UserId, request.RoleId, true, existingMapping.AssignedBy);
 
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         TempData["Success"] =
             "Role reactivated successfully.";
@@ -2214,15 +2383,18 @@ public IActionResult AddUserRole(UserRoleUpdateViewModel request)
         AssignedAt = DateTime.UtcNow,
 
         AssignedBy =
-            Convert.ToInt64(
-                HttpContext.Session.GetString("UserId")),
+            long.TryParse(HttpContext.Session.GetString("UserId"), out var assignedBy)
+                ? assignedBy
+                : null,
 
         IsActive = true
     };
 
     _context.UserRoleMappings.Add(mapping);
 
-    _context.SaveChanges();
+    await UpsertUserRoleTable(request.UserId, request.RoleId, true, mapping.AssignedBy);
+
+    await _context.SaveChangesAsync();
 
     TempData["Success"] =
         "Role assigned successfully.";
@@ -2230,7 +2402,7 @@ public IActionResult AddUserRole(UserRoleUpdateViewModel request)
     return RedirectToAction("UserAccess");
 }
 [HttpPost]
-public IActionResult RemoveUserRole(long userId, long roleId)
+public async Task<IActionResult> RemoveUserRole(long userId, long roleId)
 {
     // =====================================================
     // HUMAN COMMENT:
@@ -2258,12 +2430,39 @@ public IActionResult RemoveUserRole(long userId, long roleId)
 
     mapping.IsActive = false;
 
-    _context.SaveChanges();
+    await UpsertUserRoleTable(userId, roleId, false, null);
+
+    await _context.SaveChangesAsync();
 
     TempData["Success"] =
         "Role removed successfully.";
 
     return RedirectToAction("UserAccess");
+}
+
+private async Task UpsertUserRoleTable(long userId, long roleId, bool isActive, long? assignedBy)
+{
+    await _context.Database.ExecuteSqlInterpolatedAsync($@"
+CREATE TABLE IF NOT EXISTS public.user_roles
+(
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    user_id bigint NOT NULL,
+    role_id bigint NOT NULL,
+    assigned_by bigint,
+    assigned_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    is_active boolean DEFAULT true
+);
+
+INSERT INTO public.user_roles (user_id, role_id, assigned_by, assigned_at, is_active)
+VALUES ({userId}, {roleId}, {assignedBy}, CURRENT_TIMESTAMP, {isActive})
+ON CONFLICT DO NOTHING;
+
+UPDATE public.user_roles
+SET is_active = {isActive},
+    assigned_by = COALESCE({assignedBy}, assigned_by),
+    assigned_at = CURRENT_TIMESTAMP
+WHERE user_id = {userId}
+  AND role_id = {roleId};");
 }
 // =====================================================
 // HUMAN COMMENT:
@@ -2475,14 +2674,315 @@ private void EnsurePermissionSeedData()
     _context.SaveChanges();
 }
 
-private async Task GenerateManagedSeats(int scheduleId, long screenId, int totalSeats)
+private static ShowSchedule CreateSchedule(
+    ManageShowCreateViewModel request,
+    string type,
+    int duration,
+    DateTime startTime)
+{
+    var utcStart = DateTime.SpecifyKind(startTime, DateTimeKind.Local).ToUniversalTime();
+
+    return new ShowSchedule
+    {
+        LocationId = request.LocationId,
+        ScreenId = request.ScreenId,
+        StartTime = utcStart,
+        EndTime = utcStart.AddMinutes(duration),
+        Type = type
+    };
+}
+
+private static List<DateTime> BuildManagedShowStartTimes(ManageShowCreateViewModel request)
+{
+    var starts = new List<DateTime> { request.StartTime };
+
+    if (!string.IsNullOrWhiteSpace(request.AdditionalStartTimes))
+    {
+        var parts = request.AdditionalStartTimes.Split(
+            new[] { ',', '\n', '\r', ';' },
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (var part in parts)
+        {
+            if (DateTime.TryParse(part, out var parsed))
+            {
+                starts.Add(parsed);
+            }
+        }
+    }
+
+    return starts
+        .Distinct()
+        .OrderBy(x => x)
+        .ToList();
+}
+
+private async Task<List<Dictionary<string, string>>> BuildNotificationSystemEvents()
+{
+    var events = new List<Dictionary<string, string>>();
+
+    var failedLogs = await _context.ActivityLogs
+        .AsNoTracking()
+        .Where(x => x.IsError > 0 || x.Status == "FAILURE")
+        .OrderByDescending(x => x.CreatedAt)
+        .Take(25)
+        .Select(x => new
+        {
+            Time = x.CreatedAt,
+            Type = x.Module,
+            Title = x.Action,
+            Detail = x.ErrorMessage ?? x.Description,
+            Status = x.Status
+        })
+        .ToListAsync();
+
+    events.AddRange(failedLogs.Select(x => new Dictionary<string, string>
+    {
+        ["Time"] = x.Time.ToString("dd MMM yyyy hh:mm tt"),
+        ["Type"] = string.IsNullOrWhiteSpace(x.Type) ? "LOG" : x.Type,
+        ["Title"] = string.IsNullOrWhiteSpace(x.Title) ? "Application event" : x.Title,
+        ["Detail"] = string.IsNullOrWhiteSpace(x.Detail) ? "No details" : x.Detail,
+        ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "FAILED" : x.Status
+    }));
+
+    var failedTransactions = await _context.VwBookingTransactionSummaries
+        .AsNoTracking()
+        .Where(x => x.IsPaymentError == 1 || x.TransactionStatus == "FAILED")
+        .OrderByDescending(x => x.BookingCreatedAt)
+        .Take(25)
+        .Select(x => new
+        {
+            Time = x.BookingCreatedAt,
+            Type = "TRANSACTION",
+            Title = x.TransactionRef ?? "Failed transaction",
+            Detail = $"{x.UserEmail} | {x.ShowTitle}",
+            Status = x.TransactionStatus ?? "FAILED"
+        })
+        .ToListAsync();
+
+    events.AddRange(failedTransactions.Select(x => new Dictionary<string, string>
+    {
+        ["Time"] = x.Time.ToString("dd MMM yyyy hh:mm tt"),
+        ["Type"] = x.Type,
+        ["Title"] = x.Title,
+        ["Detail"] = x.Detail,
+        ["Status"] = x.Status
+    }));
+
+    var cancelledBookings = await _context.VwBookingCompleteDetails
+        .AsNoTracking()
+        .Where(x => x.BookingStatus == "CANCELLED")
+        .OrderByDescending(x => x.CancelledAt ?? x.BookedAt)
+        .Take(25)
+        .Select(x => new
+        {
+            Time = x.CancelledAt ?? x.BookedAt,
+            Type = "BOOKING",
+            Title = x.BookingRef,
+            Detail = $"{x.UserEmail} | {x.ShowTitle}",
+            Status = "CANCELLED"
+        })
+        .ToListAsync();
+
+    events.AddRange(cancelledBookings.Select(x => new Dictionary<string, string>
+    {
+        ["Time"] = x.Time.ToString("dd MMM yyyy hh:mm tt"),
+        ["Type"] = x.Type,
+        ["Title"] = x.Title,
+        ["Detail"] = x.Detail,
+        ["Status"] = x.Status
+    }));
+
+    return events
+        .OrderByDescending(x => DateTime.TryParse(x["Time"], out var parsed) ? parsed : DateTime.MinValue)
+        .Take(50)
+        .ToList();
+}
+
+private async Task EnsureAdminShowInfrastructure()
+{
+    await _context.Database.ExecuteSqlRawAsync(@"
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""ImdbRating"" numeric(3,1);
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+
+CREATE TABLE IF NOT EXISTS public.application_versions
+(
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    version_number varchar(50) NOT NULL,
+    release_title varchar(255) NOT NULL,
+    release_notes text,
+    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by varchar(255),
+    is_current boolean NOT NULL DEFAULT false
+);
+
+CREATE OR REPLACE VIEW public.vw_home_show_listing AS
+SELECT
+    s.""Id"" AS schedule_id,
+    CASE
+        WHEN s.""MovieId"" IS NOT NULL THEN 'Movie'
+        WHEN s.""StandupShowId"" IS NOT NULL THEN 'Standup'
+        WHEN s.""LiveStreamId"" IS NOT NULL THEN 'Live'
+        ELSE COALESCE(NULLIF(s.""Type"", ''), 'Movie')
+    END AS show_type,
+    COALESCE(s.""MovieId"", s.""StandupShowId"", s.""LiveStreamId"", 0) AS show_id,
+    COALESCE(m.""Title"", st.""Title"", ls.""Title"", 'Untitled Show') AS title,
+    COALESCE(m.""Description"", st.""Description"", ls.""Description"",
+        CASE
+            WHEN m.""Id"" IS NOT NULL THEN concat_ws(' | ', NULLIF(m.""Director"", ''), NULLIF(m.""Producer"", ''), NULLIF(m.""Cast"", ''))
+            WHEN st.""Id"" IS NOT NULL THEN 'Comedian: ' || st.""Comedian""
+            WHEN ls.""Id"" IS NOT NULL THEN 'Host: ' || ls.""Host""
+            ELSE ''
+        END) AS ""Description"",
+    COALESCE(m.""PosterUrl"", st.""PosterUrl"", ls.""PosterUrl"") AS ""PosterUrl"",
+    COALESCE(m.""Images"", st.""Images"", ls.""Images"") AS ""Images"",
+    COALESCE(m.""TrailerUrl"", st.""TrailerUrl"", ls.""TrailerUrl"") AS ""TrailerUrl"",
+    m.""Director"" AS director,
+    m.""Cast"" AS cast,
+    m.""ImdbRating"" AS imdb_rating,
+    v.venue_name,
+    sc.screen_name,
+    s.""StartTime"" AS start_time,
+    s.""EndTime"" AS end_time,
+    COALESCE(l.""Area"", '') AS location,
+    COALESCE(l.""State"", '') AS state,
+    COALESCE(l.""Country"", '') AS country
+FROM public.""ShowSchedules"" s
+LEFT JOIN public.""Movies"" m ON s.""MovieId"" = m.""Id""
+LEFT JOIN public.""StandupShows"" st ON s.""StandupShowId"" = st.""Id""
+LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id""
+LEFT JOIN public.""Locations"" l ON s.""LocationId"" = l.""Id""
+LEFT JOIN public.screens sc ON s.screen_id = sc.id
+LEFT JOIN public.venues v ON sc.venue_id = v.id;
+
+CREATE OR REPLACE VIEW public.vw_coupon_usage_admin AS
+SELECT
+    cu.id AS usage_id,
+    cu.coupon_id,
+    cu.coupon_code,
+    cu.booking_id,
+    b.booking_ref,
+    cu.transaction_id,
+    t.transaction_ref,
+    cu.user_id,
+    u.""Name"" AS user_name,
+    u.""Email"" AS user_email,
+    COALESCE(m.""Title"", st.""Title"", ls.""Title"", 'Untitled Show') AS show_name,
+    s.""Type"" AS show_type,
+    s.""StartTime"" AS show_time,
+    cu.original_amount,
+    cu.discount_amount,
+    cu.final_amount,
+    cu.usage_status,
+    cu.used_at
+FROM public.coupon_usage cu
+LEFT JOIN public.bookings b ON cu.booking_id = b.id
+LEFT JOIN public.transactions t ON cu.transaction_id = t.id
+LEFT JOIN public.""Users"" u ON cu.user_id = u.""Id""
+LEFT JOIN public.""ShowSchedules"" s ON b.schedule_id = s.""Id""
+LEFT JOIN public.""Movies"" m ON s.""MovieId"" = m.""Id""
+LEFT JOIN public.""StandupShows"" st ON s.""StandupShowId"" = st.""Id""
+LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id"";
+");
+
+    if (!await _context.Locations.AnyAsync())
+    {
+        var states = new[]
+        {
+            "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand",
+            "Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab",
+            "Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu and Kashmir"
+        };
+
+        var locations = new List<Location>();
+        for (var i = 0; i < 500; i++)
+        {
+            var state = states[i % states.Length];
+            locations.Add(new Location
+            {
+                Country = "India",
+                State = state,
+                Area = $"{state} City {i + 1:000}"
+            });
+        }
+
+        _context.Locations.AddRange(locations);
+        await _context.SaveChangesAsync();
+    }
+
+    if (!await _context.Venues.AnyAsync(x => x.IsActive))
+    {
+        var now = DateTime.UtcNow;
+        _context.Venues.Add(new Venue
+        {
+            VenueCode = "ASB-IND-001",
+            VenueName = "Amar Shows Multiplex",
+            VenueType = "Multiplex",
+            Country = "India",
+            State = "Karnataka",
+            City = "Bengaluru",
+            Address = "MG Road",
+            TotalScreens = 6,
+            CreatedAt = now,
+            UpdatedAt = now,
+            IsActive = true
+        });
+        await _context.SaveChangesAsync();
+    }
+
+    var venues = await _context.Venues.Where(x => x.IsActive).ToListAsync();
+    foreach (var venue in venues)
+    {
+        var existing = await _context.Screens.CountAsync(x => x.VenueId == venue.Id);
+        for (var i = existing + 1; i <= 6; i++)
+        {
+            _context.Screens.Add(new Screen
+            {
+                VenueId = venue.Id,
+                ScreenCode = $"{venue.VenueCode}-S{i}",
+                ScreenName = $"Screen {i}",
+                TotalSeats = 0,
+                ScreenType = i % 2 == 0 ? "IMAX" : "Standard",
+                AudioSystem = i % 2 == 0 ? "Dolby Atmos" : "Dolby 7.1",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+    }
+
+    await _context.SaveChangesAsync();
+}
+
+private async Task GenerateManagedSeats(
+    int scheduleId,
+    long screenId,
+    int totalSeats,
+    decimal silverPrice,
+    decimal goldPrice,
+    decimal premiumPrice)
 {
     if (await _context.ScreenSeats.AnyAsync(x => x.ScheduleId == scheduleId))
     {
         return;
     }
 
-    totalSeats = Math.Clamp(totalSeats, 10, 500);
+    totalSeats = Math.Clamp(totalSeats, 1, 5000);
+    silverPrice = silverPrice <= 0 ? 150 : silverPrice;
+    goldPrice = goldPrice <= 0 ? 250 : goldPrice;
+    premiumPrice = premiumPrice <= 0 ? 350 : premiumPrice;
     var seatsPerRow = 10;
     var rows = (int)Math.Ceiling(totalSeats / (double)seatsPerRow);
     var seats = new List<ScreenSeat>();
@@ -2495,7 +2995,7 @@ private async Task GenerateManagedSeats(int scheduleId, long screenId, int total
         for (var seatNumber = 1; seatNumber <= seatsInRow; seatNumber++)
         {
             var category = rowIndex < 2 ? "Premium" : rowIndex < 5 ? "Gold" : "Silver";
-            var price = category == "Premium" ? 350 : category == "Gold" ? 250 : 150;
+            var price = category == "Premium" ? premiumPrice : category == "Gold" ? goldPrice : silverPrice;
 
             seats.Add(new ScreenSeat
             {

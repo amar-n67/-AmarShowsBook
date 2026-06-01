@@ -27,5 +27,10 @@ public string? TrailerUrl { get; set; }
 
         public string Country { get; set; }
         public string? TheaterDetails { get; set; }
+        public string? Director { get; set; }
+        public string? Cast { get; set; }
+        public decimal? ImdbRating { get; set; }
+        public string? VenueName { get; set; }
+        public string? ScreenName { get; set; }
     }
 }

@@ -659,7 +659,9 @@ public async Task<IActionResult> MyBookings()
     .VwBookingCompleteDetails
     .AsNoTracking()
     .Where(x=>x.UserId==userId)
-    .OrderByDescending(
+    .OrderBy(
+    x=>x.StartTime)
+    .ThenByDescending(
     x=>x.BookedAt)
     .ToListAsync();
 
@@ -758,6 +760,7 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
 
     var refundAmount = Math.Max(0,booking.PayableAmount ?? booking.TotalAmount);
     var walletAmount = Math.Max(0,booking.WalletAmountUsed ?? 0);
+    var couponAmount = Math.Max(0,booking.DiscountAmount ?? 0);
     var refundMethod = ResolveRefundMethod(transaction.PaymentMethod, walletAmount, refundAmount);
     var refundStatus = ShouldAutoRefund(refundMethod) ? "SUCCESS" : "PENDING";
 
@@ -778,8 +781,8 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
         updated_at=DateTime.UtcNow,
         workflow_action=refundStatus=="SUCCESS" ? "AUTO_REFUNDED" : "CUSTOMER_CANCELLED",
         admin_notes=refundStatus=="SUCCESS"
-            ? "Refund completed automatically for wallet/UPI/API-supported source."
-            : "Refund case raised for admin approval."
+            ? $"Refund completed automatically. Coupon discount excluded: {couponAmount:0.00}."
+            : $"Refund case raised for admin approval. Coupon discount excluded: {couponAmount:0.00}."
     };
 
     _context.Refunds.Add(refund);

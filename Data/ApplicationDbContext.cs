@@ -33,6 +33,7 @@ public DbSet<SeatLock> SeatLocks { get; set; }
 
 public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<RefundActionLog> RefundActionLogs { get; set; }
+        public DbSet<ApplicationVersion> ApplicationVersions { get; set; }
 
         public DbSet<Refund> Refunds { get; set; }
 
@@ -113,6 +114,9 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<VwAdminUserManagement>
             VwAdminUserManagement { get; set; }
 
+        public DbSet<VwCouponUsage>
+            VwCouponUsages { get; set; }
+
         // =====================================================
         // ADMIN TRANSACTION VIEW
         // =====================================================
@@ -182,6 +186,9 @@ modelBuilder.Entity<Refund>(entity =>
 
     modelBuilder.Entity<ActivityLog>()
         .ToTable("activity_logs");
+
+    modelBuilder.Entity<ApplicationVersion>()
+        .ToTable("application_versions");
 
     modelBuilder.Entity<SeatLock>()
         .ToTable("seat_locks");
@@ -378,6 +385,34 @@ modelBuilder.Entity<Booking>(entity =>
     modelBuilder.Entity<ShowSchedule>()
         .ToTable("ShowSchedules");
 
+    modelBuilder.Entity<Movie>(entity =>
+    {
+        entity.ToTable("Movies");
+        entity.Property(x=>x.Description).HasColumnName("Description");
+        entity.Property(x=>x.PosterUrl).HasColumnName("PosterUrl");
+        entity.Property(x=>x.Images).HasColumnName("Images");
+        entity.Property(x=>x.TrailerUrl).HasColumnName("TrailerUrl");
+        entity.Property(x=>x.ImdbRating).HasColumnName("ImdbRating");
+    });
+
+    modelBuilder.Entity<StandupShow>(entity =>
+    {
+        entity.ToTable("StandupShows");
+        entity.Property(x=>x.Description).HasColumnName("Description");
+        entity.Property(x=>x.PosterUrl).HasColumnName("PosterUrl");
+        entity.Property(x=>x.Images).HasColumnName("Images");
+        entity.Property(x=>x.TrailerUrl).HasColumnName("TrailerUrl");
+    });
+
+    modelBuilder.Entity<LiveStream>(entity =>
+    {
+        entity.ToTable("LiveStreams");
+        entity.Property(x=>x.Description).HasColumnName("Description");
+        entity.Property(x=>x.PosterUrl).HasColumnName("PosterUrl");
+        entity.Property(x=>x.Images).HasColumnName("Images");
+        entity.Property(x=>x.TrailerUrl).HasColumnName("TrailerUrl");
+    });
+
     modelBuilder.Entity<ShowSchedule>()
         .Property(x=>x.ScreenId)
         .HasColumnName("screen_id");
@@ -453,6 +488,11 @@ modelBuilder.Entity<Booking>(entity =>
             .HasColumnName("country");
 
         entity.Ignore(x=>x.TheaterDetails);
+        entity.Property(x=>x.Director).HasColumnName("director");
+        entity.Property(x=>x.Cast).HasColumnName("cast");
+        entity.Property(x=>x.ImdbRating).HasColumnName("imdb_rating");
+        entity.Property(x=>x.VenueName).HasColumnName("venue_name");
+        entity.Property(x=>x.ScreenName).HasColumnName("screen_name");
     });
 
 
@@ -515,6 +555,11 @@ modelBuilder.Entity<Booking>(entity =>
         .HasNoKey()
         .ToView(
         "vw_admin_user_management");
+
+    modelBuilder.Entity<VwCouponUsage>()
+        .HasNoKey()
+        .ToView(
+        "vw_coupon_usage_admin");
 
 
 

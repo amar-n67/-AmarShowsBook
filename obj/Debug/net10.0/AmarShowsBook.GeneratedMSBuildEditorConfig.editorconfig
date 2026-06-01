@@ -42,6 +42,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vQm9va2luZ3MvSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Admin/CouponUsage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vQ291cG9uVXNhZ2UuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Admin/Dashboard.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vRGFzaGJvYXJkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -104,6 +108,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Admin/Users.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vVXNlcnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Admin/Versions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vVmVyc2lvbnMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/Views/Admin/Wallets.cshtml]

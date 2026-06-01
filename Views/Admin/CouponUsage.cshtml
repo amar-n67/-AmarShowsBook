@@ -1,0 +1,98 @@
+@model IEnumerable<AmarShowsBook.Models.Admin.VwCouponUsage>
+@using AmarShowsBook.Helpers
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Coupon Used";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalRecords = ViewBag.TotalRecords ?? Model.Count();
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Coupon Used</h1>
+            <p>All successful coupon usage with booking, transaction, user and show details.</p>
+        </div>
+        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><span>Total Uses</span><strong>@totalRecords</strong></div>
+        <div class="stat-card"><span>Visible Discount</span><strong>@CurrencyFormatter.FormatRupees(Model.Sum(x => x.DiscountAmount ?? 0))</strong></div>
+        <div class="stat-card"><span>Visible Final Amount</span><strong>@CurrencyFormatter.FormatRupees(Model.Sum(x => x.FinalAmount ?? 0))</strong></div>
+    </div>
+
+    <div class="admin-detail-panel mb-3">
+        <div class="row g-2">
+            <div class="col-md-5">
+                <input id="couponSearch" class="form-control" placeholder="Search coupon, user, booking, transaction, show" />
+            </div>
+            <div class="col-md-3">
+                <select id="couponStatus" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="SUCCESS">SUCCESS</option>
+                    <option value="FAILED">FAILED</option>
+                    <option value="REVERSED">REVERSED</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>Coupon</th>
+                    <th>User</th>
+                    <th>Show</th>
+                    <th>Booking</th>
+                    <th>Transaction</th>
+                    <th>Original</th>
+                    <th>Discount</th>
+                    <th>Final</th>
+                    <th>Status</th>
+                    <th>Used At</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach(var item in Model)
+            {
+                <tr class="coupon-row" data-status="@item.UsageStatus" data-admin-searchable>
+                    <td><strong>@item.CouponCode</strong></td>
+                    <td>@item.UserName<br /><span class="sub-text">@item.UserEmail</span></td>
+                    <td>@item.ShowName<br /><span class="sub-text">@item.ShowType @item.ShowTime?.ToString("dd MMM yyyy hh:mm tt")</span></td>
+                    <td>@item.BookingRef</td>
+                    <td>@item.TransactionRef</td>
+                    <td>@CurrencyFormatter.FormatRupees(item.OriginalAmount)</td>
+                    <td>@CurrencyFormatter.FormatRupees(item.DiscountAmount)</td>
+                    <td>@CurrencyFormatter.FormatRupees(item.FinalAmount)</td>
+                    <td><span class="badge success">@item.UsageStatus</span></td>
+                    <td>@item.UsedAt?.ToString("dd MMM yyyy hh:mm tt")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-area">
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <a class="page-btn @(i == currentPage ? "active" : "")" href="/Admin/CouponUsage?page=@i">@i</a>
+        }
+    </div>
+</section>
+
+<script>
+const couponSearch = document.getElementById("couponSearch");
+const couponStatus = document.getElementById("couponStatus");
+function filterCoupons() {
+    const text = (couponSearch.value || "").toLowerCase();
+    const status = couponStatus.value;
+    document.querySelectorAll(".coupon-row").forEach(row => {
+        row.style.display = (!status || row.dataset.status === status) && (!text || row.innerText.toLowerCase().includes(text)) ? "" : "none";
+    });
+}
+couponSearch?.addEventListener("input", filterCoupons);
+couponStatus?.addEventListener("change", filterCoupons);
+</script>

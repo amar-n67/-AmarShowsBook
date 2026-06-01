@@ -171,6 +171,12 @@ var schedules = await _context.HomeShows
     State = x.State,
 
     Country = x.Country
+    ,
+    Director = x.Director,
+    Cast = x.Cast,
+    ImdbRating = x.ImdbRating,
+    VenueName = x.VenueName,
+    ScreenName = x.ScreenName
 })
 .ToListAsync();
 
@@ -205,6 +211,12 @@ foreach (var show in schedules)
     if (theaterLookup.TryGetValue(show.ScheduleId, out var theaterDetails))
     {
         show.TheaterDetails = theaterDetails;
+    }
+
+    if (!string.IsNullOrWhiteSpace(show.VenueName) || !string.IsNullOrWhiteSpace(show.ScreenName))
+    {
+        show.TheaterDetails = string.Join(" / ", new[] { show.VenueName, show.ScreenName, show.TheaterDetails }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
     }
 }
 

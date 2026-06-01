@@ -10,6 +10,9 @@
     int totalPages = ViewBag.TotalPages ?? 1;
 
     int totalRecords = ViewBag.TotalRecords ?? Model.Count();
+    var systemEvents =
+        ViewBag.SystemEvents as List<Dictionary<string,string>>
+        ?? new List<Dictionary<string,string>>();
 }
 
 <section class="admin-page">
@@ -72,6 +75,44 @@
             </strong>
         </div>
 
+    </div>
+
+    <div class="admin-detail-panel mb-4">
+        <h2 class="h5 mb-3">Errors, Cancelled Bookings and Failed Transactions</h2>
+        <div class="table-wrapper">
+            <table class="table admin-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(!systemEvents.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="empty-state">No system events found</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach(var item in systemEvents)
+                        {
+                            <tr data-admin-searchable>
+                                <td>@item["Time"]</td>
+                                <td>@item["Type"]</td>
+                                <td><strong>@item["Title"]</strong></td>
+                                <td><span class="badge danger">@item["Status"]</span></td>
+                                <td>@item["Detail"]</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- ===================================================== -->

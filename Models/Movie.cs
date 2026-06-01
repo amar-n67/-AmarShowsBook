@@ -18,5 +18,11 @@ namespace AmarShowsBook.Models
 
         // Duration in minutes
         public int Duration { get; set; }
+
+        public string? Description { get; set; }
+        public string? PosterUrl { get; set; }
+        public string? Images { get; set; }
+        public string? TrailerUrl { get; set; }
+        public decimal? ImdbRating { get; set; }
     }
 }

@@ -1,0 +1,72 @@
+@model IEnumerable<AmarShowsBook.Models.Admin.ApplicationVersion>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Application Versions";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Application Versions</h1>
+            <p>Developer managed release notes shown from the database.</p>
+        </div>
+        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
+    </div>
+
+    @if(TempData["Success"]!=null){<div class="alert alert-success">@TempData["Success"]</div>}
+    @if(TempData["Error"]!=null){<div class="alert alert-danger">@TempData["Error"]</div>}
+
+    <div class="admin-detail-panel mb-4">
+        <h2 class="h5 mb-3">Add Version</h2>
+        <form asp-action="CreateVersion" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-md-2">
+                <label class="form-label">Version</label>
+                <input name="versionNumber" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Title</label>
+                <input name="releaseTitle" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Notes</label>
+                <input name="releaseNotes" class="form-control" />
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <label class="form-check">
+                    <input name="isCurrent" value="true" class="form-check-input" type="checkbox" checked />
+                    <span class="form-check-label">Current</span>
+                </label>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button class="btn btn-primary w-100" type="submit">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Title</th>
+                    <th>Notes</th>
+                    <th>Updated</th>
+                    <th>Current</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach(var item in Model)
+            {
+                <tr data-admin-searchable>
+                    <td><strong>@item.VersionNumber</strong></td>
+                    <td>@item.ReleaseTitle</td>
+                    <td>@item.ReleaseNotes</td>
+                    <td>@item.UpdatedAt.ToString("dd MMM yyyy hh:mm tt")</td>
+                    <td>@(item.IsCurrent ? "Yes" : "No")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

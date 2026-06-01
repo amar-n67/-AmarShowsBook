@@ -2,6 +2,7 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Manage Shows";
+    var seatCounts = ViewBag.ScheduleSeatCounts as Dictionary<int,int> ?? new Dictionary<int,int>();
 }
 
 <section class="admin-page">
@@ -42,9 +43,17 @@
                 <label class="form-label">Director/Host</label>
                 <input name="SecondaryName" class="form-control" />
             </div>
+            <div class="col-md-3">
+                <label class="form-label">Cast</label>
+                <input name="Cast" class="form-control" placeholder="Actor 1, Actor 2" />
+            </div>
             <div class="col-md-2">
-                <label class="form-label">Date Time</label>
+                <label class="form-label">First Date Time</label>
                 <input name="StartTime" class="form-control" type="datetime-local" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">More Date Times</label>
+                <textarea name="AdditionalStartTimes" class="form-control" rows="1" placeholder="2026-06-02 18:00, 2026-06-03 21:00"></textarea>
             </div>
             <div class="col-md-1">
                 <label class="form-label">Minutes</label>
@@ -52,7 +61,23 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Seats</label>
-                <input name="TotalSeats" class="form-control" type="number" min="10" value="70" />
+                <input name="TotalSeats" class="form-control" type="number" min="1" value="70" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Silver Price</label>
+                <input name="SilverPrice" class="form-control" type="number" min="1" step="0.01" value="150" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Gold Price</label>
+                <input name="GoldPrice" class="form-control" type="number" min="1" step="0.01" value="250" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Premium Price</label>
+                <input name="PremiumPrice" class="form-control" type="number" min="1" step="0.01" value="350" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">IMDB Rating</label>
+                <input name="ImdbRating" class="form-control" type="number" min="0" max="10" step="0.1" />
             </div>
             <div class="col-md-4">
                 <label class="form-label">Location</label>
@@ -66,7 +91,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">Theater</label>
-                <select name="VenueId" class="form-select" required>
+                <select name="VenueId" class="form-select" required id="venueSelect">
                     @foreach(var venue in Model.Venues)
                     {
                         <option value="@venue.Id">@venue.VenueName, @venue.City</option>
@@ -78,14 +103,50 @@
                 <select name="ScreenId" class="form-select" required>
                     @foreach(var screen in Model.Screens)
                     {
-                        <option value="@screen.Id">@screen.ScreenName (@screen.TotalSeats seats)</option>
+                        var venue = Model.Venues.FirstOrDefault(x => x.Id == screen.VenueId);
+                        <option value="@screen.Id">@screen.ScreenName - @(venue?.VenueName ?? "Venue")</option>
                     }
                 </select>
             </div>
-            <div class="col-md-1 d-flex align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Poster URL</label>
+                <input name="PosterUrl" class="form-control" placeholder="/uploads/poster.jpeg or https://..." />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Images</label>
+                <input name="Images" class="form-control" placeholder="Comma separated image URLs" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">YouTube Trailer Link</label>
+                <input name="TrailerUrl" class="form-control" placeholder="https://www.youtube.com/watch?v=..." />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Description</label>
+                <textarea name="Description" class="form-control" rows="1"></textarea>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">Save</button>
             </div>
         </form>
+    </div>
+
+    <div class="admin-detail-panel mb-3">
+        <div class="row g-2">
+            <div class="col-md-5">
+                <input id="showSearch" class="form-control" placeholder="Search show, type, location, screen" />
+            </div>
+            <div class="col-md-3">
+                <select id="showTypeFilter" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="Movie">Movie</option>
+                    <option value="Standup">Standup</option>
+                    <option value="Live">Live</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-dark w-100" onclick="resetShowFilters()">Reset</button>
+            </div>
+        </div>
     </div>
 
     <div class="card p-4">
@@ -98,22 +159,67 @@
                     <th>Location</th>
                     <th>Screen</th>
                     <th>Seats</th>
+                    <th>Trailer</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach(var schedule in Model.Schedules)
                 {
                     var title = schedule.Movie?.Title ?? schedule.StandupShow?.Title ?? schedule.LiveStream?.Title ?? "Untitled";
-                    <tr data-admin-searchable>
+                    var trailer = schedule.Movie?.TrailerUrl ?? schedule.StandupShow?.TrailerUrl ?? schedule.LiveStream?.TrailerUrl;
+                    <tr data-admin-searchable class="show-row" data-type="@schedule.Type">
                         <td><strong>@title</strong></td>
                         <td>@schedule.Type</td>
                         <td>@schedule.StartTime.ToString("dd MMM yyyy hh:mm tt")</td>
                         <td>@schedule.Location?.Area, @schedule.Location?.State</td>
                         <td>@(schedule.Screen?.ScreenName ?? "Not assigned")</td>
-                        <td>@(schedule.Screen?.TotalSeats.ToString() ?? "Auto")</td>
+                        <td>@(seatCounts.TryGetValue(schedule.Id, out var seatCount) ? seatCount : 0)</td>
+                        <td>
+                            @if(!string.IsNullOrWhiteSpace(trailer))
+                            {
+                                <a href="@trailer" target="_blank" rel="noopener">Trailer</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">NA</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <form asp-action="DeleteManagedShow" method="post" onsubmit="return confirm('Delete this show schedule?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@schedule.Id" />
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
 </section>
+
+<script>
+const showSearch = document.getElementById("showSearch");
+const showTypeFilter = document.getElementById("showTypeFilter");
+
+function applyShowFilters() {
+    const text = (showSearch.value || "").toLowerCase();
+    const type = showTypeFilter.value;
+
+    document.querySelectorAll(".show-row").forEach(row => {
+        const typeMatch = !type || row.dataset.type === type;
+        const textMatch = !text || row.innerText.toLowerCase().includes(text);
+        row.style.display = typeMatch && textMatch ? "" : "none";
+    });
+}
+
+function resetShowFilters() {
+    showSearch.value = "";
+    showTypeFilter.value = "";
+    applyShowFilters();
+}
+
+showSearch?.addEventListener("input", applyShowFilters);
+showTypeFilter?.addEventListener("change", applyShowFilters);
+</script>

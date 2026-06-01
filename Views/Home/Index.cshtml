@@ -159,6 +159,15 @@ onclick="location.href='/Booking/Seats/@item.ScheduleId'">
 
     </div>
 
+    <div class="detail-row">
+        <span>Director: @(string.IsNullOrWhiteSpace(item.Director) ? "NA" : item.Director)</span>
+        <span>IMDB: @(item.ImdbRating?.ToString("0.0") ?? "NA")</span>
+    </div>
+
+    <div class="venue-row">
+        Cast: @(string.IsNullOrWhiteSpace(item.Cast) ? "NA" : item.Cast)
+    </div>
+
     <div class="venue-row">
 
         Venue: @showRegion
