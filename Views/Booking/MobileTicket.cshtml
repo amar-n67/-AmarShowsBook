@@ -19,27 +19,13 @@ var status = summary?.BookingStatus ?? Model.Status;
 
 <style>
 
-body{
-
-margin:0;
-
-padding:20px;
-
-font-family:Segoe UI,sans-serif;
-
-background:
-linear-gradient(
-135deg,
-#f5f7ff,
-#fff
-);
-
+.mobile-ticket-page{
 display:flex;
-
 justify-content:center;
-align-items:center;
-
-min-height:100vh;
+align-items:flex-start;
+padding:24px 12px 48px;
+background:var(--app-bg);
+color:var(--app-text);
 }
 
 
@@ -48,9 +34,11 @@ min-height:100vh;
 width:100%;
 max-width:420px;
 
-background:white;
+background:var(--app-card);
+color:var(--app-card-text);
 
-border-radius:30px;
+border-radius:8px;
+border:1px solid var(--app-input-border);
 
 overflow:hidden;
 
@@ -75,11 +63,7 @@ font-weight:900;
 color:white;
 
 background:
-linear-gradient(
-135deg,
-#ff2d55,
-#d10045
-);
+var(--app-primary);
 }
 
 
@@ -90,10 +74,10 @@ padding:25px;
 
 
 .ticket-stub{
-border:1px dashed #ffb3c3;
-border-radius:20px;
+border:1px dashed var(--app-input-border);
+border-radius:8px;
 padding:18px;
-background:#fff7fa;
+background:color-mix(in srgb, var(--app-card) 86%, var(--app-primary));
 }
 
 
@@ -112,11 +96,24 @@ margin-top:20px;
 display:flex;
 
 justify-content:space-between;
+gap:16px;
 
 padding:14px 0;
 
 border-bottom:
 1px dashed #eee;
+}
+
+.row span:last-child{
+text-align:right;
+font-weight:800;
+overflow-wrap:anywhere;
+}
+
+.row span:first-child{
+color:var(--app-muted);
+font-weight:800;
+white-space:nowrap;
 }
 
 
@@ -126,7 +123,7 @@ font-size:35px;
 
 font-weight:900;
 
-color:#ff2d55;
+color:var(--app-primary);
 
 text-align:center;
 
@@ -142,7 +139,7 @@ margin-top:22px;
 
 .ticket-action{
 border:none;
-border-radius:14px;
+border-radius:8px;
 padding:13px 16px;
 text-align:center;
 text-decoration:none;
@@ -152,13 +149,13 @@ cursor:pointer;
 }
 
 .ticket-action.primary{
-background:#ff2d55;
+background:var(--app-primary);
 color:#fff;
 }
 
 .ticket-action.secondary{
-background:#eef2f7;
-color:#20212a;
+background:var(--app-input-disabled);
+color:var(--app-input-disabled-text);
 }
 
 @@media print{
@@ -193,6 +190,8 @@ translateY(0);
 
 </style>
 
+
+<div class="mobile-ticket-page">
 
 <div class="ticket">
 
@@ -329,6 +328,8 @@ translateY(0);
 <div class="ticket-actions">
 <button class="ticket-action primary" type="button" onclick="window.print()">Download</button>
 <a class="ticket-action secondary" href="/Booking/MyBookings">My Bookings</a>
+</div>
+
 </div>
 
 </div>

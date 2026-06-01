@@ -14,6 +14,11 @@
 
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var showAdminFilters = new[]
+    {
+        "Users","UserAccess","Roles","Permissions","Bookings",
+        "Transactions","Wallets","Notifications","ActivityLogs","Versions"
+    }.Contains(currentAction);
 }
 
 <body>
@@ -97,6 +102,63 @@
                 </button>
             </form>
         </header>
+
+        @if(showAdminFilters)
+        {
+            <section class="admin-detail-panel admin-filter-panel no-print"
+                     id="adminContextFilter"
+                     data-page-filter
+                     data-page-filter-target=".admin-table tbody tr, table tbody tr, .access-card, [data-admin-searchable]">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <input type="text"
+                               class="form-control rounded-pill"
+                               data-page-filter-search
+                               placeholder="Search records">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select rounded-pill" data-page-filter-status>
+                            <option value="">All Status</option>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="DISABLED">DISABLED</option>
+                            <option value="NORMAL">NORMAL</option>
+                            <option value="DELETED">DELETED</option>
+                            <option value="SUCCESS">SUCCESS</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="FAILED">FAILED</option>
+                            <option value="CONFIRMED">CONFIRMED</option>
+                            <option value="CANCELLED">CANCELLED</option>
+                            <option value="SENT">SENT</option>
+                            <option value="UNREAD">UNREAD</option>
+                            <option value="ERROR">ERROR</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select rounded-pill" data-page-filter-method>
+                            <option value="">All Methods</option>
+                            <option value="UPI">UPI</option>
+                            <option value="CARD">CARD</option>
+                            <option value="NETBANKING">NETBANKING</option>
+                            <option value="WALLET">WALLET</option>
+                            <option value="QR">QR</option>
+                            <option value="WEB">WEB</option>
+                            <option value="EMAIL">EMAIL</option>
+                            <option value="SMS">SMS</option>
+                            <option value="MOVIE">MOVIE</option>
+                            <option value="STANDUP">STANDUP</option>
+                            <option value="LIVE">LIVE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button"
+                                class="btn btn-outline-dark rounded-pill w-100"
+                                data-page-filter-reset>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </section>
+        }
 
         @RenderBody()
 

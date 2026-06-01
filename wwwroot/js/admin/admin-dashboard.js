@@ -51,4 +51,52 @@ document.addEventListener("DOMContentLoaded", () => {
         filterPage();
         search.focus();
     });
+
+    document.querySelectorAll("[data-page-filter]").forEach((panel) => {
+        const searchBox = panel.querySelector("[data-page-filter-search]");
+        const statusBox = panel.querySelector("[data-page-filter-status]");
+        const methodBox = panel.querySelector("[data-page-filter-method]");
+        const resetButton = panel.querySelector("[data-page-filter-reset]");
+        const targetSelector = panel.getAttribute("data-page-filter-target") || "tbody tr";
+        const tableCard = [...document.querySelectorAll(".card")]
+            .find((card) => card.querySelector("table"));
+        const anchor = document.querySelector(".table-wrapper")
+            || document.querySelector(".access-card-grid")
+            || tableCard;
+
+        if (anchor && anchor.parentElement) {
+            anchor.parentElement.insertBefore(panel, anchor);
+        }
+
+        const getRows = () => [...document.querySelectorAll(targetSelector)]
+            .filter((row) => !panel.contains(row))
+            .filter((row) => !row.closest(".stats-grid"))
+            .filter((row) => !row.closest("form"))
+            .filter((row, index, rows) => rows.indexOf(row) === index);
+
+        const applyPanelFilters = () => {
+            const query = (searchBox?.value || "").trim().toLowerCase();
+            const status = (statusBox?.value || "").trim().toLowerCase();
+            const method = (methodBox?.value || "").trim().toLowerCase();
+
+            getRows().forEach((row) => {
+                const text = row.textContent?.toLowerCase() || "";
+                const matchesSearch = !query || text.includes(query);
+                const matchesStatus = !status || text.includes(status);
+                const matchesMethod = !method || text.includes(method);
+                row.hidden = !(matchesSearch && matchesStatus && matchesMethod);
+            });
+        };
+
+        searchBox?.addEventListener("input", applyPanelFilters);
+        statusBox?.addEventListener("change", applyPanelFilters);
+        methodBox?.addEventListener("change", applyPanelFilters);
+        resetButton?.addEventListener("click", () => {
+            if (searchBox) searchBox.value = "";
+            if (statusBox) statusBox.value = "";
+            if (methodBox) methodBox.value = "";
+            applyPanelFilters();
+            searchBox?.focus();
+        });
+    });
 });

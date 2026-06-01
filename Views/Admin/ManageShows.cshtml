@@ -205,13 +205,20 @@ const showTypeFilter = document.getElementById("showTypeFilter");
 
 function applyShowFilters() {
     const text = (showSearch.value || "").toLowerCase();
-    const type = showTypeFilter.value;
+    const type = normalizeShowType(showTypeFilter.value);
 
     document.querySelectorAll(".show-row").forEach(row => {
-        const typeMatch = !type || row.dataset.type === type;
+        const typeMatch = !type || normalizeShowType(row.dataset.type || "") === type;
         const textMatch = !text || row.innerText.toLowerCase().includes(text);
         row.style.display = typeMatch && textMatch ? "" : "none";
     });
+}
+
+function normalizeShowType(value) {
+    const normalized = String(value || "").toLowerCase();
+    if (normalized.includes("standup")) return "standup";
+    if (normalized.includes("live")) return "live";
+    return normalized || "";
 }
 
 function resetShowFilters() {

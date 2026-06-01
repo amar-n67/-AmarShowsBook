@@ -191,11 +191,17 @@ public async Task<IActionResult> Seats(int? id)
 
 
 
+    var availableUntil =
+    DateTime.UtcNow.Date.AddDays(7).AddDays(1);
+
     var availableDates =
     await _context.ShowSchedules
     .Where(x=>
 
         x.StartTime >= DateTime.UtcNow
+        &&
+
+        x.StartTime < availableUntil
 
         &&
 
@@ -667,7 +673,7 @@ public async Task<IActionResult> MyBookings()
 
     var bookingIds = bookings.Select(x=>x.BookingId).ToList();
 
-    var venueLookup =
+    var bookingVenueRows =
     (
         await
         (
@@ -690,12 +696,19 @@ public async Task<IActionResult> MyBookings()
                 City = venue!=null ? venue.City : null
             }
         ).ToListAsync()
-    ).ToDictionary(
+    );
+
+    var venueLookup =
+    bookingVenueRows.ToDictionary(
         x=>x.Id,
         x=>string.Join(" / ",new[] { x.VenueName, x.ScreenName, x.Address, x.City }
             .Where(value=>!string.IsNullOrWhiteSpace(value))));
 
     ViewBag.BookingVenues=venueLookup;
+    ViewBag.BookingScreens=
+    bookingVenueRows.ToDictionary(
+        x=>x.Id,
+        x=>string.IsNullOrWhiteSpace(x.ScreenName) ? "Screen TBA" : x.ScreenName);
 
     ViewBag.PublicBaseUrl=
     GetPublicBaseUrl();
@@ -791,6 +804,15 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     if(walletAmount>0)
     {
         await CreditWalletRefund(booking,transaction,refund,walletAmount);
+    }
+
+    if(booking.CouponId.HasValue && couponAmount>0)
+    {
+        await RecordCouponReversal(
+        booking,
+        transaction,
+        booking.CouponId.Value,
+        couponAmount);
     }
 
     transaction.RefundStatus=refundStatus;
@@ -1808,6 +1830,75 @@ SET used_count =
     ),
     updated_at = CURRENT_TIMESTAMP
 WHERE c.id = {couponId.Value};");
+}
+
+private async Task RecordCouponReversal(
+Booking booking,
+Transaction transaction,
+long couponId,
+decimal couponDiscount)
+{
+    if(couponDiscount<=0)
+    {
+        return;
+    }
+
+    await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO coupon_usage
+(
+    coupon_id,
+    booking_id,
+    transaction_id,
+    user_id,
+    coupon_code,
+    original_amount,
+    discount_amount,
+    final_amount,
+    usage_status,
+    used_at
+)
+SELECT
+    c.id,
+    {booking.Id},
+    {transaction.Id},
+    {booking.UserId},
+    c.coupon_code,
+    {Math.Max(0,booking.OriginalAmount ?? booking.TotalAmount)},
+    {-couponDiscount},
+    {-Math.Max(0,booking.PayableAmount ?? booking.TotalAmount)},
+    'REVERSED',
+    CURRENT_TIMESTAMP
+FROM coupons c
+WHERE c.id = {couponId}
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM coupon_usage cu
+      WHERE cu.booking_id = {booking.Id}
+        AND cu.coupon_id = c.id
+        AND cu.usage_status = 'REVERSED'
+  );
+
+UPDATE coupons c
+SET used_count =
+    GREATEST(
+        0,
+        (
+            SELECT count(*)
+            FROM coupon_usage cu
+            WHERE cu.coupon_id = c.id
+              AND cu.usage_status = 'SUCCESS'
+        )
+        -
+        (
+            SELECT count(*)
+            FROM coupon_usage cu
+            WHERE cu.coupon_id = c.id
+              AND cu.usage_status = 'REVERSED'
+        )
+    )::integer,
+    updated_at = CURRENT_TIMESTAMP
+WHERE c.id = {couponId};");
 }
 // ==========================================
 // APPROVE QR PAYMENT

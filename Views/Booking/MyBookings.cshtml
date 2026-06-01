@@ -9,6 +9,7 @@
     var now = DateTime.UtcNow;
     var publicBaseUrl = ViewBag.PublicBaseUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
     var bookingVenues = ViewBag.BookingVenues as Dictionary<long,string> ?? new Dictionary<long,string>();
+    var bookingScreens = ViewBag.BookingScreens as Dictionary<long,string> ?? new Dictionary<long,string>();
 }
 
 @if(TempData["Success"]!=null)
@@ -55,6 +56,9 @@
                 var venueDetails = bookingVenues.TryGetValue(booking.BookingId, out var foundVenue) && !string.IsNullOrWhiteSpace(foundVenue)
                     ? foundVenue
                     : booking.LocationName;
+                var screenName = bookingScreens.TryGetValue(booking.BookingId, out var foundScreen) && !string.IsNullOrWhiteSpace(foundScreen)
+                    ? foundScreen
+                    : "Screen TBA";
                 var canCancel = !isExpired
                     && booking.BookingStatus == "CONFIRMED"
                     && booking.PaymentStatus == "SUCCESS"
@@ -108,6 +112,10 @@
                         <div>
                             <span>Gateway</span>
                             <strong>@(string.IsNullOrWhiteSpace(booking.GatewayName) ? "NA" : booking.GatewayName)</strong>
+                        </div>
+                        <div>
+                            <span>Screen</span>
+                            <strong>@screenName</strong>
                         </div>
                         <div>
                             <span>Theater</span>

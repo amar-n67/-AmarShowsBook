@@ -6,13 +6,14 @@
     var currentPage = ViewBag.CurrentPage ?? 1;
     var totalPages = ViewBag.TotalPages ?? 1;
     var totalRecords = ViewBag.TotalRecords ?? Model.Count();
+    var reversedCount = Model.Count(x => x.UsageStatus == "REVERSED");
 }
 
 <section class="admin-page">
     <div class="admin-page-header">
         <div>
             <h1>Coupon Used</h1>
-            <p>All successful coupon usage with booking, transaction, user and show details.</p>
+            <p>Coupon usage, reversals, bookings, transactions, users and show details.</p>
         </div>
         <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
     </div>
@@ -21,25 +22,37 @@
         <div class="stat-card"><span>Total Uses</span><strong>@totalRecords</strong></div>
         <div class="stat-card"><span>Visible Discount</span><strong>@CurrencyFormatter.FormatRupees(Model.Sum(x => x.DiscountAmount ?? 0))</strong></div>
         <div class="stat-card"><span>Visible Final Amount</span><strong>@CurrencyFormatter.FormatRupees(Model.Sum(x => x.FinalAmount ?? 0))</strong></div>
+        <div class="stat-card"><span>Reversed</span><strong>@reversedCount</strong></div>
     </div>
 
-    <div class="admin-detail-panel mb-3">
-        <div class="row g-2">
-            <div class="col-md-5">
-                <input id="couponSearch" class="form-control" placeholder="Search coupon, user, booking, transaction, show" />
+    <div class="admin-detail-panel mb-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <input id="couponSearch" class="form-control rounded-pill" placeholder="Search coupon / user / booking / show" />
             </div>
             <div class="col-md-3">
-                <select id="couponStatus" class="form-select">
+                <select id="couponStatus" class="form-select rounded-pill">
                     <option value="">All Status</option>
                     <option value="SUCCESS">SUCCESS</option>
                     <option value="FAILED">FAILED</option>
                     <option value="REVERSED">REVERSED</option>
                 </select>
             </div>
+            <div class="col-md-3">
+                <select id="couponShowType" class="form-select rounded-pill">
+                    <option value="">All Show Types</option>
+                    <option value="Movie">Movie</option>
+                    <option value="Standup">Standup</option>
+                    <option value="Live">Live</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="button" class="btn btn-outline-dark rounded-pill w-100" onclick="resetCouponFilters()">Reset</button>
+            </div>
         </div>
     </div>
 
-    <div class="table-wrapper">
+    <div class="table-wrapper coupon-usage-table">
         <table class="table admin-table">
             <thead>
                 <tr>
@@ -58,7 +71,7 @@
             <tbody>
             @foreach(var item in Model)
             {
-                <tr class="coupon-row" data-status="@item.UsageStatus" data-admin-searchable>
+                <tr class="coupon-row" data-status="@item.UsageStatus" data-type="@item.ShowType" data-admin-searchable>
                     <td><strong>@item.CouponCode</strong></td>
                     <td>@item.UserName<br /><span class="sub-text">@item.UserEmail</span></td>
                     <td>@item.ShowName<br /><span class="sub-text">@item.ShowType @item.ShowTime?.ToString("dd MMM yyyy hh:mm tt")</span></td>
@@ -67,7 +80,11 @@
                     <td>@CurrencyFormatter.FormatRupees(item.OriginalAmount)</td>
                     <td>@CurrencyFormatter.FormatRupees(item.DiscountAmount)</td>
                     <td>@CurrencyFormatter.FormatRupees(item.FinalAmount)</td>
-                    <td><span class="badge success">@item.UsageStatus</span></td>
+                    <td>
+                        <span class="badge @(item.UsageStatus == "REVERSED" ? "danger" : "success")">
+                            @item.UsageStatus
+                        </span>
+                    </td>
                     <td>@item.UsedAt?.ToString("dd MMM yyyy hh:mm tt")</td>
                 </tr>
             }
@@ -86,13 +103,49 @@
 <script>
 const couponSearch = document.getElementById("couponSearch");
 const couponStatus = document.getElementById("couponStatus");
+const couponShowType = document.getElementById("couponShowType");
 function filterCoupons() {
     const text = (couponSearch.value || "").toLowerCase();
     const status = couponStatus.value;
+    const type = normalizeCouponType(couponShowType.value);
     document.querySelectorAll(".coupon-row").forEach(row => {
-        row.style.display = (!status || row.dataset.status === status) && (!text || row.innerText.toLowerCase().includes(text)) ? "" : "none";
+        const matchesStatus = !status || row.dataset.status === status;
+        const matchesType = !type || normalizeCouponType(row.dataset.type || "") === type;
+        const matchesText = !text || row.innerText.toLowerCase().includes(text);
+        row.hidden = !(matchesStatus && matchesType && matchesText);
     });
+}
+function normalizeCouponType(value) {
+    const normalized = String(value || "").toLowerCase();
+    if (normalized.includes("standup")) return "standup";
+    if (normalized.includes("live")) return "live";
+    if (normalized.includes("movie")) return "movie";
+    return normalized || "";
+}
+function resetCouponFilters() {
+    couponSearch.value = "";
+    couponStatus.value = "";
+    couponShowType.value = "";
+    filterCoupons();
+    couponSearch.focus();
 }
 couponSearch?.addEventListener("input", filterCoupons);
 couponStatus?.addEventListener("change", filterCoupons);
+couponShowType?.addEventListener("change", filterCoupons);
 </script>
+
+<style>
+.coupon-usage-table {
+    overflow-x: auto;
+}
+
+.coupon-usage-table table {
+    min-width: 1120px;
+}
+
+.coupon-usage-table td,
+.coupon-usage-table th {
+    vertical-align: top;
+    white-space: normal;
+}
+</style>

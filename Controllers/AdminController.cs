@@ -1903,6 +1903,68 @@ public async Task<IActionResult> CreateVersion(string versionNumber, string rele
     return RedirectToAction(nameof(Versions));
 }
 
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CreateNextVersion()
+{
+    await EnsureAdminShowInfrastructure();
+
+    var latest =
+    await _context.ApplicationVersions
+    .OrderByDescending(x=>x.IsCurrent)
+    .ThenByDescending(x=>x.UpdatedAt)
+    .FirstOrDefaultAsync();
+
+    var nextVersion =
+    IncrementPatchVersion(latest?.VersionNumber);
+
+    var current =
+    await _context.ApplicationVersions
+    .Where(x=>x.IsCurrent)
+    .ToListAsync();
+
+    foreach(var item in current)
+    {
+        item.IsCurrent=false;
+    }
+
+    var now =
+    DateTime.UtcNow;
+
+    _context.ApplicationVersions.Add(new ApplicationVersion
+    {
+        VersionNumber=nextVersion,
+        ReleaseTitle=$"Release {nextVersion}",
+        ReleaseNotes=$"Auto-created on {now:yyyy-MM-dd HH:mm:ss} UTC.",
+        CreatedAt=now,
+        UpdatedAt=now,
+        CreatedBy=HttpContext.Session.GetString("UserName") ?? "Admin",
+        IsCurrent=true
+    });
+
+    await _context.SaveChangesAsync();
+    TempData["Success"]=$"Version {nextVersion} saved.";
+    return RedirectToAction(nameof(Versions));
+}
+
+private static string IncrementPatchVersion(string? versionNumber)
+{
+    var parts =
+    (versionNumber ?? "1.0.0")
+    .Split('.',StringSplitOptions.RemoveEmptyEntries)
+    .Select(part=>int.TryParse(part,out var number) ? number : 0)
+    .ToList();
+
+    while(parts.Count<3)
+    {
+        parts.Add(0);
+    }
+
+    parts[2]++;
+
+    return $"{parts[0]}.{parts[1]}.{parts[2]}";
+}
+
 
 
 public IActionResult UserDetails(long id)
@@ -2828,6 +2890,16 @@ CREATE TABLE IF NOT EXISTS public.application_versions
     is_current boolean NOT NULL DEFAULT false
 );
 
+ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS version_number varchar(50) NOT NULL DEFAULT '1.0.0';
+ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS release_title varchar(255) NOT NULL DEFAULT 'Application release';
+ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS release_notes text;
+ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS created_by varchar(255);
+ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS is_current boolean NOT NULL DEFAULT false;
+
+DROP VIEW IF EXISTS public.vw_home_show_listing;
+
 CREATE OR REPLACE VIEW public.vw_home_show_listing AS
 SELECT
     s.""Id"" AS schedule_id,
@@ -2866,6 +2938,8 @@ LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id""
 LEFT JOIN public.""Locations"" l ON s.""LocationId"" = l.""Id""
 LEFT JOIN public.screens sc ON s.screen_id = sc.id
 LEFT JOIN public.venues v ON sc.venue_id = v.id;
+
+DROP VIEW IF EXISTS public.vw_coupon_usage_admin;
 
 CREATE OR REPLACE VIEW public.vw_coupon_usage_admin AS
 SELECT

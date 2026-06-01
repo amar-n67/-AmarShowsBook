@@ -1,24 +1,6 @@
 ﻿@model AmarShowsBook.Models.ViewModels.HomeViewModel
 
 
-<div class="theme-toolbar">
-
-<button id="themeToggle"
-class="theme-btn">
-
-🌙 Dark Mode
-
-</button>
-
-<a href="/Home/Index"
-class="back-btn">
-
-← Back
-
-</a>
-
-</div>
-
 @{
     ViewData["Title"] = "showTime";
     var selectedType = Context.Request.Query["type"].ToString();
@@ -29,6 +11,13 @@ class="back-btn">
     var userName = Context.Session.GetString("UserName") ?? "Artist";
     var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
     var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
+    var currentVersion = ((AmarShowsBook.Data.ApplicationDbContext)ViewContext.HttpContext.RequestServices
+        .GetService(typeof(AmarShowsBook.Data.ApplicationDbContext))!)
+        .ApplicationVersions
+        .OrderByDescending(x => x.IsCurrent)
+        .ThenByDescending(x => x.UpdatedAt)
+        .Select(x => x.VersionNumber)
+        .FirstOrDefault() ?? "1.0.0";
 }
 
 <section class="showtime-page">
@@ -37,21 +26,8 @@ class="back-btn">
             <span class="showtime-kicker">Now Rolling</span>
             <h1>showTime</h1>
             <p>@userName, your @userLanguage track and @userGenre mood are on the board.</p>
+            <small class="home-version-label">Version @currentVersion</small>
         </div>
-        @* //added developer profile *@
-    <div class="showtime-ticket">
-    
-
-    <a asp-controller="Developer"
-       asp-action="Index"
-       class="profile-btn">
-
-        👤 Profile
-
-    </a>
-
-</div>
-        @* // *@
         <div class="showtime-ticket">
             <span>@userLanguage</span>
             <strong>@userGenre</strong>
@@ -59,7 +35,8 @@ class="back-btn">
     </div>
 
     <div class="showtime-controls">
-        <div class="location-strip">
+        <div class="location-panel">
+            <div class="location-strip">
             <div>
                 <label>Country</label>
                 <select id="country" class="form-control" onchange="loadStates()">
@@ -79,6 +56,12 @@ class="back-btn">
                 <select id="district" class="form-control">
                     <option value="">Select Region</option>
                 </select>
+            </div>
+            </div>
+
+            <div class="location-actions">
+                <button type="button" class="location-search-btn" onclick="applyLocationFilter()">Search</button>
+                <button type="button" class="location-reset-btn" onclick="resetLocationFilter()">Reset</button>
             </div>
         </div>
 
@@ -330,9 +313,9 @@ align-items:center;
     padding: 34px;
     border-radius: 8px;
     background:
-        linear-gradient(135deg, rgba(255, 242, 199, 0.94), rgba(245, 178, 196, 0.86), rgba(146, 229, 221, 0.86)),
-        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
-    color: #231f20;
+        var(--app-nav),
+        repeating-linear-gradient(90deg, rgba(244,200,106,0.08) 0 10px, transparent 10px 24px);
+    color: var(--app-nav-text);
     box-shadow: 0 22px 64px rgba(35,31,32,0.22);
 }
 .showtime-kicker,
@@ -346,52 +329,96 @@ align-items:center;
 }
 .showtime-hero h1 {
     margin: 8px 0;
-    color: #231f20;
+    color: inherit;
     font-size: clamp(3rem, 8vw, 6.5rem);
     font-weight: 900;
 }
 .showtime-hero p {
     margin: 0;
     max-width: 620px;
-    color: #34303a;
+    color: color-mix(in srgb, var(--app-nav-text) 82%, transparent);
     font-size: 1.08rem;
 }
 .showtime-ticket {
     min-width: 180px;
     padding: 14px;
-    border: 1px dashed rgba(35,31,32,0.44);
+    border: 1px dashed color-mix(in srgb, var(--app-nav-text) 42%, transparent);
     border-radius: 8px;
     text-align: right;
-    background: rgba(255,255,255,0.38);
+    background: color-mix(in srgb, var(--app-card) 28%, transparent);
 }
 .showtime-ticket strong {
     display: block;
-    color: #231f20;
+    color: inherit;
     font-size: 1.2rem;
+}
+.home-version-label {
+    display: inline-flex;
+    margin-top: 12px;
+    padding: 5px 10px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 22%, transparent);
+    border-radius: 999px;
+    color: inherit;
+    font-weight: 900;
 }
 .showtime-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 16px;
-    align-items: end;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: stretch;
     margin: 24px 0;
 }
-.location-strip {
+.location-panel {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 12px;
-    padding: 16px;
+    align-items: end;
+    padding: 12px;
     border: 1px solid var(--app-input-border);
     border-radius: 8px;
     background: var(--app-card);
     color: var(--app-card-text);
 }
+.location-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    gap: 10px;
+    align-items: end;
+}
 .location-strip label {
     margin-bottom: 6px;
+    font-size: 0.78rem;
     font-weight: 800;
+}
+.location-strip select {
+    min-height: 38px;
+    border-radius: 999px;
+}
+.location-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.location-search-btn,
+.location-reset-btn {
+    min-height: 38px;
+    border-radius: 999px;
+    border: 1px solid var(--app-input-border);
+    padding: 0 14px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+.location-search-btn {
+    background: var(--app-primary);
+    color: #fff;
+}
+.location-reset-btn {
+    background: transparent;
+    color: var(--app-card-text);
 }
 .showtime-tabs {
     display: inline-flex;
+    justify-self: end;
     gap: 6px;
     padding: 6px;
     border: 1px solid var(--app-input-border);
@@ -413,8 +440,9 @@ align-items:center;
 }
 .schedule-board {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
     gap: 16px;
+    align-items: stretch;
 }
 .show-card,
 .empty-slate {
@@ -425,9 +453,16 @@ align-items:center;
     box-shadow: 0 14px 34px rgba(0,0,0,0.13);
 }
 .show-card {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
     padding: 18px;
+    min-height: 100%;
+}
+.show-card .card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 .show-card-top {
     display: flex;
@@ -468,18 +503,19 @@ align-items:center;
     color: var(--app-muted);
 }
 @@media (max-width: 980px) {
-    .showtime-controls,
+    .location-panel,
     .schedule-board {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
     }
     .showtime-tabs {
-        grid-column: 1 / -1;
+        justify-self: stretch;
         justify-content: center;
     }
 }
 @@media (max-width: 760px) {
     .showtime-hero,
     .showtime-controls,
+    .location-panel,
     .location-strip,
     .schedule-board {
         grid-template-columns: 1fr;
@@ -499,6 +535,13 @@ align-items:center;
     .showtime-tabs a {
         min-width: 0;
     }
+    .location-actions {
+        justify-content: stretch;
+    }
+    .location-search-btn,
+    .location-reset-btn {
+        flex: 1;
+    }
 }
 .movie-title{
 font-size:1.6rem;
@@ -507,11 +550,12 @@ margin-bottom:18px;
 }
 
 .image-strip{
-height:260px;
+height:auto;
+aspect-ratio:16/10;
 width:100%;
 position:relative;
 overflow:hidden;
-border-radius:20px;
+border-radius:8px;
 margin-bottom:18px;
 box-shadow:0 12px 30px rgba(0,0,0,.25);
 }
@@ -536,6 +580,7 @@ transform:scale(1);
 .movie-details{
 margin:15px 0;
 font-size:.92rem;
+flex:1;
 }
 
 .detail-row{
@@ -543,19 +588,19 @@ display:flex;
 justify-content:space-between;
 padding-bottom:8px;
 margin-bottom:8px;
-border-bottom:1px solid rgba(255,255,255,.08);
+border-bottom:1px solid var(--app-input-border);
 }
 
 .detail-row span{
 font-weight:500;
-color:#d1d5db;
+color:var(--app-muted);
 }
 
 .venue-row{
 white-space:nowrap;
 overflow:hidden;
 text-overflow:ellipsis;
-color:#bdbdbd;
+color:var(--app-muted);
 }
 
 .card-actions{
@@ -563,6 +608,7 @@ display:flex;
 gap:10px;
 width:100%;
 margin-top:15px;
+margin-top:auto;
 }
 
 .card-actions .btn{
@@ -923,6 +969,43 @@ async function loadDistricts()
         "Could not load regions."
         );
     }
+}
+
+function applyLocationFilter()
+{
+    const country=
+    document.getElementById("country")?.value.toLowerCase() || "";
+
+    const state=
+    document.getElementById("state")?.value.toLowerCase() || "";
+
+    const district=
+    document.getElementById("district")?.value.toLowerCase() || "";
+
+    document.querySelectorAll(".show-card").forEach(card=>{
+        const text=card.innerText.toLowerCase();
+        const matchesCountry=!country || text.includes(country);
+        const matchesState=!state || text.includes(state);
+        const matchesDistrict=!district || text.includes(district);
+        card.hidden=!(matchesCountry && matchesState && matchesDistrict);
+    });
+}
+
+function resetLocationFilter()
+{
+    ["country","state","district"].forEach(id=>{
+        const select=document.getElementById(id);
+        if(select)
+        {
+            select.selectedIndex=0;
+        }
+    });
+
+    document.querySelectorAll(".show-card").forEach(card=>{
+        card.hidden=false;
+    });
+
+    loadCountries();
 }
 
 

@@ -1,4 +1,5 @@
 ﻿@inject AmarShowsBook.Services.RbacService RbacService
+@inject AmarShowsBook.Data.ApplicationDbContext AppDb
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -116,31 +117,31 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="cinema"] {
-    --app-bg: #fff7eb;
-    --app-text: #22252f;
-    --app-card: #fffdf7;
-    --app-card-text: #22252f;
-    --app-input: #ffffff;
-    --app-input-text: #22252f;
-    --app-input-border: #c8d2df;
-    --app-input-disabled: #f1f5f9;
-    --app-input-disabled-text: #526071;
-    --app-muted: #526071;
-    --app-link: #9d3156;
-    --app-primary: #c94f68;
-    --app-primary-hover: #a93d55;
-    --app-nav: linear-gradient(135deg, #fff3c4, #ffc6d0 52%, #aaf0e6);
-    --app-nav-text: #22252f;
-    --app-accent: #f2bd2d;
-    --app-accent-strong: #139487;
-    --app-danger: #c2415c;
-    --app-page-surface: #fffdf7;
-    --app-page-text: #22252f;
-    --app-popup-surface: #fffdf7;
-    --app-popup-text: #22252f;
-    --app-popup-muted: #526071;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 243, 196, 0.82), rgba(255, 198, 208, 0.72), rgba(170, 240, 230, 0.64)), rgba(34, 37, 47, 0.2);
-    --app-profile-bg: radial-gradient(circle at top left, rgba(255, 198, 208, 0.62), transparent 36%), linear-gradient(135deg, #fff7eb, #fffdf7 45%, #ddfbf6);
+    --app-bg: #121017;
+    --app-text: #f8efe2;
+    --app-card: #1f1a26;
+    --app-card-text: #fff8ed;
+    --app-input: #2a2332;
+    --app-input-text: #fff8ed;
+    --app-input-border: #5b4a65;
+    --app-input-disabled: #25202c;
+    --app-input-disabled-text: #d7c7b8;
+    --app-muted: #d4bdab;
+    --app-link: #ffd38a;
+    --app-primary: #d96c4f;
+    --app-primary-hover: #b84f38;
+    --app-nav: linear-gradient(135deg, #19131f, #59304a 48%, #b36b3f);
+    --app-nav-text: #fff8ed;
+    --app-accent: #f4c86a;
+    --app-accent-strong: #56b7a6;
+    --app-danger: #f06464;
+    --app-page-surface: #17131d;
+    --app-page-text: #f8efe2;
+    --app-popup-surface: #211a27;
+    --app-popup-text: #fff8ed;
+    --app-popup-muted: #d4bdab;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(18,16,23,0.88), rgba(89,48,74,0.7), rgba(179,107,63,0.54)), rgba(0,0,0,0.62);
+    --app-profile-bg: radial-gradient(circle at top left, rgba(244,200,106,0.26), transparent 36%), linear-gradient(135deg, #121017, #24182a 48%, #3c2631);
 }
 
 body {
@@ -989,6 +990,39 @@ footer {
     display: none !important;
 }
 
+.app-filter-panel {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.5fr) minmax(150px, 1fr) minmax(150px, 1fr) auto;
+    gap: 12px;
+    margin: 0 0 18px;
+    padding: 14px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+}
+
+.app-filter-panel input,
+.app-filter-panel select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 999px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    padding: 0 14px;
+}
+
+.app-filter-panel button {
+    min-height: 42px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--app-card-text);
+    font-weight: 850;
+    padding: 0 18px;
+}
+
 @@media (max-width: 760px) {
     .app-page-tools,
     .app-page-search {
@@ -999,12 +1033,17 @@ footer {
         max-width: none;
         width: 100%;
     }
+
+    .app-filter-panel {
+        grid-template-columns: 1fr;
+    }
 }
 
 @@media print {
     header,
     footer,
     .app-page-tools,
+    .app-filter-panel,
     .film-navbar,
     .btn,
     button,
@@ -1117,17 +1156,52 @@ z-index:9999;">
 <nav class="navbar navbar-expand-sm film-navbar mb-3">
 <div class="container-fluid">
 
-    <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
-        <span class="film-brand-badge">🎬</span>
-        <span>showTime</span>
-    </a>
-
 @{
     var isLoggedIn = Context.Session.GetString("UserEmail") != null;
     var sessionDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
     var sessionInitial = sessionDisplayName.Trim()[0].ToString().ToUpperInvariant();
     var sessionProfileImage = Context.Session.GetString("ProfileImage");
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var showAppFilters =
+        (currentController == "Booking" && currentAction == "MyBookings")
+        || (currentController == "Transaction" && currentAction == "History");
+    var showAppSearch =
+        isLoggedIn
+        && !(currentController == "Developer" && currentAction == "Index")
+        && !(currentController == "Home" && currentAction == "Index");
+    var currentVersion =
+        AppDb.ApplicationVersions
+        .OrderByDescending(x => x.IsCurrent)
+        .ThenByDescending(x => x.UpdatedAt)
+        .Select(x => x.VersionNumber)
+        .FirstOrDefault()
+        ?? "1.0.0";
 }
+
+    <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
+        <span class="film-brand-badge">🎬</span>
+        <span>showTime</span>
+        <small class="app-version-badge">v@currentVersion</small>
+    </a>
+
+    <script>
+        window.currentAppVersion = "@currentVersion";
+    </script>
+
+    <style>
+        .app-version-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 3px 8px;
+            border: 1px solid var(--app-input-border);
+            border-radius: 999px;
+            color: var(--app-muted);
+            font-size: 0.72rem;
+            font-weight: 900;
+        }
+    </style>
 
     <div class="film-menu">
         <div class="theme-switcher" aria-label="Theme selector">
@@ -1173,6 +1247,8 @@ z-index:9999;">
 
                 <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile">My Profile</a>
 
+                <a class="film-nav-btn film-profile-btn" href="/Developer/Index">Developer Profile</a>
+
                 <a class="film-nav-btn film-logout-btn"
                    href="/Auth/Logout"
                    onclick="return confirmLogout()">Exit Show</a>
@@ -1185,7 +1261,7 @@ z-index:9999;">
 
 <!-- ================= BODY ================= -->
 <div class="container mt-5">
-    @if (isLoggedIn)
+    @if (showAppSearch)
     {
         <div class="app-page-tools no-print">
             <form class="app-page-search" role="search" onsubmit="return false;">
@@ -1202,6 +1278,37 @@ z-index:9999;">
                 </button>
             </form>
         </div>
+
+        @if(showAppFilters)
+        {
+            <div class="app-filter-panel no-print"
+                 data-app-filter
+                 data-app-filter-target=".booking-card, .transaction-table tbody tr">
+                <input type="text"
+                       data-app-filter-search
+                       placeholder="Search records" />
+                <select data-app-filter-status>
+                    <option value="">All Status</option>
+                    <option value="SUCCESS">SUCCESS</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="FAILED">FAILED</option>
+                    <option value="CONFIRMED">CONFIRMED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                </select>
+                <select data-app-filter-method>
+                    <option value="">All Methods</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CARD">CARD</option>
+                    <option value="NETBANKING">NETBANKING</option>
+                    <option value="WALLET">WALLET</option>
+                    <option value="QR">QR</option>
+                </select>
+                <button type="button" data-app-filter-reset>
+                    Reset
+                </button>
+            </div>
+        }
     }
     @RenderBody()
 </div>
@@ -1290,10 +1397,51 @@ function filterCurrentPage(term) {
 
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("appPageSearch");
-    if (!input) return;
 
-    input.addEventListener("input", function () {
+    input?.addEventListener("input", function () {
         filterCurrentPage(input.value);
+    });
+
+    document.querySelectorAll("[data-app-filter]").forEach(function (panel) {
+        const searchBox = panel.querySelector("[data-app-filter-search]");
+        const statusBox = panel.querySelector("[data-app-filter-status]");
+        const methodBox = panel.querySelector("[data-app-filter-method]");
+        const resetButton = panel.querySelector("[data-app-filter-reset]");
+        const targetSelector = panel.getAttribute("data-app-filter-target") || "tbody tr";
+        const anchor = document.querySelector(".booking-grid")
+            || document.querySelector(".transaction-table-wrap")
+            || document.querySelector(".table-wrapper");
+
+        if (anchor && anchor.parentElement) {
+            anchor.parentElement.insertBefore(panel, anchor);
+        }
+
+        function applyFilters() {
+            const query = (searchBox?.value || "").trim().toLowerCase();
+            const status = (statusBox?.value || "").trim().toLowerCase();
+            const method = (methodBox?.value || "").trim().toLowerCase();
+
+            document.querySelectorAll(targetSelector).forEach(function (item) {
+                if (panel.contains(item)) return;
+
+                const text = item.innerText.toLowerCase();
+                const matchesSearch = !query || text.includes(query);
+                const matchesStatus = !status || text.includes(status);
+                const matchesMethod = !method || text.includes(method);
+                item.hidden = !(matchesSearch && matchesStatus && matchesMethod);
+            });
+        }
+
+        searchBox?.addEventListener("input", applyFilters);
+        statusBox?.addEventListener("change", applyFilters);
+        methodBox?.addEventListener("change", applyFilters);
+        resetButton?.addEventListener("click", function () {
+            if (searchBox) searchBox.value = "";
+            if (statusBox) statusBox.value = "";
+            if (methodBox) methodBox.value = "";
+            applyFilters();
+            searchBox?.focus();
+        });
     });
 });
 </script>

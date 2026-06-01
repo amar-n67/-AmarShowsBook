@@ -10,6 +10,19 @@
     int totalPages = ViewBag.TotalPages ?? 1;
 
     int totalRecords = ViewBag.TotalRecords ?? Model.Count;
+
+    string ResolveActionName(AmarShowsBook.Models.Admin.VwEnterpriseActivityLog item)
+    {
+        if(string.Equals(item.action,"PAGE_VIEW",StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(item.description))
+        {
+            return item.description;
+        }
+
+        return string.IsNullOrWhiteSpace(item.action)
+            ? "NA"
+            : item.action;
+    }
 }
 
 <section class="admin-page">
@@ -129,9 +142,7 @@
                             <!-- ACTION -->
 
                             <td class="text-wrap">
-                                @(string.IsNullOrWhiteSpace(item.action)
-                                    ? "NA"
-                                    : item.action)
+                                @ResolveActionName(item)
                             </td>
 
                             <!-- USER -->
@@ -256,7 +267,9 @@
 <style>
 
     .activity-table {
-        width: 100%;
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
         border-collapse: collapse;
     }
 
@@ -275,6 +288,8 @@
         vertical-align: top;
         border-bottom: 1px solid #e5e7eb;
         font-size: 14px;
+        min-width: auto !important;
+        white-space: nowrap;
     }
 
     .activity-table tbody tr:hover {
@@ -395,6 +410,8 @@
     }
 
     .text-wrap {
+        max-width: 320px;
+        white-space: normal !important;
         word-break: break-word;
     }
 
@@ -403,13 +420,17 @@
     }
 
     .description-cell {
-        min-width: 280px;
+        min-width: auto !important;
+        max-width: 360px;
+        white-space: normal !important;
         word-break: break-word;
         line-height: 1.5;
     }
 
     .error-cell {
-        min-width: 280px;
+        min-width: auto !important;
+        max-width: 360px;
+        white-space: normal !important;
         word-break: break-word;
         line-height: 1.5;
     }

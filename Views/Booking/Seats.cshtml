@@ -93,6 +93,9 @@ Seat Shot
 @{
     var currentDate =
     Model.StartTime.Date;
+
+    var dateListUntil =
+    DateTime.UtcNow.Date.AddDays(7).AddDays(1);
 }
 
 @if(availableDates != null && availableDates.Any())
@@ -102,6 +105,7 @@ Seat Shot
 @foreach(var show in
 availableDates
 .Where(x=>x.StartTime >= DateTime.UtcNow)
+.Where(x=>x.StartTime < dateListUntil)
 .GroupBy(x=>x.StartTime.Date)
 .Select(x=>x.First())
 .OrderBy(x=>x.StartTime))

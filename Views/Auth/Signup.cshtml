@@ -10,6 +10,7 @@
             <span>Shot 02 / Casting Desk</span>
             <h1>Create Opening Credit</h1>
             <p>Your showTime ticket starts with clean contact details and a strong password.</p>
+            <small class="signup-version">Version <span data-current-version></span></small>
         </div>
 
         <form method="post" novalidate onsubmit="return validateSignupForm()">
@@ -93,6 +94,15 @@
     max-width: 620px;
     color: #34303a;
 }
+.signup-version {
+    display: inline-flex;
+    margin-top: 12px;
+    padding: 5px 10px;
+    border: 1px solid rgba(35,31,32,0.18);
+    border-radius: 999px;
+    color: #34303a;
+    font-weight: 900;
+}
 .signup-card form {
     padding: 26px 30px 30px;
 }
@@ -129,6 +139,10 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("[data-current-version]").forEach(item => {
+                item.textContent = window.currentAppVersion || "1.0.0";
+            });
+
             const serverError = "@ViewBag.Error";
             const modelError = "@(!ViewData.ModelState.IsValid ? "Please fix the highlighted signup details." : "")";
 
