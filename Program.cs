@@ -7,19 +7,13 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
-// builder.WebHost.UseUrls(
+builder.WebHost.UseUrls(
 
-//     "http://localhost:5089",
+    "http://localhost:5089",
 
-//     "http://0.0.0.0:5089"
+    "http://0.0.0.0:5089"
 
-// );
-// var port = Environment.GetEnvironmentVariable("PORT") ?? "5089";
-
-// builder.WebHost.UseUrls(
-//     $"http://0.0.0.0:{port}"
-// );
-
+);
 // ========================================
 // Services
 // ========================================
@@ -51,24 +45,19 @@ builder.Services.AddSession();
 // Database
 // ========================================
 
-// var connectionString =
-// builder.Configuration.GetConnectionString(
-// "DefaultConnection")
-// ?? "";
-
-// if(
-// !connectionString.Contains(
-// "Timeout=",
-// StringComparison.OrdinalIgnoreCase))
-// {
-//     connectionString+=
-//     ";Timeout=3;Command Timeout=5";
-// }
 var connectionString =
 builder.Configuration.GetConnectionString(
 "DefaultConnection")
 ?? "";
-Console.WriteLine($"Connection string starts with: {connectionString[..Math.Min(30, connectionString.Length)]}");
+
+if(
+!connectionString.Contains(
+"Timeout=",
+StringComparison.OrdinalIgnoreCase))
+{
+    connectionString+=
+    ";Timeout=3;Command Timeout=5";
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(
 options=>
@@ -283,11 +272,5 @@ ex,
 }
 
 });
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-    db.Database.Migrate();
-}
 
 app.Run();
