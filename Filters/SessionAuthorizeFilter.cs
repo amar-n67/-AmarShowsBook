@@ -19,10 +19,14 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         };
 
     private readonly IActivityLogger _activityLogger;
+    private readonly RbacService _rbacService;
 
-    public SessionAuthorizeFilter(IActivityLogger activityLogger)
+    public SessionAuthorizeFilter(
+        IActivityLogger activityLogger,
+        RbacService rbacService)
     {
         _activityLogger = activityLogger;
+        _rbacService = rbacService;
     }
 
     public async Task OnActionExecutionAsync(
@@ -43,6 +47,49 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
 
         if (!string.IsNullOrWhiteSpace(userEmail))
         {
+            var userId =
+            TryGetUserId(http.Session.GetString("UserId"));
+
+            if (RequiresPermission(controller, action, out var moduleCode, out var actionType) &&
+                (userId == null || !_rbacService.HasPermission(userId.Value, moduleCode, actionType)))
+            {
+                await _activityLogger.LogAsync(
+                    userId: userId,
+                    action: "RBAC_ACCESS_DENIED",
+                    module: moduleCode,
+                    entityType: "ROUTE",
+                    description: $"Blocked role access to {controller}/{action}",
+                    status: "FAILURE",
+                    isError: 1,
+                    metadata: new
+                    {
+                        controller,
+                        action,
+                        moduleCode,
+                        actionType,
+                        path = http.Request.Path.ToString()
+                    });
+
+                if (IsAjaxOrApi(http.Request))
+                {
+                    context.Result = new ObjectResult(new
+                    {
+                        success = false,
+                        message = "You do not have access to this action."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                    return;
+                }
+
+                context.Result = new RedirectToActionResult(
+                    "Index",
+                    "Home",
+                    new { accessDenied = true });
+                return;
+            }
+
             await next();
             return;
         }
@@ -92,8 +139,73 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             return true;
         }
 
+        if (controller.Equals("Booking", StringComparison.OrdinalIgnoreCase))
+        {
+            return action.Equals("CreateQR", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("MobilePay", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("ApprovePayment", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("RejectPayment", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("TicketByBooking", StringComparison.OrdinalIgnoreCase);
+        }
+
         return controller.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
                action.Equals("Error", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool RequiresPermission(
+        string controller,
+        string action,
+        out string moduleCode,
+        out string actionType)
+    {
+        moduleCode = "";
+        actionType = "";
+
+        if (controller.Equals("Developer", StringComparison.OrdinalIgnoreCase))
+        {
+            moduleCode = "DEVELOPER";
+            actionType = "EDIT";
+            return true;
+        }
+
+        if (!controller.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        (moduleCode, actionType) = action switch
+        {
+            "Dashboard" or "Index" => ("ADMIN", "VIEW"),
+            "Users" or "UserDetails" => ("USER", "VIEW"),
+            "UserAccess" or "AddUserRole" or "RemoveUserRole" => ("USER", "GRANT_ACCESS"),
+            "ToggleUserStatus" or "DeleteUser" => ("USER", "DISABLE"),
+            "Roles" => ("ROLE", "VIEW"),
+            "CreateRole" => ("ROLE", "CREATE"),
+            "UpdateRole" => ("ROLE", "UPDATE"),
+            "Permissions" => ("PERMISSION", "VIEW"),
+            "CreatePermission" => ("PERMISSION", "CREATE"),
+            "ToggleRolePermission" => ("PERMISSION", "ASSIGN"),
+            "ManageShows" or "Bookings" => ("BOOKING", "VIEW"),
+            "Transactions" or "TransactionDetails" => ("PAYMENT", "VIEW"),
+            "Refunds" or "RefundDetails" => ("REFUND", "VIEW"),
+            "ApproveRefund" => ("REFUND", "APPROVE"),
+            "RejectRefund" => ("REFUND", "REJECT"),
+            "RetryRefund" => ("REFUND", "RETRY"),
+            "Wallets" => ("WALLET", "VIEW"),
+            "CouponUsage" => ("COUPON", "VIEW"),
+            "Notifications" => ("NOTIFICATION", "VIEW"),
+            "ActivityLogs" or "Security" or "Versions" => ("ANALYTICS", "VIEW"),
+            _ => ("ADMIN", "VIEW")
+        };
+
+        return true;
+    }
+
+    private static int? TryGetUserId(string? value)
+    {
+        return int.TryParse(value, out var userId)
+            ? userId
+            : null;
     }
 
     private static bool IsAjaxOrApi(HttpRequest request)

@@ -862,6 +862,8 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
         public async Task<IActionResult>
         GenerateQR(long bookingId)
         {
+            await EnsurePaymentSessionDraftCompatibility();
+
             string token=
             Guid.NewGuid().ToString();
 
@@ -891,6 +893,13 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
                 success=true,
                 url
             });
+        }
+
+        private async Task EnsurePaymentSessionDraftCompatibility()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+ALTER TABLE public.""PaymentSessions""
+DROP CONSTRAINT IF EXISTS fk_payment_session_booking;");
         }
 
 
@@ -963,6 +972,12 @@ MobilePay(string token)
     if(session==null)
         return NotFound();
 
+    if(session.ExpiresAt<DateTime.UtcNow ||
+       !string.Equals(session.Status,"PENDING",StringComparison.OrdinalIgnoreCase))
+    {
+        return View("MobilePayExpired");
+    }
+
 
     var booking=
 
@@ -970,6 +985,9 @@ MobilePay(string token)
     .BookingDrafts
     .FindAsync(
     session.BookingId);
+
+    if(booking==null)
+        return NotFound();
 
 
     var schedule=
@@ -1920,7 +1938,18 @@ ApprovePayment(string token)
     {
         return Json(new
         {
-            success=false
+            success=false,
+            message="Payment session was not found."
+        });
+    }
+
+    if(session.ExpiresAt<DateTime.UtcNow ||
+       !string.Equals(session.Status,"PENDING",StringComparison.OrdinalIgnoreCase))
+    {
+        return Json(new
+        {
+            success=false,
+            message="Payment session has expired or was already completed."
         });
     }
 
@@ -1935,7 +1964,8 @@ ApprovePayment(string token)
     {
         return Json(new
         {
-            success=false
+            success=false,
+            message="Booking draft was not found."
         });
     }
 
@@ -2025,7 +2055,18 @@ RejectPayment(string token)
     {
         return Json(new
         {
-            success=false
+            success=false,
+            message="Payment session was not found."
+        });
+    }
+
+    if(session.ExpiresAt<DateTime.UtcNow ||
+       !string.Equals(session.Status,"PENDING",StringComparison.OrdinalIgnoreCase))
+    {
+        return Json(new
+        {
+            success=false,
+            message="Payment session has expired or was already completed."
         });
     }
 

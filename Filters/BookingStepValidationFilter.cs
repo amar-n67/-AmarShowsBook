@@ -28,6 +28,12 @@ public class BookingStepValidationFilter : IAsyncActionFilter
             return;
         }
 
+        if (IsPublicBookingEndpoint(action))
+        {
+            await next();
+            return;
+        }
+
         var userId = GetUserId(context.HttpContext.Session.GetString("UserId"));
 
         if (userId == null)
@@ -98,6 +104,15 @@ public class BookingStepValidationFilter : IAsyncActionFilter
         }
 
         return null;
+    }
+
+    private static bool IsPublicBookingEndpoint(string action)
+    {
+        return action.Equals("CreateQR", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("MobilePay", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("ApprovePayment", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("RejectPayment", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("TicketByBooking", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<IActionResult?> ValidateDraftOwner(

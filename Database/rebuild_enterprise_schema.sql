@@ -1197,7 +1197,7 @@ ALTER TABLE public.transactions ADD CONSTRAINT fk_transactions_booking FOREIGN K
 ALTER TABLE public.bookings ADD CONSTRAINT fk_booking_transaction FOREIGN KEY (transaction_id) REFERENCES public.transactions (id);
 ALTER TABLE public.booking_drafts ADD CONSTRAINT fk_booking_draft_user FOREIGN KEY ("UserId") REFERENCES public."Users" ("Id");
 ALTER TABLE public.booking_drafts ADD CONSTRAINT fk_booking_draft_schedule FOREIGN KEY ("ScheduleId") REFERENCES public."ShowSchedules" ("Id");
-ALTER TABLE public."PaymentSessions" ADD CONSTRAINT fk_payment_session_booking FOREIGN KEY ("BookingId") REFERENCES public.bookings (id);
+ALTER TABLE public."PaymentSessions" DROP CONSTRAINT IF EXISTS fk_payment_session_booking;
 ALTER TABLE public.booking_transactions ADD CONSTRAINT fk_booking_transaction_booking FOREIGN KEY ("BookingId") REFERENCES public.bookings (id);
 ALTER TABLE public.booking_items ADD CONSTRAINT fk_booking_item_booking FOREIGN KEY (booking_id) REFERENCES public.bookings (id) ON DELETE CASCADE;
 ALTER TABLE public.booking_seats ADD CONSTRAINT fk_booking_seat_booking FOREIGN KEY (booking_id) REFERENCES public.bookings (id) ON DELETE CASCADE;

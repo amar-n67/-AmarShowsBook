@@ -977,17 +977,25 @@ async function checkQRStatus()
     await response.json();
 
 
-    if(
-    result.status==="SUCCESS"
-    ||
-    result.status==="FAILED"
-    )
+    if(result.status==="SUCCESS")
     {
         clearInterval(
         statusChecker);
 
         window.location=
         "/Booking/Confirmation?bookingId=@Model.Id";
+    }
+
+    if(result.status==="FAILED")
+    {
+        clearInterval(
+        statusChecker);
+
+        alert(
+        "QR payment was rejected or failed. Please try again.");
+
+        window.location=
+        "/Booking/Payment?bookingId=@Model.Id";
     }
 }
 function cancelBooking()
