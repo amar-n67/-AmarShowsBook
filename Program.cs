@@ -7,12 +7,13 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var port =
+Environment.GetEnvironmentVariable("PORT")
+?? "5089";
+
 builder.WebHost.UseUrls(
-
-    "http://localhost:5089",
-
-    "http://0.0.0.0:5089"
-
+$"http://0.0.0.0:{port}"
 );
 // ========================================
 // Services
@@ -46,9 +47,7 @@ builder.Services.AddSession();
 // ========================================
 
 var connectionString =
-builder.Configuration.GetConnectionString(
-"DefaultConnection")
-?? "";
+GetDatabaseConnectionString(builder.Configuration);
 
 if(
 !connectionString.Contains(
@@ -212,23 +211,7 @@ Task.Run(()=>
 try
 {
 var url=
-
-app.Urls
-.FirstOrDefault(
-u=>
-u.StartsWith(
-"http://",
-StringComparison.OrdinalIgnoreCase
-))
-
-??
-
-app.Urls
-.FirstOrDefault()
-
-??
-
-"http://localhost:5089";
+$"http://localhost:{port}";
 
 
 if(
@@ -274,3 +257,56 @@ ex,
 });
 
 app.Run();
+
+static string GetDatabaseConnectionString(IConfiguration configuration)
+{
+    var databaseUrl =
+    Environment.GetEnvironmentVariable("DATABASE_URL");
+
+    if(!string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        return ConvertPostgresUrlToConnectionString(databaseUrl);
+    }
+
+    return configuration.GetConnectionString(
+    "DefaultConnection")
+    ?? "";
+}
+
+static string ConvertPostgresUrlToConnectionString(string databaseUrl)
+{
+    var uri =
+    new Uri(databaseUrl);
+
+    var userInfo =
+    uri.UserInfo.Split(
+    ':',
+    2);
+
+    var username =
+    Uri.UnescapeDataString(
+    userInfo.ElementAtOrDefault(0)
+    ?? "");
+
+    var password =
+    Uri.UnescapeDataString(
+    userInfo.ElementAtOrDefault(1)
+    ?? "");
+
+    var database =
+    Uri.UnescapeDataString(
+    uri.AbsolutePath.TrimStart('/'));
+
+    var builder =
+    new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port > 0 ? uri.Port : 5432,
+        Database = database,
+        Username = username,
+        Password = password,
+        SslMode = Npgsql.SslMode.Require
+    };
+
+    return builder.ConnectionString;
+}

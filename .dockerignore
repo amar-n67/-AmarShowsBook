@@ -1,4 +1,5 @@
 bin/
 obj/
+out/
 .git/
 .vs/
