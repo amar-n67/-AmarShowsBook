@@ -1,6 +1,13 @@
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/web.config
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/appsettings.Development.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/appsettings.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/appsettings.Production.json
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/AmarShowsBook.deps.json
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/AmarShowsBook.runtimeconfig.json
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/AmarShowsBook.staticwebassets.endpoints.json
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/appsettings.Development.json
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/appsettings.json
+/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/appsettings.Production.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/AmarShowsBook.staticwebassets.runtime.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/AmarShowsBook.staticwebassets.endpoints.json
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/AmarShowsBook
@@ -524,10 +531,3 @@
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.pdb
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/AmarShowsBook.genruntimeconfig.cache
 /Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/Debug/net10.0/ref/AmarShowsBook.dll
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/web.config
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/AmarShowsBook.deps.json
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/AmarShowsBook.runtimeconfig.json
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/AmarShowsBook.staticwebassets.endpoints.json
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/appsettings.Development.json
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/appsettings.json
-/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/bin/Debug/net10.0/out/appsettings.Production.json

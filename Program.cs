@@ -2,6 +2,7 @@ using AmarShowsBook.Data;
 using AmarShowsBook.Filters;
 using AmarShowsBook.Models;
 using AmarShowsBook.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -68,6 +69,18 @@ connectionString
 var app=
 builder.Build();
 
+var forwardedHeadersOptions =
+new ForwardedHeadersOptions
+{
+    ForwardedHeaders =
+    ForwardedHeaders.XForwardedFor |
+    ForwardedHeaders.XForwardedProto |
+    ForwardedHeaders.XForwardedHost
+};
+
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+
 
 // ========================================
 // Middleware
@@ -83,6 +96,9 @@ else
     app.UseExceptionHandler(
     "/Home/Error");
 }
+
+app.UseForwardedHeaders(
+forwardedHeadersOptions);
 
 app.UseStaticFiles();
 

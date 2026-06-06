@@ -68,7 +68,9 @@ public async Task<IActionResult> TicketByBooking(long id)
         && currentUserId!=bookingSummary.UserId
         && !User.IsInRole("Admin"))
     {
-        return Forbid();
+        return StatusCode(
+        StatusCodes.Status403Forbidden,
+        "You do not have access to this ticket.");
     }
 
     var confirmedBooking =
@@ -2295,10 +2297,17 @@ Confirmation(long bookingId)
     await _context.Users
     .FirstOrDefaultAsync(x=>x.Id==booking.UserId);
 
+    var confirmedBooking =
+    await _context.Bookings
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x=>x.BookingRef==$"BKG-DRAFT-{booking.Id}");
+
     ViewBag.User=user;
     ViewBag.Email=user?.Email;
     ViewBag.Phone=user?.Mobile;
-    ViewBag.TicketUrl=BuildAbsoluteUrl($"/Booking/Ticket/{booking.Id}");
+    ViewBag.TicketUrl=confirmedBooking==null
+    ? BuildAbsoluteUrl($"/Booking/Ticket/{booking.Id}")
+    : BuildAbsoluteUrl($"/Booking/TicketByBooking/{confirmedBooking.Id}");
 
     return View(
     booking);
