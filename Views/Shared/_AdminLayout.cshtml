@@ -18,6 +18,87 @@
 
     <link rel="stylesheet"
           href="~/css/admin/admin-dashboard.css" />
+
+    <style>
+        @@media (pointer: fine) {
+            html.app-liquid-cursor,
+            html.app-liquid-cursor body,
+            html.app-liquid-cursor a,
+            html.app-liquid-cursor button,
+            html.app-liquid-cursor input,
+            html.app-liquid-cursor select,
+            html.app-liquid-cursor textarea,
+            html.app-liquid-cursor [role="button"] {
+                cursor: none !important;
+            }
+
+            .liquid-cursor,
+            .liquid-cursor-trail {
+                position: fixed;
+                left: 0;
+                top: 0;
+                pointer-events: none;
+                z-index: 2147483647;
+                border-radius: 999px;
+                transform: translate3d(-50%, -50%, 0);
+                will-change: transform, width, height, opacity;
+            }
+
+            .liquid-cursor {
+                width: 28px;
+                height: 28px;
+                border: 2px solid color-mix(in srgb, var(--admin-gold) 76%, #ffffff);
+                background:
+                    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.28) 24%, transparent 42%),
+                    radial-gradient(circle at 66% 72%, color-mix(in srgb, var(--admin-teal) 54%, transparent), transparent 54%),
+                    linear-gradient(135deg, color-mix(in srgb, var(--admin-panel-strong) 52%, transparent), color-mix(in srgb, var(--admin-rose) 28%, transparent));
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.36) inset,
+                    0 0 0 2px color-mix(in srgb, var(--admin-ink) 18%, transparent),
+                    0 10px 30px color-mix(in srgb, var(--admin-teal) 36%, transparent),
+                    0 0 26px color-mix(in srgb, var(--admin-gold) 34%, transparent);
+                backdrop-filter: blur(7px) saturate(145%);
+                transition: width 0.16s ease, height 0.16s ease, opacity 0.2s ease;
+            }
+
+            .liquid-cursor::after {
+                content: "";
+                position: absolute;
+                inset: 6px;
+                border-radius: inherit;
+                border: 1px solid rgba(255, 255, 255, 0.34);
+            }
+
+            .liquid-cursor-trail {
+                width: 56px;
+                height: 56px;
+                border: 1px solid color-mix(in srgb, var(--admin-teal) 36%, transparent);
+                background: radial-gradient(circle, color-mix(in srgb, var(--admin-teal) 22%, transparent), color-mix(in srgb, var(--admin-gold) 13%, transparent) 44%, transparent 72%);
+                backdrop-filter: blur(3px);
+                opacity: 0.95;
+                transition: width 0.18s ease, height 0.18s ease, opacity 0.22s ease;
+            }
+
+            html.app-liquid-cursor.cursor-action .liquid-cursor {
+                width: 36px;
+                height: 36px;
+                background:
+                    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.26) 24%, transparent 42%),
+                    linear-gradient(135deg, color-mix(in srgb, var(--admin-gold) 62%, transparent), color-mix(in srgb, var(--admin-rose) 44%, transparent));
+            }
+
+            html.app-liquid-cursor.cursor-action .liquid-cursor-trail {
+                width: 66px;
+                height: 66px;
+                opacity: 0.96;
+            }
+
+            html.app-liquid-cursor.cursor-hidden .liquid-cursor,
+            html.app-liquid-cursor.cursor-hidden .liquid-cursor-trail {
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 
 @{
@@ -222,6 +303,67 @@
     document.addEventListener("DOMContentLoaded", function () {
         const saved = localStorage.getItem("amarShowsTheme") || "cinema";
         window.setAdminTheme(saved);
+    });
+})();
+</script>
+<script>
+(function () {
+    const finePointer = window.matchMedia("(pointer: fine)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    if (!finePointer.matches || reducedMotion.matches) {
+        return;
+    }
+
+    const root = document.documentElement;
+    const cursor = document.createElement("span");
+    const trail = document.createElement("span");
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
+    let trailX = cursorX;
+    let trailY = cursorY;
+    let rafId = 0;
+
+    cursor.className = "liquid-cursor";
+    trail.className = "liquid-cursor-trail";
+    cursor.setAttribute("aria-hidden", "true");
+    trail.setAttribute("aria-hidden", "true");
+
+    function setActionState(event) {
+        const action = event.target.closest("a,button,input,select,textarea,label,[role='button'],.dashboard-card,.admin-nav a,.admin-icon-btn");
+        root.classList.toggle("cursor-action", Boolean(action));
+    }
+
+    function moveCursor(event) {
+        cursorX = event.clientX;
+        cursorY = event.clientY;
+        root.classList.remove("cursor-hidden");
+        setActionState(event);
+
+        if (!rafId) {
+            rafId = requestAnimationFrame(renderCursor);
+        }
+    }
+
+    function renderCursor() {
+        trailX += (cursorX - trailX) * 0.18;
+        trailY += (cursorY - trailY) * 0.18;
+
+        cursor.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0) translate(-50%, -50%)`;
+        trail.style.transform = `translate3d(${trailX}px, ${trailY}px, 0) translate(-50%, -50%)`;
+        rafId = requestAnimationFrame(renderCursor);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.body.appendChild(trail);
+        document.body.appendChild(cursor);
+        root.classList.add("app-liquid-cursor", "cursor-hidden");
+        rafId = requestAnimationFrame(renderCursor);
+    });
+
+    document.addEventListener("mousemove", moveCursor, { passive: true });
+    document.addEventListener("mouseleave", function () {
+        root.classList.add("cursor-hidden");
     });
 })();
 </script>

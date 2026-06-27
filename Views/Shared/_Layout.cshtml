@@ -118,31 +118,31 @@ html[data-theme="dark"] {
 
 html[data-theme="cinema"] {
     color-scheme: light;
-    --app-bg: #f6f7fb;
-    --app-text: #1f2937;
-    --app-card: #ffffff;
-    --app-card-text: #1f2937;
+    --app-bg: #eef6f2;
+    --app-text: #182536;
+    --app-card: rgba(248, 250, 246, 0.94);
+    --app-card-text: #182536;
     --app-input: #ffffff;
-    --app-input-text: #1f2937;
-    --app-input-border: #d2d8e2;
-    --app-input-disabled: #edf1f6;
-    --app-input-disabled-text: #667085;
-    --app-muted: #667085;
-    --app-link: #2563eb;
-    --app-primary: #b44a5a;
-    --app-primary-hover: #933947;
-    --app-nav: linear-gradient(135deg, #182231 0%, #26394f 52%, #9a6a37 100%);
-    --app-nav-text: #fffaf0;
-    --app-accent: #f0c66b;
-    --app-accent-strong: #287e8f;
-    --app-danger: #b83c4d;
-    --app-page-surface: #ffffff;
-    --app-page-text: #1f2937;
-    --app-popup-surface: #ffffff;
-    --app-popup-text: #1f2937;
-    --app-popup-muted: #667085;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(24, 34, 49, 0.72), rgba(154, 106, 55, 0.36)), rgba(15, 23, 42, 0.24);
-    --app-profile-bg: linear-gradient(135deg, #f6f7fb, #fff7e8 52%, #edf7f8);
+    --app-input-text: #182536;
+    --app-input-border: rgba(24, 37, 54, 0.14);
+    --app-input-disabled: #e5ece9;
+    --app-input-disabled-text: #5f6f76;
+    --app-muted: #526274;
+    --app-link: #0f7f8a;
+    --app-primary: #e45d48;
+    --app-primary-hover: #c54835;
+    --app-nav: linear-gradient(135deg, #20364a 0%, #0f7f8a 48%, #e45d48 100%);
+    --app-nav-text: #fffdf7;
+    --app-accent: #f0bd4f;
+    --app-accent-strong: #168f98;
+    --app-danger: #bd3e4b;
+    --app-page-surface: #fffefa;
+    --app-page-text: #182536;
+    --app-popup-surface: #fffefa;
+    --app-popup-text: #182536;
+    --app-popup-muted: #526274;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 248, 223, 0.84), rgba(240, 189, 79, 0.5), rgba(22, 143, 152, 0.34)), rgba(24, 37, 54, 0.2);
+    --app-profile-bg: radial-gradient(circle at 14% 4%, rgba(240, 189, 79, 0.34), transparent 32%), radial-gradient(circle at 88% 14%, rgba(22, 143, 152, 0.2), transparent 28%), linear-gradient(135deg, #eef6f2, #fff8df 48%, #f3d0bf);
 }
 
 body {
@@ -150,6 +150,13 @@ body {
     color: var(--app-text);
     font-family: 'Segoe UI', sans-serif;
     transition: background 0.2s ease, color 0.2s ease;
+}
+
+html[data-theme="cinema"] body {
+    background:
+        radial-gradient(circle at 12% 6%, rgba(240, 189, 79, 0.34), transparent 32%),
+        radial-gradient(circle at 84% 12%, rgba(22, 143, 152, 0.2), transparent 28%),
+        linear-gradient(125deg, #eef6f2, #fff8df 48%, #f3d0bf);
 }
 
 @@media (pointer: fine) {
@@ -177,19 +184,20 @@ body {
     }
 
     .liquid-cursor {
-        width: 24px;
-        height: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.82);
+        width: 28px;
+        height: 28px;
+        border: 2px solid color-mix(in srgb, var(--app-accent) 76%, #ffffff);
         background:
             radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.28) 24%, transparent 42%),
-            radial-gradient(circle at 66% 72%, rgba(125, 211, 252, 0.5), transparent 54%),
-            linear-gradient(135deg, rgba(255, 255, 255, 0.42), rgba(45, 212, 191, 0.24));
+            radial-gradient(circle at 66% 72%, color-mix(in srgb, var(--app-accent-strong) 54%, transparent), transparent 54%),
+            linear-gradient(135deg, color-mix(in srgb, var(--app-card) 52%, transparent), color-mix(in srgb, var(--app-primary) 28%, transparent));
         box-shadow:
-            0 0 0 1px rgba(255, 255, 255, 0.24) inset,
-            0 8px 28px rgba(45, 212, 191, 0.3),
-            0 0 22px rgba(240, 198, 107, 0.18);
+            0 0 0 1px rgba(255, 255, 255, 0.36) inset,
+            0 0 0 2px color-mix(in srgb, var(--app-text) 18%, transparent),
+            0 10px 30px color-mix(in srgb, var(--app-accent-strong) 36%, transparent),
+            0 0 26px color-mix(in srgb, var(--app-accent) 34%, transparent);
         backdrop-filter: blur(7px) saturate(145%);
-        mix-blend-mode: screen;
+        mix-blend-mode: normal;
         transition: width 0.16s ease, height 0.16s ease, opacity 0.2s ease;
     }
 
@@ -202,12 +210,12 @@ body {
     }
 
     .liquid-cursor-trail {
-        width: 48px;
-        height: 48px;
-        border: 1px solid rgba(125, 211, 252, 0.25);
-        background: radial-gradient(circle, rgba(125, 211, 252, 0.16), rgba(240, 198, 107, 0.08) 44%, transparent 70%);
+        width: 56px;
+        height: 56px;
+        border: 1px solid color-mix(in srgb, var(--app-accent-strong) 36%, transparent);
+        background: radial-gradient(circle, color-mix(in srgb, var(--app-accent-strong) 22%, transparent), color-mix(in srgb, var(--app-accent) 13%, transparent) 44%, transparent 72%);
         backdrop-filter: blur(3px);
-        opacity: 0.82;
+        opacity: 0.95;
         transition: width 0.18s ease, height 0.18s ease, opacity 0.22s ease;
     }
 
@@ -216,7 +224,7 @@ body {
         height: 36px;
         background:
             radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.26) 24%, transparent 42%),
-            linear-gradient(135deg, rgba(240, 198, 107, 0.52), rgba(45, 212, 191, 0.36));
+            linear-gradient(135deg, color-mix(in srgb, var(--app-accent) 62%, transparent), color-mix(in srgb, var(--app-primary) 44%, transparent));
     }
 
     html.app-liquid-cursor.cursor-action .liquid-cursor-trail {
@@ -1831,6 +1839,7 @@ document.addEventListener("DOMContentLoaded", function () {
         cursorX = event.clientX;
         cursorY = event.clientY;
         root.classList.remove("cursor-hidden");
+        setActionState(event);
 
         if (!rafId) {
             rafId = requestAnimationFrame(renderCursor);
