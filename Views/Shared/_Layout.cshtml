@@ -1,5 +1,4 @@
-﻿@inject AmarShowsBook.Services.RbacService RbacService
-@inject AmarShowsBook.Data.ApplicationDbContext AppDb
+﻿@inject AmarShowsBook.Data.ApplicationDbContext AppDb
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1160,7 +1159,10 @@ z-index:9999;">
 @{
     var isLoggedIn = Context.Session.GetString("UserEmail") != null;
     var sessionDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
-    var sessionInitial = sessionDisplayName.Trim()[0].ToString().ToUpperInvariant();
+    var normalizedDisplayName = string.IsNullOrWhiteSpace(sessionDisplayName)
+        ? "User"
+        : sessionDisplayName.Trim();
+    var sessionInitial = normalizedDisplayName[0].ToString().ToUpperInvariant();
     var sessionProfileImage = Context.Session.GetString("ProfileImage");
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
@@ -1171,19 +1173,28 @@ z-index:9999;">
         isLoggedIn
         && !(currentController == "Developer" && currentAction == "Index")
         && !(currentController == "Home" && currentAction == "Index");
-    var currentVersion =
-        AppDb.ApplicationVersions
-        .OrderByDescending(x => x.IsCurrent)
-        .ThenByDescending(x => x.UpdatedAt)
-        .Select(x => x.VersionNumber)
-        .FirstOrDefault()
-        ?? "1.0.0";
+    var currentVersion = "1.0.0";
+
+    try
+    {
+        currentVersion =
+            AppDb.ApplicationVersions
+            .OrderByDescending(x => x.IsCurrent)
+            .ThenByDescending(x => x.UpdatedAt)
+            .Select(x => x.VersionNumber)
+            .FirstOrDefault()
+            ?? currentVersion;
+    }
+    catch
+    {
+        currentVersion = "1.0.0";
+    }
 }
 
     <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
         <span class="film-brand-badge">🎬</span>
         <span>showTime</span>
-        <small class="app-version-badge">v@currentVersion</small>
+        <small class="app-version-badge">v@(currentVersion)</small>
     </a>
 
     <script>

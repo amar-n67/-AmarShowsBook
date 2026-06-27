@@ -40,7 +40,6 @@
         "dependencies": {
           "BCrypt.Net-Next": "4.1.0",
           "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": "10.0.8",
-          "Microsoft.AspNetCore.SignalR": "1.2.10",
           "Microsoft.EntityFrameworkCore": "10.0.0",
           "Microsoft.EntityFrameworkCore.Tools": "10.0.0",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.0",
@@ -127,7 +126,7 @@
           "Microsoft.AspNetCore.Session": "10.0.0.0",
           "Microsoft.AspNetCore.SignalR.Common": "10.0.0.0",
           "Microsoft.AspNetCore.SignalR.Core": "10.0.0.0",
-          "Microsoft.AspNetCore.SignalR.Reference": "10.0.0.0",
+          "Microsoft.AspNetCore.SignalR": "10.0.0.0",
           "Microsoft.AspNetCore.SignalR.Protocols.Json": "10.0.0.0",
           "Microsoft.AspNetCore.StaticAssets": "10.0.0.0",
           "Microsoft.AspNetCore.StaticFiles": "10.0.0.0",
@@ -1636,7 +1635,7 @@
         },
         "compileOnly": true
       },
-      "Microsoft.AspNetCore.SignalR.Reference/10.0.0.0": {
+      "Microsoft.AspNetCore.SignalR/10.0.0.0": {
         "compile": {
           "Microsoft.AspNetCore.SignalR.dll": {}
         },
@@ -2992,9 +2991,6 @@
         },
         "compileOnly": true
       },
-      "Microsoft.AspNetCore.SignalR/1.2.10": {
-        "compileOnly": true
-      },
       "Microsoft.CodeAnalysis.Analyzers/3.11.0": {
         "compileOnly": true
       },
@@ -3732,7 +3728,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "Microsoft.AspNetCore.SignalR.Reference/10.0.0.0": {
+    "Microsoft.AspNetCore.SignalR/10.0.0.0": {
       "type": "referenceassembly",
       "serviceable": false,
       "sha512": ""
@@ -4861,13 +4857,6 @@
       "type": "referenceassembly",
       "serviceable": false,
       "sha512": ""
-    },
-    "Microsoft.AspNetCore.SignalR/1.2.10": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-zN8T1jA4M/ogenvqfH1fCW1zY4UbUfi7wkUSa0k5uAJJhIgjpF6enIf2MVfcFf8saMJLm2Qwqyuj37aF6SZPkQ==",
-      "path": "microsoft.aspnetcore.signalr/1.2.10",
-      "hashPath": "microsoft.aspnetcore.signalr.1.2.10.nupkg.sha512"
     },
     "Microsoft.CodeAnalysis.Analyzers/3.11.0": {
       "type": "package",

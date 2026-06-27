@@ -112,6 +112,8 @@ pattern:
 "{controller=Auth}/{action=Login}/{id?}"
 );
 
+EnsureApplicationVersionTable(app);
+
 
 // ========================================
 // Seed Data
@@ -325,4 +327,63 @@ static string ConvertPostgresUrlToConnectionString(string databaseUrl)
     };
 
     return builder.ConnectionString;
+}
+
+static void EnsureApplicationVersionTable(WebApplication app)
+{
+    using var scope =
+    app.Services.CreateScope();
+
+    try
+    {
+        var context =
+        scope.ServiceProvider
+        .GetRequiredService<
+        ApplicationDbContext>();
+
+        context.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS public.application_versions
+(
+    id bigserial PRIMARY KEY,
+    version_number varchar(50) NOT NULL DEFAULT '1.0.0',
+    release_title varchar(255) NOT NULL DEFAULT 'Application release',
+    release_notes text,
+    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by varchar(255),
+    is_current boolean NOT NULL DEFAULT false
+);
+
+INSERT INTO public.application_versions
+(
+    version_number,
+    release_title,
+    release_notes,
+    updated_at,
+    created_at,
+    created_by,
+    is_current
+)
+SELECT
+    '1.0.0',
+    'Initial release',
+    'Default application version',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    'SYSTEM',
+    true
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.application_versions
+);
+");
+    }
+    catch(Exception ex)
+    {
+        app.Logger.LogWarning(
+        ex,
+        "Application version schema check skipped"
+        );
+    }
 }

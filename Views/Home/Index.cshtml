@@ -11,13 +11,22 @@
     var userName = Context.Session.GetString("UserName") ?? "Artist";
     var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
     var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
-    var currentVersion = ((AmarShowsBook.Data.ApplicationDbContext)ViewContext.HttpContext.RequestServices
-        .GetService(typeof(AmarShowsBook.Data.ApplicationDbContext))!)
-        .ApplicationVersions
-        .OrderByDescending(x => x.IsCurrent)
-        .ThenByDescending(x => x.UpdatedAt)
-        .Select(x => x.VersionNumber)
-        .FirstOrDefault() ?? "1.0.0";
+    var currentVersion = "1.0.0";
+
+    try
+    {
+        currentVersion = ((AmarShowsBook.Data.ApplicationDbContext)ViewContext.HttpContext.RequestServices
+            .GetService(typeof(AmarShowsBook.Data.ApplicationDbContext))!)
+            .ApplicationVersions
+            .OrderByDescending(x => x.IsCurrent)
+            .ThenByDescending(x => x.UpdatedAt)
+            .Select(x => x.VersionNumber)
+            .FirstOrDefault() ?? currentVersion;
+    }
+    catch
+    {
+        currentVersion = "1.0.0";
+    }
 }
 
 <section class="showtime-page">
