@@ -1,6 +1,7 @@
 @model List<AmarShowsBook.Models.VwBookingCompleteDetails>
 @using AmarShowsBook.Helpers
 @using System.Net
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"] = "My Bookings";
@@ -10,6 +11,7 @@
     var publicBaseUrl = ViewBag.PublicBaseUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
     var bookingVenues = ViewBag.BookingVenues as Dictionary<long,string> ?? new Dictionary<long,string>();
     var bookingScreens = ViewBag.BookingScreens as Dictionary<long,string> ?? new Dictionary<long,string>();
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 }
 
 @if(TempData["Success"]!=null)
@@ -133,7 +135,10 @@
 
                     <div class="booking-actions no-print">
                         <a class="btn btn-primary" href="@ticketPath">View Ticket</a>
+                        @if(canUsePrintTools)
+                        {
                         <a class="btn btn-secondary" href="@printPath">Download</a>
+                        }
                         @if(canCancel)
                         {
                             <form asp-action="CancelBooking" asp-controller="Booking" method="post" class="cancel-form"

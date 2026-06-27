@@ -23,13 +23,83 @@ namespace AmarShowsBook.Services
             string moduleCode,
             string actionType)
         {
+            return HasPermissionCore(
+                userId,
+                moduleCode,
+                actionType,
+                allowDeveloperBypass: true);
+        }
+
+        public bool HasPermissionStrict(
+            int userId,
+            string moduleCode,
+            string actionType)
+        {
+            return HasPermissionCore(
+                userId,
+                moduleCode,
+                actionType,
+                allowDeveloperBypass: false);
+        }
+
+        public bool CanUsePrintTools(int userId)
+        {
+            return HasAnyActiveRole(
+                    userId,
+                    "AMAR_SUPER_ADMIN",
+                    "AMAR_ADMIN",
+                    "ADMIN",
+                    "AMAR_DEVELOPER",
+                    "DEVELOPER")
+                || HasPermissionStrict(userId, "ADMIN", "VIEW")
+                || HasPermissionStrict(userId, "DEVELOPER", "EDIT");
+        }
+
+        public bool HasAnyActiveRole(
+            int userId,
+            params string[] roleCodes)
+        {
+            var lookup = roleCodes
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (!lookup.Any())
+            {
+                return false;
+            }
+
+            return _context.UserRoleMappings
+                .Join(
+                    _context.Roles,
+                    mapping => mapping.RoleId,
+                    role => role.Id,
+                    (mapping, role) => new
+                    {
+                        mapping.UserId,
+                        mapping.IsActive,
+                        role.RoleCode,
+                        RoleIsActive = role.IsActive
+                    })
+                .Any(x =>
+                    x.UserId == userId &&
+                    x.IsActive &&
+                    x.RoleIsActive &&
+                    lookup.Contains(x.RoleCode));
+        }
+
+        private bool HasPermissionCore(
+            int userId,
+            string moduleCode,
+            string actionType,
+            bool allowDeveloperBypass)
+        {
             // Developer override mode
             var bypass =
                 _configuration.GetValue<bool>(
                     "DeveloperSettings:BypassRBAC");
 
             // Allow everything in development
-            if (bypass)
+            if (allowDeveloperBypass && bypass)
             {
                 return true;
             }

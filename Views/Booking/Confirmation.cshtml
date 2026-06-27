@@ -1,7 +1,9 @@
 @model BookingDraft
 @using System.Net
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
+    var canUsePrintTools = AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
     var schedule = ViewBag.Schedule;
     var user = ViewBag.User as AmarShowsBook.Models.User;
     var seatCount = Model.SeatNumbers.Split(',').Length;
@@ -683,6 +685,8 @@ TOTAL
 
 <div class="ticket-action-row no-print">
 
+@if(canUsePrintTools)
+{
 <button
 class="download-btn"
 onclick="window.print()">
@@ -690,6 +694,7 @@ onclick="window.print()">
 ⬇ Download Ticket
 
 </button>
+}
 
 <a
 class="my-bookings-btn"
@@ -808,7 +813,8 @@ src="/Booking/CreateQR?text=@WebUtility.UrlEncode(ticketUrl)"
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("print") === "1") {
+    const canUsePrintTools = @canUsePrintTools.ToString().ToLowerInvariant();
+    if (canUsePrintTools && params.get("print") === "1") {
         window.print();
     }
 });

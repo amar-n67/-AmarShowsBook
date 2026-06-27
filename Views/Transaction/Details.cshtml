@@ -1,8 +1,10 @@
 @model AmarShowsBook.Models.VwBookingTransactionSummary
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"] = "Transaction Details";
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 }
 
 <section class="transaction-detail-page">
@@ -13,7 +15,10 @@
             <p>@Model.ShowTitle / @Model.BookingRef</p>
         </div>
         <div class="transaction-detail-actions no-print">
+            @if(canUsePrintTools)
+            {
             <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+            }
             <a class="btn btn-secondary" href="/Transaction/History">Back</a>
         </div>
     </div>

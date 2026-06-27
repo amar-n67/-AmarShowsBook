@@ -1,6 +1,8 @@
 @model BookingDraft
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
+var canUsePrintTools = AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 var schedule=ViewBag.Schedule;
 var user=ViewBag.User as AmarShowsBook.Models.User;
 var summary=ViewBag.BookingSummary as AmarShowsBook.Models.VwBookingCompleteDetails;
@@ -326,7 +328,10 @@ translateY(0);
 </div>
 
 <div class="ticket-actions">
+@if(canUsePrintTools)
+{
 <button class="ticket-action primary" type="button" onclick="window.print()">Download</button>
+}
 <a class="ticket-action secondary" href="/Booking/MyBookings">My Bookings</a>
 </div>
 
@@ -339,7 +344,8 @@ translateY(0);
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("print") === "1") {
+    const canUsePrintTools = @canUsePrintTools.ToString().ToLowerInvariant();
+    if (canUsePrintTools && params.get("print") === "1") {
         window.print();
     }
 });

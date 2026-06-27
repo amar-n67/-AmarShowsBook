@@ -32,7 +32,6 @@
         new { Action = "Users", Label = "Users", Url = "/Admin/Users", Module = "USER", Permission = "VIEW" },
         new { Action = "UserAccess", Label = "User Access", Url = "/Admin/UserAccess", Module = "USER", Permission = "GRANT_ACCESS" },
         new { Action = "Roles", Label = "Roles", Url = "/Admin/Roles", Module = "ROLE", Permission = "VIEW" },
-        new { Action = "Permissions", Label = "Permissions", Url = "/Admin/Permissions", Module = "PERMISSION", Permission = "VIEW" },
         new { Action = "ManageShows", Label = "Manage Shows", Url = "/Admin/ManageShows", Module = "SHOW", Permission = "VIEW" },
         new { Action = "Bookings", Label = "Bookings", Url = "/Admin/Bookings", Module = "BOOKING", Permission = "VIEW" },
         new { Action = "Transactions", Label = "Transactions", Url = "/Admin/Transactions", Module = "PAYMENT", Permission = "VIEW" },
@@ -45,9 +44,11 @@
     };
     var showAdminFilters = new[]
     {
-        "Users","UserAccess","Roles","Permissions","Bookings",
+        "Users","UserAccess","Roles","Bookings",
         "Transactions","Wallets","Notifications","ActivityLogs","Versions"
     }.Contains(currentAction);
+    var canUsePrintTools =
+        AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 }
 
 <body>
@@ -98,11 +99,14 @@
                 </button>
             }
 
-            <button class="admin-icon-btn no-print"
-                    type="button"
-                    onclick="window.print()">
-                Print
-            </button>
+            @if (canUsePrintTools)
+            {
+                <button class="admin-icon-btn no-print"
+                        type="button"
+                        onclick="window.print()">
+                    Print
+                </button>
+            }
 
             <div class="admin-theme-switcher no-print" aria-label="Theme selector">
                 <button type="button" data-admin-theme="system" onclick="setAdminTheme('system')">System</button>

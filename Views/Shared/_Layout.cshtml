@@ -70,10 +70,10 @@ html[data-theme="white"] {
     --app-input-disabled: #eef2f7;
     --app-input-disabled-text: #6b7280;
     --app-muted: #6b7280;
-    --app-link: #2563eb;
-    --app-primary: #2563eb;
-    --app-primary-hover: #1d4ed8;
-    --app-nav: linear-gradient(135deg, #ffffff, #eef2ff 55%, #dbeafe);
+    --app-link: #3858d6;
+    --app-primary: #3858d6;
+    --app-primary-hover: #2843b2;
+    --app-nav: linear-gradient(135deg, #ffffff, #edf4f7 55%, #eaf0ff);
     --app-nav-text: #111827;
     --app-accent: #2563eb;
     --app-accent-strong: #0f766e;
@@ -88,20 +88,21 @@ html[data-theme="white"] {
 }
 
 html[data-theme="dark"] {
-    --app-bg: #20212a;
+    color-scheme: dark;
+    --app-bg: #101722;
     --app-text: #f8fafc;
-    --app-card: #2a2c38;
+    --app-card: #182233;
     --app-card-text: #ffffff;
-    --app-input: #343746;
+    --app-input: #20293a;
     --app-input-text: #ffffff;
-    --app-input-border: #6b7280;
-    --app-input-disabled: #292c36;
+    --app-input-border: #526174;
+    --app-input-disabled: #1a2231;
     --app-input-disabled-text: #d1d5db;
     --app-muted: #cbd5e1;
     --app-link: #bfdbfe;
-    --app-primary: #5b5bd6;
-    --app-primary-hover: #4b4dbf;
-    --app-nav: linear-gradient(135deg, #262737, #7a3153 58%, #2f7c82);
+    --app-primary: #7a8cff;
+    --app-primary-hover: #6375e6;
+    --app-nav: linear-gradient(135deg, #121a29, #20314a 58%, #0f6972);
     --app-nav-text: #f9fafb;
     --app-accent: #ffd166;
     --app-accent-strong: #2dd4bf;
@@ -112,36 +113,36 @@ html[data-theme="dark"] {
     --app-popup-text: #f9fafb;
     --app-popup-muted: #cbd5e1;
     --app-popup-backdrop: linear-gradient(135deg, rgba(38, 39, 55, 0.82), rgba(122, 49, 83, 0.64)), rgba(0, 0, 0, 0.52);
-    --app-profile-bg: linear-gradient(135deg, #252637, #4c2d45, #2f7c82);
+    --app-profile-bg: linear-gradient(135deg, #111827, #20314a, #0f6972);
 }
 
 html[data-theme="cinema"] {
     color-scheme: light;
-    --app-bg: #f7ead2;
-    --app-text: #2d2118;
-    --app-card: #fff9ea;
-    --app-card-text: #2d2118;
-    --app-input: #fffdf6;
-    --app-input-text: #2d2118;
-    --app-input-border: #d9bd8c;
-    --app-input-disabled: #efe0c5;
-    --app-input-disabled-text: #6f604c;
-    --app-muted: #745f46;
-    --app-link: #7a2f23;
-    --app-primary: #a33d2d;
-    --app-primary-hover: #812e22;
-    --app-nav: linear-gradient(135deg, #fff2c9 0%, #d99a3d 36%, #9f3b2d 68%, #246f70 100%);
-    --app-nav-text: #24170f;
-    --app-accent: #d99a3d;
-    --app-accent-strong: #246f70;
-    --app-danger: #b93535;
-    --app-page-surface: #fff8e8;
-    --app-page-text: #2d2118;
-    --app-popup-surface: #fff8e8;
-    --app-popup-text: #2d2118;
-    --app-popup-muted: #745f46;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 242, 201, 0.86), rgba(217, 154, 61, 0.54), rgba(36, 111, 112, 0.38)), rgba(45, 33, 24, 0.22);
-    --app-profile-bg: radial-gradient(circle at 14% 4%, rgba(217, 154, 61, 0.32), transparent 32%), radial-gradient(circle at 88% 14%, rgba(36, 111, 112, 0.18), transparent 28%), linear-gradient(135deg, #f7ead2, #fff8e8 48%, #ead0a4);
+    --app-bg: #eef6f2;
+    --app-text: #182536;
+    --app-card: #fffefa;
+    --app-card-text: #182536;
+    --app-input: #ffffff;
+    --app-input-text: #182536;
+    --app-input-border: #b7c8cc;
+    --app-input-disabled: #e5ece9;
+    --app-input-disabled-text: #5f6f76;
+    --app-muted: #526274;
+    --app-link: #0f7f8a;
+    --app-primary: #e45d48;
+    --app-primary-hover: #c54835;
+    --app-nav: linear-gradient(135deg, #fff8df 0%, #f0bd4f 28%, #e45d48 62%, #168f98 100%);
+    --app-nav-text: #172033;
+    --app-accent: #f0bd4f;
+    --app-accent-strong: #168f98;
+    --app-danger: #bd3e4b;
+    --app-page-surface: #fffefa;
+    --app-page-text: #182536;
+    --app-popup-surface: #fffefa;
+    --app-popup-text: #182536;
+    --app-popup-muted: #526274;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 248, 223, 0.84), rgba(240, 189, 79, 0.5), rgba(22, 143, 152, 0.34)), rgba(24, 37, 54, 0.2);
+    --app-profile-bg: radial-gradient(circle at 14% 4%, rgba(240, 189, 79, 0.34), transparent 32%), radial-gradient(circle at 88% 14%, rgba(22, 143, 152, 0.2), transparent 28%), linear-gradient(135deg, #eef6f2, #fff8df 48%, #f3d0bf);
 }
 
 body {
@@ -149,6 +150,12 @@ body {
     color: var(--app-text);
     font-family: 'Segoe UI', sans-serif;
     transition: background 0.2s ease, color 0.2s ease;
+}
+
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .card {

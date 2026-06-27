@@ -2,9 +2,19 @@
 
 @{
     ViewData["Title"]="Developer Profile";
+    var canEdit = ViewBag.CanEditDeveloperProfile as bool? ?? false;
 }
 
 <section class="developer-page">
+
+@if(TempData["Success"] != null)
+{
+<div class="alert alert-success">@TempData["Success"]</div>
+}
+@if(TempData["Error"] != null)
+{
+<div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 <div class="developer-hero">
 
@@ -167,6 +177,109 @@ Website
 </div>
 
 
+@if(canEdit)
+{
+<div class="developer-edit-panel">
+<div class="developer-edit-header">
+<h2>Edit Developer Profile</h2>
+<p>Changes are saved directly to the database profile record.</p>
+</div>
+
+<form asp-action="Update" method="post" class="developer-edit-form">
+@Html.AntiForgeryToken()
+<input type="hidden" asp-for="DeveloperId" />
+
+<div class="dev-form-grid">
+<label>
+<span>Full Name</span>
+<input asp-for="FullName" class="form-control" />
+</label>
+<label>
+<span>Email</span>
+<input asp-for="Email" class="form-control" />
+</label>
+<label>
+<span>Phone</span>
+<input asp-for="Phone" class="form-control" />
+</label>
+<label>
+<span>Experience Years</span>
+<input asp-for="ExperienceYears" class="form-control" type="number" min="0" />
+</label>
+<label>
+<span>Profile Image URL</span>
+<input asp-for="ProfileImage" class="form-control" />
+</label>
+<label>
+<span>Resume URL</span>
+<input asp-for="ResumeUrl" class="form-control" />
+</label>
+<label class="dev-form-wide">
+<span>Bio</span>
+<textarea asp-for="Bio" class="form-control" rows="3"></textarea>
+</label>
+<label class="dev-form-wide">
+<span>Address</span>
+<textarea asp-for="Address" class="form-control" rows="2"></textarea>
+</label>
+<label class="dev-form-wide">
+<span>Skills</span>
+<textarea asp-for="Skills" class="form-control" rows="3"></textarea>
+</label>
+<label class="dev-form-wide">
+<span>Education</span>
+<textarea asp-for="Education" class="form-control" rows="3"></textarea>
+</label>
+<label class="dev-form-wide">
+<span>Projects</span>
+<textarea asp-for="Projects" class="form-control" rows="3"></textarea>
+</label>
+<label class="dev-form-wide">
+<span>Technologies</span>
+<textarea asp-for="Technologies" class="form-control" rows="3"></textarea>
+</label>
+<label class="dev-form-wide">
+<span>Achievements</span>
+<textarea asp-for="Achievements" class="form-control" rows="3"></textarea>
+</label>
+<label>
+<span>GitHub URL</span>
+<input asp-for="GitHubUrl" class="form-control" />
+</label>
+<label>
+<span>LinkedIn URL</span>
+<input asp-for="LinkedInUrl" class="form-control" />
+</label>
+<label>
+<span>Twitter URL</span>
+<input asp-for="TwitterUrl" class="form-control" />
+</label>
+<label>
+<span>Instagram URL</span>
+<input asp-for="InstagramUrl" class="form-control" />
+</label>
+<label>
+<span>Facebook URL</span>
+<input asp-for="FacebookUrl" class="form-control" />
+</label>
+<label>
+<span>YouTube URL</span>
+<input asp-for="YoutubeUrl" class="form-control" />
+</label>
+<label class="dev-form-wide">
+<span>Website URL</span>
+<input asp-for="WebsiteUrl" class="form-control" />
+</label>
+</div>
+
+<div class="developer-edit-actions">
+<button type="submit" class="resume-btn">Update Profile</button>
+</div>
+</form>
+</div>
+}
+
+
 
 <div class="resume-section">
 
@@ -198,7 +311,7 @@ class="back-btn">
 
 .developer-page{
 
-padding:30px;
+padding:clamp(16px, 3vw, 30px);
 min-height:100vh;
 
 background:
@@ -211,12 +324,13 @@ color:var(--app-text);
 .developer-hero{
 
 display:flex;
+flex-wrap:wrap;
 justify-content:space-between;
 gap:40px;
 
-padding:35px;
+padding:clamp(20px, 3vw, 35px);
 
-border-radius:25px;
+border-radius:8px;
 
 background:var(--app-card);
 border:1px solid var(--app-input-border);
@@ -231,7 +345,7 @@ margin-bottom:30px;
 .profile-left{
 
 text-align:center;
-width:300px;
+width:min(300px, 100%);
 }
 
 
@@ -279,6 +393,7 @@ background:var(--app-primary);
 border-radius:20px;
 
 font-weight:700;
+color:#fff;
 }
 
 
@@ -298,8 +413,8 @@ display:grid;
 
 grid-template-columns:
 repeat(
-3,
-1fr
+auto-fit,
+minmax(130px,1fr)
 );
 
 gap:15px;
@@ -343,8 +458,8 @@ display:grid;
 
 grid-template-columns:
 repeat(
-2,
-1fr
+auto-fit,
+minmax(260px,1fr)
 );
 
 gap:20px;
@@ -355,11 +470,12 @@ gap:20px;
 
 padding:25px;
 
-border-radius:25px;
+border-radius:8px;
 
 background:var(--app-card);
 border:1px solid var(--app-input-border);
 color:var(--app-card-text);
+overflow-wrap:anywhere;
 
 backdrop-filter:blur(20px);
 
@@ -389,6 +505,67 @@ rgba(
 margin-bottom:20px;
 
 color:var(--app-primary);
+font-size:1.08rem;
+font-weight:800;
+}
+
+.developer-edit-panel{
+margin-top:24px;
+padding:clamp(18px, 3vw, 28px);
+border-radius:8px;
+background:var(--app-card);
+border:1px solid var(--app-input-border);
+color:var(--app-card-text);
+box-shadow:0 18px 44px rgba(15,23,42,.1);
+}
+
+.developer-edit-header{
+display:flex;
+justify-content:space-between;
+gap:16px;
+align-items:flex-end;
+margin-bottom:18px;
+}
+
+.developer-edit-header h2{
+margin:0;
+font-size:1.35rem;
+font-weight:850;
+}
+
+.developer-edit-header p{
+margin:0;
+color:var(--app-muted);
+font-weight:650;
+}
+
+.dev-form-grid{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:14px;
+}
+
+.dev-form-grid label{
+display:grid;
+gap:7px;
+min-width:0;
+font-weight:800;
+color:var(--app-card-text);
+}
+
+.dev-form-grid span{
+font-size:.82rem;
+color:var(--app-muted);
+}
+
+.dev-form-wide{
+grid-column:1 / -1;
+}
+
+.developer-edit-actions{
+display:flex;
+justify-content:flex-end;
+margin-top:18px;
 }
 
 
@@ -462,6 +639,12 @@ translateY(-5px);
 .developer-hero{
 
 flex-direction:column;
+gap:22px;
+}
+
+.profile-left,
+.profile-right{
+width:100%;
 }
 
 .social-grid{
@@ -479,6 +662,34 @@ grid-template-columns:
 1fr;
 }
 
+.dev-form-grid{
+grid-template-columns:1fr;
+}
+
+.developer-edit-header,
+.resume-section{
+display:grid;
+align-items:start;
+}
+
+}
+
+@@media(max-width:520px)
+{
+.profile-image{
+width:140px;
+height:140px;
+}
+
+.profile-left h1{
+font-size:1.55rem;
+}
+
+.resume-btn,
+.back-btn{
+width:100%;
+text-align:center;
+}
 }
 
 </style>

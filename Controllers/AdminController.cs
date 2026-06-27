@@ -279,33 +279,7 @@ FailedRefunds =
 
       public IActionResult Permissions()
         {
-            EnsurePermissionSeedData();
-
-            ViewBag.Roles = _context.Roles
-                .AsNoTracking()
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.RoleName)
-                .ToList();
-
-            ViewBag.Modules = _context.ApplicationModules
-                .AsNoTracking()
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.DisplayOrder)
-                .ThenBy(x => x.ModuleName)
-                .ToList();
-
-            ViewBag.RolePermissionIds = _context.RolePermissions
-                .AsNoTracking()
-                .Select(x => $"{x.RoleId}:{x.PermissionId}")
-                .ToHashSet();
-
-            var permissions = _context.Permissions
-                .AsNoTracking()
-                .OrderBy(x => x.ModuleId)
-                .ThenBy(x => x.ActionType)
-                .ToList();
-
-            return View(permissions);
+            return NotFound();
         }
 
         [HttpPost]
@@ -2963,7 +2937,7 @@ private void EnsurePermissionSeedData()
         ("ADMIN", "Admin Dashboard", "/Admin/Dashboard", 10),
         ("USER", "Users and Profiles", "/Admin/Users", 20),
         ("ROLE", "Roles", "/Admin/Roles", 30),
-        ("PERMISSION", "Permissions", "/Admin/Permissions", 40),
+        ("PERMISSION", "Permissions", "/Admin/Roles", 40),
         ("SHOW", "Manage Shows", "/Admin/ManageShows", 50),
         ("BOOKING", "Bookings and Tickets", "/Admin/Bookings", 60),
         ("PAYMENT", "Payments", "/Admin/Transactions", 70),
@@ -2974,7 +2948,7 @@ private void EnsurePermissionSeedData()
         ("ANALYTICS", "Analytics", "/Admin/Dashboard", 120),
         ("SUPPORT", "Support", "/Admin/UserAccess", 130),
         ("SCANNER", "Ticket Scanner", "/Admin/Security", 140),
-        ("DEVELOPER", "Developer Editor", "/Admin/Permissions", 150)
+        ("DEVELOPER", "Developer Editor", "/Developer/Index", 150)
     };
 
     foreach (var module in modules)
@@ -2992,6 +2966,21 @@ private void EnsurePermissionSeedData()
                 CreatedAt = DateTime.UtcNow
             });
         }
+    }
+
+    foreach (var module in modules)
+    {
+        var existing =
+            _context.ApplicationModules
+            .FirstOrDefault(x => x.ModuleCode == module.Item1);
+
+        if (existing == null)
+        {
+            continue;
+        }
+
+        existing.RoutePath = module.Item3;
+        existing.DisplayOrder = module.Item4;
     }
 
     _context.SaveChanges();

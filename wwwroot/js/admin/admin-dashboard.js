@@ -6,11 +6,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const clear = document.getElementById("adminSearchClear");
 
     if (shell && toggle) {
+        const refreshToggleLabel = () => {
+            const isCompact = window.matchMedia("(max-width: 820px)").matches;
+            const classOn = shell.classList.contains("nav-collapsed");
+            const navVisible = isCompact ? classOn : !classOn;
+            toggle.setAttribute("aria-expanded", String(navVisible));
+            toggle.textContent = navVisible ? "Menu" : "Show Menu";
+        };
+
         toggle.addEventListener("click", () => {
-            const isCollapsed = shell.classList.toggle("nav-collapsed");
-            toggle.setAttribute("aria-expanded", String(!isCollapsed));
-            toggle.textContent = isCollapsed ? "☰ Show Menu" : "☰ Menu";
+            shell.classList.toggle("nav-collapsed");
+            refreshToggleLabel();
         });
+
+        window.addEventListener("resize", refreshToggleLabel);
+        refreshToggleLabel();
     }
 
     const searchableItems = [

@@ -1,5 +1,6 @@
 @model AmarShowsBook.Models.Admin.VwRefundSummary
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -85,10 +86,13 @@
 
         <div class="top-actions">
 
-            <button onclick="window.print()"
-                    class="print-btn">
-                Print / Save PDF
-            </button>
+            @if(AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService))
+            {
+                <button onclick="window.print()"
+                        class="print-btn">
+                    Print / Save PDF
+                </button>
+            }
 
             <a href="/Admin/Refunds"
                class="back-btn">

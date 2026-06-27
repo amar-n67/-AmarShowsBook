@@ -1,7 +1,9 @@
 @model AmarShowsBook.Models.ShowSchedule
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"]="Seat Booking";
+    var canUsePrintTools = AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 
     var title=
     Model.Type=="Movie"
@@ -78,7 +80,10 @@ Seat Shot
 </div>
 
 <div class="booking-hero-actions no-print">
+    @if(canUsePrintTools)
+    {
     <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+    }
     <a
     href="/Home/Index?type=@Model.Type"
     class="btn btn-secondary">

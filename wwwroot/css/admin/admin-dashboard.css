@@ -13,15 +13,15 @@
 }
 
 html[data-theme="white"] {
-    --admin-ink: #111827;
-    --admin-muted: #4b5563;
-    --admin-panel: rgba(255, 255, 255, 0.96);
+    --admin-ink: #172033;
+    --admin-muted: #566275;
+    --admin-panel: rgba(255, 255, 255, 0.97);
     --admin-panel-strong: #ffffff;
-    --admin-line: rgba(17, 24, 39, 0.14);
-    --admin-gold: #2563eb;
-    --admin-rose: #1d4ed8;
-    --admin-teal: #0f766e;
-    --admin-night: #111827;
+    --admin-line: rgba(23, 32, 51, 0.14);
+    --admin-gold: #c8962d;
+    --admin-rose: #3858d6;
+    --admin-teal: #047c89;
+    --admin-night: #182234;
     --admin-shadow: 0 18px 46px rgba(17, 24, 39, 0.1);
 }
 
@@ -38,30 +38,31 @@ html[data-theme="system"] {
 }
 
 html[data-theme="dark"] {
-    --admin-ink: #f8fafc;
-    --admin-muted: #cbd5e1;
-    --admin-panel: rgba(42, 44, 56, 0.94);
-    --admin-panel-strong: #303341;
-    --admin-line: rgba(248, 250, 252, 0.16);
-    --admin-gold: #ffd166;
-    --admin-rose: #7c83ff;
-    --admin-teal: #2dd4bf;
-    --admin-night: #171923;
-    --admin-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
+    color-scheme: dark;
+    --admin-ink: #f6f8fb;
+    --admin-muted: #b9c5d4;
+    --admin-panel: rgba(24, 31, 44, 0.96);
+    --admin-panel-strong: #20293a;
+    --admin-line: rgba(214, 224, 238, 0.18);
+    --admin-gold: #e3b75a;
+    --admin-rose: #7a8cff;
+    --admin-teal: #37d3c0;
+    --admin-night: #111827;
+    --admin-shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
 }
 
 html[data-theme="cinema"] {
     color-scheme: light;
-    --admin-ink: #2d2118;
-    --admin-muted: #745f46;
-    --admin-panel: rgba(255, 248, 232, 0.94);
-    --admin-panel-strong: #fffdf6;
-    --admin-line: rgba(122, 78, 29, 0.22);
-    --admin-gold: #d99a3d;
-    --admin-rose: #a33d2d;
-    --admin-teal: #246f70;
-    --admin-night: #5a3522;
-    --admin-shadow: 0 18px 46px rgba(84, 55, 25, 0.18);
+    --admin-ink: #182536;
+    --admin-muted: #526274;
+    --admin-panel: rgba(248, 250, 246, 0.94);
+    --admin-panel-strong: #fffefa;
+    --admin-line: rgba(24, 37, 54, 0.14);
+    --admin-gold: #f0bd4f;
+    --admin-rose: #e45d48;
+    --admin-teal: #168f98;
+    --admin-night: #20364a;
+    --admin-shadow: 0 20px 52px rgba(22, 59, 77, 0.18);
 }
 
 * {
@@ -165,19 +166,21 @@ html[data-theme="system"] body {
 }
 
 html[data-theme="dark"] body {
-    background: linear-gradient(125deg, #20212a, #2a2c38 52%, #263f42);
+    background: linear-gradient(125deg, #101722, #182233 52%, #172d32);
 }
 
 html[data-theme="cinema"] body {
     background:
-        radial-gradient(circle at 15% 5%, rgba(217, 154, 61, 0.32), transparent 34%),
-        radial-gradient(circle at 82% 18%, rgba(36, 111, 112, 0.18), transparent 28%),
-        linear-gradient(125deg, #f7ead2, #fff8e8 52%, #ead0a4);
+        radial-gradient(circle at 12% 6%, rgba(240, 189, 79, 0.34), transparent 32%),
+        radial-gradient(circle at 84% 12%, rgba(22, 143, 152, 0.2), transparent 28%),
+        linear-gradient(125deg, #eef6f2, #fff8df 48%, #f3d0bf);
 }
 
 .admin-wrapper {
     display: flex;
+    width: 100%;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 .admin-sidebar {
@@ -203,8 +206,8 @@ html[data-theme="system"] .admin-sidebar {
 
 html[data-theme="cinema"] .admin-sidebar {
     background:
-        linear-gradient(180deg, #5a3522 0%, #8e3d2d 45%, #d99a3d 100%),
-        repeating-linear-gradient(90deg, rgba(255, 248, 232, 0.16) 0 8px, transparent 8px 18px);
+        linear-gradient(180deg, #20364a 0%, #0f7f8a 48%, #e45d48 100%),
+        repeating-linear-gradient(90deg, rgba(255, 248, 232, 0.14) 0 8px, transparent 8px 18px);
 }
 
 .admin-wrapper.nav-collapsed .admin-sidebar {
@@ -280,12 +283,14 @@ html[data-theme="cinema"] .admin-sidebar {
     flex: 1;
     min-width: 0;
     padding: 22px clamp(18px, 3vw, 34px) 38px;
+    overflow-x: hidden;
 }
 
 .admin-topbar {
     position: sticky;
     top: 0;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
     margin: -22px calc(clamp(18px, 3vw, 34px) * -1) 24px;
@@ -302,6 +307,10 @@ html[data-theme="dark"] .admin-topbar {
 
 html[data-theme="white"] .admin-topbar {
     background: rgba(248, 250, 252, 0.88);
+}
+
+html[data-theme="cinema"] .admin-topbar {
+    background: rgba(246, 249, 242, 0.9);
 }
 
 .admin-icon-btn,
@@ -349,7 +358,9 @@ html[data-theme="white"] .admin-topbar {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1 1 280px;
     width: min(520px, 100%);
+    min-width: 220px;
     margin-left: auto;
     padding: 0 10px 0 14px;
     min-height: 42px;
@@ -384,6 +395,8 @@ html[data-theme="white"] .admin-topbar {
 
 .admin-theme-switcher {
     display: inline-flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
     padding: 4px;
@@ -416,6 +429,7 @@ html[data-theme="white"] .admin-topbar {
 .admin-page-header,
 .admin-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
     gap: 18px;
@@ -502,6 +516,7 @@ html[data-theme="white"] .admin-topbar {
 
 .table-wrapper {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     border: 1px solid var(--admin-line);
     border-radius: 8px;
@@ -511,6 +526,7 @@ html[data-theme="white"] .admin-topbar {
 
 .admin-table {
     width: 100%;
+    min-width: 760px;
     margin: 0;
     border-collapse: collapse;
     background: transparent;
@@ -537,6 +553,7 @@ html[data-theme="white"] .admin-topbar {
     border-color: rgba(23,25,35,0.08);
     color: var(--admin-ink);
     font-size: 0.9rem;
+    overflow-wrap: anywhere;
 }
 
 .admin-table tbody tr[hidden],
@@ -682,7 +699,8 @@ html[data-theme="white"] .admin-topbar {
 }
 
 .admin-filter-panel {
-    margin: 18px 24px 0;
+    margin: 0 0 18px;
+    overflow: visible;
 }
 
 .admin-detail-grid {
@@ -756,6 +774,109 @@ html[data-theme="white"] .admin-topbar {
     grid-template-columns: minmax(150px, 1fr) auto;
     gap: 8px;
     align-items: center;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-grid,
+    .stats-grid,
+    .admin-detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-sidebar {
+        width: 236px;
+    }
+}
+
+@media (max-width: 820px) {
+    html {
+        font-size: 14px;
+    }
+
+    .admin-wrapper {
+        display: block;
+    }
+
+    .admin-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(82vw, 300px);
+        height: 100vh;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-sidebar {
+        width: min(82vw, 300px);
+        padding: 22px 18px;
+    }
+
+    .admin-wrapper:not(.nav-collapsed) .admin-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .admin-wrapper.nav-collapsed .admin-sidebar {
+        transform: translateX(0);
+        box-shadow: 18px 0 46px rgba(23, 25, 35, 0.28);
+    }
+
+    .admin-main {
+        padding: 18px 14px 32px;
+    }
+
+    .admin-topbar {
+        margin: -18px -14px 18px;
+        padding: 12px 14px;
+    }
+
+    .admin-search,
+    .admin-theme-switcher {
+        order: 10;
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .admin-theme-switcher {
+        justify-content: space-between;
+    }
+
+    .admin-page-header,
+    .admin-header,
+    .transaction-detail-hero {
+        align-items: stretch;
+    }
+
+    .admin-actions,
+    .admin-page-header > .admin-actions {
+        width: 100%;
+    }
+
+    .admin-page-back {
+        width: 100%;
+    }
+}
+
+@media (max-width: 560px) {
+    .dashboard-grid,
+    .stats-grid,
+    .admin-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-detail-panel {
+        padding: 16px;
+    }
+
+    .admin-detail-list {
+        grid-template-columns: 1fr;
+        gap: 4px 0;
+    }
+
+    .admin-icon-btn,
+    .admin-back-btn,
+    .admin-action-btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-inline: 10px;
+    }
 }
 
 .admin-error-cell {

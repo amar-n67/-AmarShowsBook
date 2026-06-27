@@ -25,5 +25,16 @@ namespace AmarShowsBook.Helpers
                 actionType
             );
         }
+
+        public static bool CanUsePrintTools(
+            HttpContext context,
+            RbacService rbacService)
+        {
+            var userIdText =
+                context.Session.GetString("UserId");
+
+            return int.TryParse(userIdText, out int userId) &&
+                rbacService.CanUsePrintTools(userId);
+        }
     }
 }

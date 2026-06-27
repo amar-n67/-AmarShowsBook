@@ -113,6 +113,7 @@ pattern:
 );
 
 EnsureApplicationVersionTable(app);
+EnsureDeveloperProfileStore(app);
 
 
 // ========================================
@@ -384,6 +385,102 @@ WHERE NOT EXISTS
         app.Logger.LogWarning(
         ex,
         "Application version schema check skipped"
+        );
+    }
+}
+
+static void EnsureDeveloperProfileStore(WebApplication app)
+{
+    using var scope =
+    app.Services.CreateScope();
+
+    try
+    {
+        var context =
+        scope.ServiceProvider
+        .GetRequiredService<
+        ApplicationDbContext>();
+
+        context.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS public.developer_profiles
+(
+    developer_id integer PRIMARY KEY DEFAULT 1,
+    full_name text,
+    email text,
+    phone text,
+    bio text,
+    address text,
+    experience_years integer NOT NULL DEFAULT 0,
+    skills text,
+    education text,
+    projects text,
+    technologies text,
+    achievements text,
+    resume_url text,
+    profile_image text,
+    github_url text,
+    linked_in_url text,
+    twitter_url text,
+    instagram_url text,
+    facebook_url text,
+    youtube_url text,
+    website_url text,
+    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_developer_profiles_single_row CHECK (developer_id = 1)
+);
+
+INSERT INTO public.developer_profiles
+(
+    developer_id,
+    full_name,
+    email,
+    bio,
+    experience_years
+)
+SELECT
+    1,
+    'Amar',
+    'example@gmail.com',
+    'Developer Profile',
+    0
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.developer_profiles
+    WHERE developer_id = 1
+);
+
+CREATE OR REPLACE VIEW public.""vwDeveloperProfile"" AS
+SELECT
+    developer_id AS ""DeveloperId"",
+    full_name AS ""FullName"",
+    email AS ""Email"",
+    phone AS ""Phone"",
+    bio AS ""Bio"",
+    address AS ""Address"",
+    experience_years AS ""ExperienceYears"",
+    skills AS ""Skills"",
+    education AS ""Education"",
+    projects AS ""Projects"",
+    technologies AS ""Technologies"",
+    achievements AS ""Achievements"",
+    resume_url AS ""ResumeUrl"",
+    profile_image AS ""ProfileImage"",
+    github_url AS ""GitHubUrl"",
+    linked_in_url AS ""LinkedInUrl"",
+    twitter_url AS ""TwitterUrl"",
+    instagram_url AS ""InstagramUrl"",
+    facebook_url AS ""FacebookUrl"",
+    youtube_url AS ""YoutubeUrl"",
+    website_url AS ""WebsiteUrl""
+FROM public.developer_profiles;
+");
+    }
+    catch(Exception ex)
+    {
+        app.Logger.LogWarning(
+        ex,
+        "Developer profile schema check skipped"
         );
     }
 }
