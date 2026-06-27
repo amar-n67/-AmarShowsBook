@@ -1,5 +1,6 @@
 using AmarShowsBook.Data;
 using AmarShowsBook.Filters;
+using AmarShowsBook.Helpers;
 using AmarShowsBook.Models;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -48,7 +49,8 @@ builder.Services.AddSession();
 // ========================================
 
 var connectionString =
-GetDatabaseConnectionString(builder.Configuration);
+DatabaseConnectionStringResolver.GetDatabaseConnectionString(
+builder.Configuration);
 
 if(
 !connectionString.Contains(
@@ -276,59 +278,6 @@ ex,
 });
 
 app.Run();
-
-static string GetDatabaseConnectionString(IConfiguration configuration)
-{
-    var databaseUrl =
-    Environment.GetEnvironmentVariable("DATABASE_URL");
-
-    if(!string.IsNullOrWhiteSpace(databaseUrl))
-    {
-        return ConvertPostgresUrlToConnectionString(databaseUrl);
-    }
-
-    return configuration.GetConnectionString(
-    "DefaultConnection")
-    ?? "";
-}
-
-static string ConvertPostgresUrlToConnectionString(string databaseUrl)
-{
-    var uri =
-    new Uri(databaseUrl);
-
-    var userInfo =
-    uri.UserInfo.Split(
-    ':',
-    2);
-
-    var username =
-    Uri.UnescapeDataString(
-    userInfo.ElementAtOrDefault(0)
-    ?? "");
-
-    var password =
-    Uri.UnescapeDataString(
-    userInfo.ElementAtOrDefault(1)
-    ?? "");
-
-    var database =
-    Uri.UnescapeDataString(
-    uri.AbsolutePath.TrimStart('/'));
-
-    var builder =
-    new Npgsql.NpgsqlConnectionStringBuilder
-    {
-        Host = uri.Host,
-        Port = uri.Port > 0 ? uri.Port : 5432,
-        Database = database,
-        Username = username,
-        Password = password,
-        SslMode = Npgsql.SslMode.Require
-    };
-
-    return builder.ConnectionString;
-}
 
 static void EnsureApplicationVersionTable(WebApplication app)
 {

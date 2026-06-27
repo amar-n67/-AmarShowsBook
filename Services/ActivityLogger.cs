@@ -4,6 +4,7 @@
 // =========================================================
 namespace AmarShowsBook.Services
 {
+using AmarShowsBook.Helpers;
 using NpgsqlTypes;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
@@ -65,7 +66,8 @@ public class ActivityLogger : IActivityLogger
             var userAgent = context?.Request?.Headers["User-Agent"].ToString();
 
             var connectionString =
-                _configuration.GetConnectionString("DefaultConnection");
+                DatabaseConnectionStringResolver
+                .GetDatabaseConnectionString(_configuration);
 
             await using var connection = new NpgsqlConnection(connectionString);
 
