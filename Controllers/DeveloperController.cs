@@ -10,13 +10,16 @@ namespace AmarShowsBook.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly RbacService _rbacService;
+        private readonly IWebHostEnvironment _environment;
 
         public DeveloperController(
             ApplicationDbContext context,
-            RbacService rbacService)
+            RbacService rbacService,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _rbacService = rbacService;
+            _environment = environment;
         }
 
         public IActionResult Index()
@@ -42,7 +45,7 @@ namespace AmarShowsBook.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(DeveloperVM model)
+        public async Task<IActionResult> Update(DeveloperVM model, IFormFile? profilePhoto)
         {
             if (!CanEditDeveloperProfile())
             {
@@ -51,6 +54,18 @@ namespace AmarShowsBook.Controllers
             }
 
             EnsureDeveloperProfileStore();
+
+            if (profilePhoto != null && profilePhoto.Length > 0)
+            {
+                var imagePath = await SaveProfilePhoto(profilePhoto);
+                if (string.IsNullOrWhiteSpace(imagePath))
+                {
+                    TempData["Error"] = "Scene cut: upload a valid JPG, PNG, WEBP, or GIF profile photo.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                model.ProfileImage = imagePath;
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
 INSERT INTO public.developer_profiles
@@ -128,7 +143,7 @@ DO UPDATE SET
     updated_at = CURRENT_TIMESTAMP;
 ");
 
-            TempData["Success"] = "Developer profile updated.";
+            TempData["Success"] = "Profile reel updated. The new developer scene is live.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -139,7 +154,41 @@ DO UPDATE SET
 
             return int.TryParse(userIdText, out var userId) &&
                 (_rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER", "DEVELOPER") ||
-                 _rbacService.HasPermissionStrict(userId, "DEVELOPER", "EDIT"));
+                 _rbacService.HasPermission(userId, "DEVELOPER", "EDIT"));
+        }
+
+        private async Task<string?> SaveProfilePhoto(IFormFile profilePhoto)
+        {
+            if (!profilePhoto.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var extension = Path.GetExtension(profilePhoto.FileName).ToLowerInvariant();
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".webp",
+                ".gif"
+            };
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                return null;
+            }
+
+            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            await using var stream = System.IO.File.Create(filePath);
+            await profilePhoto.CopyToAsync(stream);
+
+            return $"/uploads/{fileName}";
         }
 
         private void EnsureDeveloperProfileStore()

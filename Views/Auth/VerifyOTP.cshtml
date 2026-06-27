@@ -25,7 +25,18 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const error = "@ViewBag.Error";
+            const message = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Message as string ?? ""));
+            const devOtp = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DevOtp as string ?? ""));
             if (error) showCinemaPopup(error, "error");
+            if (message) {
+                const popupMessage = devOtp
+                    ? `${message}\nDevelopment OTP: ${devOtp}`
+                    : message;
+                showCinemaPopup(popupMessage, "success", {
+                    title: "Secret Code Sent",
+                    okText: "Enter Code"
+                });
+            }
         });
     </script>
 }

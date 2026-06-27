@@ -11,22 +11,6 @@
     var userName = Context.Session.GetString("UserName") ?? "Artist";
     var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
     var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
-    var currentVersion = "1.0.0";
-
-    try
-    {
-        currentVersion = ((AmarShowsBook.Data.ApplicationDbContext)ViewContext.HttpContext.RequestServices
-            .GetService(typeof(AmarShowsBook.Data.ApplicationDbContext))!)
-            .ApplicationVersions
-            .OrderByDescending(x => x.IsCurrent)
-            .ThenByDescending(x => x.UpdatedAt)
-            .Select(x => x.VersionNumber)
-            .FirstOrDefault() ?? currentVersion;
-    }
-    catch
-    {
-        currentVersion = "1.0.0";
-    }
 }
 
 <section class="showtime-page">
@@ -35,7 +19,6 @@
             <span class="showtime-kicker">Now Rolling</span>
             <h1>showTime</h1>
             <p>@userName, your @userLanguage track and @userGenre mood are on the board.</p>
-            <small class="home-version-label">Version @currentVersion</small>
         </div>
         <div class="showtime-ticket">
             <span>@userLanguage</span>
@@ -348,16 +331,6 @@ Book Ticket
         display: block;
         color: inherit;
         font-size: 1.2rem;
-    }
-    
-    .home-version-label {
-        display: inline-flex;
-        margin-top: 12px;
-        padding: 5px 10px;
-        border: 1px solid color-mix(in srgb, var(--app-nav-text) 22%, transparent);
-        border-radius: 999px;
-        color: inherit;
-        font-weight: 900;
     }
     
     .showtime-controls {
@@ -867,16 +840,6 @@ Book Ticket
         display: block;
         color: inherit;
         font-size: 1.2rem;
-    }
-    
-    .home-version-label {
-        display: inline-flex;
-        margin-top: 12px;
-        padding: 5px 10px;
-        border: 1px solid color-mix(in srgb, var(--app-nav-text) 22%, transparent);
-        border-radius: 999px;
-        color: inherit;
-        font-weight: 900;
     }
     
     .showtime-controls {

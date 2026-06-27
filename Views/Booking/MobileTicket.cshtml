@@ -17,6 +17,23 @@ var venue = venueInfo!=null
     : schedule?.Location?.Area ?? "Venue to be announced";
 var amount = summary?.PayableAmount ?? summary?.TotalAmount ?? Model.TotalAmount;
 var status = summary?.BookingStatus ?? Model.Status;
+string? posterUrl = Convert.ToString(schedule?.Movie?.PosterUrl
+    ?? schedule?.StandupShow?.PosterUrl
+    ?? schedule?.LiveStream?.PosterUrl);
+string? imageList = Convert.ToString(schedule?.Movie?.Images
+    ?? schedule?.StandupShow?.Images
+    ?? schedule?.LiveStream?.Images);
+
+if (string.IsNullOrWhiteSpace(posterUrl) && !string.IsNullOrWhiteSpace(imageList))
+{
+    posterUrl = imageList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => x.Trim())
+        .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+}
+
+posterUrl = string.IsNullOrWhiteSpace(posterUrl)
+    ? "/images/default1.jpg"
+    : posterUrl;
 }
 
 <style>
@@ -80,6 +97,15 @@ border:1px dashed var(--app-input-border);
 border-radius:8px;
 padding:18px;
 background:color-mix(in srgb, var(--app-card) 86%, var(--app-primary));
+}
+
+.ticket-poster{
+width:100%;
+aspect-ratio:16/10;
+border-radius:8px;
+object-fit:cover;
+border:1px solid var(--app-input-border);
+box-shadow:0 10px 26px rgba(0,0,0,.14);
 }
 
 
@@ -204,6 +230,8 @@ translateY(0);
 </div>
 
 <div class="content">
+
+<img class="ticket-poster" src="@posterUrl" alt="@title poster" />
 
 <div class="ticket-stub">
 <div class="row">

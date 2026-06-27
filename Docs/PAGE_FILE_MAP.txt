@@ -1,0 +1,220 @@
+AmarShowsBook page and file map
+Updated: 2026-06-27
+
+Purpose
+This guide explains where each user-facing page lives, which controller action serves it, and which supporting model or asset files are commonly involved. The project keeps ASP.NET MVC conventions: Controllers hold route logic, Views hold Razor markup, Models hold database/view models, Services hold reusable business checks, and wwwroot holds public CSS/JS/uploads.
+
+Shared layout and global assets
+- Views/Shared/_Layout.cshtml
+  Main application shell, navbar, theme switcher, session popup, cinema popup, global scripts, and version badge.
+- Views/Shared/_AdminLayout.cshtml
+  Admin shell and admin theme switcher.
+- wwwroot/css/site.css
+  Public site-level CSS loaded after Bootstrap.
+- wwwroot/js/site.js
+  Public site-level JavaScript.
+- wwwroot/uploads/
+  User and developer uploaded images.
+
+Authentication pages
+- /Auth/Login
+  Controller: Controllers/AuthController.cs
+  View: Views/Auth/Login.cshtml
+  Purpose: Login, password validation, theme-aware auth card.
+- /Auth/Signup
+  Controller: Controllers/AuthController.cs
+  View: Views/Auth/Signup.cshtml
+  Purpose: Register user and set default role.
+- /Auth/ForgotPassword
+  Controller: Controllers/AuthController.cs
+  View: Views/Auth/ForgotPassword.cshtml
+  Purpose: Start reset-password OTP flow.
+- /Auth/SendOTP
+  Controller: Controllers/AuthController.cs
+  View after post: Views/Auth/VerifyOTP.cshtml
+  Purpose: Sends reset OTP and shows dev OTP popup when configured.
+- /Auth/VerifyOTP
+  Controller: Controllers/AuthController.cs
+  View: Views/Auth/VerifyOTP.cshtml
+  Purpose: Validate reset OTP.
+- /Auth/ResetPassword
+  Controller: Controllers/AuthController.cs
+  View: Views/Auth/ResetPassword.cshtml
+  Purpose: Save new password.
+
+Home and show discovery
+- /Home/Index
+  Controller: Controllers/HomeController.cs
+  View: Views/Home/Index.cshtml
+  Model: Models/ViewModels/HomeViewModel.cs and HomeShowViewModel.cs
+  Data view: public.vw_home_show_listing, mapped in Data/ApplicationDbContext.cs
+  Purpose: Show listing, category tabs, location filters, poster/image strip, trailer button, seat booking entry.
+- /Home/ShowDates
+  Controller: Controllers/HomeController.cs
+  View: Views/Home/ShowDates.cshtml
+  Purpose: Select available show dates.
+- /Home/ShowTimes
+  Controller: Controllers/HomeController.cs
+  View: Views/Home/ShowTimes.cshtml
+  Purpose: Select available show times.
+
+Booking and tickets
+- /Booking/Seats/{scheduleId}
+  Controller: Controllers/BookingController.cs
+  View: Views/Booking/Seats.cshtml
+  Models: BookingDraft, ShowSchedule, ScreenSeat, SeatLock
+  Purpose: Seat map, seat locking, booking draft creation.
+- /Booking/Payment
+  Controller: Controllers/BookingController.cs
+  View: Views/Booking/Payment.cshtml
+  Models: BookingDraft, PaymentSession, Transaction
+  Purpose: Payment method selection, wallet/coupon usage, QR status checks.
+- /Booking/Confirmation?bookingId={draftId}
+  Controller: Controllers/BookingController.cs
+  View: Views/Booking/Confirmation.cshtml
+  Purpose: Desktop ticket after booking, QR ticket URL, DB poster from booked schedule.
+- /Booking/Ticket/{draftId}
+  Controller: Controllers/BookingController.cs
+  View rendered: Views/Booking/MobileTicket.cshtml
+  Purpose: Mobile/shareable ticket for draft booking.
+- /Booking/TicketByBooking/{bookingId}
+  Controller: Controllers/BookingController.cs
+  View rendered: Views/Booking/MobileTicket.cshtml
+  Purpose: Mobile/shareable ticket for confirmed booking, using the same booked schedule poster.
+- /Booking/MyBookings
+  Controller: Controllers/BookingController.cs
+  View: Views/Booking/MyBookings.cshtml
+  Purpose: User booking history and ticket links.
+- /Booking/Details
+  Controller: Controllers/BookingController.cs
+  View: Views/Booking/Details.cshtml
+  Purpose: Booking detail display.
+
+Profile and wallet
+- /Profile/MyProfile
+  Controller: Controllers/ProfileController.cs
+  View: Views/Profile/MyProfile.cshtml
+  Script: wwwroot/js/profile.js
+  Purpose: Profile edit, email/mobile OTP verification, profile image upload.
+- /Profile/Transactions
+  Controller: Controllers/ProfileController.cs
+  View: Views/Profile/Transactions.cshtml
+  Purpose: Profile transaction list.
+- /Wallet/Index
+  Controller: Controllers/WalletController.cs
+  View: Views/Wallet/Index.cshtml
+  Purpose: Wallet summary and wallet activity.
+
+Developer page
+- /Developer/Index
+  Controller: Controllers/DeveloperController.cs
+  View: Views/Developer/Index.cshtml
+  Model: Models/ViewModels/DeveloperVM.cs
+  Database table/view: public.developer_profiles and public.vwDeveloperProfile
+  Purpose: Developer profile, social links, edit form, profile photo upload/change.
+
+Admin pages
+- /Admin/Dashboard
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/Dashboard.cshtml
+  CSS/JS: wwwroot/css/admin/admin-dashboard.css, wwwroot/js/admin/admin-dashboard.js
+  Purpose: Admin overview and operational metrics.
+- /Admin/ManageShows
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/ManageShows.cshtml
+  Models: ManageShowsViewModel, Movie, StandupShow, LiveStream, ShowSchedule
+  Purpose: Create/edit shows, poster URLs, image lists, schedule data.
+- /Admin/Bookings and /Admin/Bookings/Index
+  Controller: Controllers/AdminController.cs
+  Views: Views/Admin/Bookings.cshtml, Views/Admin/Bookings/Index.cshtml
+  Purpose: Booking administration.
+- /Admin/Transactions
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/Transactions.cshtml
+  Purpose: Payment/transaction administration.
+- /Admin/TransactionDetails
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/TransactionDetails.cshtml
+  Purpose: Detailed transaction inspection.
+- /Admin/Users and /Admin/UserDetails
+  Controller: Controllers/AdminController.cs
+  Views: Views/Admin/Users.cshtml, Views/Admin/UserDetails.cshtml
+  Purpose: User administration and user detail view.
+- /Admin/Roles, /Admin/UserAccess, /Admin/Permissions
+  Controller: Controllers/AdminController.cs
+  Views: Views/Admin/Roles.cshtml, Views/Admin/UserAccess.cshtml, Views/Admin/Security/Index.cshtml
+  Services: Services/RbacService.cs
+  Purpose: Role, permission, menu, and access management.
+- /Admin/Wallets
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/Wallets.cshtml
+  Purpose: Wallet administration.
+- /Admin/Notifications and /Admin/Notifications/Index
+  Controller: Controllers/AdminController.cs
+  Views: Views/Admin/Notifications.cshtml, Views/Admin/Notifications/Index.cshtml
+  Purpose: Notification center.
+- /Admin/ActivityLogs
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/ActivityLogs.cshtml
+  Service: Services/ActivityLogger.cs
+  Purpose: Activity audit trail.
+- /Admin/CouponUsage
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/CouponUsage.cshtml
+  Purpose: Coupon usage reporting.
+- /Admin/Refunds and /Admin/RefundDetails
+  Controller: Controllers/AdminController.cs
+  Views: Views/Admin/Refunds.cshtml, Views/Admin/Refunds/Index.cshtml, Views/Admin/RefundDetails.cshtml
+  Purpose: Refund dashboard and refund action detail.
+- /Admin/Versions
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/Versions.cshtml
+  Model: Models/Admin/ApplicationVersion.cs
+  Purpose: Application version records shown in the navbar.
+- /Admin/Invoices/Index
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/Invoices/Index.cshtml
+  Model: VwInvoiceSummary
+  Purpose: Invoice reporting.
+
+Scheduling
+- /Schedule/Create
+  Controller: Controllers/ScheduleController.cs
+  View: Views/Schedule/Create.cshtml
+  Purpose: Schedule creation workflow.
+
+Transactions
+- /Transaction/History
+  Controller: Controllers/TransactionController.cs
+  View: Views/Transaction/History.cshtml
+  Purpose: User transaction history.
+- /Transaction/Details
+  Controller: Controllers/TransactionController.cs
+  View: Views/Transaction/Details.cshtml
+  Purpose: Transaction detail display.
+
+Important services and filters
+- Services/RbacService.cs
+  Central permission and role checks.
+- Services/OtpDeliveryService.cs
+  Email/mobile OTP delivery.
+- Services/ActivityLogger.cs and Services/IActivityLogger.cs
+  Server-side activity logging.
+- Filters/SessionAuthorizeFilter.cs
+  Session protection for authenticated routes.
+- Filters/BookingStepValidationFilter.cs
+  Booking step validation.
+- Filters/ActivityLoggingFilter.cs
+  Request-level activity logging.
+
+Database and EF Core
+- Data/ApplicationDbContext.cs
+  DbSet declarations and entity/view mappings.
+- Data/DbSeeder.cs
+  Seed data helpers.
+- Program.cs
+  Startup, middleware, schema guard helpers, default version/developer profile table setup.
+- Database/rebuild_enterprise_schema.sql
+  Full schema rebuild script.
+- Migrations/
+  EF Core migration snapshot and initial migration.

@@ -11,6 +11,23 @@
     var ticketUrl = ViewBag.TicketUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}/Booking/Ticket/{Model.Id}";
     var title = schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Show";
     var venue = schedule?.Location == null ? "Venue to be announced" : $"{schedule.Location.Area}, {schedule.Location.State}";
+    string? posterUrl = Convert.ToString(schedule?.Movie?.PosterUrl
+        ?? schedule?.StandupShow?.PosterUrl
+        ?? schedule?.LiveStream?.PosterUrl);
+    string? imageList = Convert.ToString(schedule?.Movie?.Images
+        ?? schedule?.StandupShow?.Images
+        ?? schedule?.LiveStream?.Images);
+
+    if (string.IsNullOrWhiteSpace(posterUrl) && !string.IsNullOrWhiteSpace(imageList))
+    {
+        posterUrl = imageList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+    }
+
+    posterUrl = string.IsNullOrWhiteSpace(posterUrl)
+        ? "/images/default1.jpg"
+        : posterUrl;
 }
 
 <style>
@@ -600,7 +617,8 @@ gap:20px;
 
 <img
 class="poster"
-src="https://picsum.photos/300/400?random=@Model.Id"
+src="@posterUrl"
+alt="@title poster"
 />
 
 <div class="movie-info">

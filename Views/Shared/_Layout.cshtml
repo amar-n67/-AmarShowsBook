@@ -118,31 +118,31 @@ html[data-theme="dark"] {
 
 html[data-theme="cinema"] {
     color-scheme: light;
-    --app-bg: #eef6f2;
-    --app-text: #182536;
-    --app-card: #fffefa;
-    --app-card-text: #182536;
+    --app-bg: #f6f7fb;
+    --app-text: #1f2937;
+    --app-card: #ffffff;
+    --app-card-text: #1f2937;
     --app-input: #ffffff;
-    --app-input-text: #182536;
-    --app-input-border: #b7c8cc;
-    --app-input-disabled: #e5ece9;
-    --app-input-disabled-text: #5f6f76;
-    --app-muted: #526274;
-    --app-link: #0f7f8a;
-    --app-primary: #e45d48;
-    --app-primary-hover: #c54835;
-    --app-nav: linear-gradient(135deg, #fff8df 0%, #f0bd4f 28%, #e45d48 62%, #168f98 100%);
-    --app-nav-text: #172033;
-    --app-accent: #f0bd4f;
-    --app-accent-strong: #168f98;
-    --app-danger: #bd3e4b;
-    --app-page-surface: #fffefa;
-    --app-page-text: #182536;
-    --app-popup-surface: #fffefa;
-    --app-popup-text: #182536;
-    --app-popup-muted: #526274;
-    --app-popup-backdrop: linear-gradient(135deg, rgba(255, 248, 223, 0.84), rgba(240, 189, 79, 0.5), rgba(22, 143, 152, 0.34)), rgba(24, 37, 54, 0.2);
-    --app-profile-bg: radial-gradient(circle at 14% 4%, rgba(240, 189, 79, 0.34), transparent 32%), radial-gradient(circle at 88% 14%, rgba(22, 143, 152, 0.2), transparent 28%), linear-gradient(135deg, #eef6f2, #fff8df 48%, #f3d0bf);
+    --app-input-text: #1f2937;
+    --app-input-border: #d2d8e2;
+    --app-input-disabled: #edf1f6;
+    --app-input-disabled-text: #667085;
+    --app-muted: #667085;
+    --app-link: #2563eb;
+    --app-primary: #b44a5a;
+    --app-primary-hover: #933947;
+    --app-nav: linear-gradient(135deg, #182231 0%, #26394f 52%, #9a6a37 100%);
+    --app-nav-text: #fffaf0;
+    --app-accent: #f0c66b;
+    --app-accent-strong: #287e8f;
+    --app-danger: #b83c4d;
+    --app-page-surface: #ffffff;
+    --app-page-text: #1f2937;
+    --app-popup-surface: #ffffff;
+    --app-popup-text: #1f2937;
+    --app-popup-muted: #667085;
+    --app-popup-backdrop: linear-gradient(135deg, rgba(24, 34, 49, 0.72), rgba(154, 106, 55, 0.36)), rgba(15, 23, 42, 0.24);
+    --app-profile-bg: linear-gradient(135deg, #f6f7fb, #fff7e8 52%, #edf7f8);
 }
 
 body {
@@ -496,7 +496,7 @@ a {
 .film-menu {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     margin-left: auto;
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -514,9 +514,13 @@ a {
 .film-navigation-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    padding: 5px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-nav-text) 8%, transparent);
 }
 
 .film-user-card {
@@ -571,10 +575,11 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 38px;
+    min-height: 36px;
     border: 1px solid rgba(255,255,255,0.14);
     border-radius: 999px;
-    padding: 8px 14px;
+    padding: 7px 12px;
+    font-size: 0.86rem;
     font-weight: 850;
     text-decoration: none;
     color: var(--app-nav-text) !important;
@@ -604,7 +609,7 @@ a {
 .theme-switcher {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     padding: 4px;
     border: 1px solid color-mix(in srgb, var(--app-nav-text) 22%, transparent);
     border-radius: 999px;
@@ -616,7 +621,8 @@ a {
     border-radius: 999px;
     background: transparent;
     color: var(--app-nav-text);
-    padding: 6px 10px;
+    min-height: 30px;
+    padding: 5px 9px;
     font-size: 12px;
     font-weight: 850;
 }
@@ -716,9 +722,11 @@ input.clean-input[readonly],
 
 html[data-theme="white"] .film-user-card,
 html[data-theme="white"] .theme-switcher,
+html[data-theme="white"] .film-navigation-links,
 html[data-theme="white"] .film-nav-btn,
 html[data-theme="system"] .film-user-card,
 html[data-theme="system"] .theme-switcher,
+html[data-theme="system"] .film-navigation-links,
 html[data-theme="system"] .film-nav-btn {
     border-color: rgba(17,24,39,0.12);
     background: rgba(17,24,39,0.05);

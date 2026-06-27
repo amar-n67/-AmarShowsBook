@@ -3,6 +3,19 @@
 @{
     ViewData["Title"]="Developer Profile";
     var canEdit = ViewBag.CanEditDeveloperProfile as bool? ?? false;
+    var profileImage = string.IsNullOrWhiteSpace(Model.ProfileImage)
+        ? "/images/default-user.png"
+        : Model.ProfileImage;
+    var socials = new[]
+    {
+        new { Label = "GitHub", Url = Model.GitHubUrl },
+        new { Label = "LinkedIn", Url = Model.LinkedInUrl },
+        new { Label = "Twitter", Url = Model.TwitterUrl },
+        new { Label = "Instagram", Url = Model.InstagramUrl },
+        new { Label = "Facebook", Url = Model.FacebookUrl },
+        new { Label = "YouTube", Url = Model.YoutubeUrl },
+        new { Label = "Website", Url = Model.WebsiteUrl }
+    };
 }
 
 <section class="developer-page">
@@ -21,9 +34,9 @@
 <div class="profile-left">
 
 <img class="profile-image"
-src="@(string.IsNullOrEmpty(Model.ProfileImage)
-?"/images/default-user.png"
-:Model.ProfileImage)" />
+id="developerProfilePreview"
+src="@profileImage"
+alt="@Model.FullName profile image" />
 
 <h1>@Model.FullName</h1>
 
@@ -46,33 +59,22 @@ src="@(string.IsNullOrEmpty(Model.ProfileImage)
 
 <div class="social-grid">
 
-<a href="@Model.GitHubUrl" target="_blank">
-GitHub
-</a>
-
-<a href="@Model.LinkedInUrl" target="_blank">
-LinkedIn
-</a>
-
-<a href="@Model.TwitterUrl" target="_blank">
-Twitter
-</a>
-
-<a href="@Model.InstagramUrl" target="_blank">
-Instagram
-</a>
-
-<a href="@Model.FacebookUrl" target="_blank">
-Facebook
-</a>
-
-<a href="@Model.YoutubeUrl" target="_blank">
-YouTube
-</a>
-
-<a href="@Model.WebsiteUrl" target="_blank">
-Website
-</a>
+@foreach (var social in socials)
+{
+    var hasUrl = !string.IsNullOrWhiteSpace(social.Url);
+    if (hasUrl)
+    {
+        <a href="@social.Url" target="_blank" rel="noopener noreferrer">
+            @social.Label
+        </a>
+    }
+    else
+    {
+        <span class="social-link-disabled" title="@social.Label URL is not added yet">
+            @social.Label
+        </span>
+    }
+}
 
 </div>
 
@@ -185,9 +187,18 @@ Website
 <p>Changes are saved directly to the database profile record.</p>
 </div>
 
-<form asp-action="Update" method="post" class="developer-edit-form">
+<form asp-action="Update" method="post" enctype="multipart/form-data" class="developer-edit-form">
 @Html.AntiForgeryToken()
 <input type="hidden" asp-for="DeveloperId" />
+
+<div class="developer-photo-editor">
+<img src="@profileImage" id="developerEditPreview" alt="Developer profile preview" />
+<div>
+<label class="developer-upload-btn" for="profilePhoto">Upload / Change Photo</label>
+<input id="profilePhoto" name="profilePhoto" type="file" accept="image/*" onchange="previewDeveloperPhoto(this)" />
+<p>Choose a JPG, PNG, WEBP, or GIF. The poster updates when you save.</p>
+</div>
+</div>
 
 <div class="dev-form-grid">
 <label>
@@ -208,7 +219,7 @@ Website
 </label>
 <label>
 <span>Profile Image URL</span>
-<input asp-for="ProfileImage" class="form-control" />
+<input asp-for="ProfileImage" class="form-control" id="ProfileImage" placeholder="/uploads/profile.png or https://..." />
 </label>
 <label>
 <span>Resume URL</span>
@@ -450,6 +461,17 @@ background:var(--app-primary);
 color:#fff;
 }
 
+.social-link-disabled{
+padding:15px;
+border-radius:15px;
+color:var(--app-muted);
+background:var(--app-input-disabled);
+border:1px dashed var(--app-input-border);
+text-align:center;
+font-weight:800;
+cursor:not-allowed;
+}
+
 
 
 .developer-grid{
@@ -568,6 +590,52 @@ justify-content:flex-end;
 margin-top:18px;
 }
 
+.developer-photo-editor{
+display:flex;
+align-items:center;
+gap:16px;
+margin-bottom:18px;
+padding:14px;
+border:1px dashed var(--app-input-border);
+border-radius:8px;
+background:color-mix(in srgb, var(--app-card) 84%, var(--app-primary));
+}
+
+.developer-photo-editor img{
+width:96px;
+height:96px;
+border-radius:50%;
+object-fit:cover;
+border:4px solid var(--app-primary);
+}
+
+.developer-photo-editor input[type="file"]{
+position:absolute;
+width:1px;
+height:1px;
+opacity:0;
+pointer-events:none;
+}
+
+.developer-upload-btn{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+min-height:38px;
+padding:8px 14px;
+border-radius:999px;
+background:var(--app-primary);
+color:#fff;
+font-weight:900;
+cursor:pointer;
+}
+
+.developer-photo-editor p{
+margin:8px 0 0;
+color:var(--app-muted);
+font-weight:650;
+}
+
 
 .detail-item{
 
@@ -667,6 +735,7 @@ grid-template-columns:1fr;
 }
 
 .developer-edit-header,
+.developer-photo-editor,
 .resume-section{
 display:grid;
 align-items:start;
@@ -693,3 +762,17 @@ text-align:center;
 }
 
 </style>
+
+<script>
+function previewDeveloperPhoto(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    const heroPreview = document.getElementById("developerProfilePreview");
+    const editPreview = document.getElementById("developerEditPreview");
+
+    if (heroPreview) heroPreview.src = url;
+    if (editPreview) editPreview.src = url;
+}
+</script>

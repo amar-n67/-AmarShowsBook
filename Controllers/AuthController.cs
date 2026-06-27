@@ -589,7 +589,8 @@ WHERE user_id = {userId}
                 if (!result.IsConfigured && _environment.IsDevelopment() && _configuration.GetValue("Otp:ExposeDevOtp", true))
                 {
                     Console.WriteLine($"Reset password OTP for {email}: {generatedOTP}");
-                    ViewBag.Message = $"OTP sent. Development OTP: {generatedOTP}";
+                    ViewBag.Message = "OTP sent. Check the popup for the development code.";
+                    ViewBag.DevOtp = generatedOTP;
                     return View("VerifyOTP");
                 }
 
@@ -598,6 +599,10 @@ WHERE user_id = {userId}
             }
 
             ViewBag.Message = "OTP sent to your email for reset password.";
+            if (_environment.IsDevelopment() && _configuration.GetValue("Otp:ExposeDevOtp", true))
+            {
+                ViewBag.DevOtp = generatedOTP;
+            }
             return View("VerifyOTP");
         }
 
