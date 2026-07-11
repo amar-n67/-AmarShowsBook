@@ -70,7 +70,11 @@ connectionString
 
 var app=
 builder.Build();
-
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
 var forwardedHeadersOptions =
 new ForwardedHeadersOptions
 {
@@ -113,9 +117,9 @@ name:"default",
 pattern:
 "{controller=Auth}/{action=Login}/{id?}"
 );
-
-EnsureApplicationVersionTable(app);
-EnsureDeveloperProfileStore(app);
+//commented below to deploy onrender for temporary purpose
+//EnsureApplicationVersionTable(app);
+//EnsureDeveloperProfileStore(app);
 
 
 // ========================================
