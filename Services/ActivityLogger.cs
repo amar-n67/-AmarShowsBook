@@ -34,24 +34,41 @@ public class ActivityLogger : IActivityLogger
     //     object oldValue = null,
     //     object newValue = null,
     //     object metadata = null
-     public async Task LogAsync(
+//      public async Task LogAsync(
+//     int? userId,
+//     string action,
+//     string module,
+//     string entityType,
+//     int? entityId = null,
+//     string description = null,
+//     object oldValue = null,
+//     object newValue = null,
+//     string status = "SUCCESS",
+
+//     string? errorCode = null,
+//     string? errorMessage = null,
+//     string? errorSource = null,
+//     string? stackTrace = null,
+//     int isError = 0,
+
+//     object metadata = null
+// )
+public async Task LogAsync(
     int? userId,
     string action,
     string module,
     string entityType,
     int? entityId = null,
-    string description = null,
-    object oldValue = null,
-    object newValue = null,
+    string? description = null,
+    object? oldValue = null,
+    object? newValue = null,
     string status = "SUCCESS",
-
     string? errorCode = null,
     string? errorMessage = null,
     string? errorSource = null,
     string? stackTrace = null,
     int isError = 0,
-
-    object metadata = null
+    object? metadata = null
 )
     {
         try
@@ -124,14 +141,14 @@ INSERT INTO activity_logs
     ip_address,
     user_agent,
     status,
-error_code,
-error_message,
-error_source,
-stack_trace,
-is_error,
-old_value,
-new_value,
-metadata
+    error_code,
+    error_message,
+    error_source,
+    stack_trace,
+    is_error,
+    old_value,
+    new_value,
+    metadata
 )
 VALUES
 (
@@ -146,25 +163,31 @@ VALUES
     @ip_address,
     @user_agent,
     @status,
-@error_code,
-@error_message,
-@error_source,
-@stack_trace,
-@is_error,
-@old_value,
-@new_value,
-@metadata
+    @error_code,
+    @error_message,
+    @error_source,
+    @stack_trace,
+    @is_error,
+    @old_value,
+    @new_value,
+    @metadata
 );
 ";
+
             await using var command = new NpgsqlCommand(query, connection);
 
             // command.Parameters.AddWithValue("@user_id",
             //     (object?)userId ?? DBNull.Value);
-            command.Parameters.AddWithValue(
+//             command.Parameters.AddWithValue(
+//     "@user_id",
+//     userId.HasValue ? userId.Value : DBNull.Value
+// );
+command.Parameters.AddWithValue(
     "@user_id",
-    userId.HasValue ? userId.Value : DBNull.Value
+    userId.HasValue
+        ? (object)userId.Value
+        : DBNull.Value
 );
-
             command.Parameters.AddWithValue("@action", action);
 
             command.Parameters.AddWithValue("@module", module);
@@ -176,12 +199,13 @@ VALUES
     entityType ?? (object)DBNull.Value
 );
 
-            // command.Parameters.AddWithValue("@entity_id",
-            //     (object?)entityId ?? DBNull.Value);
-            command.Parameters.AddWithValue(
+           command.Parameters.AddWithValue(
     "@entity_id",
-    entityId.HasValue ? entityId.Value : DBNull.Value
+    entityId.HasValue
+        ? (object)entityId.Value
+        : DBNull.Value
 );
+
 
             command.Parameters.AddWithValue("@description",
                 (object?)description ?? DBNull.Value);
@@ -220,28 +244,48 @@ command.Parameters.AddWithValue("@is_error", isError);
 
             // command.Parameters.AddWithValue("@metadata",
             //     JsonSerializer.Serialize(metadata));
+// command.Parameters.AddWithValue(
+//     "@old_value",
+//     NpgsqlTypes.NpgsqlDbType.Jsonb,
+//     oldValue != null
+//         ? JsonSerializer.Serialize(oldValue)
+//         : "{}"
+// );
 command.Parameters.AddWithValue(
     "@old_value",
-    NpgsqlTypes.NpgsqlDbType.Jsonb,
-    oldValue != null
-        ? JsonSerializer.Serialize(oldValue)
-        : "{}"
+    NpgsqlDbType.Jsonb,
+    oldValue == null
+        ? DBNull.Value
+        : (object)JsonSerializer.Serialize(oldValue)
 );
 
+// command.Parameters.AddWithValue(
+//     "@new_value",
+//     NpgsqlTypes.NpgsqlDbType.Jsonb,
+//     newValue != null
+//         ? JsonSerializer.Serialize(newValue)
+//         : "{}"
+// );
 command.Parameters.AddWithValue(
     "@new_value",
-    NpgsqlTypes.NpgsqlDbType.Jsonb,
-    newValue != null
-        ? JsonSerializer.Serialize(newValue)
-        : "{}"
+    NpgsqlDbType.Jsonb,
+    newValue == null
+        ? DBNull.Value
+        : (object)JsonSerializer.Serialize(newValue)
 );
-
+// command.Parameters.AddWithValue(
+//     "@metadata",
+//     NpgsqlTypes.NpgsqlDbType.Jsonb,
+//     metadata != null
+//         ? JsonSerializer.Serialize(metadata)
+//         : "{}"
+// );
 command.Parameters.AddWithValue(
     "@metadata",
-    NpgsqlTypes.NpgsqlDbType.Jsonb,
-    metadata != null
-        ? JsonSerializer.Serialize(metadata)
-        : "{}"
+    NpgsqlDbType.Jsonb,
+    metadata == null
+        ? DBNull.Value
+        : (object)JsonSerializer.Serialize(metadata)
 );
 
            // await command.ExecuteNonQueryAsync();

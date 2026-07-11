@@ -362,8 +362,11 @@ modelBuilder.Entity<Booking>(entity =>
         entity.Property(x=>x.IsActive)
             .HasColumnName("is_active");
 
-        entity.Property(x=>x.CreatedAt)
-            .HasColumnName("created_at");
+        // entity.Property(x=>x.CreatedAt)
+        //     .HasColumnName("created_at");
+        entity.Property(x => x.CreatedAt)
+      .HasColumnName("created_at")
+      .HasColumnType("timestamp without time zone");
 
         entity.Property(x=>x.UpdatedAt)
             .HasColumnName("updated_at");
