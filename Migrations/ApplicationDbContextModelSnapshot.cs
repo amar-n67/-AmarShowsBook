@@ -24,12 +24,12 @@ namespace AmarShowsBook.Migrations
 
             modelBuilder.Entity("AmarShowsBook.Models.Admin.ActivityLog", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Action")
                         .IsRequired()
@@ -41,17 +41,15 @@ namespace AmarShowsBook.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("description");
 
                     b.Property<string>("Endpoint")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("endpoint");
 
-                    b.Property<long?>("EntityId")
-                        .HasColumnType("bigint")
+                    b.Property<int?>("EntityId")
+                        .HasColumnType("integer")
                         .HasColumnName("entity_id");
 
                     b.Property<string>("EntityType")
@@ -60,22 +58,18 @@ namespace AmarShowsBook.Migrations
                         .HasColumnName("entity_type");
 
                     b.Property<string>("ErrorCode")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("error_code");
 
                     b.Property<string>("ErrorMessage")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("error_message");
 
                     b.Property<string>("ErrorSource")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("error_source");
 
                     b.Property<string>("IpAddress")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ip_address");
 
@@ -84,7 +78,6 @@ namespace AmarShowsBook.Migrations
                         .HasColumnName("is_error");
 
                     b.Property<string>("Metadata")
-                        .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("metadata");
 
@@ -94,22 +87,18 @@ namespace AmarShowsBook.Migrations
                         .HasColumnName("module");
 
                     b.Property<string>("NewValue")
-                        .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("new_value");
 
                     b.Property<string>("OldValue")
-                        .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("old_value");
 
                     b.Property<string>("RequestMethod")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("request_method");
 
                     b.Property<string>("StackTrace")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("stack_trace");
 
@@ -119,12 +108,11 @@ namespace AmarShowsBook.Migrations
                         .HasColumnName("status");
 
                     b.Property<string>("UserAgent")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("user_agent");
 
-                    b.Property<long?>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<int?>("UserId")
+                        .HasColumnType("integer")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
@@ -243,7 +231,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("DeletedUsers");
+                    b.ToTable("DeletedUsers", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Admin.RefundActionLog", b =>
@@ -290,7 +278,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("refund_action_logs");
+                    b.ToTable("refund_action_logs", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Admin.VwCouponUsage", b =>
@@ -635,7 +623,7 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("text")
                         .HasColumnName("wallet_status");
 
-                    b.ToTable("vw_wallet_summary");
+                    b.ToTable("vw_wallet_summary", (string)null);
 
                     b.ToView("vw_wallet_summary", (string)null);
                 });
@@ -1054,7 +1042,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Countries");
+                    b.ToTable("Countries", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.District", b =>
@@ -1076,7 +1064,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasIndex("StateId");
 
-                    b.ToTable("Districts");
+                    b.ToTable("Districts", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.DummyCard", b =>
@@ -1170,7 +1158,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations");
+                    b.ToTable("Locations", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Movie", b =>
@@ -1248,7 +1236,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PaymentSessions");
+                    b.ToTable("PaymentSessions", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Permission", b =>
@@ -1290,7 +1278,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("permissions");
+                    b.ToTable("permissions", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Refund", b =>
@@ -1418,7 +1406,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Regions");
+                    b.ToTable("Regions", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Role", b =>
@@ -1470,7 +1458,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("roles");
+                    b.ToTable("roles", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.RolePermission", b =>
@@ -1699,7 +1687,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasIndex("CountryId");
 
-                    b.ToTable("States");
+                    b.ToTable("States", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Ticket", b =>
@@ -1955,7 +1943,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.UserRoleMapping", b =>
@@ -1989,7 +1977,7 @@ namespace AmarShowsBook.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("user_role_mappings");
+                    b.ToTable("user_role_mappings", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Venue", b =>
@@ -2696,7 +2684,7 @@ namespace AmarShowsBook.Migrations
                         .HasColumnName("audio_system");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
 
                     b.Property<bool>("IsActive")
