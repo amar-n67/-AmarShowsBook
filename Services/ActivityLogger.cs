@@ -72,32 +72,7 @@ public class ActivityLogger : IActivityLogger
             await using var connection = new NpgsqlConnection(connectionString);
 
             await connection.OpenAsync();
-Console.WriteLine("====================================");
 
-Console.WriteLine("Connection String:");
-Console.WriteLine(connection.ConnectionString);
-
-Console.WriteLine("Database : " + connection.Database);
-
-await using var cmd = new NpgsqlCommand(@"
-SELECT
-current_database(),
-current_schema(),
-inet_server_addr(),
-inet_server_port();
-", connection);
-
-await using var reader = await cmd.ExecuteReaderAsync();
-
-while (await reader.ReadAsync())
-{
-    Console.WriteLine("Current DB      : " + reader.GetString(0));
-    Console.WriteLine("Current Schema  : " + reader.GetString(1));
-    Console.WriteLine("Server Address  : " + reader.GetValue(2));
-    Console.WriteLine("Server Port     : " + reader.GetInt32(3));
-}
-
-Console.WriteLine("====================================");
             //var query = @"
                 // INSERT INTO activity_logs
                 // (
