@@ -184,8 +184,62 @@ modelBuilder.Entity<Refund>(entity =>
         .HasColumnType("timestamp with time zone");
 });
 
-    modelBuilder.Entity<ActivityLog>()
-        .ToTable("activity_logs");
+    // modelBuilder.Entity<ActivityLog>()
+    //     .ToTable("activity_logs");
+    modelBuilder.Entity<ActivityLog>(entity =>
+{
+    entity.ToTable("activity_logs");
+
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.Id).HasColumnName("id");
+
+    entity.Property(x => x.UserId).HasColumnName("user_id");
+
+    entity.Property(x => x.Action).HasColumnName("action");
+
+    entity.Property(x => x.Module).HasColumnName("module");
+
+    entity.Property(x => x.EntityType).HasColumnName("entity_type");
+
+    entity.Property(x => x.EntityId).HasColumnName("entity_id");
+
+    entity.Property(x => x.Description).HasColumnName("description");
+
+    entity.Property(x => x.RequestMethod).HasColumnName("request_method");
+
+    entity.Property(x => x.Endpoint).HasColumnName("endpoint");
+
+    entity.Property(x => x.IpAddress).HasColumnName("ip_address");
+
+    entity.Property(x => x.UserAgent).HasColumnName("user_agent");
+
+    entity.Property(x => x.Status).HasColumnName("status");
+
+    entity.Property(x => x.IsError).HasColumnName("is_error");
+
+    entity.Property(x => x.ErrorCode).HasColumnName("error_code");
+
+    entity.Property(x => x.ErrorMessage).HasColumnName("error_message");
+
+    entity.Property(x => x.ErrorSource).HasColumnName("error_source");
+
+    entity.Property(x => x.StackTrace).HasColumnName("stack_trace");
+
+    entity.Property(x => x.OldValue)
+          .HasColumnName("old_value")
+          .HasColumnType("jsonb");
+
+    entity.Property(x => x.NewValue)
+          .HasColumnName("new_value")
+          .HasColumnType("jsonb");
+
+    entity.Property(x => x.Metadata)
+          .HasColumnName("metadata")
+          .HasColumnType("jsonb");
+
+    entity.Property(x => x.CreatedAt).HasColumnName("created_at");
+});
 
     modelBuilder.Entity<ApplicationVersion>()
         .ToTable("application_versions");

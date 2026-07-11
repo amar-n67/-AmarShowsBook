@@ -1,5 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace AmarShowsBook.Models.Admin
 {
+    [Table("activity_logs")]
     public class ActivityLog
     {
         public long Id { get; set; }
@@ -16,6 +19,14 @@ namespace AmarShowsBook.Models.Admin
 
         public string Description { get; set; }
 
+        public string RequestMethod { get; set; }
+
+        public string Endpoint { get; set; }
+
+        public string IpAddress { get; set; }
+
+        public string UserAgent { get; set; }
+
         public string Status { get; set; }
 
         public int IsError { get; set; }
@@ -23,6 +34,16 @@ namespace AmarShowsBook.Models.Admin
         public string ErrorCode { get; set; }
 
         public string ErrorMessage { get; set; }
+
+        public string ErrorSource { get; set; }
+
+        public string StackTrace { get; set; }
+
+        public string OldValue { get; set; }
+
+        public string NewValue { get; set; }
+
+        public string Metadata { get; set; }
 
         public DateTime CreatedAt { get; set; }
     }

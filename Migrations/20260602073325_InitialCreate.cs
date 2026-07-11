@@ -14,26 +14,75 @@ namespace AmarShowsBook.Migrations
         {
             migrationBuilder.CreateTable(
                 name: "activity_logs",
+                // columns: table => new
+                // {
+                //     Id = table.Column<long>(type: "bigint", nullable: false)
+                //         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                //     UserId = table.Column<long>(type: "bigint", nullable: true),
+                //     Action = table.Column<string>(type: "text", nullable: false),
+                //     Module = table.Column<string>(type: "text", nullable: false),
+                //     EntityType = table.Column<string>(type: "text", nullable: false),
+                //     EntityId = table.Column<long>(type: "bigint", nullable: true),
+                //     Description = table.Column<string>(type: "text", nullable: false),
+                //     Status = table.Column<string>(type: "text", nullable: false),
+                //     IsError = table.Column<int>(type: "integer", nullable: false),
+                //     ErrorCode = table.Column<string>(type: "text", nullable: false),
+                //     ErrorMessage = table.Column<string>(type: "text", nullable: false),
+                //     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                // },
+                // constraints: table =>
+                // {
+                //     table.PrimaryKey("PK_activity_logs", x => x.Id);
+                // });
                 columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<long>(type: "bigint", nullable: true),
-                    Action = table.Column<string>(type: "text", nullable: false),
-                    Module = table.Column<string>(type: "text", nullable: false),
-                    EntityType = table.Column<string>(type: "text", nullable: false),
-                    EntityId = table.Column<long>(type: "bigint", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    IsError = table.Column<int>(type: "integer", nullable: false),
-                    ErrorCode = table.Column<string>(type: "text", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_activity_logs", x => x.Id);
-                });
+{
+    id = table.Column<long>(type: "bigint", nullable: false)
+        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+
+    user_id = table.Column<long>(type: "bigint", nullable: true),
+
+    action = table.Column<string>(type: "text", nullable: false),
+
+    module = table.Column<string>(type: "text", nullable: false),
+
+    entity_type = table.Column<string>(type: "text", nullable: false),
+
+    entity_id = table.Column<long>(type: "bigint", nullable: true),
+
+    description = table.Column<string>(type: "text", nullable: true),
+
+    request_method = table.Column<string>(type: "text", nullable: true),
+
+    endpoint = table.Column<string>(type: "text", nullable: true),
+
+    ip_address = table.Column<string>(type: "text", nullable: true),
+
+    user_agent = table.Column<string>(type: "text", nullable: true),
+
+    status = table.Column<string>(type: "text", nullable: false),
+
+    error_code = table.Column<string>(type: "text", nullable: true),
+
+    error_message = table.Column<string>(type: "text", nullable: true),
+
+    error_source = table.Column<string>(type: "text", nullable: true),
+
+    stack_trace = table.Column<string>(type: "text", nullable: true),
+
+    is_error = table.Column<int>(type: "integer", nullable: false),
+
+    old_value = table.Column<string>(type: "jsonb", nullable: true),
+
+    new_value = table.Column<string>(type: "jsonb", nullable: true),
+
+    metadata = table.Column<string>(type: "jsonb", nullable: true),
+
+    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+},
+constraints: table =>
+{
+    table.PrimaryKey("PK_activity_logs", x => x.id);
+});
 
             migrationBuilder.CreateTable(
                 name: "application_menus",
