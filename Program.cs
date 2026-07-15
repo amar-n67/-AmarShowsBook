@@ -74,6 +74,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+    BaselineExistingDatabase(app, db);
     db.Database.Migrate();
 }
 var forwardedHeadersOptions =
@@ -283,6 +284,50 @@ ex,
 });
 
 app.Run();
+
+static void BaselineExistingDatabase(WebApplication app, ApplicationDbContext context)
+{
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS public.""__EFMigrationsHistory""
+(
+    ""MigrationId"" character varying(150) NOT NULL,
+    ""ProductVersion"" character varying(32) NOT NULL,
+    CONSTRAINT ""PK___EFMigrationsHistory"" PRIMARY KEY (""MigrationId"")
+);
+
+INSERT INTO public.""__EFMigrationsHistory""
+(
+    ""MigrationId"",
+    ""ProductVersion""
+)
+SELECT
+    '20260602073325_InitialCreate',
+    '10.0.0'
+WHERE EXISTS
+(
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+    AND table_name = 'activity_logs'
+)
+AND NOT EXISTS
+(
+    SELECT 1
+    FROM public.""__EFMigrationsHistory""
+    WHERE ""MigrationId"" = '20260602073325_InitialCreate'
+);
+");
+    }
+    catch(Exception ex)
+    {
+        app.Logger.LogWarning(
+        ex,
+        "Existing database baseline check skipped"
+        );
+    }
+}
 
 static void EnsureApplicationVersionTable(WebApplication app)
 {
