@@ -76,20 +76,121 @@
                     <th>Notes</th>
                     <th>Updated</th>
                     <th>Current</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
             @foreach(var item in Model)
             {
                 <tr data-admin-searchable>
-                    <td><strong>@item.VersionNumber</strong></td>
-                    <td>@item.ReleaseTitle</td>
-                    <td>@item.ReleaseNotes</td>
-                    <td>@item.UpdatedAt.ToString("dd MMM yyyy hh:mm tt")</td>
-                    <td>@(item.IsCurrent ? "Yes" : "No")</td>
+                    <td colspan="6">
+                        <form asp-action="UpdateVersion" method="post" class="version-row-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <div class="version-grid">
+                                <div>
+                                    <label class="form-label">Version</label>
+                                    <input name="versionNumber" class="form-control" value="@item.VersionNumber" required />
+                                </div>
+                                <div>
+                                    <label class="form-label">Title</label>
+                                    <input name="releaseTitle" class="form-control" value="@item.ReleaseTitle" required />
+                                </div>
+                                <div>
+                                    <label class="form-label">Notes</label>
+                                    <textarea name="releaseNotes" class="form-control" rows="2">@item.ReleaseNotes</textarea>
+                                </div>
+                                <div>
+                                    <label class="form-label">Updated</label>
+                                    <div class="version-muted">@item.UpdatedAt.ToString("dd MMM yyyy hh:mm tt")</div>
+                                </div>
+                                <label class="version-current">
+                                    <input name="isCurrent" value="true" type="checkbox" @(item.IsCurrent ? "checked" : "") />
+                                    <span>Current</span>
+                                </label>
+                                <div class="version-actions">
+                                    <button class="btn btn-primary btn-sm" type="submit">Edit</button>
+                                    <button class="btn btn-danger btn-sm"
+                                            type="submit"
+                                            form="delete-version-@item.Id"
+                                            onclick="return confirm('Delete version @item.VersionNumber?')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <form id="delete-version-@item.Id" asp-action="DeleteVersion" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                        </form>
+                    </td>
                 </tr>
             }
             </tbody>
         </table>
     </div>
 </section>
+
+<style>
+.version-row-form {
+    margin: 0;
+}
+
+.version-grid {
+    display: grid;
+    grid-template-columns: minmax(110px, 0.7fr) minmax(180px, 1.1fr) minmax(240px, 1.6fr) minmax(150px, 0.8fr) minmax(95px, auto) minmax(150px, auto);
+    gap: 12px;
+    align-items: end;
+}
+
+.version-grid .form-label {
+    margin-bottom: 5px;
+    color: var(--admin-muted);
+    font-size: 0.76rem;
+    font-weight: 850;
+}
+
+.version-muted {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    color: var(--admin-muted);
+    font-size: 0.9rem;
+}
+
+.version-current,
+.version-actions {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.version-current {
+    font-weight: 850;
+}
+
+.version-actions {
+    justify-content: flex-end;
+}
+
+@@media (max-width: 1100px) {
+    .version-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@@media (max-width: 680px) {
+    .version-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .version-actions {
+        justify-content: stretch;
+    }
+
+    .version-actions .btn {
+        flex: 1;
+    }
+}
+</style>

@@ -72,11 +72,11 @@
             @foreach(var item in Model)
             {
                 <tr class="coupon-row" data-status="@item.UsageStatus" data-type="@item.ShowType" data-admin-searchable>
-                    <td><strong>@item.CouponCode</strong></td>
-                    <td>@item.UserName<br /><span class="sub-text">@item.UserEmail</span></td>
-                    <td>@item.ShowName<br /><span class="sub-text">@item.ShowType @item.ShowTime?.ToString("dd MMM yyyy hh:mm tt")</span></td>
-                    <td>@item.BookingRef</td>
-                    <td>@item.TransactionRef</td>
+                    <td class="coupon-code-cell"><strong>@item.CouponCode</strong></td>
+                    <td class="coupon-user-cell">@item.UserName<br /><span class="sub-text">@item.UserEmail</span></td>
+                    <td class="coupon-show-cell">@item.ShowName<br /><span class="sub-text">@item.ShowType @item.ShowTime?.ToString("dd MMM yyyy hh:mm tt")</span></td>
+                    <td class="coupon-id-cell">@item.BookingRef</td>
+                    <td class="coupon-id-cell">@item.TransactionRef</td>
                     <td>@CurrencyFormatter.FormatRupees(item.OriginalAmount)</td>
                     <td>@CurrencyFormatter.FormatRupees(item.DiscountAmount)</td>
                     <td>@CurrencyFormatter.FormatRupees(item.FinalAmount)</td>
@@ -137,15 +137,46 @@ couponShowType?.addEventListener("change", filterCoupons);
 <style>
 .coupon-usage-table {
     overflow-x: auto;
+    max-width: 100%;
 }
 
 .coupon-usage-table table {
-    min-width: 1120px;
+    min-width: 1180px;
+    table-layout: fixed;
 }
 
 .coupon-usage-table td,
 .coupon-usage-table th {
     vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.coupon-code-cell {
+    width: 120px;
+}
+
+.coupon-user-cell,
+.coupon-show-cell {
+    width: 210px;
+}
+
+.coupon-id-cell {
+    max-width: 150px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+}
+
+.coupon-usage-table .badge {
+    display: inline-flex;
+    max-width: 100%;
     white-space: normal;
+    text-align: center;
+}
+
+@@media (max-width: 760px) {
+    .coupon-usage-table table {
+        min-width: 980px;
+    }
 }
 </style>

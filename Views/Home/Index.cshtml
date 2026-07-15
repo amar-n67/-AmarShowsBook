@@ -54,9 +54,18 @@
         </div>
     </div>
     <nav class="showtime-tabs" aria-label="Show category">
-        <a href="/Home/Index?type=Movie" class="@(selectedType == "Movie" ? "active" : "")">Movies</a>
-        <a href="/Home/Index?type=Standup" class="@(selectedType == "Standup" ? "active" : "")">Standup</a>
-        <a href="/Home/Index?type=Live" class="@(selectedType == "Live" ? "active" : "")">Live</a>
+        <a href="/Home/Index?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
+            <span class="tab-icon">🎬</span>
+            <span><strong>Movies</strong><small>Big screen picks</small></span>
+        </a>
+        <a href="/Home/Index?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
+            <span class="tab-icon">🎤</span>
+            <span><strong>Standup</strong><small>Live comedy</small></span>
+        </a>
+        <a href="/Home/Index?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
+            <span class="tab-icon">📡</span>
+            <span><strong>Live</strong><small>Streaming events</small></span>
+        </a>
     </nav>
 </div>
 
@@ -334,16 +343,15 @@ Book Ticket
     }
     
     .showtime-controls {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
         gap: 12px;
         align-items: stretch;
         margin: 24px 0;
     }
     
     .location-panel {
-        flex: 1;
-        min-width: 600px;
+        min-width: 0;
         padding: 16px 20px;
         border: 1px solid var(--app-input-border);
         border-radius: 8px;
@@ -361,8 +369,8 @@ Book Ticket
     
     .location-field {
         flex: 1;
-        min-width: 120px;
-        max-width: 180px;
+        min-width: 150px;
+        max-width: none;
     }
     
     .location-field label {
@@ -417,29 +425,76 @@ Book Ticket
     }
     
     .showtime-tabs {
-        display: flex;
-        gap: 6px;
-        padding: 6px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 10px;
         border: 1px solid var(--app-input-border);
-        border-radius: 999px;
+        border-radius: 8px;
         background: var(--app-card);
-        align-self: flex-end;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
     }
     
     .showtime-tabs a {
-        min-width: 80px;
-        padding: 10px 16px;
-        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        min-height: 76px;
+        padding: 12px;
+        border: 1px solid color-mix(in srgb, var(--app-input-border) 72%, transparent);
+        border-radius: 8px;
         color: var(--app-text);
-        text-align: center;
+        text-align: left;
         text-decoration: none;
         font-weight: 850;
         font-size: 0.9rem;
+        background: color-mix(in srgb, var(--app-bg) 42%, var(--app-card));
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .showtime-tabs a:hover {
+        transform: translateY(-2px);
+        border-color: var(--app-primary);
+    }
+
+    .showtime-tabs .tab-icon {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+        font-size: 1.15rem;
+    }
+
+    .showtime-tabs strong,
+    .showtime-tabs small {
+        display: block;
+        line-height: 1.2;
+    }
+
+    .showtime-tabs small {
+        margin-top: 3px;
+        color: var(--app-muted);
+        font-size: 0.72rem;
+        font-weight: 750;
     }
     
     .showtime-tabs a.active {
         background: var(--app-primary);
         color: #fff;
+        border-color: var(--app-primary);
+        box-shadow: 0 10px 24px color-mix(in srgb, var(--app-primary) 24%, transparent);
+    }
+
+    .showtime-tabs a.active .tab-icon {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    .showtime-tabs a.active small {
+        color: rgba(255, 255, 255, 0.82);
     }
     
     .schedule-board {
@@ -681,13 +736,10 @@ Book Ticket
     /* Responsive Styles */
     @@media (max-width: 980px) {
         .showtime-controls {
-            flex-direction: column;
+            grid-template-columns: 1fr;
         }
         .location-panel {
             min-width: 100%;
-        }
-        .showtime-tabs {
-            justify-content: center;
         }
         .location-panel,
         .schedule-board {
@@ -713,11 +765,12 @@ Book Ticket
         }
         .showtime-tabs {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: 1fr;
             width: 100%;
         }
         .showtime-tabs a {
             min-width: 0;
+            min-height: 60px;
         }
         .location-field {
             max-width: 100%;

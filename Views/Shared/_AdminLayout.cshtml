@@ -105,6 +105,7 @@
         new { Action = "UserAccess", Label = "User Access", Url = "/Admin/UserAccess", Module = "USER", Permission = "GRANT_ACCESS" },
         new { Action = "Roles", Label = "Roles", Url = "/Admin/Roles", Module = "ROLE", Permission = "VIEW" },
         new { Action = "ManageShows", Label = "Manage Shows", Url = "/Admin/ManageShows", Module = "SHOW", Permission = "VIEW" },
+        new { Action = "ContentManager", Label = "Data Manager", Url = "/Admin/ContentManager", Module = "SHOW", Permission = "VIEW" },
         new { Action = "Bookings", Label = "Bookings", Url = "/Admin/Bookings", Module = "BOOKING", Permission = "VIEW" },
         new { Action = "Transactions", Label = "Transactions", Url = "/Admin/Transactions", Module = "PAYMENT", Permission = "VIEW" },
         new { Action = "Refunds", Label = "Refunds", Url = "/Admin/Refunds", Module = "REFUND", Permission = "VIEW" },
@@ -117,7 +118,7 @@
     var showAdminFilters = new[]
     {
         "Users","UserAccess","Roles","Bookings",
-        "Transactions","Wallets","Notifications","ActivityLogs","Versions"
+        "Transactions","Wallets","Notifications","ActivityLogs","Versions","ContentManager"
     }.Contains(currentAction);
     var canUsePrintTools =
         AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);

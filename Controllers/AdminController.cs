@@ -1974,6 +1974,89 @@ public async Task<IActionResult> Versions()
 
 [HttpPost]
 [ValidateAntiForgeryToken]
+public async Task<IActionResult> UpdateVersion(long id, string versionNumber, string releaseTitle, string? releaseNotes, bool isCurrent)
+{
+    await EnsureAdminShowInfrastructure();
+
+    var version = await _context.ApplicationVersions.FirstOrDefaultAsync(x => x.Id == id);
+    if (version == null)
+    {
+        TempData["Error"] = "Version not found.";
+        return RedirectToAction(nameof(Versions));
+    }
+
+    if (string.IsNullOrWhiteSpace(versionNumber) || string.IsNullOrWhiteSpace(releaseTitle))
+    {
+        TempData["Error"] = "Version number and title are required.";
+        return RedirectToAction(nameof(Versions));
+    }
+
+    if (isCurrent)
+    {
+        var currentVersions = await _context.ApplicationVersions
+            .Where(x => x.IsCurrent && x.Id != id)
+            .ToListAsync();
+
+        foreach (var item in currentVersions)
+        {
+            item.IsCurrent = false;
+        }
+    }
+
+    version.VersionNumber = versionNumber.Trim();
+    version.ReleaseTitle = releaseTitle.Trim();
+    version.ReleaseNotes = releaseNotes?.Trim();
+    version.IsCurrent = isCurrent;
+    version.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+    TempData["Success"] = "Version updated.";
+    return RedirectToAction(nameof(Versions));
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> DeleteVersion(long id)
+{
+    await EnsureAdminShowInfrastructure();
+
+    var version = await _context.ApplicationVersions.FirstOrDefaultAsync(x => x.Id == id);
+    if (version == null)
+    {
+        TempData["Error"] = "Version not found.";
+        return RedirectToAction(nameof(Versions));
+    }
+
+    if (await _context.ApplicationVersions.CountAsync() <= 1)
+    {
+        TempData["Error"] = "Keep at least one application version.";
+        return RedirectToAction(nameof(Versions));
+    }
+
+    var wasCurrent = version.IsCurrent;
+    _context.ApplicationVersions.Remove(version);
+    await _context.SaveChangesAsync();
+
+    if (wasCurrent)
+    {
+        var latest = await _context.ApplicationVersions
+            .OrderByDescending(x => x.UpdatedAt)
+            .FirstOrDefaultAsync();
+
+        if (latest != null)
+        {
+            latest.IsCurrent = true;
+            latest.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    TempData["Success"] = "Version deleted.";
+    return RedirectToAction(nameof(Versions));
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
 public async Task<IActionResult> CreateVersion(string versionNumber, string releaseTitle, string? releaseNotes, bool isCurrent)
 {
     await EnsureAdminShowInfrastructure();
@@ -2069,6 +2152,197 @@ private static string IncrementPatchVersion(string? versionNumber)
     parts[2]++;
 
     return $"{parts[0]}.{parts[1]}.{parts[2]}";
+}
+
+public async Task<IActionResult> ContentManager()
+{
+    ViewBag.Movies = await _context.Movies
+        .AsNoTracking()
+        .OrderByDescending(x => x.Id)
+        .Take(100)
+        .ToListAsync();
+
+    ViewBag.StandupShows = await _context.StandupShows
+        .AsNoTracking()
+        .OrderByDescending(x => x.Id)
+        .Take(100)
+        .ToListAsync();
+
+    ViewBag.LiveStreams = await _context.LiveStreams
+        .AsNoTracking()
+        .OrderByDescending(x => x.Id)
+        .Take(100)
+        .ToListAsync();
+
+    return View();
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> SaveContent(
+    string contentType,
+    int? id,
+    string title,
+    string? directorOrHost,
+    string? producer,
+    string? cast,
+    int duration,
+    string? description,
+    string? posterUrl,
+    string? images,
+    string? trailerUrl,
+    decimal? imdbRating)
+{
+    contentType = NormalizeContentType(contentType);
+    title = (title ?? string.Empty).Trim();
+    duration = Math.Max(duration, 1);
+
+    if (string.IsNullOrWhiteSpace(title))
+    {
+        TempData["Error"] = "Title is required.";
+        return RedirectToAction(nameof(ContentManager));
+    }
+
+    if (contentType == "Movie")
+    {
+        var movie = id.HasValue
+            ? await _context.Movies.FirstOrDefaultAsync(x => x.Id == id.Value)
+            : new Movie();
+
+        if (movie == null)
+        {
+            TempData["Error"] = "Movie not found.";
+            return RedirectToAction(nameof(ContentManager));
+        }
+
+        movie.Title = title;
+        movie.Director = directorOrHost?.Trim();
+        movie.Producer = string.IsNullOrWhiteSpace(producer) ? "NA" : producer.Trim();
+        movie.Cast = string.IsNullOrWhiteSpace(cast) ? "NA" : cast.Trim();
+        movie.Duration = duration;
+        movie.Description = description?.Trim();
+        movie.PosterUrl = posterUrl?.Trim();
+        movie.Images = images?.Trim();
+        movie.TrailerUrl = trailerUrl?.Trim();
+        movie.ImdbRating = imdbRating;
+
+        if (!id.HasValue)
+        {
+            _context.Movies.Add(movie);
+        }
+    }
+    else if (contentType == "Standup")
+    {
+        var show = id.HasValue
+            ? await _context.StandupShows.FirstOrDefaultAsync(x => x.Id == id.Value)
+            : new StandupShow();
+
+        if (show == null)
+        {
+            TempData["Error"] = "Standup show not found.";
+            return RedirectToAction(nameof(ContentManager));
+        }
+
+        show.Title = title;
+        show.Comedian = string.IsNullOrWhiteSpace(directorOrHost) ? "NA" : directorOrHost.Trim();
+        show.Duration = duration;
+        show.Description = description?.Trim();
+        show.PosterUrl = posterUrl?.Trim();
+        show.Images = images?.Trim();
+        show.TrailerUrl = trailerUrl?.Trim();
+
+        if (!id.HasValue)
+        {
+            _context.StandupShows.Add(show);
+        }
+    }
+    else if (contentType == "Live")
+    {
+        var stream = id.HasValue
+            ? await _context.LiveStreams.FirstOrDefaultAsync(x => x.Id == id.Value)
+            : new LiveStream();
+
+        if (stream == null)
+        {
+            TempData["Error"] = "Live stream not found.";
+            return RedirectToAction(nameof(ContentManager));
+        }
+
+        stream.Title = title;
+        stream.Host = string.IsNullOrWhiteSpace(directorOrHost) ? "NA" : directorOrHost.Trim();
+        stream.Duration = duration;
+        stream.Description = description?.Trim();
+        stream.PosterUrl = posterUrl?.Trim();
+        stream.Images = images?.Trim();
+        stream.TrailerUrl = trailerUrl?.Trim();
+
+        if (!id.HasValue)
+        {
+            _context.LiveStreams.Add(stream);
+        }
+    }
+
+    await _context.SaveChangesAsync();
+    TempData["Success"] = id.HasValue ? "Content updated." : "Content inserted.";
+    return RedirectToAction(nameof(ContentManager));
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> DeleteContent(string contentType, int id)
+{
+    contentType = NormalizeContentType(contentType);
+
+    var isScheduled = contentType switch
+    {
+        "Movie" => await _context.ShowSchedules.AnyAsync(x => x.MovieId == id),
+        "Standup" => await _context.ShowSchedules.AnyAsync(x => x.StandupShowId == id),
+        "Live" => await _context.ShowSchedules.AnyAsync(x => x.LiveStreamId == id),
+        _ => true
+    };
+
+    if (isScheduled)
+    {
+        TempData["Error"] = "This item is used in schedules. Delete or update schedules first.";
+        return RedirectToAction(nameof(ContentManager));
+    }
+
+    if (contentType == "Movie")
+    {
+        var movie = await _context.Movies.FirstOrDefaultAsync(x => x.Id == id);
+        if (movie != null) _context.Movies.Remove(movie);
+    }
+    else if (contentType == "Standup")
+    {
+        var show = await _context.StandupShows.FirstOrDefaultAsync(x => x.Id == id);
+        if (show != null) _context.StandupShows.Remove(show);
+    }
+    else if (contentType == "Live")
+    {
+        var stream = await _context.LiveStreams.FirstOrDefaultAsync(x => x.Id == id);
+        if (stream != null) _context.LiveStreams.Remove(stream);
+    }
+
+    await _context.SaveChangesAsync();
+    TempData["Success"] = "Content deleted.";
+    return RedirectToAction(nameof(ContentManager));
+}
+
+private static string NormalizeContentType(string? contentType)
+{
+    var value = (contentType ?? string.Empty).Trim().ToLowerInvariant();
+
+    if (value.Contains("standup"))
+    {
+        return "Standup";
+    }
+
+    if (value.Contains("live"))
+    {
+        return "Live";
+    }
+
+    return "Movie";
 }
 
 
@@ -2791,6 +3065,8 @@ private static bool TryGetAdminPermission(
         [nameof(Versions)] = ("ADMIN", "VIEW"),
         [nameof(CreateVersion)] = ("ADMIN", "VIEW"),
         [nameof(CreateNextVersion)] = ("ADMIN", "VIEW"),
+        [nameof(UpdateVersion)] = ("ADMIN", "VIEW"),
+        [nameof(DeleteVersion)] = ("ADMIN", "VIEW"),
         [nameof(AccessManagement)] = ("ADMIN", "VIEW"),
         [nameof(Menus)] = ("ADMIN", "VIEW"),
 
@@ -2814,6 +3090,9 @@ private static bool TryGetAdminPermission(
         [nameof(ToggleRolePermission)] = ("PERMISSION", "ASSIGN"),
 
         [nameof(ManageShows)] = ("SHOW", "VIEW"),
+        [nameof(ContentManager)] = ("SHOW", "VIEW"),
+        [nameof(SaveContent)] = ("SHOW", "UPDATE"),
+        [nameof(DeleteContent)] = ("SHOW", "DELETE"),
         [nameof(CreateManagedShow)] = ("SHOW", "CREATE"),
         [nameof(UpdateManagedShow)] = ("SHOW", "UPDATE"),
         [nameof(DeleteManagedShow)] = ("SHOW", "DELETE"),

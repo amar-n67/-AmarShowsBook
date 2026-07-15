@@ -1,0 +1,205 @@
+@using AmarShowsBook.Models
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Data Manager";
+    var movies = ViewBag.Movies as List<Movie> ?? new List<Movie>();
+    var standupShows = ViewBag.StandupShows as List<StandupShow> ?? new List<StandupShow>();
+    var liveStreams = ViewBag.LiveStreams as List<LiveStream> ?? new List<LiveStream>();
+}
+
+<section class="admin-page content-manager-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Data Manager</h1>
+            <p>Insert, update, and delete master content for Movies, Standup, and Live.</p>
+        </div>
+        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
+    </div>
+
+    @if(TempData["Success"]!=null){<div class="alert alert-success">@TempData["Success"]</div>}
+    @if(TempData["Error"]!=null){<div class="alert alert-danger">@TempData["Error"]</div>}
+
+    <div class="admin-detail-panel mb-4">
+        <h2 class="h5 mb-3">Insert New Content</h2>
+        <form asp-action="SaveContent" method="post" class="content-form">
+            @Html.AntiForgeryToken()
+            <select name="contentType" class="form-select" required>
+                <option value="Movie">Movie</option>
+                <option value="Standup">Standup</option>
+                <option value="Live">Live</option>
+            </select>
+            <input name="title" class="form-control" placeholder="Title" required />
+            <input name="directorOrHost" class="form-control" placeholder="Director / Comedian / Host" />
+            <input name="producer" class="form-control movie-only" placeholder="Producer" />
+            <input name="cast" class="form-control movie-only" placeholder="Cast" />
+            <input name="duration" class="form-control" type="number" min="1" value="120" placeholder="Duration minutes" required />
+            <input name="imdbRating" class="form-control movie-only" type="number" min="0" max="10" step="0.1" placeholder="IMDB" />
+            <input name="posterUrl" class="form-control" placeholder="Poster URL" />
+            <input name="images" class="form-control wide-field" placeholder="Image URLs comma separated" />
+            <input name="trailerUrl" class="form-control wide-field" placeholder="Trailer URL" />
+            <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description"></textarea>
+            <button class="btn btn-primary" type="submit">Insert</button>
+        </form>
+    </div>
+
+    <div class="content-tabs">
+        <a href="#movies">Movies</a>
+        <a href="#standup">Standup</a>
+        <a href="#live">Live</a>
+    </div>
+
+    <div id="movies" class="admin-detail-panel content-section">
+        <h2 class="h5">Movies</h2>
+        @foreach (var item in movies)
+        {
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Movie" />
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="title" class="form-control" value="@item.Title" required />
+                <input name="directorOrHost" class="form-control" value="@item.Director" placeholder="Director" />
+                <input name="producer" class="form-control" value="@item.Producer" placeholder="Producer" />
+                <input name="cast" class="form-control" value="@item.Cast" placeholder="Cast" />
+                <input name="duration" class="form-control" type="number" min="1" value="@item.Duration" />
+                <input name="imdbRating" class="form-control" type="number" min="0" max="10" step="0.1" value="@item.ImdbRating" placeholder="IMDB" />
+                <input name="posterUrl" class="form-control wide-field" value="@item.PosterUrl" placeholder="Poster URL" />
+                <input name="images" class="form-control wide-field" value="@item.Images" placeholder="Images" />
+                <input name="trailerUrl" class="form-control wide-field" value="@item.TrailerUrl" placeholder="Trailer" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-Movie-@item.Id" onclick="return confirm('Delete movie @item.Title?')">Delete</button>
+                </div>
+            </form>
+            <form id="delete-Movie-@item.Id" asp-action="DeleteContent" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Movie" />
+                <input type="hidden" name="id" value="@item.Id" />
+            </form>
+        }
+    </div>
+
+    <div id="standup" class="admin-detail-panel content-section">
+        <h2 class="h5">Standup</h2>
+        @foreach (var item in standupShows)
+        {
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Standup" />
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="title" class="form-control" value="@item.Title" required />
+                <input name="directorOrHost" class="form-control" value="@item.Comedian" placeholder="Comedian" />
+                <input name="duration" class="form-control" type="number" min="1" value="@item.Duration" />
+                <input name="posterUrl" class="form-control wide-field" value="@item.PosterUrl" placeholder="Poster URL" />
+                <input name="images" class="form-control wide-field" value="@item.Images" placeholder="Images" />
+                <input name="trailerUrl" class="form-control wide-field" value="@item.TrailerUrl" placeholder="Trailer" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-Standup-@item.Id" onclick="return confirm('Delete standup @item.Title?')">Delete</button>
+                </div>
+            </form>
+            <form id="delete-Standup-@item.Id" asp-action="DeleteContent" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Standup" />
+                <input type="hidden" name="id" value="@item.Id" />
+            </form>
+        }
+    </div>
+
+    <div id="live" class="admin-detail-panel content-section">
+        <h2 class="h5">Live</h2>
+        @foreach (var item in liveStreams)
+        {
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Live" />
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="title" class="form-control" value="@item.Title" required />
+                <input name="directorOrHost" class="form-control" value="@item.Host" placeholder="Host" />
+                <input name="duration" class="form-control" type="number" min="1" value="@item.Duration" />
+                <input name="posterUrl" class="form-control wide-field" value="@item.PosterUrl" placeholder="Poster URL" />
+                <input name="images" class="form-control wide-field" value="@item.Images" placeholder="Images" />
+                <input name="trailerUrl" class="form-control wide-field" value="@item.TrailerUrl" placeholder="Trailer" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-Live-@item.Id" onclick="return confirm('Delete live stream @item.Title?')">Delete</button>
+                </div>
+            </form>
+            <form id="delete-Live-@item.Id" asp-action="DeleteContent" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Live" />
+                <input type="hidden" name="id" value="@item.Id" />
+            </form>
+        }
+    </div>
+</section>
+
+<style>
+.content-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.content-tabs a {
+    border: 1px solid var(--admin-line);
+    border-radius: 999px;
+    padding: 8px 14px;
+    background: var(--admin-panel);
+    color: var(--admin-ink);
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.content-form,
+.content-edit-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 10px;
+    align-items: end;
+}
+
+.content-edit-row {
+    padding: 14px 0;
+    border-top: 1px solid var(--admin-line);
+}
+
+.content-section {
+    margin-bottom: 18px;
+}
+
+.wide-field {
+    grid-column: span 2;
+}
+
+.content-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.content-actions .btn,
+.content-form .btn {
+    min-height: 38px;
+}
+
+@@media (max-width: 1100px) {
+    .content-form,
+    .content-edit-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@@media (max-width: 680px) {
+    .content-form,
+    .content-edit-row {
+        grid-template-columns: 1fr;
+    }
+
+    .wide-field {
+        grid-column: span 1;
+    }
+}
+</style>

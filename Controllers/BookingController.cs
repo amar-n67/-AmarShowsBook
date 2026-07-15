@@ -126,6 +126,21 @@ public async Task<IActionResult> TicketByBooking(long id)
     .OrderBy(x=>x.SeatNumber)
     .ToListAsync();
 
+    if(!tickets.Any() && confirmedBooking!=null)
+    {
+        await EnsureTicketsForConfirmedBooking(
+        confirmedBooking,
+        bookingSummary,
+        user);
+
+        tickets =
+        await _context.Tickets
+        .AsNoTracking()
+        .Where(x=>x.BookingId==id)
+        .OrderBy(x=>x.SeatNumber)
+        .ToListAsync();
+    }
+
     var ticket =
     new BookingDraft
     {
@@ -148,6 +163,53 @@ public async Task<IActionResult> TicketByBooking(long id)
     ViewBag.TicketUrl=BuildAbsoluteUrl($"/Booking/TicketByBooking/{id}");
 
     return View("MobileTicket",ticket);
+}
+
+private async Task EnsureTicketsForConfirmedBooking(
+    Booking booking,
+    VwBookingCompleteDetails bookingSummary,
+    User? user)
+{
+    if(await _context.Tickets.AnyAsync(x=>x.BookingId==booking.Id))
+    {
+        return;
+    }
+
+    var now =
+    DateTime.UtcNow;
+
+    var seats =
+    (bookingSummary.SeatNumbers ?? string.Empty)
+    .Split(',',StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Where(x=>!string.IsNullOrWhiteSpace(x))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToList();
+
+    if(!seats.Any())
+    {
+        seats.Add("GENERAL");
+    }
+
+    foreach(var seatNumber in seats)
+    {
+        _context.Tickets.Add(
+        new Ticket
+        {
+            BookingId=booking.Id,
+            TicketNumber=$"TKT-{booking.Id}-{seatNumber}-{Guid.NewGuid():N}".Substring(0,32),
+            AttendeeName=user?.Name ?? bookingSummary.UserName,
+            SeatNumber=seatNumber,
+            QrCode=$"BOOKING:{booking.BookingRef};SEAT:{seatNumber}",
+            TicketStatus="ACTIVE",
+            IssuedAt=now,
+            CreatedAt=now,
+            UpdatedAt=now,
+            QrGeneratedAt=now,
+            ValidationStatus="NOT_SCANNED"
+        });
+    }
+
+    await _context.SaveChangesAsync();
 }
 
         // ==========================================
