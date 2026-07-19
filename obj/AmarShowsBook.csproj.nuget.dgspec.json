@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/AmarShowsBook.csproj": {}
+    "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook.worktrees/agents-fix-launching-error/AmarShowsBook.csproj": {}
   },
   "projects": {
-    "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/AmarShowsBook.csproj": {
+    "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook.worktrees/agents-fix-launching-error/AmarShowsBook.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/AmarShowsBook.csproj",
+        "projectUniqueName": "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook.worktrees/agents-fix-launching-error/AmarShowsBook.csproj",
         "projectName": "AmarShowsBook",
-        "projectPath": "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/AmarShowsBook.csproj",
+        "projectPath": "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook.worktrees/agents-fix-launching-error/AmarShowsBook.csproj",
         "packagesPath": "/Users/amarnath/.nuget/packages/",
-        "outputPath": "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook/obj/",
+        "outputPath": "/Users/amarnath/Documents/VS-Code_Projects/AmarShowsBook.worktrees/agents-fix-launching-error/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/amarnath/.nuget/NuGet/NuGet.Config"
