@@ -2324,14 +2324,67 @@ CheckPaymentStatus(long bookingId)
 // ==========================================
 
 public async Task<IActionResult>
-Confirmation(long bookingId)
+Confirmation(long bookingId, long? confirmedBookingId)
 {
-    var booking=
+    BookingDraft? booking = null;
+    Booking? confirmedBooking = null;
 
-    await _context
-    .BookingDrafts
-    .FirstOrDefaultAsync(
-    x=>x.Id==bookingId);
+    if(confirmedBookingId.HasValue)
+    {
+        confirmedBooking =
+        await _context.Bookings
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x=>x.Id==confirmedBookingId.Value);
+
+        if(confirmedBooking==null)
+        {
+            return NotFound();
+        }
+
+        var userIdText =
+        HttpContext.Session.GetString("UserId");
+
+        if(long.TryParse(userIdText,out var currentUserId)
+            && currentUserId!=confirmedBooking.UserId
+            && !User.IsInRole("Admin"))
+        {
+            return StatusCode(
+            StatusCodes.Status403Forbidden,
+            "You do not have access to this booking.");
+        }
+
+        var draftIdText =
+        confirmedBooking.BookingRef?.StartsWith("BKG-DRAFT-",StringComparison.OrdinalIgnoreCase)==true
+        ? confirmedBooking.BookingRef["BKG-DRAFT-".Length..]
+        : string.Empty;
+
+        if(long.TryParse(draftIdText,out var draftId))
+        {
+            booking =
+            await _context
+            .BookingDrafts
+            .FirstOrDefaultAsync(x=>x.Id==draftId);
+        }
+
+        booking ??= new BookingDraft
+        {
+            Id=confirmedBooking.Id,
+            UserId=confirmedBooking.UserId,
+            ScheduleId=confirmedBooking.ScheduleId,
+            SeatNumbers=string.Empty,
+            TotalAmount=confirmedBooking.PayableAmount ?? confirmedBooking.TotalAmount,
+            Status=confirmedBooking.BookingStatus,
+            CreatedAt=confirmedBooking.BookedAt ?? confirmedBooking.CreatedAt ?? DateTime.UtcNow
+        };
+    }
+    else
+    {
+        booking=
+        await _context
+        .BookingDrafts
+        .FirstOrDefaultAsync(
+        x=>x.Id==bookingId);
+    }
 
     if(booking==null)
     {
@@ -2359,7 +2412,7 @@ Confirmation(long bookingId)
     await _context.Users
     .FirstOrDefaultAsync(x=>x.Id==booking.UserId);
 
-    var confirmedBooking =
+    confirmedBooking ??=
     await _context.Bookings
     .AsNoTracking()
     .FirstOrDefaultAsync(x=>x.BookingRef==$"BKG-DRAFT-{booking.Id}");

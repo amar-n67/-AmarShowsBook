@@ -355,33 +355,27 @@ LEFT JOIN public.venues v ON sc.venue_id = v.id;
         {
             try
             {
-                // Human Comment:
-                // Return all country names, while preserving local DB ids for countries
-                // that have state/region data in the application.
                 var dataCountries = await _context.Countries
                     .AsNoTracking()
-                    .OrderBy(c => c.Name)
-                    .Select(c => new { id = c.Id, name = c.Name })
+                    .Select(c => new { id = (int?)c.Id, name = c.Name })
                     .ToListAsync();
 
-                var countriesByName = dataCountries
+                var locationCountries = await _context.Locations
+                    .AsNoTracking()
+                    .Where(l => l.Country != null && l.Country.Trim() != "")
+                    .Select(l => new { id = (int?)null, name = l.Country })
+                    .ToListAsync();
+
+                var countries = dataCountries
+                    .Concat(locationCountries)
+                    .Where(c => !string.IsNullOrWhiteSpace(c.name))
                     .GroupBy(c => c.name.Trim(), StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(g => g.Key, g => (int?)g.First().id, StringComparer.OrdinalIgnoreCase);
-
-                var cultureCountries = CultureInfo
-                    .GetCultures(CultureTypes.SpecificCultures)
-                    .Select(c => new RegionInfo(c.Name).EnglishName)
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .Distinct(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var countryName in cultureCountries)
-                {
-                    countriesByName.TryAdd(countryName.Trim(), null);
-                }
-
-                var countries = countriesByName
-                    .OrderBy(c => c.Key)
-                    .Select(c => new { id = c.Value, name = c.Key })
+                    .Select(g => new
+                    {
+                        id = g.FirstOrDefault(x => x.id.HasValue)?.id,
+                        name = g.Key
+                    })
+                    .OrderBy(c => c.name)
                     .ToList();
 
                 return Json(countries);
@@ -406,43 +400,88 @@ string type)
     return View(dates);
 }
         [HttpGet]
-        public async Task<IActionResult> GetStates(int countryId)
+        public async Task<IActionResult> GetStates(int? countryId, string? countryName)
         {
             try
             {
-                var states = await _context.States
+                var stateRows = countryId.HasValue
+                    ? await _context.States
                     .AsNoTracking()
-                    .Where(s => s.CountryId == countryId)
-                    .OrderBy(s => s.Name)
-                    .Select(s => new { id = s.Id, name = s.Name })
+                    .Where(s => s.CountryId == countryId.Value)
+                    .Select(s => new { id = (int?)s.Id, name = s.Name })
+                    .ToListAsync()
+                    : new List<object>().Select(_ => new { id = (int?)null, name = string.Empty }).ToList();
+
+                var locationStates = await _context.Locations
+                    .AsNoTracking()
+                    .Where(l =>
+                        l.State != null &&
+                        l.State.Trim() != "" &&
+                        (string.IsNullOrWhiteSpace(countryName) || l.Country.ToLower() == countryName.ToLower()))
+                    .Select(l => new { id = (int?)null, name = l.State })
                     .ToListAsync();
+
+                var states = stateRows
+                    .Concat(locationStates)
+                    .Where(s => !string.IsNullOrWhiteSpace(s.name))
+                    .GroupBy(s => s.name.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g => new
+                    {
+                        id = g.FirstOrDefault(x => x.id.HasValue)?.id,
+                        name = g.Key
+                    })
+                    .OrderBy(s => s.name)
+                    .ToList();
 
                 return Json(states);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load states for country {CountryId}.", countryId);
+                _logger.LogError(ex, "Failed to load states for country {CountryId} / {CountryName}.", countryId, countryName);
                 return StatusCode(500, new { message = "Failed to load states." });
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDistricts(int stateId)
+        public async Task<IActionResult> GetDistricts(int? stateId, string? stateName, string? countryName)
         {
             try
             {
-                var districts = await _context.Districts
+                var districtRows = stateId.HasValue
+                    ? await _context.Districts
                     .AsNoTracking()
-                    .Where(d => d.StateId == stateId)
-                    .OrderBy(d => d.Name)
-                    .Select(d => new { id = d.Id, name = d.Name })
+                    .Where(d => d.StateId == stateId.Value)
+                    .Select(d => new { id = (int?)d.Id, name = d.Name })
+                    .ToListAsync()
+                    : new List<object>().Select(_ => new { id = (int?)null, name = string.Empty }).ToList();
+
+                var locationRegions = await _context.Locations
+                    .AsNoTracking()
+                    .Where(l =>
+                        l.Area != null &&
+                        l.Area.Trim() != "" &&
+                        (string.IsNullOrWhiteSpace(countryName) || l.Country.ToLower() == countryName.ToLower()) &&
+                        (string.IsNullOrWhiteSpace(stateName) || l.State.ToLower() == stateName.ToLower()))
+                    .Select(l => new { id = (int?)null, name = l.Area })
                     .ToListAsync();
+
+                var districts = districtRows
+                    .Concat(locationRegions)
+                    .Where(d => !string.IsNullOrWhiteSpace(d.name))
+                    .GroupBy(d => d.name.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g => new
+                    {
+                        id = g.FirstOrDefault(x => x.id.HasValue)?.id,
+                        name = g.Key
+                    })
+                    .OrderBy(d => d.name)
+                    .ToList();
 
                 return Json(districts);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load districts for state {StateId}.", stateId);
+                _logger.LogError(ex, "Failed to load districts for state {StateId} / {StateName}.", stateId, stateName);
                 return StatusCode(500, new { message = "Failed to load regions." });
             }
         }

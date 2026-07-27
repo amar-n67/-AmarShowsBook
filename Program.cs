@@ -122,6 +122,7 @@ pattern:
 
 EnsureApplicationVersionTable(app);
 EnsureDeveloperProfileStore(app);
+EnsureAmaroChatStore(app);
 
 
 // ========================================
@@ -480,6 +481,51 @@ FROM public.developer_profiles;
         app.Logger.LogWarning(
         ex,
         "Developer profile schema check skipped"
+        );
+    }
+}
+
+static void EnsureAmaroChatStore(WebApplication app)
+{
+    using var scope =
+    app.Services.CreateScope();
+
+    try
+    {
+        var context =
+        scope.ServiceProvider
+        .GetRequiredService<
+        ApplicationDbContext>();
+
+        context.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS public.amaro_chat_sessions
+(
+    id bigserial PRIMARY KEY,
+    user_id integer,
+    session_key varchar(120) NOT NULL,
+    started_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS public.amaro_chat_messages
+(
+    id bigserial PRIMARY KEY,
+    user_id integer,
+    user_message text NOT NULL,
+    amaro_reply text NOT NULL,
+    request_path text,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_amaro_chat_messages_user_created
+ON public.amaro_chat_messages(user_id, created_at DESC);
+");
+    }
+    catch(Exception ex)
+    {
+        app.Logger.LogWarning(
+        ex,
+        "Amaro chatbot schema check skipped"
         );
     }
 }

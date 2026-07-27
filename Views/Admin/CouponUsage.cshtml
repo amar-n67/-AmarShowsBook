@@ -25,12 +25,14 @@
         <div class="stat-card"><span>Reversed</span><strong>@reversedCount</strong></div>
     </div>
 
-    <div class="admin-detail-panel mb-4">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-4">
+    <div class="admin-detail-panel coupon-filter-panel mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-4 col-md-6">
+                <label class="coupon-filter-label" for="couponSearch">Search</label>
                 <input id="couponSearch" class="form-control rounded-pill" placeholder="Search coupon / user / booking / show" />
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6">
+                <label class="coupon-filter-label" for="couponStatus">Status</label>
                 <select id="couponStatus" class="form-select rounded-pill">
                     <option value="">All Status</option>
                     <option value="SUCCESS">SUCCESS</option>
@@ -38,7 +40,8 @@
                     <option value="REVERSED">REVERSED</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6">
+                <label class="coupon-filter-label" for="couponShowType">Show Type</label>
                 <select id="couponShowType" class="form-select rounded-pill">
                     <option value="">All Show Types</option>
                     <option value="Movie">Movie</option>
@@ -46,7 +49,7 @@
                     <option value="Live">Live</option>
                 </select>
             </div>
-            <div class="col-md-2 text-end">
+            <div class="col-lg-2 col-md-6 text-end">
                 <button type="button" class="btn btn-outline-dark rounded-pill w-100" onclick="resetCouponFilters()">Reset</button>
             </div>
         </div>
@@ -72,20 +75,26 @@
             @foreach(var item in Model)
             {
                 <tr class="coupon-row" data-status="@item.UsageStatus" data-type="@item.ShowType" data-admin-searchable>
-                    <td class="coupon-code-cell"><strong>@item.CouponCode</strong></td>
-                    <td class="coupon-user-cell">@item.UserName<br /><span class="sub-text">@item.UserEmail</span></td>
-                    <td class="coupon-show-cell">@item.ShowName<br /><span class="sub-text">@item.ShowType @item.ShowTime?.ToString("dd MMM yyyy hh:mm tt")</span></td>
-                    <td class="coupon-id-cell">@item.BookingRef</td>
-                    <td class="coupon-id-cell">@item.TransactionRef</td>
-                    <td>@CurrencyFormatter.FormatRupees(item.OriginalAmount)</td>
-                    <td>@CurrencyFormatter.FormatRupees(item.DiscountAmount)</td>
-                    <td>@CurrencyFormatter.FormatRupees(item.FinalAmount)</td>
-                    <td>
+                    <td class="coupon-code-cell" data-label="Coupon"><strong>@(string.IsNullOrWhiteSpace(item.CouponCode) ? "NA" : item.CouponCode)</strong></td>
+                    <td class="coupon-user-cell" data-label="User">
+                        <span class="coupon-primary">@(string.IsNullOrWhiteSpace(item.UserName) ? "NA" : item.UserName)</span>
+                        <span class="sub-text">@item.UserEmail</span>
+                    </td>
+                    <td class="coupon-show-cell" data-label="Show">
+                        <span class="coupon-primary">@(string.IsNullOrWhiteSpace(item.ShowName) ? "NA" : item.ShowName)</span>
+                        <span class="sub-text">@item.ShowType @item.ShowTime?.ToString("dd MMM yyyy hh:mm tt")</span>
+                    </td>
+                    <td class="coupon-id-cell" data-label="Booking"><span title="@item.BookingRef">@(string.IsNullOrWhiteSpace(item.BookingRef) ? "NA" : item.BookingRef)</span></td>
+                    <td class="coupon-id-cell" data-label="Transaction"><span title="@item.TransactionRef">@(string.IsNullOrWhiteSpace(item.TransactionRef) ? "NA" : item.TransactionRef)</span></td>
+                    <td class="coupon-money-cell" data-label="Original">@CurrencyFormatter.FormatRupees(item.OriginalAmount)</td>
+                    <td class="coupon-money-cell" data-label="Discount">@CurrencyFormatter.FormatRupees(item.DiscountAmount)</td>
+                    <td class="coupon-money-cell" data-label="Final">@CurrencyFormatter.FormatRupees(item.FinalAmount)</td>
+                    <td class="coupon-status-cell" data-label="Status">
                         <span class="badge @(item.UsageStatus == "REVERSED" ? "danger" : "success")">
-                            @item.UsageStatus
+                            @(string.IsNullOrWhiteSpace(item.UsageStatus) ? "NA" : item.UsageStatus)
                         </span>
                     </td>
-                    <td>@item.UsedAt?.ToString("dd MMM yyyy hh:mm tt")</td>
+                    <td class="coupon-date-cell" data-label="Used At">@(item.UsedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")</td>
                 </tr>
             }
             </tbody>
@@ -135,48 +144,202 @@ couponShowType?.addEventListener("change", filterCoupons);
 </script>
 
 <style>
+.coupon-filter-panel {
+    overflow: visible;
+}
+
+.coupon-filter-label {
+    display: block;
+    margin: 0 0 6px;
+    color: var(--admin-muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.coupon-filter-panel .form-control,
+.coupon-filter-panel .form-select,
+.coupon-filter-panel .btn {
+    min-height: 44px;
+}
+
 .coupon-usage-table {
     overflow-x: auto;
     max-width: 100%;
 }
 
 .coupon-usage-table table {
-    min-width: 1180px;
+    min-width: 1120px;
     table-layout: fixed;
+}
+
+.coupon-usage-table th:nth-child(1),
+.coupon-usage-table td:nth-child(1) {
+    width: 9%;
+}
+
+.coupon-usage-table th:nth-child(2),
+.coupon-usage-table td:nth-child(2) {
+    width: 16%;
+}
+
+.coupon-usage-table th:nth-child(3),
+.coupon-usage-table td:nth-child(3) {
+    width: 17%;
+}
+
+.coupon-usage-table th:nth-child(4),
+.coupon-usage-table td:nth-child(4),
+.coupon-usage-table th:nth-child(5),
+.coupon-usage-table td:nth-child(5) {
+    width: 12%;
+}
+
+.coupon-usage-table th:nth-child(6),
+.coupon-usage-table td:nth-child(6),
+.coupon-usage-table th:nth-child(7),
+.coupon-usage-table td:nth-child(7),
+.coupon-usage-table th:nth-child(8),
+.coupon-usage-table td:nth-child(8) {
+    width: 8%;
+}
+
+.coupon-usage-table th:nth-child(9),
+.coupon-usage-table td:nth-child(9) {
+    width: 8%;
+}
+
+.coupon-usage-table th:nth-child(10),
+.coupon-usage-table td:nth-child(10) {
+    width: 10%;
 }
 
 .coupon-usage-table td,
 .coupon-usage-table th {
     vertical-align: top;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     word-break: normal;
 }
 
-.coupon-code-cell {
-    width: 120px;
+.coupon-usage-table td {
+    line-height: 1.35;
 }
 
-.coupon-user-cell,
-.coupon-show-cell {
-    width: 210px;
+.coupon-primary,
+.coupon-user-cell .sub-text,
+.coupon-show-cell .sub-text,
+.coupon-id-cell span,
+.coupon-date-cell {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.coupon-primary,
+.coupon-id-cell span,
+.coupon-date-cell {
+    white-space: nowrap;
+}
+
+.coupon-user-cell .sub-text,
+.coupon-show-cell .sub-text {
+    margin-top: 4px;
+    color: var(--admin-muted);
+    font-size: 0.78rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.coupon-code-cell {
+    font-weight: 900;
 }
 
 .coupon-id-cell {
-    max-width: 150px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.78rem;
+}
+
+.coupon-id-cell span {
+    padding: 4px 7px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--admin-teal) 10%, transparent);
+}
+
+.coupon-money-cell {
+    white-space: nowrap;
+    font-weight: 850;
 }
 
 .coupon-usage-table .badge {
     display: inline-flex;
     max-width: 100%;
-    white-space: normal;
+    white-space: nowrap;
     text-align: center;
 }
 
 @@media (max-width: 760px) {
     .coupon-usage-table table {
-        min-width: 980px;
+        min-width: 0;
+    }
+
+    .coupon-usage-table {
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .coupon-usage-table table,
+    .coupon-usage-table thead,
+    .coupon-usage-table tbody,
+    .coupon-usage-table tr,
+    .coupon-usage-table td {
+        display: block;
+        width: 100% !important;
+    }
+
+    .coupon-usage-table thead {
+        display: none;
+    }
+
+    .coupon-usage-table tbody {
+        display: grid;
+        gap: 12px;
+    }
+
+    .coupon-usage-table tr {
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: var(--admin-panel-strong);
+        box-shadow: var(--admin-shadow);
+        overflow: hidden;
+    }
+
+    .coupon-usage-table td {
+        display: grid;
+        grid-template-columns: 108px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        padding: 10px 12px;
+        border-bottom: 1px solid color-mix(in srgb, var(--admin-line) 72%, transparent);
+    }
+
+    .coupon-usage-table td:last-child {
+        border-bottom: 0;
+    }
+
+    .coupon-usage-table td::before {
+        content: attr(data-label);
+        color: var(--admin-muted);
+        font-size: 0.72rem;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .coupon-money-cell,
+    .coupon-date-cell {
+        white-space: normal;
     }
 }
 </style>

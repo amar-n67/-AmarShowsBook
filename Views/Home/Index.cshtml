@@ -28,45 +28,51 @@
 
 <div class="showtime-controls">
     <div class="location-panel">
+        <div class="location-panel-heading">
+            <span>Location</span>
+            <strong>Country, state and region</strong>
+        </div>
         <div class="location-strip">
             <div class="location-field">
                 <label>Country</label>
                 <select id="country" class="form-control" onchange="loadStates()">
-                    <option value="">Loading countries...</option>
+                    <option value="">All Countries</option>
                 </select>
             </div>
             <div class="location-field">
                 <label>State</label>
                 <select id="state" class="form-control" onchange="loadDistricts()">
-                    <option value="">Select State</option>
+                    <option value="">All States</option>
                 </select>
             </div>
             <div class="location-field">
                 <label>Region</label>
                 <select id="district" class="form-control">
-                    <option value="">Select Region</option>
+                    <option value="">All Regions</option>
                 </select>
             </div>
             <div class="location-field location-actions">
-                <button type="button" class="location-search-btn" onclick="applyLocationFilter()">Search</button>
+                <button type="button" class="location-search-btn" onclick="applyLocationFilter()">Apply</button>
                 <button type="button" class="location-reset-btn" onclick="resetLocationFilter()">Reset</button>
             </div>
         </div>
     </div>
-    <nav class="showtime-tabs" aria-label="Show category">
-        <a href="/Home/Index?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
-            <span class="tab-icon">🎬</span>
-            <span><strong>Movies</strong><small>Big screen picks</small></span>
-        </a>
-        <a href="/Home/Index?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
-            <span class="tab-icon">🎤</span>
-            <span><strong>Standup</strong><small>Live comedy</small></span>
-        </a>
-        <a href="/Home/Index?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
-            <span class="tab-icon">📡</span>
-            <span><strong>Live</strong><small>Streaming events</small></span>
-        </a>
-    </nav>
+    <div class="show-type-panel">
+        <div class="show-type-heading">
+            <span>Show Type</span>
+        </div>
+        <nav class="showtime-tabs" aria-label="Show category">
+            <a href="/Home/Index?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
+                <strong>Movies</strong>
+            </a>
+            <a href="/Home/Index?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
+                <strong>Standup</strong>
+            </a>
+            <a href="/Home/Index?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
+                <strong>Live Stream</strong>
+            </a>
+        </nav>
+    </div>
 </div>
 
     <div class="schedule-board">
@@ -1329,6 +1335,160 @@ Book Ticket
             text-align: left !important;
         }
     }
+.location-panel-heading,
+.show-type-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.location-panel-heading span,
+.show-type-heading span {
+    color: var(--app-muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.location-panel-heading strong {
+    color: var(--app-card-text);
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.showtime-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    align-items: stretch;
+    padding: 12px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    box-shadow: 0 14px 34px rgba(15,23,42,.1);
+}
+
+.location-panel,
+.show-type-panel {
+    min-width: 0;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.location-panel {
+    padding: 0;
+}
+
+.location-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
+    gap: 8px;
+}
+
+.location-field {
+    min-width: 0;
+    max-width: none;
+}
+
+.location-field select,
+.location-search-btn,
+.location-reset-btn {
+    min-height: 42px;
+    border-radius: 8px;
+}
+
+.location-field select {
+    background: var(--app-input);
+    color: var(--app-input-text);
+    font-weight: 750;
+    border: 1px solid var(--app-input-border);
+}
+
+.location-actions {
+    align-self: end;
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 8px;
+}
+
+.showtime-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 0;
+    align-self: stretch;
+    width: 100%;
+}
+
+.showtime-tabs a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 76%, transparent);
+    border-radius: 8px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    text-align: center;
+    text-decoration: none;
+    box-shadow: none;
+}
+
+.showtime-tabs .tab-icon {
+    display: none;
+}
+
+.showtime-tabs strong {
+    font-size: 0.92rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    font-weight: 900;
+}
+
+.showtime-tabs a.active {
+    background: var(--app-primary);
+    border-color: var(--app-primary);
+    color: #fff;
+}
+
+.showtime-tabs a.active .tab-icon {
+    display: none;
+}
+
+.showtime-tabs a:hover {
+    transform: none;
+    border-color: var(--app-primary);
+}
+
+@@media (max-width: 980px) {
+    .showtime-controls,
+    .location-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .showtime-tabs {
+        width: 100%;
+    }
+
+    .location-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@@media (max-width: 560px) {
+    .showtime-controls {
+        padding: 10px;
+    }
+
+    .showtime-tabs {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <script>
@@ -1419,6 +1579,11 @@ selectedName
     selectId
     );
 
+    if(!select)
+    {
+        return;
+    }
+
     select.innerHTML=
     `<option value="">
     ${placeholder}
@@ -1434,8 +1599,7 @@ selectedName
         const optionName=
         item.name || item;
 
-        option.value=
-        optionName;
+        option.value=optionName;
 
         option.dataset.id=
         item.id || "";
@@ -1492,34 +1656,18 @@ async function loadCountries()
         const countries=
         await response.json();
 
-        const india=
-        countries.find(
-        x=>
-        x.name &&
-        x.name
-        .toLowerCase()
-        ===
-        "india"
-        );
+        const india=countries.find(x=>x.name && x.name.toLowerCase()==="india");
 
-        const selectedCountryName=
-        india
-        ?
-        india.name
-        :
-        "";
+        const selectedCountryName=india ? india.name : "";
 
         setSelectOptions(
         "country",
         countries,
-        "Select Country",
+        "All Countries",
         selectedCountryName
         );
 
-        if(
-        india &&
-        india.id
-        )
+        if(india)
         {
             await loadStates();
         }
@@ -1530,19 +1678,19 @@ async function loadCountries()
         setSelectOptions(
         "country",
         [],
-        "Select Country"
+        "All Countries"
         );
 
         setSelectOptions(
         "state",
         [],
-        "Select State"
+        "All States"
         );
 
         setSelectOptions(
         "district",
         [],
-        "Select Region"
+        "All Regions"
         );
 
         showLocationError(
@@ -1572,18 +1720,20 @@ async function loadStates()
     :
     "";
 
+    const countryName=countrySelect.value || "";
+
     setSelectOptions(
     "district",
     [],
-    "Select Region"
+    "All Regions"
     );
 
-    if(!countryId)
+    if(!countryId && !countryName)
     {
         setSelectOptions(
         "state",
         [],
-        "Select State"
+        "All States"
         );
 
         return;
@@ -1593,7 +1743,7 @@ async function loadStates()
     {
         const response=
         await fetch(
-        `/Home/GetStates?countryId=${countryId}`
+        `/Home/GetStates?countryId=${encodeURIComponent(countryId)}&countryName=${encodeURIComponent(countryName)}`
         );
 
         const states=
@@ -1602,7 +1752,7 @@ async function loadStates()
         setSelectOptions(
         "state",
         states,
-        "Select State"
+        "All States"
         );
     }
     catch
@@ -1634,12 +1784,15 @@ async function loadDistricts()
     :
     "";
 
-    if(!stateId)
+    const stateName=stateSelect.value || "";
+    const countryName=document.getElementById("country")?.value || "";
+
+    if(!stateId && !stateName)
     {
         setSelectOptions(
         "district",
         [],
-        "Select Region"
+        "All Regions"
         );
 
         return;
@@ -1649,7 +1802,7 @@ async function loadDistricts()
     {
         const response=
         await fetch(
-        `/Home/GetDistricts?stateId=${stateId}`
+        `/Home/GetDistricts?stateId=${encodeURIComponent(stateId)}&stateName=${encodeURIComponent(stateName)}&countryName=${encodeURIComponent(countryName)}`
         );
 
         const districts=
@@ -1658,7 +1811,7 @@ async function loadDistricts()
         setSelectOptions(
         "district",
         districts,
-        "Select Region"
+        "All Regions"
         );
     }
     catch

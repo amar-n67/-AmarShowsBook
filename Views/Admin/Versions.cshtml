@@ -82,7 +82,7 @@
             <tbody>
             @foreach(var item in Model)
             {
-                <tr data-admin-searchable>
+                <tr data-admin-searchable data-version-row>
                     <td colspan="6">
                         <form asp-action="UpdateVersion" method="post" class="version-row-form">
                             @Html.AntiForgeryToken()
@@ -90,26 +90,28 @@
                             <div class="version-grid">
                                 <div>
                                     <label class="form-label">Version</label>
-                                    <input name="versionNumber" class="form-control" value="@item.VersionNumber" required />
+                                    <input name="versionNumber" class="form-control" value="@item.VersionNumber" required readonly data-version-editable />
                                 </div>
                                 <div>
                                     <label class="form-label">Title</label>
-                                    <input name="releaseTitle" class="form-control" value="@item.ReleaseTitle" required />
+                                    <input name="releaseTitle" class="form-control" value="@item.ReleaseTitle" required readonly data-version-editable />
                                 </div>
                                 <div>
                                     <label class="form-label">Notes</label>
-                                    <textarea name="releaseNotes" class="form-control" rows="2">@item.ReleaseNotes</textarea>
+                                    <textarea name="releaseNotes" class="form-control" rows="2" readonly data-version-editable>@item.ReleaseNotes</textarea>
                                 </div>
                                 <div>
                                     <label class="form-label">Updated</label>
                                     <div class="version-muted">@item.UpdatedAt.ToString("dd MMM yyyy hh:mm tt")</div>
                                 </div>
                                 <label class="version-current">
-                                    <input name="isCurrent" value="true" type="checkbox" @(item.IsCurrent ? "checked" : "") />
+                                    <input name="isCurrent" value="true" type="checkbox" @(item.IsCurrent ? "checked" : "") disabled data-version-check />
                                     <span>Current</span>
                                 </label>
                                 <div class="version-actions">
-                                    <button class="btn btn-primary btn-sm" type="submit">Edit</button>
+                                    <button class="btn btn-outline-primary btn-sm" type="button" data-version-edit>Edit</button>
+                                    <button class="btn btn-primary btn-sm d-none" type="submit" data-version-save>Save</button>
+                                    <button class="btn btn-secondary btn-sm d-none" type="button" data-version-cancel>Cancel</button>
                                     <button class="btn btn-danger btn-sm"
                                             type="submit"
                                             form="delete-version-@item.Id"
@@ -134,6 +136,13 @@
 <style>
 .version-row-form {
     margin: 0;
+}
+
+.version-row-form input[readonly],
+.version-row-form textarea[readonly] {
+    background: var(--admin-soft);
+    color: var(--admin-muted);
+    cursor: default;
 }
 
 .version-grid {
@@ -194,3 +203,43 @@
     }
 }
 </style>
+
+<script>
+document.querySelectorAll("[data-version-row]").forEach(row => {
+    const editButton = row.querySelector("[data-version-edit]");
+    const saveButton = row.querySelector("[data-version-save]");
+    const cancelButton = row.querySelector("[data-version-cancel]");
+    const fields = Array.from(row.querySelectorAll("[data-version-editable]"));
+    const currentCheck = row.querySelector("[data-version-check]");
+    const originals = fields.map(field => field.value);
+    const originalChecked = currentCheck ? currentCheck.checked : false;
+
+    function setEditing(isEditing) {
+        fields.forEach(field => {
+            field.readOnly = !isEditing;
+        });
+
+        if (currentCheck) {
+            currentCheck.disabled = !isEditing;
+        }
+
+        editButton.classList.toggle("d-none", isEditing);
+        saveButton.classList.toggle("d-none", !isEditing);
+        cancelButton.classList.toggle("d-none", !isEditing);
+    }
+
+    editButton.addEventListener("click", () => setEditing(true));
+
+    cancelButton.addEventListener("click", () => {
+        fields.forEach((field, index) => {
+            field.value = originals[index];
+        });
+
+        if (currentCheck) {
+            currentCheck.checked = originalChecked;
+        }
+
+        setEditing(false);
+    });
+});
+</script>

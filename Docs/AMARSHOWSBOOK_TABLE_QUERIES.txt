@@ -1,0 +1,193 @@
+AmarShowsBook SQL Query Reference
+Database: AmarMovie_DB
+Dialect: PostgreSQL
+
+Use these as copy-ready templates for inserting, updating, deleting, and viewing the main application data.
+
+============================================================
+MOVIES
+============================================================
+
+-- View movies
+SELECT * FROM public."Movies" ORDER BY "Id" DESC;
+
+-- Insert movie
+INSERT INTO public."Movies"
+("Title", "Director", "Producer", "Cast", "Duration", "PosterUrl", "Images", "TrailerUrl", "Description", "ImdbRating")
+VALUES
+('Sample Movie', 'Director Name', 'Producer Name', 'Actor One, Actor Two', 150, '/uploads/movie-poster.jpg', '/uploads/movie-1.jpg,/uploads/movie-2.jpg', 'https://www.youtube.com/watch?v=VIDEO_ID', 'Movie description', 8.2);
+
+-- Update movie
+UPDATE public."Movies"
+SET "Title" = 'Updated Movie',
+    "Director" = 'Updated Director',
+    "Duration" = 145,
+    "ImdbRating" = 8.5
+WHERE "Id" = 1;
+
+-- Delete movie
+DELETE FROM public."Movies" WHERE "Id" = 1;
+
+============================================================
+STANDUP SHOWS
+============================================================
+
+SELECT * FROM public."StandupShows" ORDER BY "Id" DESC;
+
+INSERT INTO public."StandupShows"
+("Title", "Comedian", "Duration", "PosterUrl", "Images", "TrailerUrl", "Description")
+VALUES
+('Sample Standup Night', 'Comedian Name', 90, '/uploads/standup-poster.jpg', '/uploads/standup-1.jpg', 'https://www.youtube.com/watch?v=VIDEO_ID', 'Standup show description');
+
+UPDATE public."StandupShows"
+SET "Title" = 'Updated Standup Night',
+    "Comedian" = 'Updated Comedian',
+    "Duration" = 95
+WHERE "Id" = 1;
+
+DELETE FROM public."StandupShows" WHERE "Id" = 1;
+
+============================================================
+LIVE STREAMS
+============================================================
+
+SELECT * FROM public."LiveStreams" ORDER BY "Id" DESC;
+
+INSERT INTO public."LiveStreams"
+("Title", "Host", "Duration", "PosterUrl", "Images", "TrailerUrl", "Description")
+VALUES
+('Sample Live Stream', 'Host Name', 120, '/uploads/live-poster.jpg', '/uploads/live-1.jpg', 'https://www.youtube.com/watch?v=VIDEO_ID', 'Live stream description');
+
+UPDATE public."LiveStreams"
+SET "Title" = 'Updated Live Stream',
+    "Host" = 'Updated Host',
+    "Duration" = 110
+WHERE "Id" = 1;
+
+DELETE FROM public."LiveStreams" WHERE "Id" = 1;
+
+============================================================
+LOCATIONS, VENUES, SCREENS
+============================================================
+
+SELECT * FROM public."Locations" ORDER BY "Id" DESC;
+SELECT * FROM public.venues ORDER BY id DESC;
+SELECT * FROM public.screens ORDER BY id DESC;
+
+INSERT INTO public."Locations" ("Country", "State", "Area")
+VALUES ('India', 'Telangana', 'Hyderabad');
+
+INSERT INTO public.venues (venue_code, venue_name, venue_type, address, city, state, country, total_screens, is_active, created_at, updated_at)
+VALUES ('VEN-SAMPLE-1', 'Sample Cinemas', 'THEATER', 'Road 1, Sample Area', 'Hyderabad', 'Telangana', 'India', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO public.screens (venue_id, screen_code, screen_name, total_seats, screen_type, audio_system, is_active, created_at, updated_at)
+VALUES (1, 'SCR-SAMPLE-1', 'Screen 1', 120, 'STANDARD', 'DOLBY', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+UPDATE public."Locations"
+SET "Area" = 'Updated Area'
+WHERE "Id" = 1;
+
+DELETE FROM public."Locations" WHERE "Id" = 1;
+
+============================================================
+SHOW SCHEDULES
+============================================================
+
+SELECT * FROM public."ShowSchedules" ORDER BY "StartTime" DESC;
+
+-- Insert movie schedule
+INSERT INTO public."ShowSchedules"
+("MovieId", "StandupShowId", "LiveStreamId", "LocationId", screen_id, "StartTime", "EndTime", "Type")
+VALUES
+(1, NULL, NULL, 1, 1, '2026-07-25 18:30:00+05:30', '2026-07-25 21:00:00+05:30', 'Movie');
+
+-- Insert standup schedule
+INSERT INTO public."ShowSchedules"
+("MovieId", "StandupShowId", "LiveStreamId", "LocationId", screen_id, "StartTime", "EndTime", "Type")
+VALUES
+(NULL, 1, NULL, 1, 1, '2026-07-26 19:00:00+05:30', '2026-07-26 20:30:00+05:30', 'Standup');
+
+-- Insert live stream schedule
+INSERT INTO public."ShowSchedules"
+("MovieId", "StandupShowId", "LiveStreamId", "LocationId", screen_id, "StartTime", "EndTime", "Type")
+VALUES
+(NULL, NULL, 1, 1, 1, '2026-07-27 20:00:00+05:30', '2026-07-27 22:00:00+05:30', 'Live');
+
+UPDATE public."ShowSchedules"
+SET "StartTime" = '2026-07-25 20:00:00+05:30',
+    "EndTime" = '2026-07-25 22:30:00+05:30'
+WHERE "Id" = 1;
+
+DELETE FROM public."ShowSchedules" WHERE "Id" = 1;
+
+============================================================
+USERS, ROLES, PERMISSIONS
+============================================================
+
+SELECT "Id", "Name", "Email", is_active, is_deleted FROM public."Users" ORDER BY "Id" DESC;
+SELECT id, role_code, role_name, is_active FROM public.roles ORDER BY id;
+SELECT * FROM public.vw_user_access_matrix ORDER BY user_id, module_code, action_type;
+
+INSERT INTO public.roles (role_code, role_name, description, is_active, created_at, updated_at)
+VALUES ('CUSTOM_ROLE', 'Custom Role', 'Custom role description', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+UPDATE public.roles
+SET role_name = 'Updated Role Name',
+    updated_at = CURRENT_TIMESTAMP
+WHERE role_code = 'CUSTOM_ROLE';
+
+DELETE FROM public.roles WHERE role_code = 'CUSTOM_ROLE';
+
+============================================================
+BOOKINGS, TICKETS, PAYMENTS
+============================================================
+
+SELECT * FROM public.booking_drafts ORDER BY "Id" DESC;
+SELECT * FROM public.bookings ORDER BY id DESC;
+SELECT * FROM public.transactions ORDER BY id DESC;
+SELECT * FROM public.tickets ORDER BY id DESC;
+SELECT * FROM public.vw_booking_complete_details ORDER BY booking_id DESC;
+
+UPDATE public.bookings
+SET booking_status = 'CONFIRMED',
+    payment_status = 'SUCCESS',
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = 1;
+
+UPDATE public.bookings
+SET booking_status = 'CANCELLED',
+    payment_status = 'REFUND_PENDING',
+    cancelled_at = CURRENT_TIMESTAMP,
+    cancellation_reason = 'Admin cancelled'
+WHERE id = 1;
+
+DELETE FROM public.booking_drafts WHERE "Id" = 1;
+
+============================================================
+APPLICATION VERSIONS
+============================================================
+
+SELECT * FROM public.application_versions ORDER BY is_current DESC, updated_at DESC;
+
+INSERT INTO public.application_versions
+(version_number, release_title, release_notes, updated_at, created_at, created_by, is_current)
+VALUES
+('1.0.1', 'Patch release', 'Release notes here', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Admin', true);
+
+UPDATE public.application_versions
+SET release_title = 'Updated release title',
+    release_notes = 'Updated release notes',
+    is_current = true,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = 1;
+
+DELETE FROM public.application_versions WHERE id = 1;
+
+============================================================
+AMARO CHATBOT
+============================================================
+
+SELECT * FROM public.amaro_chat_messages ORDER BY created_at DESC;
+
+DELETE FROM public.amaro_chat_messages
+WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '90 days';

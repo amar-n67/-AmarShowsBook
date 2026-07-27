@@ -53,8 +53,8 @@
                 var statusClass = booking.IsError == 1 ? "failed" : isExpired ? "expired" : "success";
                 var statusText = isExpired ? "EXPIRED" : booking.BookingStatus;
                 var ticketUrl = $"{publicBaseUrl}/Booking/TicketByBooking/{booking.BookingId}";
-                var ticketPath = $"/Booking/TicketByBooking/{booking.BookingId}";
-                var printPath = $"{ticketPath}?print=1";
+                var ticketPath = $"/Booking/Confirmation?confirmedBookingId={booking.BookingId}";
+                var mobileTicketPath = $"/Booking/TicketByBooking/{booking.BookingId}";
                 var venueDetails = bookingVenues.TryGetValue(booking.BookingId, out var foundVenue) && !string.IsNullOrWhiteSpace(foundVenue)
                     ? foundVenue
                     : booking.LocationName;
@@ -137,7 +137,7 @@
                         <a class="btn btn-primary" href="@ticketPath">View Ticket</a>
                         @if(canUsePrintTools)
                         {
-                        <a class="btn btn-secondary" href="@printPath">Download</a>
+                        <a class="btn btn-secondary" href="@mobileTicketPath?print=1">Download</a>
                         }
                         @if(canCancel)
                         {

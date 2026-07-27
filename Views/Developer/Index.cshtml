@@ -6,6 +6,20 @@
     var profileImage = string.IsNullOrWhiteSpace(Model.ProfileImage)
         ? "/images/default-user.png"
         : Model.ProfileImage;
+    var roleLabel = canEdit ? "Developer editor access" : "Profile viewer access";
+    var defaultSkills = "ASP.NET Core MVC, Entity Framework Core, PostgreSQL, Razor Views, Bootstrap, JavaScript, RBAC, Session Authentication, Payment Flow, QR Ticketing";
+    var defaultTechnologies = ".NET 10, C#, Npgsql, PostgreSQL Views, MVC Controllers, Razor, Bootstrap, jQuery, HTML5, CSS3, Docker, Render Deployment";
+    var skillsText = string.IsNullOrWhiteSpace(Model.Skills) ? defaultSkills : Model.Skills;
+    var technologiesText = string.IsNullOrWhiteSpace(Model.Technologies) ? defaultTechnologies : Model.Technologies;
+    var skillList = skillsText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var technologyList = technologiesText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var applicationSections = new[]
+    {
+        new { Title = "Application Stack", Body = "ASP.NET Core MVC application using Razor views, EF Core, Npgsql, PostgreSQL tables/views, Bootstrap styling, JavaScript interactions, QR ticket generation, wallet, transactions, refunds, and admin dashboards." },
+        new { Title = "Role And Access", Body = "Session authorization with RBAC roles, role-permission mapping, application menus, module actions, developer bypass settings, and page-level authorization filters." },
+        new { Title = "Booking Domain", Body = "Movies, standup shows, live streams, schedules, venues, screens, seats, booking drafts, payment sessions, confirmed bookings, tickets, transactions, refunds, coupons, and wallet usage." },
+        new { Title = "Operations", Body = "Admin tools for users, roles, permissions, bookings, transactions, coupon usage, wallets, refunds, notifications, activity logs, application versions, and show management." }
+    };
     var socials = new[]
     {
         new { Label = "GitHub", Url = Model.GitHubUrl },
@@ -82,6 +96,26 @@ alt="@Model.FullName profile image" />
 
 </div>
 
+<div class="developer-command-bar">
+<div>
+<span>@roleLabel</span>
+<strong>Application engineering profile</strong>
+</div>
+@if(canEdit)
+{
+<details class="developer-action-menu">
+<summary>Edit Profile</summary>
+<button type="button" onclick="showDeveloperEditor()">Open editor</button>
+<a href="#developerSkills">Review skills</a>
+<a href="#developerTech">Review technologies</a>
+</details>
+}
+else
+{
+<span class="developer-readonly-pill">Read only</span>
+}
+</div>
+
 
 
 <div class="developer-grid">
@@ -111,13 +145,14 @@ alt="@Model.FullName profile image" />
 
 <div class="dev-card">
 
-<h2>🛠 Skills</h2>
+<h2 id="developerSkills">🛠 Skills</h2>
 
-<p>
-
-@Model.Skills
-
-</p>
+<div class="dev-chip-list">
+@foreach(var skill in skillList)
+{
+    <span>@skill</span>
+}
+</div>
 
 </div>
 
@@ -152,13 +187,14 @@ alt="@Model.FullName profile image" />
 
 <div class="dev-card">
 
-<h2>⚡ Technologies</h2>
+<h2 id="developerTech">⚡ Technologies</h2>
 
-<p>
-
-@Model.Technologies
-
-</p>
+<div class="dev-chip-list tech">
+@foreach(var technology in technologyList)
+{
+    <span>@technology</span>
+}
+</div>
 
 </div>
 
@@ -178,10 +214,20 @@ alt="@Model.FullName profile image" />
 
 </div>
 
+<div class="developer-grid developer-application-grid">
+@foreach(var section in applicationSections)
+{
+<div class="dev-card">
+<h2>@(section.Title)</h2>
+<p>@(section.Body)</p>
+</div>
+}
+</div>
+
 
 @if(canEdit)
 {
-<div class="developer-edit-panel">
+<div class="developer-edit-panel" id="developerEditPanel" hidden>
 <div class="developer-edit-header">
 <h2>Edit Developer Profile</h2>
 <p>Changes are saved directly to the database profile record.</p>
@@ -487,6 +533,100 @@ minmax(260px,1fr)
 gap:20px;
 }
 
+.developer-command-bar{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:14px;
+margin-bottom:22px;
+padding:14px 16px;
+border:1px solid var(--app-input-border);
+border-radius:8px;
+background:var(--app-card);
+color:var(--app-card-text);
+box-shadow:0 14px 34px rgba(15,23,42,.1);
+}
+
+.developer-command-bar span{
+display:block;
+color:var(--app-muted);
+font-size:.78rem;
+font-weight:850;
+}
+
+.developer-command-bar strong{
+display:block;
+font-size:1rem;
+font-weight:900;
+}
+
+.developer-action-menu{
+position:relative;
+}
+
+.developer-action-menu summary{
+list-style:none;
+min-height:40px;
+display:inline-flex;
+align-items:center;
+padding:0 16px;
+border-radius:999px;
+background:var(--app-primary);
+color:#fff;
+font-weight:900;
+cursor:pointer;
+}
+
+.developer-action-menu summary::-webkit-details-marker{
+display:none;
+}
+
+.developer-action-menu[open]{
+z-index:5;
+}
+
+.developer-action-menu[open]::after{
+content:"";
+position:absolute;
+right:0;
+top:44px;
+width:210px;
+height:132px;
+border:1px solid var(--app-input-border);
+border-radius:8px;
+background:var(--app-card);
+box-shadow:0 18px 44px rgba(15,23,42,.18);
+z-index:-1;
+}
+
+.developer-action-menu button,
+.developer-action-menu a{
+position:relative;
+z-index:1;
+display:block;
+width:210px;
+min-height:38px;
+padding:9px 12px;
+border:0;
+background:transparent;
+color:var(--app-card-text);
+text-align:left;
+text-decoration:none;
+font-weight:850;
+}
+
+.developer-action-menu button{
+margin-top:8px;
+}
+
+.developer-readonly-pill{
+padding:9px 12px;
+border-radius:999px;
+background:var(--app-input-disabled);
+color:var(--app-muted);
+font-weight:900;
+}
+
 
 .dev-card{
 
@@ -531,6 +671,32 @@ font-size:1.08rem;
 font-weight:800;
 }
 
+.developer-application-grid{
+margin-top:20px;
+}
+
+.dev-chip-list{
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+}
+
+.dev-chip-list span{
+display:inline-flex;
+align-items:center;
+min-height:32px;
+padding:6px 10px;
+border:1px solid var(--app-input-border);
+border-radius:999px;
+background:color-mix(in srgb, var(--app-primary) 10%, var(--app-card));
+font-weight:850;
+font-size:.86rem;
+}
+
+.dev-chip-list.tech span{
+background:color-mix(in srgb, var(--app-accent-strong) 10%, var(--app-card));
+}
+
 .developer-edit-panel{
 margin-top:24px;
 padding:clamp(18px, 3vw, 28px);
@@ -539,6 +705,10 @@ background:var(--app-card);
 border:1px solid var(--app-input-border);
 color:var(--app-card-text);
 box-shadow:0 18px 44px rgba(15,23,42,.1);
+}
+
+.developer-edit-panel[hidden]{
+display:none;
 }
 
 .developer-edit-header{
@@ -736,7 +906,8 @@ grid-template-columns:1fr;
 
 .developer-edit-header,
 .developer-photo-editor,
-.resume-section{
+.resume-section,
+.developer-command-bar{
 display:grid;
 align-items:start;
 }
@@ -774,5 +945,13 @@ function previewDeveloperPhoto(input) {
 
     if (heroPreview) heroPreview.src = url;
     if (editPreview) editPreview.src = url;
+}
+
+function showDeveloperEditor() {
+    const panel = document.getElementById("developerEditPanel");
+    if (!panel) return;
+
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 </script>
