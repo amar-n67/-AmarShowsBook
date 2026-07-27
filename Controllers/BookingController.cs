@@ -16,13 +16,16 @@ namespace AmarShowsBook.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
+        private readonly RbacService _rbacService;
 
         public BookingController(
             ApplicationDbContext context,
-            IActivityLogger activityLogger)
+            IActivityLogger activityLogger,
+            RbacService rbacService)
         {
             _context = context;
             _activityLogger = activityLogger;
+            _rbacService = rbacService;
         }
 public async Task<IActionResult> Ticket(long id)
 {
@@ -64,9 +67,17 @@ public async Task<IActionResult> TicketByBooking(long id)
     var userIdText =
     HttpContext.Session.GetString("UserId");
 
-    if(long.TryParse(userIdText,out var currentUserId)
-        && currentUserId!=bookingSummary.UserId
-        && !User.IsInRole("Admin"))
+    if(!long.TryParse(userIdText,out var currentUserId))
+    {
+        return RedirectToAction("Login","Auth");
+    }
+
+    var canViewAnyTicket =
+        _rbacService.HasPermission((int)currentUserId, "BOOKING", "VIEW") ||
+        _rbacService.HasPermission((int)currentUserId, "ADMIN", "VIEW") ||
+        _rbacService.HasAnyActiveRole((int)currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "ADMIN");
+
+    if(currentUserId!=bookingSummary.UserId && !canViewAnyTicket)
     {
         return StatusCode(
         StatusCodes.Status403Forbidden,
