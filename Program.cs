@@ -5,14 +5,21 @@ using AmarShowsBook.Models;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
+using System.Net.Sockets;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var port =
+var configuredPort =
 Environment.GetEnvironmentVariable("PORT")
 ?? "5089";
+
+var port =
+ResolveStartupPort(
+configuredPort,
+builder.Environment.IsDevelopment());
 
 builder.WebHost.UseUrls(
 $"http://0.0.0.0:{port}"
@@ -285,6 +292,54 @@ ex,
 });
 
 app.Run();
+
+static string ResolveStartupPort(string configuredPort, bool allowDevelopmentFallback)
+{
+    if(!int.TryParse(
+    configuredPort,
+    out var requestedPort))
+    {
+        return configuredPort;
+    }
+
+    if(IsPortAvailable(requestedPort))
+    {
+        return requestedPort.ToString();
+    }
+
+    if(!allowDevelopmentFallback)
+    {
+        return requestedPort.ToString();
+    }
+
+    for(var candidate = requestedPort + 1; candidate <= requestedPort + 100; candidate++)
+    {
+        if(IsPortAvailable(candidate))
+        {
+            return candidate.ToString();
+        }
+    }
+
+    return requestedPort.ToString();
+}
+
+static bool IsPortAvailable(int port)
+{
+    try
+    {
+        using var listener =
+        new TcpListener(
+        IPAddress.Any,
+        port);
+
+        listener.Start();
+        return true;
+    }
+    catch(SocketException)
+    {
+        return false;
+    }
+}
 
 static void BaselineExistingDatabase(WebApplication app, ApplicationDbContext context)
 {
