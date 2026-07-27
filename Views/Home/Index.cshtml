@@ -63,13 +63,25 @@
         </div>
         <nav class="showtime-tabs" aria-label="Show category">
             <a href="/Home/Index?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
-                <strong>Movies</strong>
+                <span class="tab-icon" aria-hidden="true">M</span>
+                <span>
+                    <strong>Movies</strong>
+                    <small>Theater releases</small>
+                </span>
             </a>
             <a href="/Home/Index?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
-                <strong>Standup</strong>
+                <span class="tab-icon" aria-hidden="true">S</span>
+                <span>
+                    <strong>Standup</strong>
+                    <small>Live comedy</small>
+                </span>
             </a>
             <a href="/Home/Index?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
-                <strong>Live Stream</strong>
+                <span class="tab-icon" aria-hidden="true">L</span>
+                <span>
+                    <strong>Live Stream</strong>
+                    <small>Online events</small>
+                </span>
             </a>
         </nav>
     </div>
@@ -1416,37 +1428,59 @@ Book Ticket
 .showtime-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    padding: 0;
+    gap: 10px;
+    padding: 8px;
     align-self: stretch;
     width: 100%;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-input) 82%, var(--app-card));
 }
 
 .showtime-tabs a {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 10px;
     min-width: 0;
-    min-height: 42px;
-    padding: 8px 12px;
+    min-height: 58px;
+    padding: 10px 12px;
     border: 1px solid color-mix(in srgb, var(--app-input-border) 76%, transparent);
     border-radius: 8px;
     background: var(--app-input);
     color: var(--app-input-text);
-    text-align: center;
+    text-align: left;
     text-decoration: none;
     box-shadow: none;
 }
 
 .showtime-tabs .tab-icon {
-    display: none;
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+    color: var(--app-primary);
+    font-weight: 950;
 }
 
 .showtime-tabs strong {
+    display: block;
     font-size: 0.92rem;
     line-height: 1.1;
     white-space: nowrap;
     font-weight: 900;
+}
+
+.showtime-tabs small {
+    display: block;
+    margin-top: 3px;
+    color: var(--app-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.1;
 }
 
 .showtime-tabs a.active {
@@ -1456,7 +1490,12 @@ Book Ticket
 }
 
 .showtime-tabs a.active .tab-icon {
-    display: none;
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+
+.showtime-tabs a.active small {
+    color: rgba(255,255,255,.82);
 }
 
 .showtime-tabs a:hover {
