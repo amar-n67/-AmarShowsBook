@@ -117,6 +117,9 @@
 
 <article class="show-card"
 data-location="@showLocation"
+data-country="@item.Country"
+data-state="@item.State"
+data-region="@item.Location"
 onclick="location.href='/Booking/Seats/@item.ScheduleId'">
   <div class="card-body">
 
@@ -1873,10 +1876,13 @@ function applyLocationFilter()
     document.getElementById("district")?.value.toLowerCase() || "";
 
     document.querySelectorAll(".show-card").forEach(card=>{
-        const text=card.innerText.toLowerCase();
-        const matchesCountry=!country || text.includes(country);
-        const matchesState=!state || text.includes(state);
-        const matchesDistrict=!district || text.includes(district);
+        const cardCountry=(card.dataset.country || "").toLowerCase();
+        const cardState=(card.dataset.state || "").toLowerCase();
+        const cardRegion=(card.dataset.region || "").toLowerCase();
+        const cardLocation=(card.dataset.location || card.innerText || "").toLowerCase();
+        const matchesCountry=!country || cardCountry===country || cardLocation.includes(country);
+        const matchesState=!state || cardState===state || cardLocation.includes(state);
+        const matchesDistrict=!district || cardRegion===district || cardLocation.includes(district);
         card.hidden=!(matchesCountry && matchesState && matchesDistrict);
     });
 }

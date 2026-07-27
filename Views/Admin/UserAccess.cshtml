@@ -123,7 +123,7 @@
                         !user.RoleIds.Contains(role.Id))
                     .ToList();
 
-                <div class="access-card">
+                <div class="access-card" data-filter-status="@(user.IsActive ? "ACTIVE" : "DISABLED")">
 
                     <!-- ===================================================== -->
                     <!-- USER HEADER -->

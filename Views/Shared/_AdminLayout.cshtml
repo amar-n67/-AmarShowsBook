@@ -120,6 +120,33 @@
         "Users","UserAccess","Roles","Bookings",
         "Transactions","Wallets","Notifications","ActivityLogs","Versions","ContentManager"
     }.Contains(currentAction);
+    var adminStatusOptions = currentAction switch
+    {
+        "Users" => new[] { "ACTIVE", "DISABLED", "NORMAL", "DELETED" },
+        "UserAccess" => new[] { "ACTIVE", "DISABLED" },
+        "Roles" => new[] { "ACTIVE", "INACTIVE" },
+        "Bookings" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
+        "Transactions" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
+        "Wallets" => new[] { "ACTIVE", "DISABLED", "BLOCKED" },
+        "Notifications" => new[] { "SUCCESS", "SENT", "PENDING", "FAILED", "UNREAD", "ERROR" },
+        "ActivityLogs" => new[] { "SUCCESS", "FAILED", "ERROR", "PENDING" },
+        "Versions" => new[] { "CURRENT", "PREVIOUS" },
+        _ => Array.Empty<string>()
+    };
+    var adminMethodLabel = currentAction switch
+    {
+        "Transactions" => "Payment Method",
+        "Notifications" => "Notification Type",
+        "Bookings" or "ContentManager" => "Show Type",
+        _ => string.Empty
+    };
+    var adminMethodOptions = currentAction switch
+    {
+        "Transactions" => new[] { "UPI", "CARD", "NETBANKING", "WALLET", "QR" },
+        "Notifications" => new[] { "WEB", "EMAIL", "SMS" },
+        "Bookings" or "ContentManager" => new[] { "MOVIE", "STANDUP", "LIVE" },
+        _ => Array.Empty<string>()
+    };
     var canUsePrintTools =
         AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 }
@@ -216,39 +243,30 @@
                                data-page-filter-search
                                placeholder="Search records">
                     </div>
+                    @if(adminStatusOptions.Any())
+                    {
                     <div class="col-md-3">
                         <select class="form-select rounded-pill" data-page-filter-status>
                             <option value="">All Status</option>
-                            <option value="ACTIVE">ACTIVE</option>
-                            <option value="DISABLED">DISABLED</option>
-                            <option value="NORMAL">NORMAL</option>
-                            <option value="DELETED">DELETED</option>
-                            <option value="SUCCESS">SUCCESS</option>
-                            <option value="PENDING">PENDING</option>
-                            <option value="FAILED">FAILED</option>
-                            <option value="CONFIRMED">CONFIRMED</option>
-                            <option value="CANCELLED">CANCELLED</option>
-                            <option value="SENT">SENT</option>
-                            <option value="UNREAD">UNREAD</option>
-                            <option value="ERROR">ERROR</option>
+                            @foreach(var option in adminStatusOptions)
+                            {
+                                <option value="@option">@option</option>
+                            }
                         </select>
                     </div>
+                    }
+                    @if(adminMethodOptions.Any())
+                    {
                     <div class="col-md-3">
                         <select class="form-select rounded-pill" data-page-filter-method>
-                            <option value="">All Methods</option>
-                            <option value="UPI">UPI</option>
-                            <option value="CARD">CARD</option>
-                            <option value="NETBANKING">NETBANKING</option>
-                            <option value="WALLET">WALLET</option>
-                            <option value="QR">QR</option>
-                            <option value="WEB">WEB</option>
-                            <option value="EMAIL">EMAIL</option>
-                            <option value="SMS">SMS</option>
-                            <option value="MOVIE">MOVIE</option>
-                            <option value="STANDUP">STANDUP</option>
-                            <option value="LIVE">LIVE</option>
+                            <option value="">All @adminMethodLabel</option>
+                            @foreach(var option in adminMethodOptions)
+                            {
+                                <option value="@option">@option</option>
+                            }
                         </select>
                     </div>
+                    }
                     <div class="col-md-2 text-end">
                         <button type="button"
                                 class="btn btn-outline-dark rounded-pill w-100"

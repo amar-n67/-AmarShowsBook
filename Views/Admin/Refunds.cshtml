@@ -295,7 +295,8 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-refund-status="@item.RefundStatus"
+                            data-refund-method="@item.RefundMethod">
                             <td class="fw-semibold text-dark">
                                 @item.RefundRef
                             </td>
@@ -514,15 +515,17 @@
     statusFilter.addEventListener('change', filterTable);
     methodFilter.addEventListener('change', filterTable);
     function filterTable() {
-        const search = searchInput.value.toLowerCase();
-        const status = statusFilter.value.toLowerCase();
-        const method = methodFilter.value.toLowerCase();
+        const search = searchInput.value.trim().toLowerCase();
+        const status = statusFilter.value.trim().toLowerCase();
+        const method = methodFilter.value.trim().toLowerCase();
         const rows = document.querySelectorAll('#refundTable tbody tr');
         rows.forEach(row => {
             const text = row.innerText.toLowerCase();
-            const matchesSearch = text.includes(search);
-            const matchesStatus = !status || text.includes(status);
-            const matchesMethod = !method || text.includes(method);
+            const rowStatus = (row.dataset.refundStatus || '').trim().toLowerCase();
+            const rowMethod = (row.dataset.refundMethod || '').trim().toLowerCase();
+            const matchesSearch = !search || text.includes(search);
+            const matchesStatus = !status || rowStatus === status;
+            const matchesMethod = !method || rowMethod === method;
             row.style.display =
                 matchesSearch && matchesStatus && matchesMethod
                     ? ''

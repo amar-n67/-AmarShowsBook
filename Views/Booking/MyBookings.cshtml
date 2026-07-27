@@ -65,7 +65,10 @@
                     && booking.PaymentStatus == "SUCCESS"
                     && booking.CancelledAt == null;
 
-                <article class="booking-card" data-admin-searchable>
+                <article class="booking-card"
+                         data-admin-searchable
+                         data-filter-status="@($"{statusText}|{booking.PaymentStatus}")"
+                         data-filter-method="@booking.PaymentMethod">
                     <div class="booking-top">
                         <span class="booking-status @statusClass">@statusText</span>
                         <strong>@booking.BookingRef</strong>

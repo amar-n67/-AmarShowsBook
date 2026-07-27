@@ -78,22 +78,38 @@ document.addEventListener("DOMContentLoaded", () => {
             anchor.parentElement.insertBefore(panel, anchor);
         }
 
+        const normalize = (value) => String(value || "").trim().toLowerCase();
+        const getFilterValues = (row, key) => normalize(row.dataset[key])
+            .split("|")
+            .map((value) => value.trim())
+            .filter(Boolean);
+        const matchesFilter = (row, key, filterValue, text) => {
+            if (!filterValue) {
+                return true;
+            }
+
+            const values = getFilterValues(row, key);
+            return values.length > 0
+                ? values.includes(filterValue)
+                : text.includes(filterValue);
+        };
+
         const getRows = () => [...document.querySelectorAll(targetSelector)]
             .filter((row) => !panel.contains(row))
             .filter((row) => !row.closest(".stats-grid"))
-            .filter((row) => !row.closest("form"))
+            .filter((row) => !row.matches(".admin-detail-panel[data-admin-searchable]"))
             .filter((row, index, rows) => rows.indexOf(row) === index);
 
         const applyPanelFilters = () => {
-            const query = (searchBox?.value || "").trim().toLowerCase();
-            const status = (statusBox?.value || "").trim().toLowerCase();
-            const method = (methodBox?.value || "").trim().toLowerCase();
+            const query = normalize(searchBox?.value);
+            const status = normalize(statusBox?.value);
+            const method = normalize(methodBox?.value);
 
             getRows().forEach((row) => {
-                const text = row.textContent?.toLowerCase() || "";
+                const text = normalize(row.dataset.filterSearch || row.textContent);
                 const matchesSearch = !query || text.includes(query);
-                const matchesStatus = !status || text.includes(status);
-                const matchesMethod = !method || text.includes(method);
+                const matchesStatus = matchesFilter(row, "filterStatus", status, text);
+                const matchesMethod = matchesFilter(row, "filterMethod", method, text);
                 row.hidden = !(matchesSearch && matchesStatus && matchesMethod);
             });
         };

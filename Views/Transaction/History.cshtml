@@ -69,7 +69,8 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-filter-status="@item.TransactionStatus"
+                            data-filter-method="@item.PaymentMethod">
                             <td>
                                 <strong>@item.BookingRef</strong>
                             </td>

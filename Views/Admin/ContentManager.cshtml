@@ -52,7 +52,7 @@
         <h2 class="h5">Movies</h2>
         @foreach (var item in movies)
         {
-            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable>
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="MOVIE">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="contentType" value="Movie" />
                 <input type="hidden" name="id" value="@item.Id" />
@@ -83,7 +83,7 @@
         <h2 class="h5">Standup</h2>
         @foreach (var item in standupShows)
         {
-            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable>
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="STANDUP">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="contentType" value="Standup" />
                 <input type="hidden" name="id" value="@item.Id" />
@@ -111,7 +111,7 @@
         <h2 class="h5">Live</h2>
         @foreach (var item in liveStreams)
         {
-            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable>
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="LIVE">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="contentType" value="Live" />
                 <input type="hidden" name="id" value="@item.Id" />

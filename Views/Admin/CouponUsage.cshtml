@@ -74,7 +74,12 @@
             <tbody>
             @foreach(var item in Model)
             {
-                <tr class="coupon-row" data-status="@item.UsageStatus" data-type="@item.ShowType" data-admin-searchable>
+                <tr class="coupon-row"
+                    data-status="@item.UsageStatus"
+                    data-type="@item.ShowType"
+                    data-filter-status="@item.UsageStatus"
+                    data-filter-method="@item.ShowType"
+                    data-admin-searchable>
                     <td class="coupon-code-cell" data-label="Coupon"><strong>@(string.IsNullOrWhiteSpace(item.CouponCode) ? "NA" : item.CouponCode)</strong></td>
                     <td class="coupon-user-cell" data-label="User">
                         <span class="coupon-primary">@(string.IsNullOrWhiteSpace(item.UserName) ? "NA" : item.UserName)</span>

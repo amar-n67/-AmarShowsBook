@@ -82,7 +82,7 @@
             <tbody>
             @foreach(var item in Model)
             {
-                <tr data-admin-searchable data-version-row>
+                <tr data-admin-searchable data-version-row data-filter-status="@(item.IsCurrent ? "CURRENT" : "PREVIOUS")">
                     <td colspan="6">
                         <form asp-action="UpdateVersion" method="post" class="version-row-form">
                             @Html.AntiForgeryToken()

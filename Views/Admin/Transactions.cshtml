@@ -147,7 +147,8 @@
                 {
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-filter-status="@($"{item.TransactionStatus}|{item.BookingStatus}")"
+                            data-filter-method="@item.PaymentMethod">
 
                             <!-- ROW NUMBER -->
 

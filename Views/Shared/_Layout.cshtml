@@ -1551,18 +1551,38 @@ document.addEventListener("DOMContentLoaded", function () {
             anchor.parentElement.insertBefore(panel, anchor);
         }
 
+        function normalizeFilterValue(value) {
+            return String(value || "").trim().toLowerCase();
+        }
+
+        function getFilterValues(item, key) {
+            return normalizeFilterValue(item.dataset[key])
+                .split("|")
+                .map(value => value.trim())
+                .filter(Boolean);
+        }
+
+        function matchesFilter(item, key, selectedValue, text) {
+            if (!selectedValue) return true;
+
+            const values = getFilterValues(item, key);
+            return values.length > 0
+                ? values.includes(selectedValue)
+                : text.includes(selectedValue);
+        }
+
         function applyFilters() {
-            const query = (searchBox?.value || "").trim().toLowerCase();
-            const status = (statusBox?.value || "").trim().toLowerCase();
-            const method = (methodBox?.value || "").trim().toLowerCase();
+            const query = normalizeFilterValue(searchBox?.value);
+            const status = normalizeFilterValue(statusBox?.value);
+            const method = normalizeFilterValue(methodBox?.value);
 
             document.querySelectorAll(targetSelector).forEach(function (item) {
                 if (panel.contains(item)) return;
 
-                const text = item.innerText.toLowerCase();
+                const text = normalizeFilterValue(item.dataset.filterSearch || item.innerText);
                 const matchesSearch = !query || text.includes(query);
-                const matchesStatus = !status || text.includes(status);
-                const matchesMethod = !method || text.includes(method);
+                const matchesStatus = matchesFilter(item, "filterStatus", status, text);
+                const matchesMethod = matchesFilter(item, "filterMethod", method, text);
                 item.hidden = !(matchesSearch && matchesStatus && matchesMethod);
             });
         }

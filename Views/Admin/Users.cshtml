@@ -52,7 +52,7 @@
 
                 @foreach (var user in Model)
                 {
-                    <tr>
+                    <tr data-filter-status="@($"{(user.is_active ? "ACTIVE" : "DISABLED")}|{(user.is_deleted ? "DELETED" : "NORMAL")}")">
 
                         <td>@user.Name</td>
 

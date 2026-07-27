@@ -58,7 +58,7 @@
             <tbody>
                 @foreach(var role in Model)
                 {
-                    <tr data-admin-searchable>
+                    <tr data-admin-searchable data-filter-status="@(role.IsActive ? "ACTIVE" : "INACTIVE")">
                         <form asp-action="UpdateRole" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@role.Id" />

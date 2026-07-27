@@ -178,7 +178,10 @@
                     var duration = schedule.Movie?.Duration ?? schedule.StandupShow?.Duration ?? schedule.LiveStream?.Duration ?? (int)Math.Max(15, (schedule.EndTime - schedule.StartTime).TotalMinutes);
                     var venueId = schedule.Screen?.VenueId ?? 0;
                     var venueName = Model.Venues.FirstOrDefault(x => x.Id == venueId)?.VenueName ?? "Not assigned";
-                    <tr data-admin-searchable class="show-row" data-type="@schedule.Type">
+                    <tr data-admin-searchable
+                        class="show-row"
+                        data-type="@schedule.Type"
+                        data-filter-method="@schedule.Type">
                         <td><strong>@title</strong></td>
                         <td>@schedule.Type</td>
                         <td>@schedule.StartTime.ToString("dd MMM yyyy hh:mm tt")</td>

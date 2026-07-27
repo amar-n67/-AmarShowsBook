@@ -101,7 +101,9 @@
                     {
                         foreach(var item in systemEvents)
                         {
-                            <tr data-admin-searchable>
+                            <tr data-admin-searchable
+                                data-filter-status="@item["Status"]"
+                                data-filter-method="@item["Type"]">
                                 <td>@item["Time"]</td>
                                 <td>@item["Type"]</td>
                                 <td><strong>@item["Title"]</strong></td>
@@ -162,7 +164,8 @@
                 {
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-filter-status="@item.Status"
+                            data-filter-method="@item.NotificationType">
 
                             <!-- USER -->
 
