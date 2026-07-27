@@ -105,7 +105,7 @@ alt="@Model.FullName profile image" />
 {
 <details class="developer-action-menu">
 <summary>Edit Profile</summary>
-<button type="button" onclick="showDeveloperEditor()">Open editor</button>
+<button type="button" onclick="toggleDeveloperEditor()">Open / hide editor</button>
 <a href="#developerSkills">Review skills</a>
 <a href="#developerTech">Review technologies</a>
 </details>
@@ -330,6 +330,7 @@ else
 </div>
 
 <div class="developer-edit-actions">
+<button type="button" class="back-btn developer-hide-editor-btn" onclick="requestDeveloperEditorHide()">Hide Editor</button>
 <button type="submit" class="resume-btn">Update Profile</button>
 </div>
 </form>
@@ -757,7 +758,15 @@ grid-column:1 / -1;
 .developer-edit-actions{
 display:flex;
 justify-content:flex-end;
+gap:10px;
+flex-wrap:wrap;
 margin-top:18px;
+}
+
+.developer-hide-editor-btn{
+border:0;
+background:var(--app-input-disabled);
+color:var(--app-card-text);
 }
 
 .developer-photo-editor{
@@ -954,4 +963,91 @@ function showDeveloperEditor() {
     panel.hidden = false;
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+function getDeveloperForm() {
+    return document.querySelector("#developerEditPanel form");
+}
+
+function snapshotDeveloperForm(form) {
+    if (!form) return "";
+
+    const data = new FormData(form);
+    const values = [];
+
+    for (const [key, value] of data.entries()) {
+        if (key === "__RequestVerificationToken") continue;
+        values.push(key + "=" + (value instanceof File ? value.name + ":" + value.size : value));
+    }
+
+    return values.sort().join("&");
+}
+
+function rememberDeveloperFormState() {
+    const form = getDeveloperForm();
+    if (form) {
+        form.dataset.initialState = snapshotDeveloperForm(form);
+    }
+
+    const editPreview = document.getElementById("developerEditPreview");
+    if (editPreview && !editPreview.dataset.originalSrc) {
+        editPreview.dataset.originalSrc = editPreview.getAttribute("src") || "";
+    }
+}
+
+function hasDeveloperFormChanges() {
+    const form = getDeveloperForm();
+    return Boolean(form) && (form.dataset.initialState || "") !== snapshotDeveloperForm(form);
+}
+
+function hideDeveloperEditor(dropChanges) {
+    const panel = document.getElementById("developerEditPanel");
+    const form = getDeveloperForm();
+    if (!panel) return;
+
+    if (dropChanges && form) {
+        form.reset();
+        const heroPreview = document.getElementById("developerProfilePreview");
+        const editPreview = document.getElementById("developerEditPreview");
+        const originalImage = editPreview?.dataset.originalSrc;
+        if (heroPreview && originalImage) heroPreview.src = originalImage;
+        if (editPreview && originalImage) editPreview.src = originalImage;
+        rememberDeveloperFormState();
+    }
+
+    panel.hidden = true;
+}
+
+function requestDeveloperEditorHide() {
+    if (!hasDeveloperFormChanges()) {
+        hideDeveloperEditor(false);
+        return;
+    }
+
+    showCinemaPopup("You changed the developer profile. Save before hiding, or drop the unsaved changes?", "confirm", {
+        title: "Save Changes?",
+        okText: "Save",
+        cancelText: "Drop",
+        onOk: function () {
+            getDeveloperForm()?.requestSubmit();
+        },
+        onCancel: function () {
+            hideDeveloperEditor(true);
+        }
+    });
+}
+
+function toggleDeveloperEditor() {
+    const panel = document.getElementById("developerEditPanel");
+    if (!panel) return;
+
+    if (panel.hidden) {
+        showDeveloperEditor();
+        rememberDeveloperFormState();
+        return;
+    }
+
+    requestDeveloperEditorHide();
+}
+
+document.addEventListener("DOMContentLoaded", rememberDeveloperFormState);
 </script>
