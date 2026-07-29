@@ -574,7 +574,7 @@ a {
 .film-menu {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     margin-left: auto;
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -583,7 +583,7 @@ a {
 .film-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: flex-end;
 }
@@ -592,13 +592,17 @@ a {
 .film-navigation-links {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
-    padding: 5px;
-    border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--app-nav-text) 8%, transparent);
+    padding: 7px;
+    border: 1px solid color-mix(in srgb, var(--app-accent) 28%, transparent);
+    border-radius: 22px;
+    background:
+        linear-gradient(135deg,
+        color-mix(in srgb, var(--app-nav-text) 12%, transparent),
+        color-mix(in srgb, var(--app-accent) 10%, transparent));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 14px 34px rgba(0,0,0,0.18);
 }
 
 .film-user-card {
@@ -653,56 +657,125 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 36px;
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 999px;
-    padding: 7px 12px;
-    font-size: 0.86rem;
-    font-weight: 850;
+    gap: 8px;
+    min-height: 42px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
+    border-radius: 15px;
+    padding: 7px 13px 7px 8px;
+    font-size: 0.84rem;
+    font-weight: 900;
     text-decoration: none;
     color: var(--app-nav-text) !important;
-    background: rgba(255,255,255,0.12);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 20px rgba(0,0,0,0.12);
-    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    background:
+        linear-gradient(135deg,
+        rgba(255,255,255,0.14),
+        rgba(255,255,255,0.06));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 20px rgba(0,0,0,0.13);
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     white-space: nowrap;
 }
 
-.film-nav-btn:hover {
+.film-nav-btn:hover,
+.film-nav-btn:focus-visible {
     background: var(--app-accent);
+    border-color: var(--app-accent);
     color: #231f20 !important;
     transform: translateY(-2px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 12px 24px rgba(0,0,0,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 14px 28px rgba(0,0,0,0.22);
+    outline: none;
+}
+
+.film-nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--app-accent) 26%, rgba(255,255,255,0.14));
+    color: var(--app-nav-text);
+    font-size: 1rem;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
+}
+
+.film-nav-btn:hover .film-nav-icon,
+.film-nav-btn:focus-visible .film-nav-icon {
+    background: rgba(35,31,32,0.12);
+    color: #231f20;
+}
+
+.film-nav-label {
+    line-height: 1.05;
 }
 
 .film-profile-btn {
-    background: var(--app-accent);
+    background:
+        linear-gradient(135deg,
+        color-mix(in srgb, var(--app-accent) 86%, #ffffff),
+        var(--app-accent));
     color: #231f20 !important;
 }
 
+.film-profile-btn .film-nav-icon {
+    color: #231f20;
+    background: rgba(35,31,32,0.1);
+}
+
 .film-logout-btn {
-    background: var(--app-danger);
+    background:
+        linear-gradient(135deg,
+        color-mix(in srgb, var(--app-danger) 84%, #ffffff),
+        var(--app-danger));
+    border-color: color-mix(in srgb, var(--app-danger) 70%, transparent);
     color: #fff !important;
+}
+
+.film-logout-btn .film-nav-icon {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
 }
 
 .theme-switcher {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    padding: 4px;
-    border: 1px solid color-mix(in srgb, var(--app-nav-text) 22%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--app-nav-text) 10%, transparent);
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid color-mix(in srgb, var(--app-accent) 28%, transparent);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg,
+        color-mix(in srgb, var(--app-nav-text) 12%, transparent),
+        color-mix(in srgb, var(--app-accent) 8%, transparent));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 12px 28px rgba(0,0,0,0.16);
 }
 
 .theme-toggle-btn {
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    background: rgba(255,255,255,0.08);
     color: var(--app-nav-text);
-    min-height: 30px;
-    padding: 5px 9px;
+    min-height: 34px;
+    padding: 5px 10px;
     font-size: 12px;
-    font-weight: 850;
+    font-weight: 900;
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.theme-toggle-btn:hover,
+.theme-toggle-btn:focus-visible {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.16);
+    outline: none;
+}
+
+.theme-icon {
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .theme-toggle-btn.active {
@@ -810,6 +883,11 @@ html[data-theme="system"] .film-nav-btn {
     background: rgba(17,24,39,0.05);
 }
 
+html[data-theme="white"] .film-nav-icon,
+html[data-theme="system"] .film-nav-icon {
+    background: rgba(17,24,39,0.08);
+}
+
 @@media (max-width: 760px) {
     .film-navbar {
         margin: 8px;
@@ -827,6 +905,17 @@ html[data-theme="system"] .film-nav-btn {
         justify-content: center;
     }
 
+    .film-navigation-links {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        border-radius: 18px;
+    }
+
+    .film-nav-btn {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
     .film-user-card {
         width: 100%;
         justify-content: center;
@@ -839,7 +928,20 @@ html[data-theme="system"] .film-nav-btn {
     .theme-switcher {
         order: 3;
         width: 100%;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0,1fr));
+    }
+
+    .theme-toggle-btn {
+        justify-content: center;
+        padding-inline: 6px;
+    }
+}
+
+@@media (max-width: 430px) {
+    .film-navigation-links,
+    .theme-switcher {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -1310,21 +1412,26 @@ z-index:9999;">
 
     <div class="film-menu">
         <div class="theme-switcher" aria-label="Theme selector">
-            <button type="button" class="theme-toggle-btn" data-theme-choice="system" onclick="setAppTheme('system')">System</button>
-            <button type="button" class="theme-toggle-btn" data-theme-choice="dark" onclick="setAppTheme('dark')">Dark</button>
-            <button type="button" class="theme-toggle-btn" data-theme-choice="white" onclick="setAppTheme('white')">White</button>
-            <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')">Cinema</button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="system" onclick="setAppTheme('system')"><span class="theme-icon">◐</span><span>System</span></button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="dark" onclick="setAppTheme('dark')"><span class="theme-icon">☾</span><span>Dark</span></button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="white" onclick="setAppTheme('white')"><span class="theme-icon">☀</span><span>White</span></button>
+            <button type="button" class="theme-toggle-btn" data-theme-choice="cinema" onclick="setAppTheme('cinema')"><span class="theme-icon">▣</span><span>Cinema</span></button>
         </div>
 
         @if (isLoggedIn)
         {
             <div class="film-actions">
                 <div class="film-navigation-links" aria-label="Main navigation">
-                    <a class="film-nav-btn" href="/Home/Index">Home</a>
-                    <a class="film-nav-btn" href="/Booking/MyBookings">My Bookings</a>
-                    <a class="film-nav-btn" href="/Transaction/History">My Transactions</a>
-                    <a class="film-nav-btn" href="/Wallet/Index">Wallet</a>
-                    <a class="film-nav-btn" href="/Admin/Dashboard">Admin Dashboard</a>
+                    <a class="film-nav-btn" href="/Home/Index"><span class="film-nav-icon">⌂</span><span class="film-nav-label">Home</span></a>
+                    <a class="film-nav-btn" href="/Booking/MyBookings"><span class="film-nav-icon">▤</span><span class="film-nav-label">My Bookings</span></a>
+                    <a class="film-nav-btn" href="/Transaction/History"><span class="film-nav-icon">↔</span><span class="film-nav-label">My Transactions</span></a>
+                    <a class="film-nav-btn" href="/Wallet/Index"><span class="film-nav-icon">◈</span><span class="film-nav-label">Wallet</span></a>
+                    <a class="film-nav-btn" href="/Admin/Dashboard"><span class="film-nav-icon">▦</span><span class="film-nav-label">Admin Dashboard</span></a>
+                    <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile"><span class="film-nav-icon">◉</span><span class="film-nav-label">My Profile</span></a>
+                    <a class="film-nav-btn film-profile-btn" href="/Developer/Index"><span class="film-nav-icon">◇</span><span class="film-nav-label">Developer Profile</span></a>
+                    <a class="film-nav-btn film-logout-btn"
+                       href="/Auth/Logout"
+                       onclick="return confirmLogout()"><span class="film-nav-icon">⏻</span><span class="film-nav-label">Exit Show</span></a>
                 </div>
 
                 <div class="film-user-card">
@@ -1350,13 +1457,6 @@ z-index:9999;">
                     }
                 </div>
 
-                <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile">My Profile</a>
-
-                <a class="film-nav-btn film-profile-btn" href="/Developer/Index">Developer Profile</a>
-
-                <a class="film-nav-btn film-logout-btn"
-                   href="/Auth/Logout"
-                   onclick="return confirmLogout()">Exit Show</a>
             </div>
         }
     </div>
