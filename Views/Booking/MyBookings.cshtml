@@ -52,8 +52,8 @@
                 var isExpired = booking.StartTime < now;
                 var statusClass = booking.IsError == 1 ? "failed" : isExpired ? "expired" : "success";
                 var statusText = isExpired ? "EXPIRED" : booking.BookingStatus;
-                var ticketUrl = $"{publicBaseUrl}/Booking/TicketByBooking/{booking.BookingId}";
-                var mobileTicketPath = $"/Booking/TicketByBooking/{booking.BookingId}";
+                var confirmationPath = $"/Booking/Confirmation?confirmedBookingId={booking.BookingId}";
+                var confirmationUrl = $"{publicBaseUrl}{confirmationPath}";
                 var venueDetails = bookingVenues.TryGetValue(booking.BookingId, out var foundVenue) && !string.IsNullOrWhiteSpace(foundVenue)
                     ? foundVenue
                     : booking.LocationName;
@@ -80,7 +80,7 @@
                             <p class="booking-show">@booking.ShowType at @booking.LocationName</p>
                         </div>
                         <div class="booking-qr">
-                            <img src="/Booking/CreateQR?text=@WebUtility.UrlEncode(ticketUrl)" alt="Ticket QR for @booking.BookingRef" />
+                            <img src="/Booking/CreateQR?text=@WebUtility.UrlEncode(confirmationUrl)" alt="Ticket QR for @booking.BookingRef" />
                         </div>
                     </div>
 
@@ -136,10 +136,10 @@
                     </div>
 
                     <div class="booking-actions no-print">
-                        <a class="btn btn-primary" href="@mobileTicketPath">View Ticket</a>
+                        <a class="btn btn-primary" href="@confirmationPath">View Ticket</a>
                         @if(canUsePrintTools)
                         {
-                        <a class="btn btn-secondary" href="@mobileTicketPath?print=1">Download</a>
+                        <a class="btn btn-secondary" href="@(confirmationPath + "&print=1")">Download</a>
                         }
                         @if(canCancel)
                         {
