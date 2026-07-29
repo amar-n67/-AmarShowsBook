@@ -96,29 +96,34 @@ alt="@Model.FullName profile image" />
 
 </div>
 
-<div class="developer-command-bar">
-<div>
+<nav class="developer-command-bar" aria-label="Developer profile menu">
+<div class="developer-menu-title">
 <span>@roleLabel</span>
 <strong>Application engineering profile</strong>
 </div>
+
+<div class="developer-menu-links">
+<a href="#developerOverview">Overview</a>
+<a href="#developerSkills">Skills</a>
+<a href="#developerTech">Technologies</a>
+<a href="#developerApplication">Application</a>
+</div>
+
+<div class="developer-menu-actions">
 @if(canEdit)
 {
-<details class="developer-action-menu">
-<summary>Edit Profile</summary>
-<button type="button" onclick="toggleDeveloperEditor()">Open / hide editor</button>
-<a href="#developerSkills">Review skills</a>
-<a href="#developerTech">Review technologies</a>
-</details>
+<button type="button" class="developer-edit-toggle" onclick="toggleDeveloperEditor()">Edit Profile</button>
 }
 else
 {
 <span class="developer-readonly-pill">Read only</span>
 }
 </div>
+</nav>
 
 
 
-<div class="developer-grid">
+<div class="developer-grid" id="developerOverview">
 
 <div class="dev-card">
 
@@ -214,7 +219,7 @@ else
 
 </div>
 
-<div class="developer-grid developer-application-grid">
+<div class="developer-grid developer-application-grid" id="developerApplication">
 @foreach(var section in applicationSections)
 {
 <div class="dev-card">
@@ -538,94 +543,107 @@ gap:20px;
 display:flex;
 align-items:center;
 justify-content:space-between;
-gap:14px;
-margin-bottom:22px;
-padding:14px 16px;
-border:1px solid var(--app-input-border);
+gap:16px;
+margin:-8px 0 24px;
+padding:12px;
+border:1px solid color-mix(in srgb, var(--app-primary) 28%, var(--app-input-border));
 border-radius:8px;
-background:var(--app-card);
+background:
+linear-gradient(135deg,
+color-mix(in srgb, var(--app-card) 88%, #ffffff),
+color-mix(in srgb, var(--app-primary) 12%, var(--app-card)));
 color:var(--app-card-text);
-box-shadow:0 14px 34px rgba(15,23,42,.1);
+box-shadow:0 18px 48px rgba(15,23,42,.14);
+position:sticky;
+top:12px;
+z-index:20;
+backdrop-filter:blur(18px);
 }
 
-.developer-command-bar span{
+.developer-menu-title{
+display:grid;
+gap:3px;
+min-width:220px;
+padding:4px 6px;
+}
+
+.developer-menu-title span{
 display:block;
 color:var(--app-muted);
 font-size:.78rem;
 font-weight:850;
+text-transform:uppercase;
+letter-spacing:.08em;
 }
 
-.developer-command-bar strong{
+.developer-menu-title strong{
 display:block;
 font-size:1rem;
 font-weight:900;
 }
 
-.developer-action-menu{
-position:relative;
+.developer-menu-links,
+.developer-menu-actions{
+display:flex;
+align-items:center;
+gap:8px;
+flex-wrap:wrap;
 }
 
-.developer-action-menu summary{
-list-style:none;
-min-height:40px;
+.developer-menu-links{
+justify-content:center;
+flex:1;
+}
+
+.developer-menu-actions{
+justify-content:flex-end;
+min-width:130px;
+}
+
+.developer-menu-links a,
+.developer-edit-toggle,
+.developer-readonly-pill{
+min-height:42px;
 display:inline-flex;
 align-items:center;
-padding:0 16px;
+justify-content:center;
+padding:0 15px;
 border-radius:999px;
+border:1px solid color-mix(in srgb, var(--app-primary) 22%, var(--app-input-border));
+background:color-mix(in srgb, var(--app-card) 84%, #ffffff);
+color:var(--app-card-text);
+text-decoration:none;
+font-weight:900;
+font-size:.9rem;
+line-height:1;
+white-space:nowrap;
+box-shadow:0 8px 20px rgba(15,23,42,.08);
+transition:transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.developer-menu-links a:hover,
+.developer-menu-links a:focus-visible,
+.developer-edit-toggle:hover,
+.developer-edit-toggle:focus-visible{
+transform:translateY(-2px);
+border-color:color-mix(in srgb, var(--app-primary) 62%, var(--app-input-border));
 background:var(--app-primary);
 color:#fff;
-font-weight:900;
+box-shadow:0 14px 28px color-mix(in srgb, var(--app-primary) 28%, transparent);
+outline:none;
+}
+
+.developer-edit-toggle{
+border-color:transparent;
+background:var(--app-primary);
+color:#fff;
 cursor:pointer;
 }
 
-.developer-action-menu summary::-webkit-details-marker{
-display:none;
-}
-
-.developer-action-menu[open]{
-z-index:5;
-}
-
-.developer-action-menu[open]::after{
-content:"";
-position:absolute;
-right:0;
-top:44px;
-width:210px;
-height:132px;
-border:1px solid var(--app-input-border);
-border-radius:8px;
-background:var(--app-card);
-box-shadow:0 18px 44px rgba(15,23,42,.18);
-z-index:-1;
-}
-
-.developer-action-menu button,
-.developer-action-menu a{
-position:relative;
-z-index:1;
-display:block;
-width:210px;
-min-height:38px;
-padding:9px 12px;
-border:0;
-background:transparent;
-color:var(--app-card-text);
-text-align:left;
-text-decoration:none;
-font-weight:850;
-}
-
-.developer-action-menu button{
-margin-top:8px;
-}
-
 .developer-readonly-pill{
-padding:9px 12px;
-border-radius:999px;
 background:var(--app-input-disabled);
 color:var(--app-muted);
-font-weight:900;
+box-shadow:none;
 }
 
 
@@ -921,6 +939,23 @@ display:grid;
 align-items:start;
 }
 
+.developer-command-bar{
+position:relative;
+top:auto;
+grid-template-columns:1fr;
+}
+
+.developer-menu-title,
+.developer-menu-actions{
+min-width:0;
+width:100%;
+}
+
+.developer-menu-links,
+.developer-menu-actions{
+justify-content:flex-start;
+}
+
 }
 
 @@media(max-width:520px)
@@ -938,6 +973,19 @@ font-size:1.55rem;
 .back-btn{
 width:100%;
 text-align:center;
+}
+
+.developer-menu-links{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+width:100%;
+}
+
+.developer-menu-links a,
+.developer-edit-toggle,
+.developer-readonly-pill{
+width:100%;
+padding-inline:10px;
 }
 }
 
