@@ -1,4 +1,5 @@
 ﻿@inject AmarShowsBook.Data.ApplicationDbContext AppDb
+@inject AmarShowsBook.Services.RbacService RbacService
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,14 +161,14 @@ html[data-theme="cinema"] body {
 }
 
 @@media (pointer: fine) {
-    html.app-liquid-cursor,
-    html.app-liquid-cursor body,
-    html.app-liquid-cursor a,
-    html.app-liquid-cursor button,
-    html.app-liquid-cursor input,
-    html.app-liquid-cursor select,
-    html.app-liquid-cursor textarea,
-    html.app-liquid-cursor [role="button"] {
+    html.app-custom-cursor,
+    html.app-custom-cursor body,
+    html.app-custom-cursor a,
+    html.app-custom-cursor button,
+    html.app-custom-cursor input,
+    html.app-custom-cursor select,
+    html.app-custom-cursor textarea,
+    html.app-custom-cursor [role="button"] {
         cursor: none !important;
     }
 
@@ -227,6 +228,35 @@ html[data-theme="cinema"] body {
     html.app-liquid-cursor.cursor-hidden .liquid-cursor,
     html.app-liquid-cursor.cursor-hidden .liquid-cursor-trail {
         opacity: 0;
+    }
+
+    html.app-precision-cursor .liquid-cursor {
+        width: 6px;
+        height: 6px;
+        background: var(--app-danger);
+        border-color: #fff;
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-danger) 18%, transparent);
+    }
+
+    html.app-precision-cursor .liquid-cursor-trail {
+        width: 28px;
+        height: 28px;
+        border-style: dashed;
+        background: transparent;
+    }
+
+    html.app-spotlight-cursor .liquid-cursor {
+        width: 12px;
+        height: 12px;
+        background: #fff;
+        border-color: var(--app-accent);
+    }
+
+    html.app-spotlight-cursor .liquid-cursor-trail {
+        width: 52px;
+        height: 52px;
+        background: color-mix(in srgb, var(--app-accent) 20%, transparent);
+        border-color: color-mix(in srgb, var(--app-primary) 44%, transparent);
     }
 }
 
@@ -571,6 +601,41 @@ a {
     background: rgba(255,255,255,0.08);
 }
 
+.film-mobile-menu-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    min-height: 40px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 22%, transparent);
+    color: var(--app-nav-text);
+    font-weight: 900;
+    padding: 7px 12px;
+}
+
+.film-mobile-menu-icon,
+.film-brand-badge,
+.film-nav-icon {
+    background:
+        radial-gradient(circle at 32% 24%, rgba(255,255,255,.9), transparent 32%),
+        linear-gradient(145deg, color-mix(in srgb, var(--app-accent) 42%, #fff), color-mix(in srgb, var(--app-accent-strong) 28%, var(--app-primary)));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.7),
+        inset 0 -9px 14px rgba(15,23,42,.14),
+        0 8px 16px rgba(15,23,42,.2);
+}
+
+.film-mobile-menu-icon {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    color: #231f20;
+}
+
 .film-menu {
     display: flex;
     align-items: center;
@@ -658,10 +723,12 @@ a {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    position: relative;
+    min-width: 44px;
     min-height: 42px;
     border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
     border-radius: 15px;
-    padding: 7px 13px 7px 8px;
+    padding: 7px;
     font-size: 0.84rem;
     font-weight: 900;
     text-decoration: none;
@@ -693,11 +760,9 @@ a {
     width: 28px;
     height: 28px;
     border-radius: 11px;
-    background: color-mix(in srgb, var(--app-accent) 26%, rgba(255,255,255,0.14));
     color: var(--app-nav-text);
     font-size: 1rem;
     line-height: 1;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
 .film-nav-btn:hover .film-nav-icon,
@@ -707,7 +772,29 @@ a {
 }
 
 .film-nav-label {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 30;
+    max-width: 180px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    border: 1px solid var(--app-input-border);
+    box-shadow: 0 12px 26px rgba(15,23,42,.22);
     line-height: 1.05;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -4px);
+    transition: opacity .16s ease, transform .16s ease;
+    white-space: nowrap;
+}
+
+.film-nav-btn:hover .film-nav-label,
+.film-nav-btn:focus-visible .film-nav-label {
+    opacity: 1;
+    transform: translate(-50%, 0);
 }
 
 .film-profile-btn {
@@ -893,27 +980,72 @@ html[data-theme="system"] .film-nav-icon {
         margin: 8px;
     }
 
+    .film-navbar .container-fluid {
+        align-items: center;
+    }
+
+    .film-brand {
+        max-width: calc(100% - 96px);
+    }
+
+    .film-brand > span:not(.film-brand-badge) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .film-mobile-menu-btn {
+        display: inline-flex;
+    }
+
     .film-menu {
+        display: none;
         width: 100%;
-        flex-wrap: wrap;
-        justify-content: center;
+        margin-top: 10px;
+        flex-wrap: nowrap;
+        justify-content: stretch;
+        align-items: stretch;
+        padding-top: 10px;
+        border-top: 1px solid color-mix(in srgb, var(--app-nav-text) 14%, transparent);
+    }
+
+    .film-menu.open {
+        display: grid;
+        gap: 10px;
     }
 
     .film-actions,
     .film-navigation-links {
         width: 100%;
-        justify-content: center;
+        justify-content: stretch;
     }
 
     .film-navigation-links {
         display: grid;
         grid-template-columns: repeat(2, minmax(0,1fr));
-        border-radius: 18px;
+        border-radius: 8px;
     }
 
     .film-nav-btn {
         width: 100%;
         justify-content: flex-start;
+        min-height: 44px;
+        padding: 8px 10px;
+    }
+
+    .film-nav-label {
+        position: static;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        max-width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        box-shadow: none;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .film-user-card {
@@ -943,6 +1075,10 @@ html[data-theme="system"] .film-nav-icon {
     .theme-switcher {
         grid-template-columns: 1fr;
     }
+
+    .app-version-badge {
+        display: none;
+    }
 }
 
 </style>
@@ -956,6 +1092,7 @@ html[data-theme="system"] .film-nav-icon {
     const storedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
     document.documentElement.dataset.theme = storedTheme;
     document.documentElement.dataset.themeChoice = storedTheme;
+    document.documentElement.dataset.cursorChoice = localStorage.getItem("amarShowsCursor") || "native";
 })();
 </script>
 
@@ -1353,6 +1490,13 @@ z-index:9999;">
 
 @{
     var isLoggedIn = Context.Session.GetString("UserEmail") != null;
+    var hasCurrentUserId = int.TryParse(Context.Session.GetString("UserId"), out var currentUserId);
+    var canOpenAdmin = hasCurrentUserId &&
+        (RbacService.HasPermission(currentUserId, "ADMIN", "VIEW") ||
+         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "ADMIN"));
+    var canOpenDeveloper = hasCurrentUserId &&
+        (RbacService.HasPermission(currentUserId, "DEVELOPER", "EDIT") ||
+         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER", "DEVELOPER"));
     var sessionDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
     var normalizedDisplayName = string.IsNullOrWhiteSpace(sessionDisplayName)
         ? "User"
@@ -1404,13 +1548,23 @@ z-index:9999;">
             padding: 3px 8px;
             border: 1px solid var(--app-input-border);
             border-radius: 999px;
-            color: var(--app-muted);
+            color: var(--app-card-text);
             font-size: 0.72rem;
             font-weight: 900;
+            background: color-mix(in srgb, var(--app-accent) 24%, var(--app-card));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
         }
     </style>
 
-    <div class="film-menu">
+    @if (isLoggedIn)
+    {
+    <button class="film-mobile-menu-btn" type="button" aria-expanded="false" aria-controls="filmMenu" onclick="toggleFilmMenu(this)">
+        <span class="film-mobile-menu-icon" aria-hidden="true">☰</span>
+        <span>Menu</span>
+    </button>
+    }
+
+    <div id="filmMenu" class="film-menu @(isLoggedIn ? "" : "guest-film-menu")">
         <div class="theme-switcher" aria-label="Theme selector">
             <button type="button" class="theme-toggle-btn" data-theme-choice="system" onclick="setAppTheme('system')"><span class="theme-icon">◐</span><span>System</span></button>
             <button type="button" class="theme-toggle-btn" data-theme-choice="dark" onclick="setAppTheme('dark')"><span class="theme-icon">☾</span><span>Dark</span></button>
@@ -1422,15 +1576,23 @@ z-index:9999;">
         {
             <div class="film-actions">
                 <div class="film-navigation-links" aria-label="Main navigation">
-                    <a class="film-nav-btn" href="/Home/Index"><span class="film-nav-icon">⌂</span><span class="film-nav-label">Home</span></a>
-                    <a class="film-nav-btn" href="/Booking/MyBookings"><span class="film-nav-icon">▤</span><span class="film-nav-label">My Bookings</span></a>
-                    <a class="film-nav-btn" href="/Transaction/History"><span class="film-nav-icon">↔</span><span class="film-nav-label">My Transactions</span></a>
-                    <a class="film-nav-btn" href="/Wallet/Index"><span class="film-nav-icon">◈</span><span class="film-nav-label">Wallet</span></a>
-                    <a class="film-nav-btn" href="/Admin/Dashboard"><span class="film-nav-icon">▦</span><span class="film-nav-label">Admin Dashboard</span></a>
-                    <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile"><span class="film-nav-icon">◉</span><span class="film-nav-label">My Profile</span></a>
-                    <a class="film-nav-btn film-profile-btn" href="/Developer/Index"><span class="film-nav-icon">◇</span><span class="film-nav-label">Developer Profile</span></a>
+                    <a class="film-nav-btn" href="/Home/Index" title="Home" aria-label="Home"><span class="film-nav-icon">🏠</span><span class="film-nav-label">Home</span></a>
+                    <a class="film-nav-btn" href="/Booking/MyBookings" title="My Bookings" aria-label="My Bookings"><span class="film-nav-icon">🎟</span><span class="film-nav-label">My Bookings</span></a>
+                    <a class="film-nav-btn" href="/Transaction/History" title="My Transactions" aria-label="My Transactions"><span class="film-nav-icon">💳</span><span class="film-nav-label">My Transactions</span></a>
+                    <a class="film-nav-btn" href="/Wallet/Index" title="Wallet" aria-label="Wallet"><span class="film-nav-icon">💰</span><span class="film-nav-label">Wallet</span></a>
+                    @if (canOpenAdmin)
+                    {
+                        <a class="film-nav-btn" href="/Admin/Dashboard" title="Admin Dashboard" aria-label="Admin Dashboard"><span class="film-nav-icon">📊</span><span class="film-nav-label">Admin Dashboard</span></a>
+                    }
+                    <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile" title="My Profile" aria-label="My Profile"><span class="film-nav-icon">👤</span><span class="film-nav-label">My Profile</span></a>
+                    @if (canOpenDeveloper)
+                    {
+                        <a class="film-nav-btn film-profile-btn" href="/Developer/Index" title="Developer Profile" aria-label="Developer Profile"><span class="film-nav-icon">🧩</span><span class="film-nav-label">Developer Profile</span></a>
+                    }
                     <a class="film-nav-btn film-logout-btn"
                        href="/Auth/Logout"
+                       title="Exit Show"
+                       aria-label="Exit Show"
                        onclick="return confirmLogout()"><span class="film-nav-icon">⏻</span><span class="film-nav-label">Exit Show</span></a>
                 </div>
 
@@ -1518,9 +1680,7 @@ z-index:9999;">
     @RenderBody()
 </div>
 
-@if (isLoggedIn)
-{
-    <div class="amaro-widget no-print" data-amaro-widget>
+<div class="amaro-widget no-print" data-amaro-widget>
         <button class="amaro-launcher" type="button" data-amaro-toggle aria-expanded="false" aria-controls="amaroPanel">
             <span>A</span>
             <strong>Amaro</strong>
@@ -1529,24 +1689,30 @@ z-index:9999;">
             <div class="amaro-header">
                 <div>
                     <span>Amaro</span>
-                    <strong data-amaro-greeting>Hey @normalizedDisplayName, I'm Amaro. How may I help you?</strong>
+                    <strong data-amaro-greeting>Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows or booking help.</strong>
                 </div>
                 <button type="button" data-amaro-close aria-label="Close Amaro">×</button>
+            </div>
+            <div class="amaro-command-deck" data-amaro-command-deck>
+                <button type="button" data-amaro-prompt="Book a movie">Book</button>
+                <button type="button" data-amaro-prompt="Show prices and available seats">Seats</button>
+                <button type="button" data-amaro-prompt="My upcoming bookings">Upcoming</button>
+                <button type="button" data-amaro-prompt="Change theme">Theme</button>
+                <button type="button" data-amaro-prompt="Change cursor">Cursor</button>
             </div>
             <div class="amaro-options" data-amaro-options></div>
             <div class="amaro-thread" data-amaro-thread>
                 <div class="amaro-message amaro-message-bot">
-                    Hey @normalizedDisplayName, I'm Amaro. How may I help you?
+                    Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows, show times, or how to book.
                 </div>
             </div>
             <form class="amaro-form" data-amaro-form>
                 @Html.AntiForgeryToken()
-                <input data-amaro-input type="text" maxlength="300" placeholder="Ask about bookings, wallet, access..." autocomplete="off" />
+                <input data-amaro-input type="text" maxlength="300" placeholder="Ask Amaro to book, filter, open, switch, or check" autocomplete="off" />
                 <button type="submit">Send</button>
             </form>
         </section>
-    </div>
-}
+</div>
 
 <!-- ================= FOOTER ================= -->
 <footer class="border-top footer text-muted">
@@ -1605,6 +1771,14 @@ function appBack() {
     }
 
     window.location.href = "/Home/Index";
+}
+
+function toggleFilmMenu(button) {
+    const menu = document.getElementById("filmMenu");
+    if (!menu) return;
+
+    const isOpen = menu.classList.toggle("open");
+    button?.setAttribute("aria-expanded", String(isOpen));
 }
 
 function clearAppSearch() {
@@ -1965,11 +2139,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const root = document.documentElement;
     const cursor = document.createElement("span");
     const trail = document.createElement("span");
+    const cursorClasses = ["app-custom-cursor", "app-liquid-cursor", "app-precision-cursor", "app-spotlight-cursor"];
     let cursorX = window.innerWidth / 2;
     let cursorY = window.innerHeight / 2;
     let trailX = cursorX;
     let trailY = cursorY;
     let rafId = 0;
+    let isReady = false;
 
     cursor.className = "liquid-cursor";
     trail.className = "liquid-cursor-trail";
@@ -1996,6 +2172,42 @@ document.addEventListener("DOMContentLoaded", function () {
         rafId = requestAnimationFrame(renderCursor);
     }
 
+    function applyCursorStyle(choice) {
+        const cursorChoice = choice || localStorage.getItem("amarShowsCursor") || "native";
+        root.dataset.cursorChoice = cursorChoice;
+        root.classList.remove(...cursorClasses);
+
+        if (cursorChoice !== "native") {
+            root.classList.add("app-custom-cursor", "app-" + cursorChoice + "-cursor");
+        }
+
+        document.querySelectorAll("[data-cursor-choice]").forEach(button => {
+            button.classList.toggle("active", button.dataset.cursorChoice === cursorChoice);
+        });
+
+        if (cursorChoice === "native") {
+            cursor.style.display = "none";
+            trail.style.display = "none";
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = 0;
+            }
+            return;
+        }
+
+        cursor.style.display = "";
+        trail.style.display = "";
+        if (isReady && !rafId) {
+            rafId = requestAnimationFrame(renderCursor);
+        }
+    }
+
+    window.setAppCursorStyle = function (choice) {
+        const cursorChoice = choice || "native";
+        localStorage.setItem("amarShowsCursor", cursorChoice);
+        applyCursorStyle(cursorChoice);
+    };
+
     function setActionState(event) {
         const action = event.target.closest("a,button,input,select,textarea,label,[role='button'],.show-card,.theme-toggle-btn");
         root.classList.toggle("cursor-action", Boolean(action));
@@ -2004,8 +2216,9 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("DOMContentLoaded", function () {
         document.body.appendChild(trail);
         document.body.appendChild(cursor);
-        root.classList.add("app-liquid-cursor", "cursor-hidden");
-        rafId = requestAnimationFrame(renderCursor);
+        root.classList.add("cursor-hidden");
+        isReady = true;
+        applyCursorStyle(localStorage.getItem("amarShowsCursor") || "native");
     });
 
     document.addEventListener("mousemove", moveCursor, { passive: true });
@@ -2086,6 +2299,12 @@ document.addEventListener("DOMContentLoaded", function () {
     font-weight: 900;
 }
 
+.amaro-launcher:hover,
+.amaro-launcher:focus-visible {
+    transform: translateY(-2px);
+    outline: none;
+}
+
 .amaro-launcher span {
     display: grid;
     place-items: center;
@@ -2100,7 +2319,7 @@ document.addEventListener("DOMContentLoaded", function () {
     position: absolute;
     right: 0;
     bottom: 66px;
-    width: min(360px, calc(100vw - 28px));
+    width: min(420px, calc(100vw - 28px));
     border: 1px solid var(--app-input-border);
     border-radius: 8px;
     background: var(--app-card);
@@ -2116,6 +2335,27 @@ document.addEventListener("DOMContentLoaded", function () {
     padding: 14px;
     background: color-mix(in srgb, var(--app-primary) 14%, var(--app-card));
     border-bottom: 1px solid var(--app-input-border);
+}
+
+.amaro-command-deck {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px 12px 4px;
+}
+
+.amaro-command-deck button {
+    min-width: 0;
+    min-height: 38px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 24%, var(--app-input-border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-primary) 10%, var(--app-card));
+    color: var(--app-card-text);
+    font-size: 0.72rem;
+    font-weight: 900;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .amaro-header span,
@@ -2223,6 +2463,10 @@ document.addEventListener("DOMContentLoaded", function () {
         right: 14px;
         bottom: 14px;
     }
+
+    .amaro-command-deck {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 </style>
 
@@ -2239,6 +2483,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const thread = widget.querySelector("[data-amaro-thread]");
     const options = widget.querySelector("[data-amaro-options]");
     const greeting = widget.querySelector("[data-amaro-greeting]");
+    const commandDeck = widget.querySelector("[data-amaro-command-deck]");
     const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
 
     function addMessage(text, kind) {
@@ -2267,21 +2512,70 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(response => response.json())
         .then(data => {
             addMessage(data.message || "I could not find details for that yet.", "bot");
-            renderOptions((data.options || []).map(item => item.label || item.url).filter(Boolean));
+            renderOptions(data.options || []);
         })
         .catch(() => addMessage("I could not reach the helper service. Please try again.", "bot"));
+    }
+
+    function runCommand(command, label) {
+        const value = String(command || "");
+
+        if (value.startsWith("theme:")) {
+            const theme = value.split(":")[1] || "cinema";
+            window.setAppTheme?.(theme);
+            addMessage((label || "Theme") + " applied.", "bot");
+            return true;
+        }
+
+        if (value.startsWith("cursor:")) {
+            const cursor = value.split(":")[1] || "native";
+            window.setAppCursorStyle?.(cursor);
+            addMessage((label || "Cursor") + " applied across the app.", "bot");
+            return true;
+        }
+
+        if (value.startsWith("filter-type:")) {
+            const showType = value.split(":")[1] || "Movie";
+            window.location.href = "/Home/Index?type=" + encodeURIComponent(showType);
+            return true;
+        }
+
+        return false;
     }
 
     function renderOptions(items) {
         options.innerHTML = "";
         items.slice(0, 6).forEach(item => {
+            const option = typeof item === "string"
+                ? { label: item, url: "" }
+                : { label: item.label || item.url || "", url: item.url || "", command: item.command || "" };
+
+            if (!option.label) return;
+
             const button = document.createElement("button");
             button.type = "button";
-            button.textContent = item;
-            button.addEventListener("click", () => sendMessage(item));
+            button.textContent = option.label;
+            button.addEventListener("click", () => {
+                if (option.command && runCommand(option.command, option.label)) {
+                    return;
+                }
+
+                if (option.url && option.url.startsWith("/")) {
+                    window.location.href = option.url;
+                    return;
+                }
+
+                sendMessage(option.label);
+            });
             options.appendChild(button);
         });
     }
+
+    commandDeck?.querySelectorAll("[data-amaro-prompt]").forEach(button => {
+        button.addEventListener("click", function () {
+            sendMessage(button.dataset.amaroPrompt || button.textContent);
+        });
+    });
 
     function loadMenu() {
         fetch("/Amaro/Menu")

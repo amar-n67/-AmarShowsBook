@@ -11,6 +11,7 @@
     var userName = Context.Session.GetString("UserName") ?? "Artist";
     var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
     var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
+    var isLoggedIn = Context.Session.GetString("UserEmail") != null;
 }
 
 <section class="showtime-page">
@@ -63,21 +64,21 @@
         </div>
         <nav class="showtime-tabs" aria-label="Show category">
             <a href="/Home/Index?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
-                <span class="tab-icon" aria-hidden="true">M</span>
+                <span class="tab-icon" aria-hidden="true">🎬</span>
                 <span>
                     <strong>Movies</strong>
                     <small>Theater releases</small>
                 </span>
             </a>
             <a href="/Home/Index?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
-                <span class="tab-icon" aria-hidden="true">S</span>
+                <span class="tab-icon" aria-hidden="true">🎙</span>
                 <span>
                     <strong>Standup</strong>
                     <small>Live comedy</small>
                 </span>
             </a>
             <a href="/Home/Index?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
-                <span class="tab-icon" aria-hidden="true">L</span>
+                <span class="tab-icon" aria-hidden="true">📡</span>
                 <span>
                     <strong>Live Stream</strong>
                     <small>Online events</small>
@@ -119,8 +120,7 @@
 data-location="@showLocation"
 data-country="@item.Country"
 data-state="@item.State"
-data-region="@item.Location"
-onclick="location.href='/Booking/Seats/@item.ScheduleId'">
+data-region="@item.Location">
   <div class="card-body">
 
         <h2 class="movie-title">
@@ -203,22 +203,18 @@ data-url="@item.TrailerUrl"
 href="#"
 onclick="event.preventDefault();event.stopPropagation();">
 
-▶ Trailer
+<span class="action-icon" aria-hidden="true">▶</span>
+<span>Trailer</span>
 </a>
 
-     @* <a
-    class="btn btn-primary"
-    href="/Booking/Seats/@item.ScheduleId">
-    
-    Book Ticket
-
-    </a>  *@
 <a
 class="btn btn-primary"
 href="/Booking/Seats/@item.ScheduleId"
-onclick="event.stopPropagation();">
+title="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")"
+aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
-Book Ticket
+<span class="action-icon" aria-hidden="true">🎟</span>
+<span>@(isLoggedIn ? "Book Ticket" : "Login to Book")</span>
 </a>
 
 </div>
@@ -917,16 +913,15 @@ Book Ticket
     }
     
     .showtime-controls {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
         gap: 12px;
         align-items: stretch;
         margin: 24px 0;
     }
     
     .location-panel {
-        flex: 1;
-        min-width: 600px;
+        min-width: 0;
         padding: 16px 20px;
         border: 1px solid var(--app-input-border);
         border-radius: 8px;
@@ -944,8 +939,8 @@ Book Ticket
     
     .location-field {
         flex: 1;
-        min-width: 120px;
-        max-width: 180px;
+        min-width: 150px;
+        max-width: none;
     }
     
     .location-field label {
@@ -1000,29 +995,75 @@ Book Ticket
     }
     
     .showtime-tabs {
-        display: flex;
-        gap: 6px;
-        padding: 6px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 10px;
         border: 1px solid var(--app-input-border);
-        border-radius: 999px;
+        border-radius: 8px;
         background: var(--app-card);
-        align-self: flex-end;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
     }
     
     .showtime-tabs a {
-        min-width: 80px;
-        padding: 10px 16px;
-        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        min-height: 76px;
+        padding: 12px;
+        border: 1px solid color-mix(in srgb, var(--app-input-border) 72%, transparent);
+        border-radius: 8px;
         color: var(--app-text);
-        text-align: center;
+        text-align: left;
         text-decoration: none;
         font-weight: 850;
         font-size: 0.9rem;
+        background: color-mix(in srgb, var(--app-bg) 42%, var(--app-card));
+    }
+
+    .showtime-tabs a:hover {
+        border-color: var(--app-primary);
+        transform: translateY(-2px);
+    }
+
+    .showtime-tabs .tab-icon {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+        font-size: 1.15rem;
+    }
+
+    .showtime-tabs strong,
+    .showtime-tabs small {
+        display: block;
+        line-height: 1.2;
+    }
+
+    .showtime-tabs small {
+        margin-top: 3px;
+        color: var(--app-muted);
+        font-size: 0.72rem;
+        font-weight: 750;
     }
     
     .showtime-tabs a.active {
         background: var(--app-primary);
         color: #fff;
+        border-color: var(--app-primary);
+        box-shadow: 0 10px 24px color-mix(in srgb, var(--app-primary) 24%, transparent);
+    }
+
+    .showtime-tabs a.active .tab-icon {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    .showtime-tabs a.active small {
+        color: rgba(255, 255, 255, 0.82);
     }
     
     .schedule-board {
@@ -1035,7 +1076,7 @@ Book Ticket
     .show-card,
     .empty-slate {
         border: 1px solid var(--app-input-border);
-        border-radius: 25px;
+        border-radius: 8px;
         background: var(--app-card);
         color: var(--app-card-text);
         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
@@ -1114,7 +1155,7 @@ Book Ticket
         width: 100%;
         position: relative;
         overflow: hidden;
-        border-radius: 25px;
+        border-radius: 8px;
         margin-bottom: 18px;
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
         background: var(--app-input-border);
@@ -1130,7 +1171,7 @@ Book Ticket
         opacity: 0;
         transform: scale(1.1);
         transition: opacity 1s ease, transform 6s ease;
-        border-radius: 25px;
+        border-radius: 8px;
     }
     
     .swap-image.active {
@@ -1293,17 +1334,10 @@ Book Ticket
     /* Responsive Styles */
     @@media (max-width: 980px) {
         .showtime-controls {
-            flex-direction: column;
+            grid-template-columns: 1fr;
         }
         .location-panel {
-            min-width: 100%;
-        }
-        .showtime-tabs {
-            justify-content: center;
-        }
-        .location-panel,
-        .schedule-board {
-            grid-template-columns: 1fr;
+            min-width: 0;
         }
     }
     
@@ -1325,11 +1359,12 @@ Book Ticket
         }
         .showtime-tabs {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: 1fr;
             width: 100%;
         }
         .showtime-tabs a {
             min-width: 0;
+            min-height: 60px;
         }
         .location-field {
             max-width: 100%;
@@ -1460,13 +1495,20 @@ Book Ticket
 .showtime-tabs .tab-icon {
     display: grid;
     place-items: center;
-    flex: 0 0 34px;
-    width: 34px;
-    height: 34px;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
     border-radius: 8px;
-    background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+    background:
+        radial-gradient(circle at 32% 24%, rgba(255,255,255,.9), transparent 28%),
+        linear-gradient(145deg, color-mix(in srgb, var(--app-primary) 24%, #fff), color-mix(in srgb, var(--app-accent-strong) 18%, var(--app-input)));
     color: var(--app-primary);
+    font-size: 1.16rem;
     font-weight: 950;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.75),
+        inset 0 -8px 14px rgba(15,23,42,.08),
+        0 8px 16px rgba(15,23,42,.16);
 }
 
 .showtime-tabs strong {
@@ -1502,8 +1544,50 @@ Book Ticket
 }
 
 .showtime-tabs a:hover {
-    transform: none;
+    transform: translateY(-1px);
     border-color: var(--app-primary);
+}
+
+.show-card {
+    cursor: default;
+}
+
+.show-card:hover {
+    transform: translateY(-4px);
+}
+
+.card-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 44px;
+    border-radius: 8px;
+}
+
+.action-icon {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border-radius: 8px;
+    background:
+        radial-gradient(circle at 30% 24%, rgba(255,255,255,.86), transparent 34%),
+        linear-gradient(145deg, rgba(255,255,255,.3), rgba(0,0,0,.1));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.45),
+        0 5px 12px rgba(15,23,42,.18);
+    line-height: 1;
+}
+
+.trailer-btn:hover span:last-child,
+.btn-primary:hover span:last-child,
+.trailer-btn:focus-visible span:last-child,
+.btn-primary:focus-visible span:last-child {
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 @@media (max-width: 980px) {
@@ -1529,6 +1613,38 @@ Book Ticket
 
     .showtime-tabs {
         grid-template-columns: 1fr;
+    }
+
+    .showtime-hero {
+        min-height: auto;
+        padding: 18px;
+    }
+
+    .showtime-hero h1 {
+        font-size: 2.45rem;
+    }
+
+    .schedule-board {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .show-card {
+        padding: 14px;
+    }
+
+    .movie-title {
+        min-height: 0;
+        font-size: 1.18rem;
+    }
+
+    .card-actions {
+        gap: 8px;
+    }
+
+    .card-actions .btn {
+        padding: 10px 8px;
+        font-size: 0.82rem;
     }
 }
 </style>

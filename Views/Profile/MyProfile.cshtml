@@ -308,10 +308,36 @@
                 </div>
             </section>
 
+            <section class="profile-scene cursor-scene">
+                <div class="scene-title">
+                    <span>Scene 04</span>
+                    <h5>Mouse Cursor Style</h5>
+                </div>
+
+                <div class="cursor-style-grid" aria-label="Cursor style options">
+                    <button type="button" class="cursor-style-option" data-cursor-choice="native" onclick="setAppCursorStyle('native')">
+                        <span class="cursor-preview cursor-preview-native"></span>
+                        <strong>Native</strong>
+                    </button>
+                    <button type="button" class="cursor-style-option" data-cursor-choice="liquid" onclick="setAppCursorStyle('liquid')">
+                        <span class="cursor-preview cursor-preview-liquid"></span>
+                        <strong>Liquid</strong>
+                    </button>
+                    <button type="button" class="cursor-style-option" data-cursor-choice="precision" onclick="setAppCursorStyle('precision')">
+                        <span class="cursor-preview cursor-preview-precision"></span>
+                        <strong>Precision</strong>
+                    </button>
+                    <button type="button" class="cursor-style-option" data-cursor-choice="spotlight" onclick="setAppCursorStyle('spotlight')">
+                        <span class="cursor-preview cursor-preview-spotlight"></span>
+                        <strong>Spotlight</strong>
+                    </button>
+                </div>
+            </section>
+
             <!-- ================= PASSWORD ================= -->
             <section class="profile-scene password-scene">
                 <div class="scene-title">
-                    <span>Scene 04</span>
+                    <span>Scene 05</span>
                     <h5>Security Retake</h5>
                 </div>
 
@@ -591,6 +617,54 @@ input.clean-input[readonly],
     border-radius: 8px;
     background: color-mix(in srgb, var(--app-card) 86%, var(--app-accent-strong) 14%);
 }
+.cursor-style-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+.cursor-style-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    padding: 10px;
+    text-align: left;
+    font-weight: 850;
+}
+.cursor-style-option.active {
+    border-color: var(--app-primary);
+    background: color-mix(in srgb, var(--app-primary) 12%, var(--app-input));
+    box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--app-primary) 18%, transparent);
+}
+.cursor-preview {
+    display: block;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--app-input-border);
+    background: var(--app-card);
+}
+.cursor-preview-native {
+    clip-path: polygon(18% 8%, 78% 58%, 52% 62%, 66% 92%, 52% 98%, 38% 68%, 18% 86%);
+    background: var(--app-card-text);
+}
+.cursor-preview-liquid {
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 28%, #fff, transparent 34%), var(--app-accent-strong);
+}
+.cursor-preview-precision {
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--app-danger) 0 20%, transparent 23% 42%, var(--app-danger) 45% 50%, transparent 52%);
+}
+.cursor-preview-spotlight {
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 18%, color-mix(in srgb, var(--app-accent) 44%, transparent) 22% 100%);
+}
 .change-password-form {
     margin-top: 10px;
 }
@@ -604,7 +678,8 @@ input.clean-input[readonly],
     }
     .profile-grid,
     .field-split,
-    .location-grid {
+    .location-grid,
+    .cursor-style-grid {
         grid-template-columns: 1fr;
     }
     .profile-form,
