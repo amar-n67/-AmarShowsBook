@@ -87,19 +87,19 @@ public class AmaroController : Controller
         var menuItems = await GetAccessibleMenus(userId);
         var quickLinks = menuItems
             .Where(x => !string.IsNullOrWhiteSpace(x.RoutePath))
-            .Take(6)
+            .Take(5)
             .Select(x => new AmaroQuickOption(x.MenuName ?? x.MenuCode ?? "Open", x.RoutePath!))
             .ToArray();
         var matchedMenus = FindMenus(menuItems, normalized)
-            .Take(6)
+            .Take(5)
             .Select(x => new AmaroQuickOption(x.MenuName ?? x.MenuCode ?? "Open", x.RoutePath!))
             .ToArray();
 
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I can book shows, show prices and available seats, filter movies/standup/live, open role-allowed pages, summarize upcoming booked shows, check transactions/wallet/profile, and switch theme or cursor.",
-                BuildAssistantOptions(menuItems, userId).Take(8).ToArray());
+                "I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, check wallet/profile/transactions, and switch theme or cursor.",
+                BuildAssistantOptions(menuItems, userId).Take(5).ToArray());
         }
 
         if (IsThemeIntent(normalized))
@@ -154,7 +154,7 @@ public class AmaroController : Controller
 
         if (IsOpenPageIntent(normalized))
         {
-            var pageOptions = BuildPageOptions(menuItems, userId, normalized).Take(8).ToArray();
+            var pageOptions = BuildPageOptions(menuItems, userId, normalized).Take(5).ToArray();
             if (pageOptions.Any())
             {
                 return new AmaroAskResponse(
@@ -521,11 +521,12 @@ public class AmaroController : Controller
             .Select(x => new AmaroQuickOption(
                 wantsBooking ? $"Book {x.StartTime:hh:mm tt}" : $"{x.Title} {x.StartTime:hh:mm tt}",
                 $"/Booking/Seats/{x.ScheduleId}"))
+            .Prepend(new AmaroQuickOption("Upcoming Shows", "/Home/Index"))
             .Prepend(new AmaroQuickOption("Browse Shows", string.IsNullOrWhiteSpace(type) ? "/Home/Index" : $"/Home/Index?type={type}"))
             .Prepend(new AmaroQuickOption("Filter Movies", "", "filter-type:Movie"))
             .Prepend(new AmaroQuickOption("Filter Standup", "", "filter-type:Standup"))
             .Prepend(new AmaroQuickOption("Filter Live", "", "filter-type:Live"))
-            .Take(6)
+            .Take(5)
             .ToArray();
 
         if (requireLoginToBook && wantsBooking)
@@ -674,7 +675,7 @@ VALUES
         return options
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(8)
+            .Take(5)
             .Select(x => x!)
             .ToArray();
     }
@@ -682,13 +683,17 @@ VALUES
     private IEnumerable<AmaroQuickOption> BuildAssistantOptions(List<AmaroMenuItem> menuItems, int userId)
     {
         yield return new AmaroQuickOption("Book Shows", "/Home/Index");
-        yield return new AmaroQuickOption("Available Seats", "", null);
+        yield return new AmaroQuickOption("Available Seats", "", "show-suggestions");
+        yield return new AmaroQuickOption("Upcoming Shows", "/Home/Index");
+        yield return new AmaroQuickOption("Movies", "", "filter-type:Movie");
+        yield return new AmaroQuickOption("Standup", "", "filter-type:Standup");
+        yield return new AmaroQuickOption("Live Streams", "", "filter-type:Live");
         yield return new AmaroQuickOption("My Bookings", "/Booking/MyBookings");
         yield return new AmaroQuickOption("Transactions", "/Transaction/History");
         yield return new AmaroQuickOption("Wallet", "/Wallet/Index");
         yield return new AmaroQuickOption("Profile", "/Profile/MyProfile");
-        yield return new AmaroQuickOption("Theme", "", null);
-        yield return new AmaroQuickOption("Cursor", "", null);
+        yield return new AmaroQuickOption("Theme", "", "theme-options");
+        yield return new AmaroQuickOption("Cursor", "", "cursor-options");
 
         foreach (var menu in menuItems.Where(x => !string.IsNullOrWhiteSpace(x.RoutePath)).Take(6))
         {

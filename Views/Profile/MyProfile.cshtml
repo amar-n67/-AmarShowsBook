@@ -317,20 +317,42 @@
                 <div class="cursor-style-grid" aria-label="Cursor style options">
                     <button type="button" class="cursor-style-option" data-cursor-choice="native" onclick="setAppCursorStyle('native')">
                         <span class="cursor-preview cursor-preview-native"></span>
-                        <strong>Native</strong>
+                        <span>
+                            <strong>Native</strong>
+                            <small>System pointer</small>
+                        </span>
                     </button>
                     <button type="button" class="cursor-style-option" data-cursor-choice="liquid" onclick="setAppCursorStyle('liquid')">
                         <span class="cursor-preview cursor-preview-liquid"></span>
-                        <strong>Liquid</strong>
+                        <span>
+                            <strong>Liquid</strong>
+                            <small>Soft trailing dot</small>
+                        </span>
                     </button>
                     <button type="button" class="cursor-style-option" data-cursor-choice="precision" onclick="setAppCursorStyle('precision')">
                         <span class="cursor-preview cursor-preview-precision"></span>
-                        <strong>Precision</strong>
+                        <span>
+                            <strong>Precision</strong>
+                            <small>Target reticle</small>
+                        </span>
                     </button>
                     <button type="button" class="cursor-style-option" data-cursor-choice="spotlight" onclick="setAppCursorStyle('spotlight')">
                         <span class="cursor-preview cursor-preview-spotlight"></span>
-                        <strong>Spotlight</strong>
+                        <span>
+                            <strong>Spotlight</strong>
+                            <small>Wide focus ring</small>
+                        </span>
                     </button>
+                </div>
+
+                <div class="cursor-color-panel" aria-label="Cursor color options">
+                    <span>Cursor Color</span>
+                    <div class="cursor-color-grid">
+                        <button type="button" data-cursor-color="#168f98" style="--cursor-swatch:#168f98" onclick="setAppCursorColor('#168f98')">Teal</button>
+                        <button type="button" data-cursor-color="#e45d48" style="--cursor-swatch:#e45d48" onclick="setAppCursorColor('#e45d48')">Coral</button>
+                        <button type="button" data-cursor-color="#7a8cff" style="--cursor-swatch:#7a8cff" onclick="setAppCursorColor('#7a8cff')">Indigo</button>
+                        <button type="button" data-cursor-color="#f0bd4f" style="--cursor-swatch:#f0bd4f" onclick="setAppCursorColor('#f0bd4f')">Gold</button>
+                    </div>
                 </div>
             </section>
 
@@ -636,6 +658,14 @@ input.clean-input[readonly],
     text-align: left;
     font-weight: 850;
 }
+.cursor-style-option small {
+    display: block;
+    margin-top: 2px;
+    color: var(--app-muted);
+    font-size: 0.7rem;
+    font-weight: 750;
+    line-height: 1.15;
+}
 .cursor-style-option.active {
     border-color: var(--app-primary);
     background: color-mix(in srgb, var(--app-primary) 12%, var(--app-input));
@@ -650,20 +680,78 @@ input.clean-input[readonly],
     background: var(--app-card);
 }
 .cursor-preview-native {
-    clip-path: polygon(18% 8%, 78% 58%, 52% 62%, 66% 92%, 52% 98%, 38% 68%, 18% 86%);
-    background: var(--app-card-text);
+    border: 0;
+    border-radius: 0;
+    clip-path: polygon(12% 4%, 88% 62%, 58% 66%, 74% 100%, 58% 100%, 44% 70%, 18% 88%);
+    background: linear-gradient(135deg, var(--app-card-text), color-mix(in srgb, var(--app-card-text) 54%, var(--app-input)));
 }
 .cursor-preview-liquid {
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 28%, #fff, transparent 34%), var(--app-accent-strong);
+    border-color: color-mix(in srgb, var(--app-cursor-color, var(--app-accent-strong)) 48%, transparent);
+    background: radial-gradient(circle at 35% 28%, #fff, transparent 34%), var(--app-cursor-color, var(--app-accent-strong));
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--app-cursor-color, var(--app-accent-strong)) 14%, transparent);
 }
 .cursor-preview-precision {
     border-radius: 50%;
-    background: radial-gradient(circle, var(--app-danger) 0 20%, transparent 23% 42%, var(--app-danger) 45% 50%, transparent 52%);
+    border: 2px solid var(--app-cursor-color, var(--app-danger));
+    background:
+        linear-gradient(var(--app-cursor-color, var(--app-danger)), var(--app-cursor-color, var(--app-danger))) center / 2px 100% no-repeat,
+        linear-gradient(90deg, var(--app-cursor-color, var(--app-danger)), var(--app-cursor-color, var(--app-danger))) center / 100% 2px no-repeat,
+        radial-gradient(circle, var(--app-input) 0 22%, transparent 24%);
 }
 .cursor-preview-spotlight {
     border-radius: 50%;
-    background: radial-gradient(circle, #fff 0 18%, color-mix(in srgb, var(--app-accent) 44%, transparent) 22% 100%);
+    border: 2px solid color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 54%, transparent);
+    background:
+        radial-gradient(circle, #fff 0 16%, transparent 18% 34%, color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 34%, transparent) 36% 100%);
+    box-shadow: inset 0 0 14px color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 24%, transparent);
+}
+.cursor-color-panel {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 82%, var(--app-input));
+}
+.cursor-color-panel > span {
+    color: var(--app-muted);
+    font-size: 0.74rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.cursor-color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+.cursor-color-grid button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 38px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+.cursor-color-grid button::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    border-radius: 50%;
+    background: var(--cursor-swatch);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--cursor-swatch) 24%, transparent);
+}
+.cursor-color-grid button.active {
+    border-color: var(--cursor-swatch);
+    box-shadow: 0 0 0 0.14rem color-mix(in srgb, var(--cursor-swatch) 22%, transparent);
 }
 .change-password-form {
     margin-top: 10px;
@@ -679,7 +767,8 @@ input.clean-input[readonly],
     .profile-grid,
     .field-split,
     .location-grid,
-    .cursor-style-grid {
+    .cursor-style-grid,
+    .cursor-color-grid {
         grid-template-columns: 1fr;
     }
     .profile-form,

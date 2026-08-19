@@ -1613,6 +1613,28 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
     .showtime-tabs {
         grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .showtime-tabs a {
+        min-height: 44px;
+        justify-content: center;
+        padding: 10px 12px;
+        text-align: center;
+    }
+
+    .showtime-tabs .tab-icon,
+    .card-actions .action-icon {
+        display: none;
+    }
+
+    .showtime-tabs strong {
+        white-space: normal;
+    }
+
+    .showtime-tabs small {
+        display: none;
     }
 
     .showtime-hero {
