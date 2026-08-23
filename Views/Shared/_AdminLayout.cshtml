@@ -1,4 +1,5 @@
 @inject AmarShowsBook.Services.RbacService RbacService
+@inject AmarShowsBook.Data.ApplicationDbContext AdminDbContext
 <!DOCTYPE html>
 <html>
 <head>
@@ -128,7 +129,7 @@
         "Bookings" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
         "Transactions" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
         "Wallets" => new[] { "ACTIVE", "DISABLED", "BLOCKED" },
-        "Notifications" => new[] { "SUCCESS", "SENT", "PENDING", "FAILED", "UNREAD", "ERROR" },
+        "Notifications" => new[] { "SUCCESS", "SENT", "PENDING", "FAILED", "ERROR", "CANCELLED", "REJECTED", "ISSUE" },
         "ActivityLogs" => new[] { "SUCCESS", "FAILED", "ERROR", "PENDING" },
         "Versions" => new[] { "CURRENT", "PREVIOUS" },
         _ => Array.Empty<string>()
@@ -136,19 +137,47 @@
     var adminMethodLabel = currentAction switch
     {
         "Transactions" => "Payment Method",
-        "Notifications" => "Notification Type",
+        "Notifications" => "Source",
         "Bookings" or "ContentManager" => "Show Type",
         _ => string.Empty
     };
     var adminMethodOptions = currentAction switch
     {
         "Transactions" => new[] { "UPI", "CARD", "NETBANKING", "WALLET", "QR" },
-        "Notifications" => new[] { "WEB", "EMAIL", "SMS" },
+        "Notifications" => new[] { "REFUND", "BOOKING", "PAYMENT", "NOTIFICATION", "SECURITY", "AUTH", "EMAIL", "SMS", "PUSH", "IN_APP", "WHATSAPP" },
         "Bookings" or "ContentManager" => new[] { "MOVIE", "STANDUP", "LIVE" },
         _ => Array.Empty<string>()
     };
     var canUsePrintTools =
         AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+
+    int CountAdminNotifications(Func<int> count)
+    {
+        try
+        {
+            return count();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    var adminNotificationCount =
+        CountAdminNotifications(() => AdminDbContext.VwRefundSummaries.Count(x =>
+            x.RefundStatus == "PENDING" ||
+            x.RefundStatus == "FAILED" ||
+            x.RefundStatus == "REJECTED")) +
+        CountAdminNotifications(() => AdminDbContext.VwNotificationCenters.Count(x =>
+            x.IsError == 1 ||
+            x.Status == "FAILED" ||
+            x.Status == "ERROR")) +
+        CountAdminNotifications(() => AdminDbContext.VwBookingTransactionSummaries.Count(x =>
+            x.IsPaymentError == 1 ||
+            x.TransactionStatus == "FAILED" ||
+            x.TransactionStatus == "ERROR")) +
+        CountAdminNotifications(() => AdminDbContext.VwTicketValidationSummaries.Count(x =>
+            x.IsSecurityIssue == 1));
 }
 
 <body>
@@ -171,7 +200,15 @@
                     (item.Action == "Transactions" && currentAction == "TransactionDetails") ||
                     (item.Action == "Refunds" && currentAction == "RefundDetails");
 
-                <a class="@(isActive ? "active" : "")" href="@item.Url">@item.Label</a>
+                <a class="@(isActive ? "active" : "")" href="@item.Url">
+                    <span class="admin-nav-label">@item.Label</span>
+                    @if (item.Action == "Notifications" && adminNotificationCount > 0)
+                    {
+                        <span class="admin-nav-count" title="Pending admin notifications">
+                            @adminNotificationCount
+                        </span>
+                    }
+                </a>
             }
 
         </nav>

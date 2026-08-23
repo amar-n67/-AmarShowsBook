@@ -254,6 +254,8 @@ html[data-theme="cinema"] .admin-sidebar {
 .admin-nav a {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     min-height: 44px;
     padding: 11px 14px;
     border: 1px solid transparent;
@@ -263,6 +265,29 @@ html[data-theme="cinema"] .admin-sidebar {
     font-size: 0.95rem;
     font-weight: 800;
     transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border 0.18s ease;
+}
+
+.admin-nav-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-nav-count {
+    min-width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: #b33d58;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 8px 18px rgba(179, 61, 88, 0.28);
 }
 
 .admin-nav a:hover,

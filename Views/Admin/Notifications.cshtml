@@ -1,3 +1,4 @@
+@using AmarShowsBook.Models.ViewModels
 @model IEnumerable<AmarShowsBook.Models.Admin.VwNotificationCenter>
 
 @{
@@ -10,9 +11,52 @@
     int totalPages = ViewBag.TotalPages ?? 1;
 
     int totalRecords = ViewBag.TotalRecords ?? Model.Count();
-    var systemEvents =
-        ViewBag.SystemEvents as List<Dictionary<string,string>>
-        ?? new List<Dictionary<string,string>>();
+    var actionNotifications =
+        ViewBag.ActionNotifications as List<AdminNotificationActionItem>
+        ?? new List<AdminNotificationActionItem>();
+
+    int actionNotificationCount = ViewBag.ActionNotificationCount ?? actionNotifications.Count;
+
+    int pendingActionCount = ViewBag.PendingActionCount ?? actionNotifications.Count(x => x.RequiresAction);
+
+    int criticalActionCount = ViewBag.CriticalActionCount ?? actionNotifications.Count(x => x.Priority == "HIGH");
+
+    string highlight = Context.Request.Query["highlight"].ToString();
+
+    string BadgeClass(string? status, int isError = 0)
+    {
+        var normalized = (status ?? string.Empty).Trim().ToUpperInvariant();
+
+        if (isError == 1 ||
+            normalized is "HIGH" ||
+            normalized is "FAILED" or "ERROR" or "FAILURE" or "REJECTED" or "ISSUE")
+        {
+            return "danger";
+        }
+
+        if (normalized is "MEDIUM" or "PENDING" or "PROCESSING" or "UNREAD" or "CANCELLED")
+        {
+            return "warning";
+        }
+
+        if (normalized is "SENT" or "SUCCESS" or "DELIVERED" or "READ")
+        {
+            return "success";
+        }
+
+        return "neutral";
+    }
+
+    string FormatDate(DateTime value) =>
+        value.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+    string FormatTime(DateTime value) =>
+        value.ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+
+    string FormatDateTime(DateTime? value) =>
+        value.HasValue
+            ? value.Value.ToString("dd MMM yyyy hh:mm tt", System.Globalization.CultureInfo.InvariantCulture)
+            : "NA";
 }
 
 <section class="admin-page">
@@ -30,9 +74,9 @@
             </h1>
 
             <p class="page-subtitle">
-                Track notification delivery status,
-                email alerts, system pushes,
-                and user communication activity.
+                Track customer actions, cancellations, refunds,
+                payment failures, delivery issues,
+                and technical errors in one action queue.
             </p>
 
         </div>
@@ -55,60 +99,131 @@
     <div class="stats-grid">
 
         <div class="stat-card">
-            <span>Total Notifications</span>
+            <span>Action Items</span>
+            <strong>@actionNotificationCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Needs Admin Action</span>
+            <strong>@pendingActionCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Critical</span>
+            <strong>@criticalActionCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Delivery Records</span>
             <strong>@totalRecords</strong>
-        </div>
-
-        <div class="stat-card">
-            <span>Failed Notifications</span>
-            <strong>
-                @Model.Count(x => x.IsError == 1)
-            </strong>
-        </div>
-
-        <div class="stat-card">
-            <span>Successful Notifications</span>
-            <strong>
-                @Model.Count(x =>
-                    x.Status == "SENT" ||
-                    x.Status == "SUCCESS")
-            </strong>
         </div>
 
     </div>
 
     <div class="admin-detail-panel mb-4">
-        <h2 class="h5 mb-3">Errors, Cancelled Bookings and Failed Transactions</h2>
+        <div class="notification-panel-head">
+            <div>
+                <h2 class="h5 mb-1">Admin Action Notifications</h2>
+                <p class="panel-subtitle">
+                    Refunds, cancelled tickets, failed payments, delivery failures,
+                    security issues, and technical logs with direct action links.
+                </p>
+            </div>
+        </div>
+
         <div class="table-wrapper">
-            <table class="table admin-table">
+            <table class="table admin-table action-notification-table">
                 <thead>
                     <tr>
-                        <th>Time</th>
-                        <th>Type</th>
-                        <th>Title</th>
-                        <th>Status</th>
-                        <th>Details</th>
+                        <th style="min-width:160px;">Time</th>
+                        <th style="min-width:150px;">Priority</th>
+                        <th style="min-width:190px;">Event</th>
+                        <th style="min-width:240px;">User</th>
+                        <th style="min-width:420px;">Details</th>
+                        <th style="min-width:170px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if(!systemEvents.Any())
+                    @if(!actionNotifications.Any())
                     {
                         <tr>
-                            <td colspan="5" class="empty-state">No system events found</td>
+                            <td colspan="6" class="empty-state">
+                                No action notifications found
+                            </td>
                         </tr>
                     }
                     else
                     {
-                        foreach(var item in systemEvents)
+                        foreach(var item in actionNotifications)
                         {
-                            <tr data-admin-searchable
-                                data-filter-status="@item["Status"]"
-                                data-filter-method="@item["Type"]">
-                                <td>@item["Time"]</td>
-                                <td>@item["Type"]</td>
-                                <td><strong>@item["Title"]</strong></td>
-                                <td><span class="badge danger">@item["Status"]</span></td>
-                                <td>@item["Detail"]</td>
+                            <tr id="@item.Id"
+                                class="@(highlight == item.Id ? "highlight-row" : "")"
+                                data-admin-searchable
+                                data-filter-status="@item.Status"
+                                data-filter-method="@item.Category">
+
+                                <td>
+                                    <div class="created-date">
+                                        @FormatDate(item.Time)
+                                    </div>
+                                    <div class="sub-text">
+                                        @FormatTime(item.Time)
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge @BadgeClass(item.Priority)">
+                                        @item.Priority
+                                    </span>
+                                    @if (item.RequiresAction)
+                                    {
+                                        <div class="sub-text">
+                                            Action required
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="notification-title">
+                                        @item.Title
+                                    </div>
+                                    <div class="sub-text">
+                                        @item.Category | @item.Status
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="user-name">
+                                        @(string.IsNullOrWhiteSpace(item.UserName)
+                                            ? "NA"
+                                            : item.UserName)
+                                    </div>
+                                    <div class="sub-text email-cell">
+                                        @(string.IsNullOrWhiteSpace(item.UserEmail)
+                                            ? "NA"
+                                            : item.UserEmail)
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="notification-detail">
+                                        @item.Detail
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+                                    {
+                                        <a class="notification-action-btn"
+                                           href="@item.ActionUrl">
+                                            @item.ActionText
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="sub-text">No action</span>
+                                    }
+                                </td>
                             </tr>
                         }
                     }
@@ -118,8 +233,18 @@
     </div>
 
     <!-- ===================================================== -->
-    <!-- TABLE -->
+    <!-- DELIVERY TABLE -->
     <!-- ===================================================== -->
+
+    <div class="notification-panel-head delivery-panel-head">
+        <div>
+            <h2 class="h5 mb-1">Delivery Records</h2>
+            <p class="panel-subtitle">
+                Customer notification messages, delivery timing, retry count,
+                and failure details from the notification center.
+            </p>
+        </div>
+    </div>
 
     <div class="table-wrapper">
 
@@ -135,6 +260,10 @@
 
                     <th style="min-width:320px;">
                         Notification
+                    </th>
+
+                    <th style="min-width:360px;">
+                        Delivery Details
                     </th>
 
                     <th style="min-width:140px;">
@@ -154,7 +283,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="4"
+                        <td colspan="5"
                             class="empty-state">
                             No notifications found
                         </td>
@@ -164,7 +293,11 @@
                 {
                     @foreach (var item in Model)
                     {
-                        <tr data-filter-status="@item.Status"
+                        var rowId = $"notification-{item.NotificationId}";
+
+                        <tr id="@rowId"
+                            class="@(highlight == rowId ? "highlight-row" : "")"
+                            data-filter-status="@item.Status"
                             data-filter-method="@item.NotificationType">
 
                             <!-- USER -->
@@ -196,33 +329,61 @@
                                 </div>
 
                                 <div class="sub-text">
+                                    Type:
                                     @(string.IsNullOrWhiteSpace(item.NotificationType)
                                         ? "NA"
                                         : item.NotificationType)
                                 </div>
 
+                                <div class="sub-text">
+                                    Template:
+                                    @(string.IsNullOrWhiteSpace(item.TemplateCode)
+                                        ? "NA"
+                                        : item.TemplateCode)
+                                    /
+                                    @(string.IsNullOrWhiteSpace(item.TemplateName)
+                                        ? "NA"
+                                        : item.TemplateName)
+                                </div>
+
+                            </td>
+
+                            <!-- DELIVERY DETAILS -->
+
+                            <td>
+                                <div class="notification-detail">
+                                    @(string.IsNullOrWhiteSpace(item.Message)
+                                        ? "No message body"
+                                        : item.Message)
+                                </div>
+
+                                <div class="sub-text">
+                                    Sent:
+                                    @FormatDateTime(item.SentAt)
+                                    | Delivered:
+                                    @FormatDateTime(item.DeliveredAt)
+                                    | Read:
+                                    @FormatDateTime(item.ReadAt)
+                                </div>
+
+                                <div class="sub-text">
+                                    Retries: @item.RetryCount
+                                    | Failure:
+                                    @(string.IsNullOrWhiteSpace(item.FailureReason)
+                                        ? "NA"
+                                        : item.FailureReason)
+                                </div>
                             </td>
 
                             <!-- STATUS -->
 
                             <td>
 
-                                @if (item.IsError == 1)
-                                {
-                                    <span class="badge danger">
-                                        @(string.IsNullOrWhiteSpace(item.Status)
-                                            ? "FAILED"
-                                            : item.Status)
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge success">
-                                        @(string.IsNullOrWhiteSpace(item.Status)
-                                            ? "SUCCESS"
-                                            : item.Status)
-                                    </span>
-                                }
+                                <span class="badge @BadgeClass(item.Status, item.IsError)">
+                                    @(string.IsNullOrWhiteSpace(item.Status)
+                                        ? (item.IsError == 1 ? "FAILED" : "SUCCESS")
+                                        : item.Status)
+                                </span>
 
                             </td>
 
@@ -231,11 +392,11 @@
                             <td>
 
                                 <div class="created-date">
-                                    @item.CreatedAt
+                                    @FormatDate(item.CreatedAt)
                                 </div>
 
                                 <div class="sub-text">
-                                    @item.CreatedAt
+                                    @FormatTime(item.CreatedAt)
                                 </div>
 
                             </td>
@@ -274,12 +435,14 @@
 
 <style>
 
-    .notification-table {
+    .notification-table,
+    .action-notification-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .notification-table th {
+    .notification-table th,
+    .action-notification-table th {
         background: #111827;
         color: white;
         padding: 14px;
@@ -289,15 +452,41 @@
         white-space: nowrap;
     }
 
-    .notification-table td {
+    .notification-table td,
+    .action-notification-table td {
         padding: 14px;
         vertical-align: top;
         border-bottom: 1px solid #e5e7eb;
         font-size: 14px;
     }
 
-    .notification-table tbody tr:hover {
+    .notification-table tbody tr:hover,
+    .action-notification-table tbody tr:hover {
         background: #f9fafb;
+    }
+
+    .highlight-row {
+        background: #fff7ed !important;
+        box-shadow: inset 4px 0 0 #f97316;
+    }
+
+    .notification-panel-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .delivery-panel-head {
+        margin-top: 6px;
+    }
+
+    .panel-subtitle {
+        margin: 0;
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.5;
     }
 
     .table-wrapper {
@@ -363,6 +552,16 @@
         color: #991b1b;
     }
 
+    .badge.warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge.neutral {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
     .sub-text {
         font-size: 12px;
         color: #6b7280;
@@ -426,6 +625,32 @@
         word-break: break-word;
     }
 
+    .notification-detail {
+        color: #374151;
+        line-height: 1.55;
+        word-break: break-word;
+    }
+
+    .notification-action-btn {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #111827;
+        color: #fff;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .notification-action-btn:hover {
+        background: #374151;
+        color: #fff;
+    }
+
     .created-date {
         font-weight: 500;
         color: #111827;
@@ -438,7 +663,9 @@
         }
 
         .notification-table td,
-        .notification-table th {
+        .notification-table th,
+        .action-notification-table td,
+        .action-notification-table th {
             font-size: 13px;
             padding: 10px;
         }
