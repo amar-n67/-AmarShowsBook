@@ -255,7 +255,7 @@
                      data-page-filter
                      data-page-filter-target=".admin-table tbody tr, table tbody tr, .access-card, [data-admin-searchable]">
                 <div class="row g-3 align-items-center">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <input type="text"
                                class="form-control rounded-pill"
                                data-page-filter-search
@@ -263,7 +263,7 @@
                     </div>
                     @if(adminStatusOptions.Any())
                     {
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <select class="form-select rounded-pill" data-page-filter-status>
                             <option value="">All Status</option>
                             @foreach(var option in adminStatusOptions)
@@ -275,7 +275,7 @@
                     }
                     @if(adminMethodOptions.Any())
                     {
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <select class="form-select rounded-pill" data-page-filter-method>
                             <option value="">All @adminMethodLabel</option>
                             @foreach(var option in adminMethodOptions)
@@ -297,7 +297,17 @@
                         </select>
                     </div>
                     }
-                    <div class="col-md-2 text-end">
+                    <div class="col-md-2">
+                        <select class="form-select rounded-pill" data-page-filter-sort>
+                            <option value="">Default Sort</option>
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="priority">Priority First</option>
+                            <option value="status">Status A-Z</option>
+                            <option value="source">Source A-Z</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 text-end">
                         <button type="button"
                                 class="btn btn-outline-dark rounded-pill w-100"
                                 data-page-filter-reset>

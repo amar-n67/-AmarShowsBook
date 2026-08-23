@@ -28,6 +28,8 @@ namespace AmarShowsBook.Controllers
 
         private readonly RbacService _rbacService;
 
+        private readonly OtpDeliveryService _emailDeliveryService;
+
         // =====================================================
         // CONSTRUCTOR
         // =====================================================
@@ -41,11 +43,13 @@ namespace AmarShowsBook.Controllers
         public AdminController(
             ApplicationDbContext context,
             IActivityLogger activityLogger,
-            RbacService rbacService)
+            RbacService rbacService,
+            OtpDeliveryService emailDeliveryService)
         {
             _context = context;
             _activityLogger = activityLogger;
             _rbacService = rbacService;
+            _emailDeliveryService = emailDeliveryService;
         }
 
         public override async Task OnActionExecutionAsync(
@@ -977,8 +981,12 @@ FailedRefunds =
         public async Task<IActionResult> Notifications(int page = 1)
         {
             var actionNotifications = await BuildAdminNotificationActions();
+            var archivedActionNotifications = await BuildAdminNotificationArchiveActions();
+
             ViewBag.ActionNotifications = actionNotifications;
+            ViewBag.ArchivedActionNotifications = archivedActionNotifications;
             ViewBag.ActionNotificationCount = actionNotifications.Count;
+            ViewBag.ArchivedActionNotificationCount = archivedActionNotifications.Count;
             ViewBag.PendingActionCount = actionNotifications.Count(x => x.RequiresAction);
             ViewBag.CriticalActionCount = actionNotifications.Count(x => x.Priority == "HIGH");
 
@@ -1595,14 +1603,13 @@ public async Task<IActionResult> RejectRefund(long id)
         return RedirectToAction("Refunds");
     }
 
-    // =====================================================
-    // UPDATE REFUND STATUS
-    // =====================================================
+    await using var dbTransaction =
+        await _context.Database.BeginTransactionAsync();
 
     refund.refund_status = "REJECTED";
 
     refund.workflow_action =
-        "REJECTED BY ADMIN";
+        "REJECTED BY ADMIN - TICKET REMAINS ACTIVE";
 
     refund.updated_at =
         DateTime.UtcNow;
@@ -1618,7 +1625,9 @@ public async Task<IActionResult> RejectRefund(long id)
         DateTime.UtcNow;
 
     refund.admin_notes =
-        "Refund rejected by admin";
+        "Refund rejected by admin. Ticket cancellation request denied and ticket remains active.";
+
+    await RestoreBookingAfterRefundRejection(refund);
 
     // =====================================================
     // SAVE AUDIT LOG
@@ -1640,7 +1649,7 @@ public async Task<IActionResult> RejectRefund(long id)
                 DateTime.UtcNow,
 
             action_notes =
-                "Refund rejected by admin",
+                "Refund rejected by admin. Ticket remains active.",
 
             ip_address =
                 HttpContext
@@ -1657,6 +1666,7 @@ public async Task<IActionResult> RejectRefund(long id)
     // =====================================================
 
     await _context.SaveChangesAsync();
+    await dbTransaction.CommitAsync();
 
     // =====================================================
     // ACTIVITY LOG
@@ -1667,7 +1677,7 @@ public async Task<IActionResult> RejectRefund(long id)
         module: "REFUND",
         entityType: "REFUND",
         description:
-            $"Refund rejected: {refund.refund_ref}",
+            $"Refund rejected and ticket kept active: {refund.refund_ref}",
         status: "SUCCESS",
         isError: 0
     );
@@ -1676,20 +1686,233 @@ public async Task<IActionResult> RejectRefund(long id)
     // NOTIFICATION LOG
     // =====================================================
 
+    var notificationResult =
+        await TrySendRefundRejectionUserNotification(refund);
+
     await _activityLogger.LogAsync(
         action: "REFUND_NOTIFICATION",
         module: "NOTIFICATION",
         entityType: "REFUND",
         description:
-            $"Rejection notification sent for refund {refund.refund_ref}",
-        status: "SUCCESS",
-        isError: 0
+            notificationResult.Success
+                ? $"Rejection email sent for refund {refund.refund_ref}. Ticket remains active."
+                : $"Rejection email not sent for refund {refund.refund_ref}: {notificationResult.Message}",
+        status: notificationResult.Success ? "SUCCESS" : "FAILED",
+        isError: notificationResult.Success ? 0 : 1
     );
 
     TempData["Success"] =
-        "Refund rejected successfully.";
+        notificationResult.Success
+            ? "Refund rejected successfully. Ticket remains active and the user was notified by email."
+            : $"Refund rejected successfully. Ticket remains active, but email notification failed: {notificationResult.Message}";
 
     return RedirectToAction("Refunds");
+}
+
+private async Task RestoreBookingAfterRefundRejection(Refund refund)
+{
+    var now =
+        DateTime.UtcNow;
+
+    var booking =
+        await _context.Bookings
+        .FirstOrDefaultAsync(x => x.Id == refund.booking_id);
+
+    if (booking != null)
+    {
+        booking.BookingStatus =
+            "CONFIRMED";
+
+        booking.PaymentStatus =
+            "SUCCESS";
+
+        booking.RefundStatus =
+            "REJECTED";
+
+        booking.CancelledAt =
+            null;
+
+        booking.CancellationReason =
+            "Cancellation rejected by admin. Ticket remains active.";
+
+        booking.UpdatedAt =
+            now;
+    }
+
+    var transaction =
+        await _context.Transactions
+        .FirstOrDefaultAsync(x => x.Id == refund.transaction_id);
+
+    if (transaction != null)
+    {
+        transaction.RefundStatus =
+            "REJECTED";
+
+        transaction.RefundedAmount =
+            Math.Max(0, (transaction.RefundedAmount ?? 0) - refund.refund_amount);
+
+        transaction.UpdatedAt =
+            now;
+    }
+
+    var tickets =
+        await _context.Tickets
+        .Where(x => x.BookingId == refund.booking_id)
+        .ToListAsync();
+
+    foreach (var ticket in tickets)
+    {
+        ticket.TicketStatus =
+            "ACTIVE";
+
+        ticket.UpdatedAt =
+            now;
+    }
+
+    var bookingSeats =
+        await _context.BookingSeats
+        .Where(x => x.BookingId == refund.booking_id)
+        .ToListAsync();
+
+    foreach (var seat in bookingSeats)
+    {
+        seat.BookingStatus =
+            "BOOKED";
+    }
+
+    if (booking != null && bookingSeats.Count > 0)
+    {
+        var seatIds =
+            bookingSeats
+            .Select(x => x.ScreenSeatId)
+            .ToList();
+
+        var locks =
+            await _context.SeatLocks
+            .Where(x =>
+                x.ScheduleId == booking.ScheduleId &&
+                seatIds.Contains(x.ScreenSeatId))
+            .ToListAsync();
+
+        foreach (var seatLock in locks)
+        {
+            seatLock.LockStatus =
+                "CONFIRMED";
+        }
+    }
+}
+
+private async Task<OtpDeliveryResult> SendRefundRejectionUserNotification(Refund refund)
+{
+    if (refund.user_id > int.MaxValue || refund.user_id < int.MinValue)
+    {
+        return new OtpDeliveryResult(false, false, "Refund user id is invalid.");
+    }
+
+    var userId =
+        (int)refund.user_id;
+
+    var user =
+        await _context.Users
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == userId);
+
+    if (user == null || string.IsNullOrWhiteSpace(user.Email))
+    {
+        return new OtpDeliveryResult(false, false, "User email not found.");
+    }
+
+    var booking =
+        await _context.Bookings
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == refund.booking_id);
+
+    var bookingRef =
+        string.IsNullOrWhiteSpace(booking?.BookingRef)
+            ? $"Booking #{refund.booking_id}"
+            : booking.BookingRef;
+
+    var subject =
+        $"Ticket cancellation request rejected - {bookingRef}";
+
+    var message =
+        $"Hello {NullText(user.Name)},\n\n" +
+        $"Your cancellation request for {bookingRef} was reviewed by admin and rejected.\n" +
+        "Your ticket cannot be cancelled, so the ticket remains active and can still be used for the show.\n\n" +
+        $"Refund reference: {refund.refund_ref}\n" +
+        $"Refund amount requested: {CurrencyFormatter.FormatRupees(refund.refund_amount)}\n\n" +
+        "Thank you,\nAmarShowsBook";
+
+    var emailResult =
+        await _emailDeliveryService.SendEmailAsync(
+            user.Email,
+            subject,
+            message);
+
+    var notificationStatus =
+        emailResult.Success
+            ? "SENT"
+            : "FAILED";
+
+    var sentAt =
+        emailResult.Success
+            ? DateTime.UtcNow
+            : (DateTime?)null;
+
+    var failureReason =
+        emailResult.Success
+            ? null
+            : emailResult.Message;
+
+    await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO user_notifications
+(
+    user_id,
+    template_id,
+    notification_type,
+    title,
+    message,
+    status,
+    priority,
+    recipient_email,
+    sent_at,
+    delivered_at,
+    retry_count,
+    failure_reason,
+    created_at,
+    updated_at
+)
+VALUES
+(
+    {refund.user_id},
+    NULL,
+    'EMAIL',
+    {subject},
+    {message},
+    {notificationStatus},
+    'HIGH',
+    {user.Email},
+    {sentAt},
+    {sentAt},
+    0,
+    {failureReason},
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+);");
+
+    return emailResult;
+}
+
+private async Task<OtpDeliveryResult> TrySendRefundRejectionUserNotification(Refund refund)
+{
+    try
+    {
+        return await SendRefundRejectionUserNotification(refund);
+    }
+    catch (Exception ex)
+    {
+        return new OtpDeliveryResult(false, true, ex.Message);
+    }
 }
 
 // =====================================================
@@ -3542,20 +3765,37 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
 
     try
     {
-        var activeRefunds = await _context.VwRefundSummaries
+        var refundLookup = await _context.VwRefundSummaries
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.BookingRef))
+            .OrderByDescending(x => x.RequestedAt ?? x.CreatedAt)
+            .Take(100)
+            .ToListAsync();
+
+        refundByBookingRef = refundLookup
+            .GroupBy(x => x.BookingRef!.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
+
+        var activeRefunds = refundLookup
+            .Where(x =>
+                x.RefundStatus == "PENDING" ||
+                x.RefundStatus == "FAILED")
+            .Take(40)
+            .ToList();
+
+        if (activeRefunds.Count < 40)
+        {
+            var missingRefunds = await _context.VwRefundSummaries
             .AsNoTracking()
             .Where(x =>
                 x.RefundStatus == "PENDING" ||
-                x.RefundStatus == "FAILED" ||
-                x.RefundStatus == "REJECTED")
+                x.RefundStatus == "FAILED")
             .OrderByDescending(x => x.RequestedAt ?? x.CreatedAt)
             .Take(40)
             .ToListAsync();
 
-        refundByBookingRef = activeRefunds
-            .Where(x => !string.IsNullOrWhiteSpace(x.BookingRef))
-            .GroupBy(x => x.BookingRef!.Trim(), StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
+            activeRefunds = missingRefunds;
+        }
 
         events.AddRange(activeRefunds.Select(x => new AdminNotificationActionItem
         {
@@ -3567,8 +3807,8 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
             Priority = x.RefundStatus == "FAILED" ? "HIGH" : "MEDIUM",
             UserName = x.UserName ?? string.Empty,
             UserEmail = x.UserEmail ?? string.Empty,
-            Detail = $"Approval pending | Booking {NullText(x.BookingRef)} | Transaction {NullText(x.TransactionRef)} | Amount {CurrencyFormatter.FormatRupees(x.RefundAmount)} | Reason {NullText(x.RefundReason)} | Method {NullText(x.RefundMethod)} | Gateway {NullText(x.GatewayRefundId)} | Failure {NullText(x.FailureReason)}",
-            ActionText = x.RefundStatus == "FAILED" ? "Retry Refund" : "Review Refund",
+            Detail = $"Booking {NullText(x.BookingRef)} | Transaction {NullText(x.TransactionRef)} | Amount {CurrencyFormatter.FormatRupees(x.RefundAmount)} | Reason {NullText(x.RefundReason)} | Method {NullText(x.RefundMethod)} | Gateway {NullText(x.GatewayRefundId)} | Failure {NullText(x.FailureReason)}",
+            ActionText = x.RefundStatus == "FAILED" ? "Retry" : "Review",
             ActionUrl = $"/Admin/Refunds?highlight=refund-{x.RefundId}",
             RequiresAction = true
         }));
@@ -3587,7 +3827,11 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
             .Take(25)
             .ToListAsync();
 
-        events.AddRange(cancelledBookings.Select(x =>
+        events.AddRange(cancelledBookings
+        .Where(x =>
+            string.IsNullOrWhiteSpace(x.BookingRef) ||
+            !refundByBookingRef.ContainsKey(x.BookingRef.Trim()))
+        .Select(x =>
         {
             VwRefundSummary? refund = null;
 
@@ -3607,7 +3851,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
                 UserName = x.UserName ?? string.Empty,
                 UserEmail = x.UserEmail ?? string.Empty,
                 Detail = $"{NullText(x.ShowTitle)} | Seats {NullText(x.SeatNumbers)} | Payment {NullText(x.PaymentStatus)} | Transaction {NullText(x.TransactionStatus)} | Refund {NullText(refund?.RefundStatus)} {CurrencyFormatter.FormatRupees(refund?.RefundAmount)} | Reason {NullText(refund?.RefundReason)}",
-                ActionText = refund == null ? "Open Booking" : "Open Refund",
+                ActionText = refund == null ? "Open" : "Review",
                 ActionUrl = refund == null
                     ? $"/Admin/Bookings?highlight=booking-{x.BookingId}"
                     : $"/Admin/Refunds?highlight=refund-{refund.RefundId}",
@@ -3673,7 +3917,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
             UserName = x.UserName ?? string.Empty,
             UserEmail = x.UserEmail ?? string.Empty,
             Detail = $"{NullText(x.BookingRef)} | {NullText(x.ShowTitle)} | {NullText(x.PaymentMethod)} | {NullText(x.FailureReason)}",
-            ActionText = "Open Transaction",
+            ActionText = "Open",
             ActionUrl = x.TransactionId.HasValue
                 ? $"/Admin/Transactions?highlight=transaction-{x.TransactionId.Value}"
                 : $"/Admin/Bookings?highlight=booking-{x.BookingId}",
@@ -3705,7 +3949,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
             UserName = x.UserName ?? string.Empty,
             UserEmail = x.UserEmail ?? string.Empty,
             Detail = $"{NullText(x.BookingRef)} | {NullText(x.ShowTitle)} | {NullText(x.ValidationMessage)}",
-            ActionText = "Open Security",
+            ActionText = "Open",
             ActionUrl = "/Admin/Security",
             RequiresAction = true
         }));
@@ -3745,7 +3989,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
             Priority = "LOW",
             UserName = x.UserId.HasValue ? $"User #{x.UserId.Value}" : string.Empty,
             Detail = $"Entity {NullText(x.EntityType)} #{(x.EntityId.HasValue ? x.EntityId.Value.ToString(CultureInfo.InvariantCulture) : "NA")} | {NullText(x.Detail)}",
-            ActionText = "Open Logs",
+            ActionText = "Open",
             ActionUrl = "/Admin/ActivityLogs",
             RequiresAction = false
         }));
@@ -3756,7 +4000,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
 
     return events
-        .GroupBy(x => $"{x.Category}|{x.Id}|{x.Status}")
+        .GroupBy(x => GetAdminNotificationDedupKey(x), StringComparer.OrdinalIgnoreCase)
         .Select(x => x.First())
         .OrderByDescending(x => x.RequiresAction)
         .ThenByDescending(x => x.Priority == "HIGH")
@@ -3765,23 +4009,126 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
         .ToList();
 }
 
+private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationArchiveActions()
+{
+    var events =
+        new List<AdminNotificationActionItem>();
+
+    try
+    {
+        var completedRefunds =
+            await _context.VwRefundSummaries
+            .AsNoTracking()
+            .Where(x =>
+                x.RefundStatus == "SUCCESS" ||
+                x.RefundStatus == "REJECTED" ||
+                x.RefundStatus == "PROCESSING" ||
+                x.workflow_action == "RETRY INITIATED BY ADMIN")
+            .OrderByDescending(x =>
+                x.rejected_at ??
+                x.approved_at ??
+                x.retried_at ??
+                x.ProcessedAt ??
+                x.UpdatedAt ??
+                x.RequestedAt ??
+                x.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        events.AddRange(completedRefunds.Select(x =>
+        {
+            var actionTime =
+                x.rejected_at ??
+                x.approved_at ??
+                x.retried_at ??
+                x.ProcessedAt ??
+                x.UpdatedAt ??
+                x.RequestedAt ??
+                x.CreatedAt;
+
+            var status =
+                string.IsNullOrWhiteSpace(x.RefundStatus)
+                    ? "COMPLETED"
+                    : x.RefundStatus;
+
+            var owner =
+                x.RefundStatus == "REJECTED"
+                    ? x.rejected_by
+                    : x.RefundStatus == "SUCCESS"
+                        ? x.approved_by
+                        : x.retried_by;
+
+            return new AdminNotificationActionItem
+            {
+                Id = $"archive-refund-{x.RefundId}",
+                Time = actionTime,
+                Category = "REFUND",
+                Title = string.IsNullOrWhiteSpace(x.RefundRef) ? "Refund action completed" : x.RefundRef,
+                Status = status,
+                Priority = x.RefundStatus == "REJECTED" ? "MEDIUM" : "LOW",
+                UserName = x.UserName ?? string.Empty,
+                UserEmail = x.UserEmail ?? string.Empty,
+                Detail = $"Booking {NullText(x.BookingRef)} | Transaction {NullText(x.TransactionRef)} | Amount {CurrencyFormatter.FormatRupees(x.RefundAmount)} | Action {NullText(x.workflow_action)} | By {NullText(owner)} | Notes {NullText(x.admin_notes)}",
+                ActionText = "Open",
+                ActionUrl = $"/Admin/RefundDetails/{x.RefundId}",
+                RequiresAction = false
+            };
+        }));
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Notification archive refund source failed: {ex.Message}");
+    }
+
+    try
+    {
+        var deliveredNotifications =
+            await _context.VwNotificationCenters
+            .AsNoTracking()
+            .Where(x =>
+                x.Status == "SENT" ||
+                x.Status == "DELIVERED" ||
+                x.Status == "READ" ||
+                x.Status == "SUCCESS")
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(30)
+            .ToListAsync();
+
+        events.AddRange(deliveredNotifications.Select(x => new AdminNotificationActionItem
+        {
+            Id = $"archive-notification-{x.NotificationId}",
+            Time = x.DeliveredAt ?? x.SentAt ?? x.CreatedAt,
+            Category = "NOTIFICATION",
+            Title = string.IsNullOrWhiteSpace(x.Title) ? "Notification completed" : x.Title,
+            Status = string.IsNullOrWhiteSpace(x.Status) ? "SENT" : x.Status,
+            Priority = "LOW",
+            UserName = x.UserName ?? string.Empty,
+            UserEmail = x.UserEmail ?? string.Empty,
+            Detail = $"Type {NullText(x.NotificationType)} | Message {NullText(x.Message)} | Sent {FormatDateText(x.SentAt)} | Delivered {FormatDateText(x.DeliveredAt)} | Read {FormatDateText(x.ReadAt)}",
+            ActionText = "Open",
+            ActionUrl = $"/Admin/Notifications?highlight=notification-{x.NotificationId}",
+            RequiresAction = false
+        }));
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Notification archive delivery source failed: {ex.Message}");
+    }
+
+    return events
+        .GroupBy(x => GetAdminNotificationDedupKey(x), StringComparer.OrdinalIgnoreCase)
+        .Select(x => x.First())
+        .OrderByDescending(x => x.Time)
+        .Take(50)
+        .ToList();
+}
+
 private async Task<int> GetAdminNotificationCount()
 {
-    return
-        await CountAdminNotifications(() => _context.VwRefundSummaries.CountAsync(x =>
-            x.RefundStatus == "PENDING" ||
-            x.RefundStatus == "FAILED" ||
-            x.RefundStatus == "REJECTED")) +
-        await CountAdminNotifications(() => _context.VwNotificationCenters.CountAsync(x =>
-            x.IsError == 1 ||
-            x.Status == "FAILED" ||
-            x.Status == "ERROR")) +
-        await CountAdminNotifications(() => _context.VwBookingTransactionSummaries.CountAsync(x =>
-            x.IsPaymentError == 1 ||
-            x.TransactionStatus == "FAILED" ||
-            x.TransactionStatus == "ERROR")) +
-        await CountAdminNotifications(() => _context.VwTicketValidationSummaries.CountAsync(x =>
-            x.IsSecurityIssue == 1));
+    var actionItems =
+        await BuildAdminNotificationActions();
+
+    return actionItems.Count(x => x.RequiresAction);
 }
 
 private static async Task<int> CountAdminNotifications(Func<Task<int>> count)
@@ -3795,6 +4142,21 @@ private static async Task<int> CountAdminNotifications(Func<Task<int>> count)
         Console.WriteLine($"Admin notification count source failed: {ex.Message}");
         return 0;
     }
+}
+
+private static string GetAdminNotificationDedupKey(AdminNotificationActionItem item)
+{
+    if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+    {
+        return item.ActionUrl.Trim();
+    }
+
+    if (!string.IsNullOrWhiteSpace(item.Title))
+    {
+        return $"{item.Category}|{item.Title.Trim()}";
+    }
+
+    return $"{item.Category}|{item.Id}";
 }
 
 private static string NullText(string? value)

@@ -15,7 +15,14 @@
         ViewBag.ActionNotifications as List<AdminNotificationActionItem>
         ?? new List<AdminNotificationActionItem>();
 
+    var archivedActionNotifications =
+        ViewBag.ArchivedActionNotifications as List<AdminNotificationActionItem>
+        ?? new List<AdminNotificationActionItem>();
+
     int actionNotificationCount = ViewBag.ActionNotificationCount ?? actionNotifications.Count;
+
+    int archivedActionNotificationCount =
+        ViewBag.ArchivedActionNotificationCount ?? archivedActionNotifications.Count;
 
     int pendingActionCount = ViewBag.PendingActionCount ?? actionNotifications.Count(x => x.RequiresAction);
 
@@ -130,6 +137,11 @@
         </div>
 
         <div class="stat-card">
+            <span>Archive</span>
+            <strong>@archivedActionNotificationCount</strong>
+        </div>
+
+        <div class="stat-card">
             <span>Delivery Records</span>
             <strong>@totalRecords</strong>
         </div>
@@ -147,7 +159,7 @@
             </div>
         </div>
 
-        <div class="table-wrapper">
+        <div class="table-wrapper notification-scroll-area">
             <table class="table admin-table action-notification-table">
                 <thead>
                     <tr>
@@ -177,6 +189,8 @@
                             <tr id="@item.Id"
                                 class="action-row action-row-@categoryClass @(highlight == item.Id ? "highlight-row" : "")"
                                 data-admin-searchable
+                                data-notification-row
+                                data-sort-time="@item.Time.Ticks"
                                 data-filter-status="@item.Status"
                                 data-filter-method="@item.Category"
                                 data-filter-priority="@item.Priority">
@@ -256,6 +270,133 @@
         </div>
     </div>
 
+    <details class="admin-detail-panel notification-archive-panel mb-4">
+        <summary class="notification-archive-toggle">
+            <span>
+                Notification Archive
+            </span>
+            <strong>
+                @archivedActionNotificationCount
+            </strong>
+        </summary>
+
+        <div class="notification-panel-head">
+            <div>
+                <h2 class="h5 mb-1">Notification Archive</h2>
+                <p class="panel-subtitle">
+                    Completed admin actions and old notification outcomes in the same review format.
+                </p>
+            </div>
+        </div>
+
+        <div class="table-wrapper notification-scroll-area">
+            <table class="table admin-table action-notification-table">
+                <thead>
+                    <tr>
+                        <th style="min-width:160px;">Time</th>
+                        <th style="min-width:150px;">Priority</th>
+                        <th style="min-width:190px;">Event</th>
+                        <th style="min-width:240px;">User</th>
+                        <th style="min-width:420px;">Details</th>
+                        <th style="min-width:170px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(!archivedActionNotifications.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                No archived notifications found
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach(var item in archivedActionNotifications)
+                        {
+                            var categoryClass = CategoryClass(item.Category);
+                            var priorityClass = BadgeClass(item.Priority);
+                            <tr id="@item.Id"
+                                class="action-row archive-row action-row-@categoryClass @(highlight == item.Id ? "highlight-row" : "")"
+                                data-admin-searchable
+                                data-notification-row
+                                data-sort-time="@item.Time.Ticks"
+                                data-filter-status="@item.Status"
+                                data-filter-method="@item.Category"
+                                data-filter-priority="@item.Priority">
+
+                                <td>
+                                    <div class="created-date">
+                                        @FormatDate(item.Time)
+                                    </div>
+                                    <div class="sub-text">
+                                        @FormatTime(item.Time)
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge @BadgeClass(item.Priority)">
+                                        @item.Priority
+                                    </span>
+                                    <div class="sub-text">
+                                        Archived
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="notification-title">
+                                        @item.Title
+                                    </div>
+                                    <div class="sub-text">
+                                        <span class="source-chip source-@categoryClass">
+                                            @item.Category
+                                        </span>
+                                        <span class="status-inline">
+                                            @item.Status
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="user-name">
+                                        @(string.IsNullOrWhiteSpace(item.UserName)
+                                            ? "NA"
+                                            : item.UserName)
+                                    </div>
+                                    <div class="sub-text email-cell">
+                                        @(string.IsNullOrWhiteSpace(item.UserEmail)
+                                            ? "NA"
+                                            : item.UserEmail)
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="notification-detail">
+                                        @item.Detail
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+                                    {
+                                        <a class="notification-action-btn action-btn-@priorityClass action-btn-@categoryClass"
+                                           href="@item.ActionUrl">
+                                            @item.ActionText
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="sub-text">No action</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </details>
+
     <!-- ===================================================== -->
     <!-- DELIVERY TABLE -->
     <!-- ===================================================== -->
@@ -270,7 +411,7 @@
         </div>
     </div>
 
-    <div class="table-wrapper">
+    <div class="table-wrapper notification-scroll-area">
 
         <table class="table admin-table notification-table">
 
@@ -321,6 +462,9 @@
 
                         <tr id="@rowId"
                             class="@(highlight == rowId ? "highlight-row" : "")"
+                            data-admin-searchable
+                            data-notification-row
+                            data-sort-time="@item.CreatedAt.Ticks"
                             data-filter-status="@item.Status"
                             data-filter-method="@item.NotificationType"
                             data-filter-priority="@item.Priority">
@@ -551,6 +695,63 @@
         border-radius: 12px;
         background: white;
         box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .notification-scroll-area {
+        max-height: 360px;
+        overflow: auto;
+    }
+
+    .notification-scroll-area thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+
+    .notification-archive-panel {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .notification-archive-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        cursor: pointer;
+        background: linear-gradient(135deg, #111827, #334155);
+        color: white;
+        font-weight: 800;
+        list-style: none;
+    }
+
+    .notification-archive-toggle::-webkit-details-marker {
+        display: none;
+    }
+
+    .notification-archive-toggle::after {
+        content: "Open";
+        min-width: 72px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.14);
+        text-align: center;
+        font-size: 12px;
+    }
+
+    .notification-archive-panel[open] .notification-archive-toggle::after {
+        content: "Close";
+    }
+
+    .notification-archive-panel .notification-panel-head,
+    .notification-archive-panel .table-wrapper {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .notification-archive-panel .notification-panel-head {
+        margin-top: 18px;
     }
 
     .stats-grid {

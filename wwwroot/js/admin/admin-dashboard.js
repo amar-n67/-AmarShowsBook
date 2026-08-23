@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const statusBox = panel.querySelector("[data-page-filter-status]");
         const methodBox = panel.querySelector("[data-page-filter-method]");
         const priorityBox = panel.querySelector("[data-page-filter-priority]");
+        const sortBox = panel.querySelector("[data-page-filter-sort]");
         const resetButton = panel.querySelector("[data-page-filter-reset]");
         const targetSelector = panel.getAttribute("data-page-filter-target") || "tbody tr";
         const tableCard = [...document.querySelectorAll(".card")]
@@ -80,6 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const normalize = (value) => String(value || "").trim().toLowerCase();
+        const priorityRank = {
+            high: 4,
+            medium: 3,
+            normal: 2,
+            low: 1
+        };
         const getFilterValues = (row, key) => normalize(row.dataset[key])
             .split("|")
             .map((value) => value.trim())
@@ -101,6 +108,71 @@ document.addEventListener("DOMContentLoaded", () => {
             .filter((row) => !row.matches(".admin-detail-panel[data-admin-searchable]"))
             .filter((row, index, rows) => rows.indexOf(row) === index);
 
+        const getRowText = (row) => normalize(row.dataset.filterSearch || row.textContent);
+        const getRowTime = (row) => Number(row.dataset.sortTime || 0);
+        const compareRows = (left, right, sort) => {
+            const leftPriority = priorityRank[normalize(left.dataset.filterPriority)] || 0;
+            const rightPriority = priorityRank[normalize(right.dataset.filterPriority)] || 0;
+            const leftStatus = normalize(left.dataset.filterStatus);
+            const rightStatus = normalize(right.dataset.filterStatus);
+            const leftSource = normalize(left.dataset.filterMethod);
+            const rightSource = normalize(right.dataset.filterMethod);
+            const leftTime = getRowTime(left);
+            const rightTime = getRowTime(right);
+
+            if (sort === "oldest") {
+                return leftTime - rightTime || getRowText(left).localeCompare(getRowText(right));
+            }
+
+            if (sort === "priority") {
+                return rightPriority - leftPriority || rightTime - leftTime;
+            }
+
+            if (sort === "status") {
+                return leftStatus.localeCompare(rightStatus) || rightTime - leftTime;
+            }
+
+            if (sort === "source") {
+                return leftSource.localeCompare(rightSource) || rightTime - leftTime;
+            }
+
+            if (sort === "newest") {
+                return rightTime - leftTime || getRowText(left).localeCompare(getRowText(right));
+            }
+
+            return 0;
+        };
+
+        const sortRows = () => {
+            const sort = normalize(sortBox?.value);
+
+            if (!sort) {
+                return;
+            }
+
+            const groups = new Map();
+
+            getRows().forEach((row) => {
+                const parent = row.parentElement;
+
+                if (!parent) {
+                    return;
+                }
+
+                if (!groups.has(parent)) {
+                    groups.set(parent, []);
+                }
+
+                groups.get(parent).push(row);
+            });
+
+            groups.forEach((rows, parent) => {
+                rows
+                    .sort((left, right) => compareRows(left, right, sort))
+                    .forEach((row) => parent.appendChild(row));
+            });
+        };
+
         const applyPanelFilters = () => {
             const query = normalize(searchBox?.value);
             const status = normalize(statusBox?.value);
@@ -108,24 +180,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const priority = normalize(priorityBox?.value);
 
             getRows().forEach((row) => {
-                const text = normalize(row.dataset.filterSearch || row.textContent);
+                const text = getRowText(row);
                 const matchesSearch = !query || text.includes(query);
                 const matchesStatus = matchesFilter(row, "filterStatus", status, text);
                 const matchesMethod = matchesFilter(row, "filterMethod", method, text);
                 const matchesPriority = matchesFilter(row, "filterPriority", priority, text);
                 row.hidden = !(matchesSearch && matchesStatus && matchesMethod && matchesPriority);
             });
+
+            sortRows();
         };
 
         searchBox?.addEventListener("input", applyPanelFilters);
         statusBox?.addEventListener("change", applyPanelFilters);
         methodBox?.addEventListener("change", applyPanelFilters);
         priorityBox?.addEventListener("change", applyPanelFilters);
+        sortBox?.addEventListener("change", applyPanelFilters);
         resetButton?.addEventListener("click", () => {
             if (searchBox) searchBox.value = "";
             if (statusBox) statusBox.value = "";
             if (methodBox) methodBox.value = "";
             if (priorityBox) priorityBox.value = "";
+            if (sortBox) sortBox.value = "";
             applyPanelFilters();
             searchBox?.focus();
         });

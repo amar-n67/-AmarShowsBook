@@ -59,6 +59,49 @@ public class OtpDeliveryService
         }
     }
 
+    public async Task<OtpDeliveryResult> SendEmailAsync(string email, string subject, string body)
+    {
+        var host = _configuration["Otp:Email:SmtpHost"] ?? "smtp.gmail.com";
+        var port = _configuration.GetValue("Otp:Email:SmtpPort", 587);
+        var from = _configuration["Otp:Email:From"];
+        var password = _configuration["Otp:Email:Password"];
+        var fromName = _configuration["Otp:Email:FromName"] ?? "AmarShowsBook";
+        var enableSsl = _configuration.GetValue("Otp:Email:EnableSsl", true);
+
+        if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(password))
+        {
+            return new OtpDeliveryResult(false, false, "Email is not configured.");
+        }
+
+        try
+        {
+            using var smtp = new SmtpClient(host)
+            {
+                Port = port,
+                Credentials = new NetworkCredential(from, password),
+                EnableSsl = enableSsl
+            };
+
+            using var mail = new MailMessage
+            {
+                From = new MailAddress(from, fromName),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = false
+            };
+
+            mail.To.Add(email);
+            await smtp.SendMailAsync(mail);
+
+            return new OtpDeliveryResult(true, true, "Email sent.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Email send failed for {Email}", email);
+            return new OtpDeliveryResult(false, true, "Unable to send email.");
+        }
+    }
+
     public async Task<OtpDeliveryResult> SendMobileOtpAsync(string mobile, string otp, string purpose)
     {
         var apiKey = _configuration["Otp:Sms:Fast2SmsApiKey"];
