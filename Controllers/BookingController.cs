@@ -749,6 +749,26 @@ public async Task<IActionResult> MyBookings()
 
     var bookingIds = bookings.Select(x=>x.BookingId).ToList();
 
+    var refundRows =
+        await _context.Refunds
+            .AsNoTracking()
+            .Where(x=>bookingIds.Contains(x.booking_id))
+            .OrderByDescending(x=>x.updated_at ?? x.created_at)
+            .ThenByDescending(x=>x.id)
+            .ToListAsync();
+
+    ViewBag.RefundLookup =
+        refundRows
+            .GroupBy(x=>x.booking_id)
+            .ToDictionary(x=>x.Key,x=>x.First());
+
+    ViewBag.BookingWalletAmounts =
+        await _context.Bookings
+            .AsNoTracking()
+            .Where(x=>bookingIds.Contains(x.Id))
+            .Select(x=>new { x.Id, WalletAmount = x.WalletAmountUsed ?? 0 })
+            .ToDictionaryAsync(x=>x.Id,x=>x.WalletAmount);
+
     var bookingVenueRows =
     (
         await
@@ -814,13 +834,22 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     var schedule = await _context.ShowSchedules.FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
     var now = DateTime.UtcNow;
 
-    if(schedule==null || schedule.StartTime<=DateTime.UtcNow || booking.BookingStatus=="CANCELLED")
+    if(schedule==null || schedule.StartTime<=now || booking.BookingStatus=="CANCELLED")
     {
         TempData["Error"]="Cancellation is not allowed for this booking.";
         return RedirectToAction(nameof(MyBookings));
     }
 
-    if(booking.BookingStatus!="CONFIRMED" && booking.PaymentStatus!="SUCCESS")
+    var minutesUntilShow =
+        (schedule.StartTime-now).TotalMinutes;
+
+    if(minutesUntilShow<45)
+    {
+        TempData["Error"]="Ticket cannot be cancelled within 45 minutes of show time.";
+        return RedirectToAction(nameof(MyBookings));
+    }
+
+    if(booking.BookingStatus!="CONFIRMED" || booking.PaymentStatus!="SUCCESS")
     {
         TempData["Error"]="Only confirmed paid bookings can be cancelled.";
         return RedirectToAction(nameof(MyBookings));
@@ -847,11 +876,21 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     booking.CancellationReason=string.IsNullOrWhiteSpace(reason) ? "Cancelled by customer" : reason.Trim();
     booking.UpdatedAt=DateTime.UtcNow;
 
-    var refundAmount = Math.Max(0,booking.PayableAmount ?? booking.TotalAmount);
+    var refundRate =
+        GetCancellationRefundRate(schedule.StartTime,now);
+
+    var sourceRefundAmount =
+        RoundCurrency(Math.Max(0,booking.PayableAmount ?? booking.TotalAmount)*refundRate);
+
     var walletAmount = Math.Max(0,booking.WalletAmountUsed ?? 0);
+    var walletRefundAmount =
+        RoundCurrency(walletAmount*refundRate);
+
     var couponAmount = Math.Max(0,booking.DiscountAmount ?? 0);
-    var refundMethod = ResolveRefundMethod(transaction.PaymentMethod, walletAmount, refundAmount);
+    var refundMethod = ResolveRefundMethod(transaction.PaymentMethod, walletRefundAmount, sourceRefundAmount);
     var refundStatus = ShouldAutoRefund(refundMethod) ? "SUCCESS" : "PENDING";
+    var refundPolicy =
+        GetCancellationRefundPolicyText(schedule.StartTime,now);
 
     var refund = new Refund
     {
@@ -859,7 +898,7 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
         transaction_id=transaction.Id,
         user_id=booking.UserId,
         refund_ref=$"RFD-{booking.Id}-{DateTime.UtcNow:yyyyMMddHHmmssfff}",
-        refund_amount=refundAmount + walletAmount,
+        refund_amount=sourceRefundAmount + walletRefundAmount,
         refund_reason=booking.CancellationReason,
         refund_status=refundStatus,
         refund_method=refundMethod,
@@ -870,16 +909,16 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
         updated_at=DateTime.UtcNow,
         workflow_action=refundStatus=="SUCCESS" ? "AUTO_REFUNDED" : "CUSTOMER_CANCELLED",
         admin_notes=refundStatus=="SUCCESS"
-            ? $"Refund completed automatically. Coupon discount excluded: {couponAmount:0.00}."
-            : $"Refund case raised for admin approval. Coupon discount excluded: {couponAmount:0.00}."
+            ? $"Refund completed automatically under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
+            : $"Refund case raised for admin approval under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
     };
 
     _context.Refunds.Add(refund);
     await _context.SaveChangesAsync();
 
-    if(walletAmount>0)
+    if(walletRefundAmount>0)
     {
-        await CreditWalletRefund(booking,transaction,refund,walletAmount);
+        await CreditWalletRefund(booking,transaction,refund,walletRefundAmount);
     }
 
     if(booking.CouponId.HasValue && couponAmount>0)
@@ -922,8 +961,8 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     await dbTransaction.CommitAsync();
 
     TempData["Success"] = refundStatus=="SUCCESS"
-        ? "Booking cancelled and refund processed."
-        : "Booking cancelled. Refund case has been raised for admin approval.";
+        ? $"Booking cancelled and refund processed. {refundPolicy}."
+        : $"Booking cancelled. Refund case has been raised for admin approval. {refundPolicy}.";
 
     return RedirectToAction(nameof(MyBookings));
 }
@@ -2526,6 +2565,39 @@ private bool ShouldAutoRefund(string refundMethod)
 {
     var method = refundMethod.ToUpperInvariant();
     return method.Contains("WALLET") || method=="UPI" || method=="QR" || method=="SOURCE";
+}
+
+private static decimal GetCancellationRefundRate(DateTime showTime, DateTime now)
+{
+    var minutesUntilShow =
+        (showTime-now).TotalMinutes;
+
+    if(minutesUntilShow<45)
+    {
+        return 0m;
+    }
+
+    return minutesUntilShow>=120 ? 1m : 0.5m;
+}
+
+private static string GetCancellationRefundPolicyText(DateTime showTime, DateTime now)
+{
+    var minutesUntilShow =
+        (showTime-now).TotalMinutes;
+
+    if(minutesUntilShow<45)
+    {
+        return "Cancellation closes 45 minutes before show time; no refund is available after that cutoff";
+    }
+
+    return minutesUntilShow>=120
+        ? "Full refund because cancellation is 2 hours or more before show time"
+        : "Partial 50% refund because cancellation is between 45 minutes and 2 hours before show time";
+}
+
+private static decimal RoundCurrency(decimal amount)
+{
+    return Math.Round(amount,2,MidpointRounding.AwayFromZero);
 }
 
 private async Task CreditWalletRefund(

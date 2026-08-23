@@ -1,16 +1,19 @@
 @model List<AmarShowsBook.Models.VwBookingCompleteDetails>
 @using AmarShowsBook.Helpers
+@using AmarShowsBook.Models
 @using System.Net
 @inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"] = "My Bookings";
     var totalSpend = Model.Sum(x => x.PayableAmount ?? x.TotalAmount);
-    var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" || x.PaymentStatus == "SUCCESS");
+    var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" && x.CancelledAt == null);
     var now = DateTime.UtcNow;
     var publicBaseUrl = ViewBag.PublicBaseUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
     var bookingVenues = ViewBag.BookingVenues as Dictionary<long,string> ?? new Dictionary<long,string>();
     var bookingScreens = ViewBag.BookingScreens as Dictionary<long,string> ?? new Dictionary<long,string>();
+    var refundLookup = ViewBag.RefundLookup as Dictionary<long,Refund> ?? new Dictionary<long,Refund>();
+    var bookingWalletAmounts = ViewBag.BookingWalletAmounts as Dictionary<long,decimal> ?? new Dictionary<long,decimal>();
     var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 }
 
@@ -37,6 +40,13 @@
         </div>
     </div>
 
+    <div class="booking-refund-rule no-print">
+        <strong>Cancellation refund rule</strong>
+        <span>2 hours or more before show time: full refund.</span>
+        <span>45 minutes to 2 hours before show time: 50% refund.</span>
+        <span>Inside 45 minutes: cancellation closed, no refund.</span>
+    </div>
+
     @if (!Model.Any())
     {
         <div class="empty-booking" data-admin-searchable>
@@ -50,8 +60,23 @@
             @foreach (var booking in Model)
             {
                 var isExpired = booking.StartTime < now;
-                var statusClass = booking.IsError == 1 ? "failed" : isExpired ? "expired" : "success";
-                var statusText = isExpired ? "EXPIRED" : booking.BookingStatus;
+                var isCancelled = booking.BookingStatus == "CANCELLED" || booking.CancelledAt != null;
+                var minutesUntilShow = (booking.StartTime - now).TotalMinutes;
+                var cancellationClosed = minutesUntilShow < 45;
+                var refundRate = cancellationClosed ? 0m : minutesUntilShow >= 120 ? 1m : 0.5m;
+                var refundRuleLabel = cancellationClosed
+                    ? "Cancellation closed"
+                    : refundRate == 1m
+                        ? "Full refund available"
+                        : "50% refund available";
+                var walletAmountUsed = bookingWalletAmounts.TryGetValue(booking.BookingId, out var foundWalletAmount)
+                    ? foundWalletAmount
+                    : 0m;
+                var estimatedSourceRefund = Math.Round(Math.Max(0, booking.PayableAmount ?? booking.TotalAmount) * refundRate, 2, MidpointRounding.AwayFromZero);
+                var estimatedWalletRefund = Math.Round(Math.Max(0, walletAmountUsed) * refundRate, 2, MidpointRounding.AwayFromZero);
+                var estimatedRefundTotal = estimatedSourceRefund + estimatedWalletRefund;
+                var statusClass = isCancelled ? "cancelled" : booking.IsError == 1 ? "failed" : isExpired ? "expired" : "success";
+                var statusText = isCancelled ? "CANCELLED" : isExpired ? "EXPIRED" : booking.BookingStatus;
                 var confirmationPath = $"/Booking/Confirmation?confirmedBookingId={booking.BookingId}";
                 var confirmationUrl = $"{publicBaseUrl}{confirmationPath}";
                 var venueDetails = bookingVenues.TryGetValue(booking.BookingId, out var foundVenue) && !string.IsNullOrWhiteSpace(foundVenue)
@@ -61,20 +86,47 @@
                     ? foundScreen
                     : "Screen TBA";
                 var canCancel = !isExpired
+                    && !cancellationClosed
                     && booking.BookingStatus == "CONFIRMED"
                     && booking.PaymentStatus == "SUCCESS"
                     && booking.CancelledAt == null;
+                refundLookup.TryGetValue(booking.BookingId, out var refund);
+                var refundStatus = (refund?.refund_status ?? booking.PaymentStatus ?? "CANCELLED").Trim().ToUpperInvariant();
+                var refundButtonClass = refundStatus switch
+                {
+                    "SUCCESS" => "refund-status-success",
+                    "PENDING" or "REFUND_PENDING" => "refund-status-pending",
+                    "FAILED" => "refund-status-failed",
+                    "REJECTED" or "CANCELLED" => "refund-status-cancelled",
+                    "RETRY" => "refund-status-retry",
+                    _ => "refund-status-neutral"
+                };
+                var refundLabel = refundStatus switch
+                {
+                    "SUCCESS" => "Refunded",
+                    "PENDING" or "REFUND_PENDING" => "Refund Pending",
+                    "FAILED" => "Refund Failed",
+                    "REJECTED" => "Refund Rejected",
+                    "CANCELLED" => "Refund Cancelled",
+                    "RETRY" => "Refund Retry",
+                    _ => $"Refund {refundStatus}"
+                };
 
-                <article class="booking-card"
+                <article class="booking-card @(isCancelled ? "booking-card-cancelled" : "booking-card-confirmed")"
                          data-admin-searchable
-                         data-filter-status="@($"{statusText}|{booking.PaymentStatus}")"
-                         data-filter-method="@booking.PaymentMethod">
+                         data-filter-search="@($"{booking.BookingRef} {booking.ShowTitle} {booking.ShowType} {booking.LocationName} {venueDetails} {screenName} {statusText} {booking.PaymentStatus} {booking.PaymentMethod} {refundStatus} {refundLabel}")"
+                         data-filter-status="@($"{statusText}|{booking.PaymentStatus}|{refundStatus}|{refundLabel}")"
+                         data-filter-method="@($"{booking.PaymentMethod}|{refund?.refund_method}")"
+                         data-sort-showtime="@booking.StartTime.ToString("yyyyMMddHHmmss")"
+                         data-sort-booked="@booking.BookedAt.ToString("yyyyMMddHHmmss")"
+                         data-sort-amount="@((booking.PayableAmount ?? booking.TotalAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
+                         data-sort-status="@statusText">
                     <div class="booking-top">
                         <span class="booking-status @statusClass">@statusText</span>
                         <strong>@booking.BookingRef</strong>
                     </div>
 
-                    <div class="booking-main">
+                    <div class="booking-main booking-ticket-surface">
                         <div>
                             <h2>@booking.ShowTitle</h2>
                             <p class="booking-show">@booking.ShowType at @booking.LocationName</p>
@@ -84,7 +136,7 @@
                         </div>
                     </div>
 
-                    <div class="booking-meta">
+                    <div class="booking-meta booking-ticket-surface">
                         <div>
                             <span>Show Time</span>
                             <strong>@booking.StartTime.ToString("dd MMM yyyy, hh:mm tt")</strong>
@@ -136,15 +188,25 @@
                     </div>
 
                     <div class="booking-actions no-print">
-                        <a class="btn btn-primary" href="@confirmationPath">View Ticket</a>
-                        @if(canUsePrintTools)
+                        @if (isCancelled)
                         {
-                        <a class="btn btn-secondary" href="@(confirmationPath + "&print=1")">Download</a>
+                            <button class="refund-status-btn @refundButtonClass" type="button" disabled>
+                                @refundLabel
+                            </button>
+                        }
+                        else
+                        {
+                            <a class="btn btn-primary" href="@confirmationPath">View Ticket</a>
+                            @if(canUsePrintTools)
+                            {
+                            <a class="btn btn-secondary" href="@(confirmationPath + "&print=1")">Download</a>
+                            }
                         }
                         @if(canCancel)
                         {
                             <form asp-action="CancelBooking" asp-controller="Booking" method="post" class="cancel-form"
-                                  data-wallet="@booking.PayableAmount"
+                                  data-refund-rule="@refundRuleLabel"
+                                  data-refund-amount="@CurrencyFormatter.FormatRupees(estimatedRefundTotal)"
                                   data-coupon="@booking.DiscountAmount">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="bookingId" value="@booking.BookingId" />
@@ -152,9 +214,11 @@
                                 <button class="btn btn-danger" type="submit">Cancel Ticket</button>
                             </form>
                         }
-                        else
+                        else if (!isCancelled)
                         {
-                            <button class="btn btn-secondary disabled-cancel" type="button" title="Cancellation not allowed" disabled>Cancel Ticket</button>
+                            <button class="btn btn-secondary disabled-cancel" type="button" title="@refundRuleLabel" disabled>
+                                @(cancellationClosed ? "Cancellation Closed" : "Cancel Ticket")
+                            </button>
                         }
                     </div>
                 </article>
@@ -242,6 +306,40 @@
     font-weight: 800;
 }
 
+.booking-refund-rule {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 1px solid rgba(35,31,32,0.18);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.booking-refund-rule strong,
+.booking-refund-rule span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+}
+
+.booking-refund-rule strong {
+    color: var(--app-primary);
+    font-weight: 900;
+}
+
+.booking-refund-rule span {
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-input-disabled) 70%, transparent);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
 .booking-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0,1fr));
@@ -269,6 +367,53 @@
     background: linear-gradient(90deg, var(--app-accent), var(--app-accent-strong), var(--app-primary));
 }
 
+.booking-card-confirmed::before {
+    background: linear-gradient(90deg, var(--app-accent), var(--app-accent-strong), var(--app-primary));
+}
+
+.booking-card-cancelled {
+    border-color: rgba(220, 38, 38, 0.42);
+    background:
+        linear-gradient(135deg, rgba(254, 226, 226, 0.92), rgba(255, 255, 255, 0.86)),
+        var(--app-card);
+    box-shadow: 0 14px 30px rgba(153, 27, 27, 0.18);
+}
+
+.booking-card-cancelled::before {
+    height: 6px;
+    background: linear-gradient(90deg, #991b1b, #dc2626, #f87171);
+}
+
+.booking-card-cancelled::after {
+    content: "";
+    position: absolute;
+    inset: 62px 22px 76px;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        linear-gradient(32deg, transparent calc(50% - 2px), rgba(153, 27, 27, 0.26) 50%, transparent calc(50% + 2px)),
+        linear-gradient(148deg, transparent calc(50% - 2px), rgba(153, 27, 27, 0.26) 50%, transparent calc(50% + 2px));
+    opacity: 0.48;
+}
+
+.booking-card-cancelled .booking-ticket-surface,
+.booking-card-cancelled .booking-qr {
+    filter: blur(2.2px) grayscale(0.7);
+    opacity: 0.54;
+    user-select: none;
+}
+
+.booking-card-cancelled .booking-ticket-surface {
+    position: relative;
+    z-index: 2;
+}
+
+.booking-card-cancelled .booking-top,
+.booking-card-cancelled .booking-actions {
+    position: relative;
+    z-index: 3;
+}
+
 .booking-top,
 .booking-main,
 .booking-actions {
@@ -292,6 +437,11 @@
 
 .booking-status.success {
     background: var(--app-accent-strong);
+}
+
+.booking-status.cancelled {
+    background: #dc2626;
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.24);
 }
 
 .booking-status.failed {
@@ -361,12 +511,57 @@
 }
 
 .cancel-form {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
     margin: 0;
 }
 
 .disabled-cancel {
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+.booking-card-cancelled .disabled-cancel {
+    opacity: 1;
+}
+
+.refund-status-btn {
+    min-height: 38px;
+    padding: 9px 14px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-transform: uppercase;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16);
+    cursor: not-allowed;
+}
+
+.refund-status-success {
+    background: linear-gradient(135deg, #047857, #22c55e);
+}
+
+.refund-status-pending {
+    background: linear-gradient(135deg, #b45309, #f59e0b);
+    color: #231f20;
+}
+
+.refund-status-failed,
+.refund-status-cancelled {
+    background: linear-gradient(135deg, #991b1b, #dc2626);
+}
+
+.refund-status-retry {
+    background: linear-gradient(135deg, #4338ca, #6366f1);
+}
+
+.refund-status-neutral {
+    background: linear-gradient(135deg, #475569, #64748b);
 }
 
 .empty-booking {
@@ -398,6 +593,11 @@
         grid-template-columns: 1fr;
     }
 
+    .booking-refund-rule {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
     .booking-qr img {
         width: 132px;
         height: 132px;
@@ -408,14 +608,29 @@
 <script>
 document.querySelectorAll(".cancel-form").forEach(form => {
     form.addEventListener("submit", event => {
-        const coupon = Number(form.dataset.coupon || "0");
-        const message = coupon > 0
-            ? "Cancel this ticket? Coupon discount is not refundable. Paid amount and wallet-used amount will be refunded according to payment source."
-            : "Cancel this ticket? Paid amount and wallet-used amount will be refunded according to payment source.";
-
-        if (!confirm(message)) {
-            event.preventDefault();
+        if (form.dataset.confirmed === "true") {
+            form.dataset.confirmed = "false";
+            return;
         }
+
+        event.preventDefault();
+
+        const coupon = Number(form.dataset.coupon || "0");
+        const refundRule = form.dataset.refundRule || "Refund rule applies";
+        const refundAmount = form.dataset.refundAmount || "";
+        const message = coupon > 0
+            ? `Cancel this ticket?\n\nRefund rule: ${refundRule}\nRefund amount: ${refundAmount}\n\nCoupon discount is not refundable.`
+            : `Cancel this ticket?\n\nRefund rule: ${refundRule}\nRefund amount: ${refundAmount}`;
+
+        window.showCinemaPopup(message, "confirm", {
+            title: "Cancel Ticket?",
+            okText: "Cancel Ticket",
+            cancelText: "Keep Ticket",
+            onOk: () => {
+                form.dataset.confirmed = "true";
+                form.requestSubmit();
+            }
+        });
     });
 });
 </script>

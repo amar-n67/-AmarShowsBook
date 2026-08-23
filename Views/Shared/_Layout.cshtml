@@ -535,6 +535,7 @@ a {
     margin: 0;
     color: var(--app-popup-muted);
     line-height: 1.5;
+    white-space: pre-line;
 }
 
 .cinema-popup-actions {
@@ -1492,8 +1493,9 @@ footer {
 
 .app-filter-panel {
     display: grid;
-    grid-template-columns: minmax(180px, 1.5fr) minmax(150px, 1fr) minmax(150px, 1fr) auto;
-    gap: 12px;
+    grid-template-columns: minmax(190px, 1.6fr) minmax(132px, 0.9fr) minmax(132px, 0.9fr) minmax(132px, 0.9fr) auto;
+    align-items: center;
+    gap: 10px;
     margin: 0 0 18px;
     padding: 14px;
     border: 1px solid var(--app-input-border);
@@ -1505,6 +1507,7 @@ footer {
 .app-filter-panel input,
 .app-filter-panel select {
     width: 100%;
+    min-width: 0;
     min-height: 42px;
     border: 1px solid var(--app-input-border);
     border-radius: 999px;
@@ -1514,6 +1517,7 @@ footer {
 }
 
 .app-filter-panel button {
+    width: 100%;
     min-height: 42px;
     border: 1px solid var(--app-input-border);
     border-radius: 999px;
@@ -1521,6 +1525,17 @@ footer {
     color: var(--app-card-text);
     font-weight: 850;
     padding: 0 18px;
+    white-space: nowrap;
+}
+
+@@media (max-width: 1100px) {
+    .app-filter-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-filter-panel button {
+        grid-column: span 2;
+    }
 }
 
 @@media (max-width: 760px) {
@@ -1536,6 +1551,10 @@ footer {
 
     .app-filter-panel {
         grid-template-columns: 1fr;
+    }
+
+    .app-filter-panel button {
+        grid-column: auto;
     }
 }
 
@@ -1679,7 +1698,9 @@ z-index:9999;">
     var showAppSearch =
         isLoggedIn
         && !(currentController == "Developer" && currentAction == "Index")
-        && !(currentController == "Home" && currentAction == "Index");
+        && !(currentController == "Home" && currentAction == "Index")
+        && !(currentController == "Booking" && currentAction == "MyBookings")
+        && !(currentController == "Booking" && currentAction == "Confirmation");
     var currentVersion = "1.0.0";
 
     try
@@ -1813,37 +1834,50 @@ z-index:9999;">
                 </button>
             </form>
         </div>
+    }
 
-        @if(showAppFilters)
-        {
-            <div class="app-filter-panel no-print"
-                 data-app-filter
-                 data-app-filter-target=".booking-card, .transaction-table tbody tr">
-                <input type="text"
-                       data-app-filter-search
-                       placeholder="Search records" />
-                <select data-app-filter-status>
-                    <option value="">All Status</option>
-                    <option value="SUCCESS">SUCCESS</option>
-                    <option value="PENDING">PENDING</option>
-                    <option value="FAILED">FAILED</option>
-                    <option value="CONFIRMED">CONFIRMED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                    <option value="EXPIRED">EXPIRED</option>
-                </select>
-                <select data-app-filter-method>
-                    <option value="">All Methods</option>
-                    <option value="UPI">UPI</option>
-                    <option value="CARD">CARD</option>
-                    <option value="NETBANKING">NETBANKING</option>
-                    <option value="WALLET">WALLET</option>
-                    <option value="QR">QR</option>
-                </select>
-                <button type="button" data-app-filter-reset>
-                    Reset
-                </button>
-            </div>
-        }
+    @if(showAppFilters)
+    {
+        <div class="app-filter-panel no-print"
+             data-app-filter
+             data-app-filter-target=".booking-card, .transaction-table tbody tr">
+            <input type="text"
+                   data-app-filter-search
+                   placeholder="Search records" />
+            <select data-app-filter-status>
+                <option value="">All Status</option>
+                <option value="SUCCESS">SUCCESS</option>
+                <option value="PENDING">PENDING</option>
+                <option value="FAILED">FAILED</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="CANCELLED">CANCELLED</option>
+                <option value="EXPIRED">EXPIRED</option>
+                <option value="REFUND_PENDING">REFUND PENDING</option>
+                <option value="REFUNDED">REFUNDED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="RETRY">RETRY</option>
+            </select>
+            <select data-app-filter-method>
+                <option value="">All Methods</option>
+                <option value="UPI">UPI</option>
+                <option value="CARD">CARD</option>
+                <option value="NETBANKING">NETBANKING</option>
+                <option value="WALLET">WALLET</option>
+                <option value="QR">QR</option>
+            </select>
+            <select data-app-filter-sort>
+                <option value="showtime-asc">Show Time</option>
+                <option value="showtime-desc">Show Time Desc</option>
+                <option value="booked-desc">Booked Latest</option>
+                <option value="booked-asc">Booked Oldest</option>
+                <option value="amount-desc">Amount High</option>
+                <option value="amount-asc">Amount Low</option>
+                <option value="status-asc">Status A-Z</option>
+            </select>
+            <button type="button" data-app-filter-reset>
+                Reset
+            </button>
+        </div>
     }
     @RenderBody()
 </div>
@@ -2033,6 +2067,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const searchBox = panel.querySelector("[data-app-filter-search]");
         const statusBox = panel.querySelector("[data-app-filter-status]");
         const methodBox = panel.querySelector("[data-app-filter-method]");
+        const sortBox = panel.querySelector("[data-app-filter-sort]");
         const resetButton = panel.querySelector("[data-app-filter-reset]");
         const targetSelector = panel.getAttribute("data-app-filter-target") || "tbody tr";
         const anchor = document.querySelector(".booking-grid")
@@ -2063,6 +2098,54 @@ document.addEventListener("DOMContentLoaded", function () {
                 : text.includes(selectedValue);
         }
 
+        function getSortValue(item, key) {
+            return item.dataset[key] || "";
+        }
+
+        function sortItems() {
+            const sort = sortBox?.value || "showtime-asc";
+            const parentMap = new Map();
+
+            document.querySelectorAll(targetSelector).forEach(function (item) {
+                if (panel.contains(item) || !item.parentElement) return;
+
+                const parent = item.parentElement;
+                if (!parentMap.has(parent)) {
+                    parentMap.set(parent, []);
+                }
+
+                parentMap.get(parent).push(item);
+            });
+
+            parentMap.forEach(function (items, parent) {
+                items
+                    .sort(function (a, b) {
+                        if (sort === "booked-desc" || sort === "booked-asc") {
+                            const left = Number(getSortValue(a, "sortBooked") || "0");
+                            const right = Number(getSortValue(b, "sortBooked") || "0");
+                            return sort === "booked-desc" ? right - left : left - right;
+                        }
+
+                        if (sort === "amount-desc" || sort === "amount-asc") {
+                            const left = Number(getSortValue(a, "sortAmount") || "0");
+                            const right = Number(getSortValue(b, "sortAmount") || "0");
+                            return sort === "amount-desc" ? right - left : left - right;
+                        }
+
+                        if (sort === "status-asc") {
+                            return getSortValue(a, "sortStatus").localeCompare(getSortValue(b, "sortStatus"));
+                        }
+
+                        const left = Number(getSortValue(a, "sortShowtime") || "0");
+                        const right = Number(getSortValue(b, "sortShowtime") || "0");
+                        return sort === "showtime-desc" ? right - left : left - right;
+                    })
+                    .forEach(function (item) {
+                        parent.appendChild(item);
+                    });
+            });
+        }
+
         function applyFilters() {
             const query = normalizeFilterValue(searchBox?.value);
             const status = normalizeFilterValue(statusBox?.value);
@@ -2077,18 +2160,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 const matchesMethod = matchesFilter(item, "filterMethod", method, text);
                 item.hidden = !(matchesSearch && matchesStatus && matchesMethod);
             });
+
+            sortItems();
         }
 
         searchBox?.addEventListener("input", applyFilters);
         statusBox?.addEventListener("change", applyFilters);
         methodBox?.addEventListener("change", applyFilters);
+        sortBox?.addEventListener("change", applyFilters);
         resetButton?.addEventListener("click", function () {
             if (searchBox) searchBox.value = "";
             if (statusBox) statusBox.value = "";
             if (methodBox) methodBox.value = "";
+            if (sortBox) sortBox.value = "showtime-asc";
             applyFilters();
             searchBox?.focus();
         });
+
+        if (sortBox) sortBox.value = "showtime-asc";
+        applyFilters();
     });
 });
 </script>
