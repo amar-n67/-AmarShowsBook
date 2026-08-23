@@ -104,6 +104,10 @@ namespace AmarShowsBook.Controllers
             // LOAD DASHBOARD COUNTS
             // =====================================================
 
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+            var now = DateTime.UtcNow;
+
             var vm = new AdminDashboardViewModel
             {
                 // ================= BOOKINGS =================
@@ -115,6 +119,30 @@ namespace AmarShowsBook.Controllers
                     _context.VwBookingCompleteDetails
                         .Count(x => x.IsError == 1),
 
+                TodayBookings =
+                    _context.VwBookingCompleteDetails
+                        .Count(x => x.BookedAt >= today && x.BookedAt < tomorrow),
+
+                ConfirmedBookings =
+                    _context.VwBookingCompleteDetails
+                        .Count(x => x.BookingStatus == "CONFIRMED"),
+
+                CancelledBookings =
+                    _context.VwBookingCompleteDetails
+                        .Count(x => x.BookingStatus == "CANCELLED"),
+
+                TotalTickets =
+                    _context.VwBookingCompleteDetails
+                        .Sum(x => (int?)x.TotalTickets) ?? 0,
+
+                GrossBookingAmount =
+                    _context.VwBookingCompleteDetails
+                        .Sum(x => (decimal?)x.TotalAmount) ?? 0,
+
+                PayableBookingAmount =
+                    _context.VwBookingCompleteDetails
+                        .Sum(x => x.PayableAmount ?? (decimal?)x.TotalAmount) ?? 0,
+
                 // ================= PAYMENTS =================
 
                 SuccessfulPayments =
@@ -125,17 +153,35 @@ namespace AmarShowsBook.Controllers
                     _context.VwBookingTransactionSummaries
                         .Count(x => x.IsPaymentError == 1),
 
+                SuccessfulPaymentAmount =
+                    _context.VwBookingTransactionSummaries
+                        .Where(x => x.IsPaymentError == 0)
+                        .Sum(x => x.TransactionAmount) ?? 0,
+
                 // ================= REFUNDS =================
 
                 TotalRefunds =
                     _context.VwRefundSummaries.Count(),
-// Using mapped C# property name.
-// EF Core automatically maps this
-// to PostgreSQL column "is_refund_error".
 
-FailedRefunds =
-    _context.VwRefundSummaries
-        .Count(x => x.IsRefundError == 1),
+                FailedRefunds =
+                    _context.VwRefundSummaries
+                        .Count(x => x.IsRefundError == 1),
+
+                PendingRefunds =
+                    _context.VwRefundSummaries
+                        .Count(x => x.RefundStatus == "PENDING"),
+
+                ApprovedRefunds =
+                    _context.VwRefundSummaries
+                        .Count(x => x.RefundStatus == "APPROVED"),
+
+                RejectedRefunds =
+                    _context.VwRefundSummaries
+                        .Count(x => x.RefundStatus == "REJECTED"),
+
+                RequestedRefundAmount =
+                    _context.VwRefundSummaries
+                        .Sum(x => x.RefundAmount) ?? 0,
 
                 // ================= INVOICES =================
 
@@ -149,26 +195,168 @@ FailedRefunds =
                     _context.VwNotificationCenters
                         .Count(x => x.IsError == 1),
 
+                TotalNotifications =
+                    _context.VwNotificationCenters.Count(),
+
+                DeliveredNotifications =
+                    _context.VwNotificationCenters
+                        .Count(x => x.Status == "DELIVERED"),
+
+                PendingNotifications =
+                    _context.VwNotificationCenters
+                        .Count(x => x.Status == "PENDING"),
+
+                HighPriorityNotifications =
+                    _context.VwNotificationCenters
+                        .Count(x => x.Priority == "HIGH"),
+
                 // ================= SECURITY =================
 
                 TicketValidationIssues =
                     _context.VwTicketValidationSummaries
                         .Count(x => x.IsSecurityIssue == 1),
 
+                ValidatedTickets =
+                    _context.VwTicketValidationSummaries
+                        .Count(x => x.IsSecurityIssue == 0),
+
                 // ================= WALLET =================
 
                 TotalWalletBalance =
                     _context.VwWalletSummaries
-                        .Sum(x => x.WalletBalance),
+                        .Sum(x => (decimal?)x.WalletBalance) ?? 0,
 
                 TotalCredits =
                     _context.VwWalletSummaries
-                        .Sum(x => x.TotalCredits),
+                        .Sum(x => (decimal?)x.TotalCredits) ?? 0,
 
                 TotalDebits =
                     _context.VwWalletSummaries
-                        .Sum(x => x.TotalDebits)
+                        .Sum(x => (decimal?)x.TotalDebits) ?? 0,
+
+                BlockedWalletBalance =
+                    _context.VwWalletSummaries
+                        .Sum(x => (decimal?)x.BlockedBalance) ?? 0,
+
+                // ================= CONTENT / ACCESS =================
+
+                TotalUsers =
+                    _context.Users.Count(),
+
+                TotalMovies =
+                    _context.Movies.Count(),
+
+                TotalStandups =
+                    _context.StandupShows.Count(),
+
+                TotalLiveStreams =
+                    _context.LiveStreams.Count(),
+
+                TotalSchedules =
+                    _context.ShowSchedules.Count(),
+
+                UpcomingSchedules =
+                    _context.ShowSchedules
+                        .Count(x => x.StartTime >= now),
+
+                TodaySchedules =
+                    _context.ShowSchedules
+                        .Count(x => x.StartTime >= today && x.StartTime < tomorrow),
+
+                TotalScreens =
+                    _context.Screens.Count(),
+
+                TotalVenues =
+                    _context.Venues.Count(),
+
+                ActiveRoles =
+                    _context.Roles.Count(x => x.IsActive)
             };
+
+            vm.BookingStatusBreakdown = await _context.VwBookingCompleteDetails
+                .GroupBy(x => x.BookingStatus)
+                .Select(x => new DashboardBreakdownItem
+                {
+                    Label = x.Key ?? "NA",
+                    Count = x.Count(),
+                    Amount = x.Sum(y => y.PayableAmount ?? (decimal?)y.TotalAmount) ?? 0
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(6)
+                .ToListAsync();
+
+            vm.ShowTypeBreakdown = await _context.VwBookingCompleteDetails
+                .GroupBy(x => x.ShowType)
+                .Select(x => new DashboardBreakdownItem
+                {
+                    Label = x.Key ?? "NA",
+                    Count = x.Count(),
+                    Amount = x.Sum(y => y.PayableAmount ?? (decimal?)y.TotalAmount) ?? 0
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(6)
+                .ToListAsync();
+
+            vm.PaymentMethodBreakdown = await _context.VwBookingTransactionSummaries
+                .GroupBy(x => x.PaymentMethod)
+                .Select(x => new DashboardBreakdownItem
+                {
+                    Label = x.Key ?? "NA",
+                    Count = x.Count(),
+                    Amount = x.Sum(y => y.TransactionAmount) ?? 0
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(6)
+                .ToListAsync();
+
+            var recentBookings = await _context.VwBookingCompleteDetails
+                .OrderByDescending(x => x.BookedAt)
+                .Take(5)
+                .Select(x => new
+                {
+                    x.BookingRef,
+                    x.ShowTitle,
+                    x.UserName,
+                    x.BookingStatus,
+                    x.BookedAt
+                })
+                .ToListAsync();
+
+            vm.RecentBookings = recentBookings
+                .Select(x => new DashboardRecentItem
+                {
+                    Title = string.IsNullOrWhiteSpace(x.BookingRef) ? "Booking" : x.BookingRef,
+                    Detail = $"{(string.IsNullOrWhiteSpace(x.ShowTitle) ? "Show" : x.ShowTitle)} - {(string.IsNullOrWhiteSpace(x.UserName) ? "NA" : x.UserName)}",
+                    Status = string.IsNullOrWhiteSpace(x.BookingStatus) ? "NA" : x.BookingStatus,
+                    Time = x.BookedAt
+                })
+                .ToList();
+
+            var recentRefunds = await _context.VwRefundSummaries
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(5)
+                .Select(x => new
+                {
+                    x.RefundRef,
+                    x.BookingRef,
+                    x.UserName,
+                    x.RefundReason,
+                    x.RefundStatus,
+                    x.CreatedAt
+                })
+                .ToListAsync();
+
+            vm.RecentRefunds = recentRefunds
+                .Select(x => new DashboardRecentItem
+                {
+                    Title = string.IsNullOrWhiteSpace(x.RefundRef)
+                        ? (string.IsNullOrWhiteSpace(x.BookingRef) ? "Refund request" : x.BookingRef)
+                        : x.RefundRef,
+                    Detail = $"{(string.IsNullOrWhiteSpace(x.UserName) ? "NA" : x.UserName)} - {(string.IsNullOrWhiteSpace(x.RefundReason) ? "No reason" : x.RefundReason)}",
+                    Status = string.IsNullOrWhiteSpace(x.RefundStatus) ? "NA" : x.RefundStatus,
+                    Time = x.CreatedAt
+                })
+                .ToList();
             
 
             // =====================================================
@@ -194,7 +382,7 @@ FailedRefunds =
         // Human Comment:
         // Admin role management screen
 
-     public IActionResult Roles()
+        public IActionResult Roles()
         {
             var roles = _context.Roles
                 .AsNoTracking()
@@ -202,6 +390,296 @@ FailedRefunds =
                 .ToList();
 
             return View(roles);
+        }
+
+        // =====================================================
+        // SECURITY PAGE
+        // =====================================================
+
+        public async Task<IActionResult> Security(int page = 1)
+        {
+            const int pageSize = 50;
+
+            await EnsureSecurityInfrastructure();
+
+            page = Math.Max(1, page);
+
+            var query = _context.VwTicketValidationSummaries
+                .AsNoTracking()
+                .OrderByDescending(x => x.IsSecurityIssue)
+                .ThenByDescending(x => x.LastScannedAt ?? x.ValidatedAt)
+                .ThenByDescending(x => x.ValidationLogId);
+
+            var totalCount = await query.CountAsync();
+
+            var rows = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalRecords = totalCount;
+            ViewBag.SecurityIssueCount = await _context.VwTicketValidationSummaries
+                .CountAsync(x => x.IsSecurityIssue == 1);
+            ViewBag.ValidatedCount = await _context.VwTicketValidationSummaries
+                .CountAsync(x => x.IsSecurityIssue == 0);
+            ViewBag.ActiveDeviceCount = await _context.ScannerDevices
+                .CountAsync(x => x.DeviceStatus == "ACTIVE");
+            ViewBag.ScannerDevices = await _context.ScannerDevices
+                .AsNoTracking()
+                .OrderByDescending(x => x.LastActiveAt ?? x.CreatedAt)
+                .Take(8)
+                .ToListAsync();
+
+            return View("~/Views/Admin/Security/Index.cshtml", rows);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcknowledgeSecurityAlerts()
+        {
+            await _activityLogger.LogAsync(
+                action: "ACKNOWLEDGE_SECURITY_ALERTS",
+                module: "SCANNER",
+                entityType: "TICKET_VALIDATION",
+                description: "Admin reviewed ticket security alerts",
+                status: "SUCCESS",
+                isError: 0
+            );
+
+            TempData["Success"] = "Security alerts reviewed.";
+
+            return RedirectToAction(nameof(Security));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddSecurityValidation(
+            string ticketNumber,
+            string validationStatus,
+            string validationResult,
+            string? gateName,
+            string? deviceId,
+            string? remarks)
+        {
+            await EnsureSecurityInfrastructure();
+
+            ticketNumber = (ticketNumber ?? string.Empty).Trim();
+            validationStatus = NormalizeSecurityStatus(validationStatus);
+            validationResult = NormalizeSecurityResult(validationResult);
+            gateName = string.IsNullOrWhiteSpace(gateName) ? "Admin Gate" : gateName.Trim();
+            deviceId = string.IsNullOrWhiteSpace(deviceId) ? "ADMIN-CONSOLE" : deviceId.Trim();
+
+            var ticket = await _context.Tickets
+                .FirstOrDefaultAsync(x => x.TicketNumber == ticketNumber);
+
+            if (ticket == null)
+            {
+                TempData["Error"] = "Ticket number not found.";
+                return RedirectToAction(nameof(Security));
+            }
+
+            var booking = await _context.Bookings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == ticket.BookingId);
+
+            var now = DateTime.Now;
+
+            _context.TicketValidationLogs.Add(new TicketValidationLog
+            {
+                TicketId = ticket.Id,
+                BookingId = ticket.BookingId,
+                UserId = booking?.UserId,
+                ScannedQrToken = ticket.QrToken,
+                ValidationStatus = validationStatus,
+                ValidationResult = validationResult,
+                GateName = gateName,
+                DeviceId = deviceId,
+                ScannerUser = HttpContext.Session.GetString("UserName") ?? "Admin",
+                ScannerIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Remarks = string.IsNullOrWhiteSpace(remarks) ? "Manual admin validation" : remarks.Trim(),
+                Metadata = "{}",
+                ScannedAt = now
+            });
+
+            ticket.ValidationStatus = validationStatus == "BLOCKED" ? "BLOCKED" : "SCANNED";
+            ticket.ValidationCount += 1;
+            ticket.LastScannedAt = now;
+            ticket.LastScannedGate = gateName;
+            ticket.UpdatedAt = now;
+
+            await TouchScannerDevice(deviceId, gateName, now);
+            await _context.SaveChangesAsync();
+
+            await _activityLogger.LogAsync(
+                action: "ADD_TICKET_VALIDATION",
+                module: "SCANNER",
+                entityType: "TICKET",
+                entityId: ticket.Id > int.MaxValue ? null : (int)ticket.Id,
+                description: $"Admin added {validationResult} validation for ticket {ticket.TicketNumber}",
+                status: validationResult == "SUCCESS" ? "SUCCESS" : "WARNING",
+                isError: validationResult == "SUCCESS" ? 0 : 1
+            );
+
+            TempData["Success"] = "Ticket validation record added.";
+
+            return RedirectToAction(nameof(Security));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearSecurityAlert(long validationLogId)
+        {
+            await EnsureSecurityInfrastructure();
+
+            var log = await _context.TicketValidationLogs
+                .FirstOrDefaultAsync(x => x.Id == validationLogId);
+
+            if (log == null)
+            {
+                TempData["Error"] = "Security alert log not found.";
+                return RedirectToAction(nameof(Security));
+            }
+
+            log.ValidationStatus = "SCANNED";
+            log.ValidationResult = "SUCCESS";
+            log.Remarks = AppendAdminRemark(log.Remarks, "Alert cleared by admin");
+
+            var ticket = await _context.Tickets
+                .FirstOrDefaultAsync(x => x.Id == log.TicketId);
+
+            if (ticket != null)
+            {
+                ticket.ValidationStatus = "SCANNED";
+                ticket.LastScannedAt = DateTime.Now;
+                ticket.LastScannedGate = log.GateName;
+                ticket.UpdatedAt = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            await _activityLogger.LogAsync(
+                action: "CLEAR_SECURITY_ALERT",
+                module: "SCANNER",
+                entityType: "TICKET_VALIDATION",
+                entityId: validationLogId > int.MaxValue ? null : (int)validationLogId,
+                description: $"Admin cleared security alert log {validationLogId}",
+                status: "SUCCESS",
+                isError: 0
+            );
+
+            TempData["Success"] = "Security alert cleared.";
+
+            return RedirectToAction(nameof(Security));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BlockTicketFromSecurity(long ticketId)
+        {
+            await EnsureSecurityInfrastructure();
+
+            var ticket = await _context.Tickets
+                .FirstOrDefaultAsync(x => x.Id == ticketId);
+
+            if (ticket == null)
+            {
+                TempData["Error"] = "Ticket not found.";
+                return RedirectToAction(nameof(Security));
+            }
+
+            var booking = await _context.Bookings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == ticket.BookingId);
+
+            var now = DateTime.Now;
+
+            ticket.ValidationStatus = "BLOCKED";
+            ticket.LastScannedAt = now;
+            ticket.LastScannedGate = "Admin Security";
+            ticket.UpdatedAt = now;
+
+            _context.TicketValidationLogs.Add(new TicketValidationLog
+            {
+                TicketId = ticket.Id,
+                BookingId = ticket.BookingId,
+                UserId = booking?.UserId,
+                ScannedQrToken = ticket.QrToken,
+                ValidationStatus = "BLOCKED",
+                ValidationResult = "ADMIN_BLOCKED",
+                GateName = "Admin Security",
+                DeviceId = "ADMIN-CONSOLE",
+                ScannerUser = HttpContext.Session.GetString("UserName") ?? "Admin",
+                ScannerIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Remarks = "Ticket blocked by admin from Security page",
+                Metadata = "{}",
+                ScannedAt = now
+            });
+
+            await _context.SaveChangesAsync();
+
+            await _activityLogger.LogAsync(
+                action: "BLOCK_TICKET_SECURITY",
+                module: "SCANNER",
+                entityType: "TICKET",
+                entityId: ticket.Id > int.MaxValue ? null : (int)ticket.Id,
+                description: $"Admin blocked ticket {ticket.TicketNumber} from scanner validation",
+                status: "WARNING",
+                isError: 1
+            );
+
+            TempData["Success"] = "Ticket blocked from scanner validation.";
+
+            return RedirectToAction(nameof(Security));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegisterScannerDevice(
+            string deviceCode,
+            string? deviceName,
+            string? gateName)
+        {
+            await EnsureSecurityInfrastructure();
+
+            deviceCode = (deviceCode ?? string.Empty).Trim().ToUpperInvariant();
+
+            if (string.IsNullOrWhiteSpace(deviceCode))
+            {
+                TempData["Error"] = "Device code is required.";
+                return RedirectToAction(nameof(Security));
+            }
+
+            var now = DateTime.Now;
+            var device = await _context.ScannerDevices
+                .FirstOrDefaultAsync(x => x.DeviceCode == deviceCode);
+
+            if (device == null)
+            {
+                _context.ScannerDevices.Add(new ScannerDevice
+                {
+                    DeviceCode = deviceCode,
+                    DeviceName = string.IsNullOrWhiteSpace(deviceName) ? deviceCode : deviceName.Trim(),
+                    GateName = string.IsNullOrWhiteSpace(gateName) ? "Main Gate" : gateName.Trim(),
+                    DeviceStatus = "ACTIVE",
+                    LastActiveAt = now,
+                    CreatedAt = now
+                });
+            }
+            else
+            {
+                device.DeviceName = string.IsNullOrWhiteSpace(deviceName) ? device.DeviceName : deviceName.Trim();
+                device.GateName = string.IsNullOrWhiteSpace(gateName) ? device.GateName : gateName.Trim();
+                device.DeviceStatus = "ACTIVE";
+                device.LastActiveAt = now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Scanner device saved.";
+
+            return RedirectToAction(nameof(Security));
         }
 
         [HttpPost]
@@ -3326,6 +3804,12 @@ private static bool TryGetAdminPermission(
         [nameof(DeleteManagedShow)] = ("SHOW", "DELETE"),
 
         [nameof(Bookings)] = ("BOOKING", "VIEW"),
+        [nameof(Security)] = ("SCANNER", "VIEW"),
+        [nameof(AcknowledgeSecurityAlerts)] = ("SCANNER", "VIEW"),
+        [nameof(AddSecurityValidation)] = ("SCANNER", "VIEW"),
+        [nameof(ClearSecurityAlert)] = ("SCANNER", "VIEW"),
+        [nameof(BlockTicketFromSecurity)] = ("SCANNER", "VIEW"),
+        [nameof(RegisterScannerDevice)] = ("SCANNER", "VIEW"),
 
         [nameof(Transactions)] = ("PAYMENT", "VIEW"),
         [nameof(TransactionDetails)] = ("PAYMENT", "VIEW"),
@@ -3504,7 +3988,7 @@ private void EnsurePermissionSeedData()
         ("WALLET", "VIEW"), ("WALLET", "UPDATE"),
         ("COUPON", "VIEW"), ("COUPON", "CREATE"), ("COUPON", "UPDATE"), ("COUPON", "DELETE"),
         ("NOTIFICATION", "VIEW"), ("NOTIFICATION", "UPDATE"),
-        ("ANALYTICS", "VIEW"), ("SUPPORT", "VIEW"), ("SCANNER", "VALIDATE"), ("DEVELOPER", "EDIT")
+        ("ANALYTICS", "VIEW"), ("SUPPORT", "VIEW"), ("SCANNER", "VIEW"), ("SCANNER", "VALIDATE"), ("DEVELOPER", "EDIT")
     };
 
     var moduleLookup = _context.ApplicationModules.ToDictionary(x => x.ModuleCode, x => x.Id);
@@ -4169,6 +4653,142 @@ private static string FormatDateText(DateTime? value)
     return value.HasValue
         ? value.Value.ToString("dd MMM yyyy hh:mm tt", CultureInfo.InvariantCulture)
         : "NA";
+}
+
+private static string NormalizeSecurityStatus(string? value)
+{
+    var status = (value ?? string.Empty).Trim().ToUpperInvariant();
+
+    return status switch
+    {
+        "SCANNED" or "BLOCKED" or "EXPIRED" or "CANCELLED" => status,
+        _ => "SCANNED"
+    };
+}
+
+private static string NormalizeSecurityResult(string? value)
+{
+    var result = (value ?? string.Empty).Trim().ToUpperInvariant();
+
+    return result switch
+    {
+        "SUCCESS" or "INVALID_QR" or "DUPLICATE_SCAN" or "EXPIRED_TICKET" or "CANCELLED_TICKET" or "ADMIN_BLOCKED" => result,
+        _ => "SUCCESS"
+    };
+}
+
+private static string AppendAdminRemark(string? existing, string note)
+{
+    var stamp = DateTime.Now.ToString("dd MMM yyyy hh:mm tt", CultureInfo.InvariantCulture);
+    var addition = $"{stamp}: {note}";
+
+    return string.IsNullOrWhiteSpace(existing)
+        ? addition
+        : $"{existing.Trim()} | {addition}";
+}
+
+private async Task TouchScannerDevice(string deviceCode, string? gateName, DateTime activeAt)
+{
+    deviceCode = string.IsNullOrWhiteSpace(deviceCode)
+        ? "ADMIN-CONSOLE"
+        : deviceCode.Trim().ToUpperInvariant();
+
+    var device = await _context.ScannerDevices
+        .FirstOrDefaultAsync(x => x.DeviceCode == deviceCode);
+
+    if (device == null)
+    {
+        _context.ScannerDevices.Add(new ScannerDevice
+        {
+            DeviceCode = deviceCode,
+            DeviceName = deviceCode,
+            GateName = string.IsNullOrWhiteSpace(gateName) ? "Admin Gate" : gateName.Trim(),
+            DeviceStatus = "ACTIVE",
+            LastActiveAt = activeAt,
+            CreatedAt = activeAt
+        });
+
+        return;
+    }
+
+    device.GateName = string.IsNullOrWhiteSpace(gateName) ? device.GateName : gateName.Trim();
+    device.DeviceStatus = "ACTIVE";
+    device.LastActiveAt = activeAt;
+}
+
+private async Task EnsureSecurityInfrastructure()
+{
+    await _context.Database.ExecuteSqlRawAsync(@"
+CREATE TABLE IF NOT EXISTS public.ticket_validation_logs (
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    ticket_id bigint NOT NULL,
+    booking_id bigint,
+    user_id bigint,
+    scanned_qr_token uuid,
+    validation_status varchar(50),
+    validation_result varchar(100),
+    gate_name varchar(100),
+    device_id varchar(255),
+    scanner_user varchar(255),
+    scanner_ip varchar(45),
+    latitude numeric(10,7),
+    longitude numeric(10,7),
+    remarks text,
+    metadata jsonb,
+    scanned_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS public.scanner_devices (
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    device_code varchar(100) NOT NULL UNIQUE,
+    device_name varchar(255),
+    venue_id bigint,
+    screen_id bigint,
+    gate_name varchar(100),
+    device_status varchar(50) DEFAULT 'ACTIVE',
+    last_active_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS qr_token uuid DEFAULT gen_random_uuid();
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS validation_status varchar(50) DEFAULT 'NOT_SCANNED';
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS validation_count integer DEFAULT 0;
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS last_scanned_at timestamp without time zone;
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS last_scanned_gate varchar(100);
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS security_hash text;
+
+CREATE INDEX IF NOT EXISTS idx_ticket_validation_status ON public.tickets (validation_status);
+CREATE INDEX IF NOT EXISTS idx_validation_ticket ON public.ticket_validation_logs (ticket_id);
+CREATE INDEX IF NOT EXISTS idx_validation_booking ON public.ticket_validation_logs (booking_id);
+CREATE INDEX IF NOT EXISTS idx_validation_scanned_at ON public.ticket_validation_logs (scanned_at);
+
+CREATE OR REPLACE VIEW public.vw_ticket_validation_summary AS
+SELECT
+    tvl.id AS validation_log_id,
+    t.id AS ticket_id,
+    t.ticket_number,
+    b.booking_ref,
+    u.""Name"" AS user_name,
+    u.""Email"" AS user_email,
+    tvl.validation_status,
+    tvl.validation_result,
+    tvl.gate_name,
+    tvl.device_id,
+    tvl.scanner_user,
+    tvl.scanned_at,
+    COALESCE(t.validation_count, 0) AS validation_count,
+    t.last_scanned_at,
+    CASE
+        WHEN COALESCE(tvl.validation_result, '') = 'SUCCESS'
+            AND COALESCE(tvl.validation_status, '') <> 'BLOCKED'
+            THEN 0
+        ELSE 1
+    END AS is_security_issue
+FROM public.ticket_validation_logs tvl
+JOIN public.tickets t ON tvl.ticket_id = t.id
+LEFT JOIN public.bookings b ON COALESCE(tvl.booking_id, t.booking_id) = b.id
+LEFT JOIN public.""Users"" u ON COALESCE(tvl.user_id, b.user_id) = u.""Id"";
+");
 }
 
 private async Task EnsureAdminShowInfrastructure()

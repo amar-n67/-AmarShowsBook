@@ -42,4 +42,19 @@ public class Ticket
 
     [Column("validation_status")]
     public string? ValidationStatus { get; set; }
+
+    [Column("validation_count")]
+    public int ValidationCount { get; set; }
+
+    [Column("last_scanned_at")]
+    public DateTime? LastScannedAt { get; set; }
+
+    [Column("last_scanned_gate")]
+    public string? LastScannedGate { get; set; }
+
+    [Column("qr_token")]
+    public Guid? QrToken { get; set; }
+
+    [Column("security_hash")]
+    public string? SecurityHash { get; set; }
 }

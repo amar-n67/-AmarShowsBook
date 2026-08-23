@@ -33,6 +33,8 @@ public DbSet<SeatLock> SeatLocks { get; set; }
 
 public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<RefundActionLog> RefundActionLogs { get; set; }
+        public DbSet<TicketValidationLog> TicketValidationLogs { get; set; }
+        public DbSet<ScannerDevice> ScannerDevices { get; set; }
         public DbSet<ApplicationVersion> ApplicationVersions { get; set; }
 
         public DbSet<Refund> Refunds { get; set; }

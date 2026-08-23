@@ -183,29 +183,59 @@ html[data-theme="cinema"] body {
     min-height: 100dvh;
     overflow-x: hidden;
     align-items: stretch;
+    --admin-sidebar-width: 270px;
 }
 
 .admin-sidebar {
-    position: relative;
-    flex: 0 0 270px;
-    width: 270px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    align-self: flex-start;
+    flex: 0 0 var(--admin-sidebar-width);
+    width: var(--admin-sidebar-width);
+    height: 100dvh;
     min-height: 100dvh;
     padding: 22px 18px;
-    overflow-y: auto;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    overscroll-behavior: contain;
     background:
         linear-gradient(180deg, rgba(21, 23, 34, 0.98), rgba(55, 28, 44, 0.98)),
         repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 8px, transparent 8px 18px);
     color: #fffdf7;
     box-shadow: 18px 0 46px rgba(23, 25, 35, 0.2);
+    scrollbar-color: var(--admin-gold) rgba(255, 255, 255, 0.16);
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
     transition: width 0.22s ease, padding 0.22s ease, transform 0.22s ease;
     z-index: 10;
+}
+
+.admin-sidebar:hover,
+.admin-sidebar:focus-within {
+    overflow-y: auto;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 10px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--admin-gold), var(--admin-teal));
+    border: 2px solid rgba(21, 23, 34, 0.78);
+    border-radius: 999px;
 }
 
 .admin-sidebar::before {
     content: "";
     position: fixed;
     inset: 0 auto 0 0;
-    width: 270px;
+    width: var(--admin-sidebar-width);
     background: inherit;
     z-index: -1;
     pointer-events: none;
@@ -266,6 +296,7 @@ html[data-theme="cinema"] .admin-sidebar {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding-bottom: 22px;
 }
 
 .admin-nav a {
@@ -330,8 +361,14 @@ html[data-theme="cinema"] .admin-sidebar {
     flex: 1;
     min-width: 0;
     min-height: 100dvh;
+    margin-left: var(--admin-sidebar-width);
     padding: 22px clamp(18px, 3vw, 34px) 38px;
     overflow-x: hidden;
+    transition: margin-left 0.22s ease;
+}
+
+.admin-wrapper.nav-collapsed .admin-main {
+    margin-left: 0;
 }
 
 .admin-topbar {
@@ -831,13 +868,12 @@ html[data-theme="cinema"] .admin-topbar {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .admin-sidebar {
-        flex-basis: 236px;
-        width: 236px;
+    .admin-wrapper {
+        --admin-sidebar-width: 236px;
     }
 
     .admin-sidebar::before {
-        width: 236px;
+        width: var(--admin-sidebar-width);
     }
 }
 
@@ -848,6 +884,7 @@ html[data-theme="cinema"] .admin-topbar {
 
     .admin-wrapper {
         display: block;
+        --admin-sidebar-width: 0px;
     }
 
     .admin-sidebar {
@@ -856,6 +893,7 @@ html[data-theme="cinema"] .admin-topbar {
         width: min(82vw, 300px);
         height: 100vh;
         min-height: 100vh;
+        overflow-y: auto;
     }
 
     .admin-sidebar::before {
@@ -877,6 +915,7 @@ html[data-theme="cinema"] .admin-topbar {
     }
 
     .admin-main {
+        margin-left: 0;
         padding: 18px 14px 32px;
     }
 

@@ -4,6 +4,12 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Admin Dashboard";
+
+    string DateText(DateTime? value) => value.HasValue
+        ? value.Value.ToString("dd MMM yyyy, hh:mm tt")
+        : "NA";
+
+    string Clean(string? value) => string.IsNullOrWhiteSpace(value) ? "NA" : value;
 }
 
 <section class="admin-dashboard">
@@ -64,10 +70,12 @@
             <strong>@Model.NotificationFailures</strong>
         </div>
 
-        <div class="dashboard-card">
+        <a class="dashboard-card dashboard-card-link security-alert-card"
+           href="/Admin/Security"
+           title="Review ticket security alerts">
             <span>Security Alerts</span>
             <strong>@Model.TicketValidationIssues</strong>
-        </div>
+        </a>
 
         <div class="dashboard-card">
             <span>Total Wallet Balance</span>
@@ -86,4 +94,541 @@
 
     </div>
 
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Booking Health</h2>
+                    <p>Ticket volume, booking status, and upcoming show load.</p>
+                </div>
+                <a href="/Admin/Bookings">View Bookings</a>
+            </div>
+
+            <div class="dashboard-mini-grid">
+                <div>
+                    <span>Today Bookings</span>
+                    <strong>@Model.TodayBookings</strong>
+                </div>
+                <div>
+                    <span>Confirmed</span>
+                    <strong>@Model.ConfirmedBookings</strong>
+                </div>
+                <div>
+                    <span>Cancelled</span>
+                    <strong>@Model.CancelledBookings</strong>
+                </div>
+                <div>
+                    <span>Tickets Sold</span>
+                    <strong>@Model.TotalTickets</strong>
+                </div>
+            </div>
+
+            <div class="dashboard-money-row">
+                <div>
+                    <span>Gross Booking Value</span>
+                    <strong>@CurrencyFormatter.FormatRupees(Model.GrossBookingAmount)</strong>
+                </div>
+                <div>
+                    <span>Payable Booking Value</span>
+                    <strong>@CurrencyFormatter.FormatRupees(Model.PayableBookingAmount)</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Show Inventory</h2>
+                    <p>Content, venues, screens, and schedule readiness.</p>
+                </div>
+                <a href="/Admin/ManageShows">Manage Shows</a>
+            </div>
+
+            <div class="dashboard-mini-grid">
+                <div>
+                    <span>Movies</span>
+                    <strong>@Model.TotalMovies</strong>
+                </div>
+                <div>
+                    <span>Standups</span>
+                    <strong>@Model.TotalStandups</strong>
+                </div>
+                <div>
+                    <span>Live Streams</span>
+                    <strong>@Model.TotalLiveStreams</strong>
+                </div>
+                <div>
+                    <span>Venues</span>
+                    <strong>@Model.TotalVenues</strong>
+                </div>
+                <div>
+                    <span>Screens</span>
+                    <strong>@Model.TotalScreens</strong>
+                </div>
+                <div>
+                    <span>Today Shows</span>
+                    <strong>@Model.TodaySchedules</strong>
+                </div>
+                <div>
+                    <span>Upcoming</span>
+                    <strong>@Model.UpcomingSchedules</strong>
+                </div>
+                <div>
+                    <span>Total Schedules</span>
+                    <strong>@Model.TotalSchedules</strong>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid three">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Payments</h2>
+                    <p>Successful collection and failed payment tracking.</p>
+                </div>
+                <a href="/Admin/Transactions">Open</a>
+            </div>
+            <div class="dashboard-stack">
+                <div><span>Collected</span><strong>@CurrencyFormatter.FormatRupees(Model.SuccessfulPaymentAmount)</strong></div>
+                <div><span>Successful</span><strong>@Model.SuccessfulPayments</strong></div>
+                <div><span>Failed</span><strong>@Model.FailedPayments</strong></div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Refunds</h2>
+                    <p>Pending requests and admin action state.</p>
+                </div>
+                <a href="/Admin/Refunds">Review</a>
+            </div>
+            <div class="dashboard-stack">
+                <div><span>Pending</span><strong>@Model.PendingRefunds</strong></div>
+                <div><span>Approved</span><strong>@Model.ApprovedRefunds</strong></div>
+                <div><span>Rejected</span><strong>@Model.RejectedRefunds</strong></div>
+                <div><span>Requested Amount</span><strong>@CurrencyFormatter.FormatRupees(Model.RequestedRefundAmount)</strong></div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Notifications</h2>
+                    <p>Delivery health and high priority alerts.</p>
+                </div>
+                <a href="/Admin/Notifications">Open</a>
+            </div>
+            <div class="dashboard-stack">
+                <div><span>Total Sent</span><strong>@Model.TotalNotifications</strong></div>
+                <div><span>Delivered</span><strong>@Model.DeliveredNotifications</strong></div>
+                <div><span>Pending</span><strong>@Model.PendingNotifications</strong></div>
+                <div><span>High Priority</span><strong>@Model.HighPriorityNotifications</strong></div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Booking Status Mix</h2>
+                    <p>Current distribution by booking state.</p>
+                </div>
+            </div>
+            <div class="dashboard-list">
+                @foreach (var item in Model.BookingStatusBreakdown)
+                {
+                    <div>
+                        <span>@Clean(item.Label)</span>
+                        <strong>@item.Count</strong>
+                        <em>@CurrencyFormatter.FormatRupees(item.Amount)</em>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Show Type Demand</h2>
+                    <p>Bookings and revenue by movies, standup, and live content.</p>
+                </div>
+            </div>
+            <div class="dashboard-list">
+                @foreach (var item in Model.ShowTypeBreakdown)
+                {
+                    <div>
+                        <span>@Clean(item.Label)</span>
+                        <strong>@item.Count</strong>
+                        <em>@CurrencyFormatter.FormatRupees(item.Amount)</em>
+                    </div>
+                }
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Recent Bookings</h2>
+                    <p>Latest customer bookings in the system.</p>
+                </div>
+                <a href="/Admin/Bookings">All</a>
+            </div>
+            <div class="dashboard-activity-list">
+                @foreach (var item in Model.RecentBookings)
+                {
+                    <div>
+                        <strong>@Clean(item.Title)</strong>
+                        <span>@Clean(item.Detail)</span>
+                        <em>@Clean(item.Status) • @DateText(item.Time)</em>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Recent Refunds</h2>
+                    <p>Latest refund movement for admin review.</p>
+                </div>
+                <a href="/Admin/Refunds">All</a>
+            </div>
+            <div class="dashboard-activity-list">
+                @foreach (var item in Model.RecentRefunds)
+                {
+                    <div>
+                        <strong>@Clean(item.Title)</strong>
+                        <span>@Clean(item.Detail)</span>
+                        <em>@Clean(item.Status) • @DateText(item.Time)</em>
+                    </div>
+                }
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Wallet And Security</h2>
+                    <p>Wallet exposure and ticket validation signals.</p>
+                </div>
+                <a href="/Admin/Security">Review Security</a>
+            </div>
+            <div class="dashboard-mini-grid">
+                <div>
+                    <span>Blocked Balance</span>
+                    <strong>@CurrencyFormatter.FormatRupees(Model.BlockedWalletBalance)</strong>
+                </div>
+                <div>
+                    <span>Validated Tickets</span>
+                    <strong>@Model.ValidatedTickets</strong>
+                </div>
+                <div>
+                    <span>Security Issues</span>
+                    <strong>@Model.TicketValidationIssues</strong>
+                </div>
+                <div>
+                    <span>Active Roles</span>
+                    <strong>@Model.ActiveRoles</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Admin Shortcuts</h2>
+                    <p>Common places to continue operations.</p>
+                </div>
+            </div>
+            <div class="dashboard-shortcuts">
+                <a href="/Admin/Users">Users <strong>@Model.TotalUsers</strong></a>
+                <a href="/Admin/Roles">Roles <strong>@Model.ActiveRoles</strong></a>
+                <a href="/Admin/CouponUsage">Coupons</a>
+                <a href="/Admin/ActivityLogs">Activity Logs</a>
+                <a href="/Admin/Versions">Versions</a>
+                <a href="/Admin/ContentManager">Content Manager</a>
+            </div>
+        </article>
+    </div>
+
 </section>
+
+<style>
+    .admin-dashboard .dashboard-insight-card.is-collapsed {
+        min-height: 0;
+    }
+
+    .admin-dashboard .dashboard-insight-card.is-collapsed > :not(.dashboard-section-head) {
+        display: none !important;
+    }
+
+    .admin-dashboard .dashboard-card-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .admin-dashboard .dashboard-card-link:hover {
+        border-color: var(--admin-gold) !important;
+        transform: translateY(-1px);
+    }
+
+    .admin-dashboard .security-alert-card::before {
+        background: linear-gradient(90deg, #dc2626, var(--admin-gold), var(--admin-teal));
+    }
+
+    .admin-dashboard .dashboard-section-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .admin-dashboard .dashboard-section-grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .admin-dashboard .dashboard-insight-card {
+        padding: 18px;
+    }
+
+    .admin-dashboard .dashboard-section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .admin-dashboard .dashboard-section-head h2 {
+        margin: 0;
+        color: var(--admin-ink);
+        font-size: 1.05rem;
+        font-weight: 900;
+    }
+
+    .admin-dashboard .dashboard-section-head p {
+        margin: 5px 0 0;
+        color: var(--admin-muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+    }
+
+    .admin-dashboard .dashboard-section-head a,
+    .admin-dashboard .dashboard-shortcuts a {
+        color: var(--admin-ink);
+        text-decoration: none;
+        font-weight: 850;
+    }
+
+    .admin-dashboard .dashboard-section-head a {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        border: 1px solid var(--admin-line);
+        border-radius: 999px;
+        background: var(--admin-panel-strong);
+        font-size: 0.8rem;
+    }
+
+    .admin-dashboard .dashboard-section-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+
+    .admin-dashboard .dashboard-toggle-btn {
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--admin-line);
+        border-radius: 999px;
+        background: var(--admin-panel-strong);
+        color: var(--admin-ink);
+        font-size: 0.9rem;
+        font-weight: 950;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+
+    .admin-dashboard .dashboard-toggle-btn:hover {
+        border-color: var(--admin-gold);
+        color: var(--admin-teal);
+    }
+
+    .admin-dashboard .dashboard-mini-grid,
+    .admin-dashboard .dashboard-money-row,
+    .admin-dashboard .dashboard-stack {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .admin-dashboard .dashboard-mini-grid div,
+    .admin-dashboard .dashboard-money-row div,
+    .admin-dashboard .dashboard-stack div,
+    .admin-dashboard .dashboard-list div,
+    .admin-dashboard .dashboard-activity-list div,
+    .admin-dashboard .dashboard-shortcuts a {
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: var(--admin-panel-strong);
+        padding: 12px;
+    }
+
+    .admin-dashboard .dashboard-money-row {
+        margin-top: 10px;
+    }
+
+    .admin-dashboard .dashboard-mini-grid span,
+    .admin-dashboard .dashboard-money-row span,
+    .admin-dashboard .dashboard-stack span,
+    .admin-dashboard .dashboard-list span {
+        display: block;
+        color: var(--admin-muted);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .admin-dashboard .dashboard-mini-grid strong,
+    .admin-dashboard .dashboard-money-row strong,
+    .admin-dashboard .dashboard-stack strong {
+        display: block;
+        margin-top: 6px;
+        color: var(--admin-ink);
+        font-size: 1.25rem;
+        font-weight: 950;
+    }
+
+    .admin-dashboard .dashboard-list,
+    .admin-dashboard .dashboard-activity-list,
+    .admin-dashboard .dashboard-shortcuts {
+        display: grid;
+        gap: 10px;
+    }
+
+    .admin-dashboard .dashboard-list div {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .admin-dashboard .dashboard-list strong {
+        color: var(--admin-ink);
+        font-size: 1rem;
+    }
+
+    .admin-dashboard .dashboard-list em,
+    .admin-dashboard .dashboard-activity-list em {
+        color: var(--admin-muted);
+        font-size: 0.78rem;
+        font-style: normal;
+    }
+
+    .admin-dashboard .dashboard-activity-list strong,
+    .admin-dashboard .dashboard-activity-list span,
+    .admin-dashboard .dashboard-activity-list em {
+        display: block;
+    }
+
+    .admin-dashboard .dashboard-activity-list strong {
+        color: var(--admin-ink);
+        font-size: 0.95rem;
+    }
+
+    .admin-dashboard .dashboard-activity-list span {
+        margin-top: 4px;
+        color: var(--admin-muted);
+        font-size: 0.85rem;
+    }
+
+    .admin-dashboard .dashboard-activity-list em {
+        margin-top: 6px;
+    }
+
+    .admin-dashboard .dashboard-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-dashboard .dashboard-shortcuts a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .admin-dashboard .dashboard-shortcuts strong {
+        color: var(--admin-teal);
+    }
+
+    @@media(max-width: 1100px) {
+        .admin-dashboard .dashboard-section-grid,
+        .admin-dashboard .dashboard-section-grid.three {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media(max-width: 620px) {
+        .admin-dashboard .dashboard-mini-grid,
+        .admin-dashboard .dashboard-money-row,
+        .admin-dashboard .dashboard-stack,
+        .admin-dashboard .dashboard-shortcuts {
+            grid-template-columns: 1fr;
+        }
+
+        .admin-dashboard .dashboard-list div {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.querySelectorAll(".admin-dashboard .dashboard-insight-card").forEach((card) => {
+        const head = card.querySelector(".dashboard-section-head");
+
+        if (!head || head.querySelector(".dashboard-toggle-btn")) {
+            return;
+        }
+
+        let actions = head.querySelector(".dashboard-section-actions");
+
+        if (!actions) {
+            actions = document.createElement("div");
+            actions.className = "dashboard-section-actions";
+
+            [...head.querySelectorAll(":scope > a")].forEach((link) => {
+                actions.appendChild(link);
+            });
+
+            head.appendChild(actions);
+        }
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dashboard-toggle-btn";
+        button.setAttribute("aria-label", "Hide section");
+        button.textContent = "▲";
+
+        button.addEventListener("click", () => {
+            const collapsed = card.classList.toggle("is-collapsed");
+            button.textContent = collapsed ? "▼" : "▲";
+            button.setAttribute("aria-label", collapsed ? "Show section" : "Hide section");
+        });
+
+        actions.appendChild(button);
+    });
+</script>

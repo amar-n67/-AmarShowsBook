@@ -5,6 +5,7 @@ using AmarShowsBook.Models;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -65,6 +66,8 @@ options=>
 options.UseNpgsql(
 connectionString
 )
+.ConfigureWarnings(warnings =>
+    warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
 );
 
 var app=

@@ -107,6 +107,7 @@
         new { Action = "ManageShows", Label = "Manage Shows", Url = "/Admin/ManageShows", Module = "SHOW", Permission = "VIEW" },
         new { Action = "ContentManager", Label = "Data Manager", Url = "/Admin/ContentManager", Module = "SHOW", Permission = "VIEW" },
         new { Action = "Bookings", Label = "Bookings", Url = "/Admin/Bookings", Module = "BOOKING", Permission = "VIEW" },
+        new { Action = "Security", Label = "Security", Url = "/Admin/Security", Module = "SCANNER", Permission = "VIEW" },
         new { Action = "Transactions", Label = "Transactions", Url = "/Admin/Transactions", Module = "PAYMENT", Permission = "VIEW" },
         new { Action = "Refunds", Label = "Refunds", Url = "/Admin/Refunds", Module = "REFUND", Permission = "VIEW" },
         new { Action = "CouponUsage", Label = "Coupon Used", Url = "/Admin/CouponUsage", Module = "COUPON", Permission = "VIEW" },
@@ -117,7 +118,7 @@
     };
     var showAdminFilters = new[]
     {
-        "Users","UserAccess","Roles","Bookings",
+        "Users","UserAccess","Roles","Bookings","Security",
         "Transactions","Wallets","Notifications","ActivityLogs","Versions","ContentManager"
     }.Contains(currentAction);
     var adminStatusOptions = currentAction switch
@@ -126,6 +127,7 @@
         "UserAccess" => new[] { "ACTIVE", "DISABLED" },
         "Roles" => new[] { "ACTIVE", "INACTIVE" },
         "Bookings" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
+        "Security" => new[] { "VALID", "INVALID", "DUPLICATE", "USED", "ISSUE", "CLEAR" },
         "Transactions" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
         "Wallets" => new[] { "ACTIVE", "DISABLED", "BLOCKED" },
         "Notifications" => new[] { "SUCCESS", "SENT", "DELIVERED", "READ", "PENDING", "PROCESSING", "FAILED", "FAILURE", "ERROR", "CANCELLED", "REJECTED", "ISSUE" },
@@ -136,6 +138,7 @@
     var adminMethodLabel = currentAction switch
     {
         "Transactions" => "Payment Method",
+        "Security" => "Gate / Device",
         "Notifications" => "Source",
         "Bookings" or "ContentManager" => "Show Type",
         _ => string.Empty
@@ -143,6 +146,7 @@
     var adminMethodOptions = currentAction switch
     {
         "Transactions" => new[] { "UPI", "CARD", "NETBANKING", "WALLET", "QR" },
+        "Security" => new[] { "GATE", "SCANNER", "DEVICE", "UNKNOWN" },
         "Notifications" => new[] { "REFUND", "BOOKING", "PAYMENT", "NOTIFICATION", "SECURITY", "AUTH", "ADMIN", "LOG", "EMAIL", "SMS", "PUSH", "IN_APP", "WHATSAPP" },
         "Bookings" or "ContentManager" => new[] { "MOVIE", "STANDUP", "LIVE" },
         _ => Array.Empty<string>()
@@ -150,6 +154,7 @@
     var adminPriorityOptions = currentAction switch
     {
         "Notifications" => new[] { "HIGH", "MEDIUM", "LOW", "NORMAL" },
+        "Security" => new[] { "HIGH", "NORMAL" },
         _ => Array.Empty<string>()
     };
     var canUsePrintTools =

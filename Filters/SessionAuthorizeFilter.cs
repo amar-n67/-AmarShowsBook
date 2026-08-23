@@ -204,7 +204,8 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             "Wallets" => ("WALLET", "VIEW"),
             "CouponUsage" => ("COUPON", "VIEW"),
             "Notifications" => ("NOTIFICATION", "VIEW"),
-            "ActivityLogs" or "Security" or "Versions" => ("ANALYTICS", "VIEW"),
+            "Security" or "AcknowledgeSecurityAlerts" or "AddSecurityValidation" or "ClearSecurityAlert" or "BlockTicketFromSecurity" or "RegisterScannerDevice" => ("SCANNER", "VIEW"),
+            "ActivityLogs" or "Versions" => ("ANALYTICS", "VIEW"),
             _ => ("ADMIN", "VIEW")
         };
 

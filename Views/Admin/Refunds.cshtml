@@ -359,7 +359,7 @@
     else if (item.RefundStatus == "REJECTED")
     {
         <span class="badge bg-danger px-3 py-2">
-            ❌ Rejected by Admin
+            Rejected - Ticket Active
         </span>
     }
     else if (item.RefundStatus == "RETRY")
@@ -429,7 +429,8 @@
 
                     <button
                         type="submit"
-                        class="btn btn-sm btn-danger px-3">
+                        class="btn btn-sm btn-danger px-3"
+                        title="Reject cancellation request and keep ticket active">
 
                         <i class="bi bi-x-lg me-1"></i>
                         Reject
@@ -479,7 +480,7 @@
             <div
                 class="d-flex align-items-center justify-content-center">
 
-                <span class="text-danger fw-bold fs-4" title="Rejected">✕</span>
+                <span class="text-danger fw-bold fs-4" title="Rejected - ticket active">✕</span>
 
             </div>
         }
