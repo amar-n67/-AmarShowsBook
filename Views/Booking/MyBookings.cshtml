@@ -199,7 +199,9 @@
                             <a class="btn btn-primary" href="@confirmationPath">View Ticket</a>
                             @if(canUsePrintTools)
                             {
-                            <a class="btn btn-secondary" href="@(confirmationPath + "&print=1")">Download</a>
+                            <a class="btn btn-secondary"
+                               href="/Booking/DownloadTicket?confirmedBookingId=@booking.BookingId"
+                               download>Download</a>
                             }
                         }
                         @if(canCancel)

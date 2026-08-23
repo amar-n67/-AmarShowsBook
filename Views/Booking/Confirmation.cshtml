@@ -9,6 +9,7 @@
     var seatCount = Model.SeatNumbers.Split(',').Length;
     var seatPrice = Model.TotalAmount / seatCount;
     var ticketUrl = ViewBag.TicketUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}/Booking/Ticket/{Model.Id}";
+    var confirmedBookingId = ViewBag.ConfirmedBookingId as long?;
     var title = schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Show";
     var venue = schedule?.Location == null ? "Venue to be announced" : $"{schedule.Location.Area}, {schedule.Location.State}";
     string? posterUrl = Convert.ToString(schedule?.Movie?.PosterUrl
@@ -705,6 +706,19 @@ TOTAL
 
 @if(canUsePrintTools)
 {
+    @if(confirmedBookingId.HasValue)
+    {
+<a
+class="download-btn"
+href="/Booking/DownloadTicket?confirmedBookingId=@confirmedBookingId.Value"
+download>
+
+⬇ Download Ticket
+
+</a>
+    }
+    else
+    {
 <button
 class="download-btn"
 onclick="window.print()">
@@ -712,6 +726,7 @@ onclick="window.print()">
 ⬇ Download Ticket
 
 </button>
+    }
 }
 
 <a

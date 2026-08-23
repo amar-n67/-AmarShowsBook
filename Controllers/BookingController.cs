@@ -9,6 +9,7 @@ using QRCoder;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
 
 namespace AmarShowsBook.Controllers
 {
@@ -1025,6 +1026,16 @@ DROP CONSTRAINT IF EXISTS fk_payment_session_booking;");
         public IActionResult
         CreateQR(string text)
         {
+            byte[] bytes=
+            CreateQrPngBytes(text,20);
+
+            return File(
+            bytes,
+            "image/png");
+        }
+
+        private static byte[] CreateQrPngBytes(string text,int pixelsPerModule)
+        {
             QRCodeGenerator generator=
             new QRCodeGenerator();
 
@@ -1036,12 +1047,7 @@ DROP CONSTRAINT IF EXISTS fk_payment_session_booking;");
             PngByteQRCode qr=
             new PngByteQRCode(data);
 
-            byte[] bytes=
-            qr.GetGraphic(20);
-
-            return File(
-            bytes,
-            "image/png");
+            return qr.GetGraphic(pixelsPerModule);
         }
 
 
@@ -2470,6 +2476,7 @@ Confirmation(long bookingId, long? confirmedBookingId)
     ViewBag.User=user;
     ViewBag.Email=user?.Email;
     ViewBag.Phone=user?.Mobile;
+    ViewBag.ConfirmedBookingId=confirmedBooking?.Id;
     ViewBag.TicketUrl=confirmedBooking==null
     ? BuildAbsoluteUrl($"/Booking/Confirmation?bookingId={booking.Id}")
     : BuildAbsoluteUrl($"/Booking/Confirmation?confirmedBookingId={confirmedBooking.Id}");
@@ -2477,6 +2484,192 @@ Confirmation(long bookingId, long? confirmedBookingId)
     return View(
     booking);
 }
+
+[HttpGet]
+public async Task<IActionResult> DownloadTicket(long confirmedBookingId)
+{
+    var booking =
+        await _context.Bookings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x=>x.Id==confirmedBookingId);
+
+    if(booking==null)
+    {
+        return NotFound();
+    }
+
+    var userIdText =
+        HttpContext.Session.GetString("UserId");
+
+    if(!long.TryParse(userIdText,out var currentUserId))
+    {
+        return RedirectToAction("Login","Auth");
+    }
+
+    var canViewAnyTicket =
+        _rbacService.HasPermission((int)currentUserId,"BOOKING","VIEW") ||
+        _rbacService.HasPermission((int)currentUserId,"ADMIN","VIEW") ||
+        _rbacService.HasAnyActiveRole((int)currentUserId,"AMAR_SUPER_ADMIN","AMAR_ADMIN","ADMIN");
+
+    if(currentUserId!=booking.UserId && !canViewAnyTicket)
+    {
+        return StatusCode(
+            StatusCodes.Status403Forbidden,
+            "You do not have access to this ticket.");
+    }
+
+    if(!RbacAuthorizationHelper.CanUsePrintTools(HttpContext,_rbacService))
+    {
+        return StatusCode(
+            StatusCodes.Status403Forbidden,
+            "You do not have permission to download tickets.");
+    }
+
+    var summary =
+        await _context.VwBookingCompleteDetails
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x=>x.BookingId==booking.Id);
+
+    var user =
+        await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x=>x.Id==booking.UserId);
+
+    var ticketUrl =
+        BuildAbsoluteUrl($"/Booking/Confirmation?confirmedBookingId={booking.Id}");
+
+    var qrBytes =
+        CreateQrPngBytes(ticketUrl,10);
+
+    var html =
+        BuildDownloadTicketHtml(booking,summary,user,ticketUrl,qrBytes);
+
+    var fileName =
+        $"{SanitizeFileName(booking.BookingRef)}-ticket.html";
+
+    return File(
+        Encoding.UTF8.GetBytes(html),
+        "text/html; charset=utf-8",
+        fileName);
+}
+
+private static string BuildDownloadTicketHtml(
+    Booking booking,
+    VwBookingCompleteDetails? summary,
+    User? user,
+    string ticketUrl,
+    byte[] qrBytes)
+{
+    static string H(string? value) =>
+        WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(value) ? "NA" : value);
+
+    var title =
+        H(summary?.ShowTitle);
+
+    var showType =
+        H(summary?.ShowType);
+
+    var venue =
+        H(summary?.LocationName);
+
+    var seats =
+        H(summary?.SeatNumbers);
+
+    var showTime =
+        summary?.StartTime.ToString("dd MMM yyyy, hh:mm tt") ?? "NA";
+
+    var bookedAt =
+        (booking.BookedAt ?? booking.CreatedAt ?? DateTime.UtcNow)
+            .ToString("dd MMM yyyy, hh:mm tt");
+
+    var amount =
+        AmarShowsBook.Helpers.CurrencyFormatter.FormatRupees(
+            booking.PayableAmount ?? booking.TotalAmount);
+
+    var qrData =
+        Convert.ToBase64String(qrBytes);
+
+    var bookingRef =
+        H(booking.BookingRef);
+
+    var status =
+        H(booking.BookingStatus);
+
+    return $$"""
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{bookingRef}} Ticket</title>
+<style>
+body{margin:0;background:#f4f6ff;font-family:Segoe UI,Arial,sans-serif;color:#172033}
+.wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+.ticket{width:min(760px,100%);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.18);border:1px solid #dbe3ef}
+.top{padding:22px 26px;background:linear-gradient(135deg,#ff2d55,#f2bd2d);color:#fff;display:flex;justify-content:space-between;gap:18px}
+.top span{display:block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.9}
+.top strong{display:block;font-size:24px;margin-top:4px}
+.body{display:grid;grid-template-columns:1fr 190px;gap:20px;padding:24px}
+.title{font-size:30px;font-weight:900;margin:0 0 6px}
+.muted{color:#667085;font-weight:700;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cell{border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;padding:12px}
+.cell span{display:block;color:#667085;font-size:12px;font-weight:800;text-transform:uppercase}
+.cell strong{display:block;margin-top:4px;font-size:15px;overflow-wrap:anywhere}
+.qr{display:grid;place-items:center;align-content:center;gap:10px;border-radius:16px;background:#fff7eb;border:1px dashed #f2bd2d;padding:14px;text-align:center}
+.qr img{width:150px;height:150px}
+.foot{padding:18px 24px;background:#172033;color:#fff;display:flex;justify-content:space-between;gap:14px;font-weight:800}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="ticket">
+<div class="top">
+<div><span>Booking</span><strong>{{bookingRef}}</strong></div>
+<div><span>Status</span><strong>{{status}}</strong></div>
+</div>
+<div class="body">
+<div>
+<h1 class="title">{{title}}</h1>
+<p class="muted">{{showType}} at {{venue}}</p>
+<div class="grid">
+<div class="cell"><span>Show Time</span><strong>{{showTime}}</strong></div>
+<div class="cell"><span>Booked At</span><strong>{{bookedAt}}</strong></div>
+<div class="cell"><span>Seats</span><strong>{{seats}}</strong></div>
+<div class="cell"><span>Tickets</span><strong>{{booking.TotalTickets}}</strong></div>
+<div class="cell"><span>Amount Paid</span><strong>{{amount}}</strong></div>
+<div class="cell"><span>Name</span><strong>{{H(user?.Name)}}</strong></div>
+</div>
+</div>
+<div class="qr">
+<img src="data:image/png;base64,{{qrData}}" alt="Ticket QR">
+</div>
+</div>
+<div class="foot">
+<span>AmarShowsBook</span>
+<span>Keep this file for entry verification</span>
+</div>
+</section>
+</main>
+</body>
+</html>
+""";
+}
+
+private static string SanitizeFileName(string? value)
+{
+    var text =
+        string.IsNullOrWhiteSpace(value) ? "ticket" : value.Trim();
+
+    foreach(var invalid in Path.GetInvalidFileNameChars())
+    {
+        text =
+            text.Replace(invalid,'-');
+    }
+
+    return text;
+}
+
 [HttpGet]
 public async Task<IActionResult>
 CheckQRStatus(long bookingId)
