@@ -442,7 +442,7 @@
 .booking-category-tabs {
     display: grid;
     position: sticky;
-    top: 12px;
+    top: 0;
     z-index: 20;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
@@ -511,6 +511,26 @@
 .booking-section-list {
     display: grid;
     gap: 24px;
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+    padding-right: 8px;
+    scroll-behavior: smooth;
+    scrollbar-color: var(--app-primary) color-mix(in srgb, var(--app-input-disabled) 76%, transparent);
+    scrollbar-width: thin;
+}
+
+.booking-section-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.booking-section-list::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-input-disabled) 76%, transparent);
+}
+
+.booking-section-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--app-primary);
 }
 
 .booking-category {
@@ -841,6 +861,11 @@
 
     .booking-category-tabs {
         grid-template-columns: 1fr;
+    }
+
+    .booking-section-list {
+        max-height: calc(100vh - 230px);
+        padding-right: 4px;
     }
 
     .booking-category-head {
