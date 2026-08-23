@@ -741,7 +741,7 @@ public async Task<IActionResult> MyBookings()
     await _context
     .VwBookingCompleteDetails
     .AsNoTracking()
-    .Where(x=>x.UserId==userId && x.StartTime>=now)
+    .Where(x=>x.UserId==userId)
     .OrderBy(
     x=>x.StartTime)
     .ThenByDescending(
@@ -769,6 +769,17 @@ public async Task<IActionResult> MyBookings()
             .Where(x=>bookingIds.Contains(x.Id))
             .Select(x=>new { x.Id, WalletAmount = x.WalletAmountUsed ?? 0 })
             .ToDictionaryAsync(x=>x.Id,x=>x.WalletAmount);
+
+    ViewBag.CheckedOutBookingIds =
+        (await _context.Tickets
+            .AsNoTracking()
+            .Where(x=>bookingIds.Contains(x.BookingId)
+                && ((x.ValidationStatus ?? "")=="SCANNED"
+                    || (x.TicketStatus ?? "")=="USED"))
+            .Select(x=>x.BookingId)
+            .Distinct()
+            .ToListAsync())
+        .ToHashSet();
 
     var bookingVenueRows =
     (
@@ -2473,10 +2484,22 @@ Confirmation(long bookingId, long? confirmedBookingId)
     .AsNoTracking()
     .FirstOrDefaultAsync(x=>x.BookingRef==$"BKG-DRAFT-{booking.Id}");
 
+    var isTicketCheckedOut =
+        confirmedBooking!=null
+        && await _context.Tickets
+            .AsNoTracking()
+            .AnyAsync(x=>x.BookingId==confirmedBooking.Id
+                && ((x.ValidationStatus ?? "")=="SCANNED"
+                    || (x.TicketStatus ?? "")=="USED"));
+
+    var isTicketExpired =
+        schedule!=null && schedule.StartTime<DateTime.UtcNow;
+
     ViewBag.User=user;
     ViewBag.Email=user?.Email;
     ViewBag.Phone=user?.Mobile;
     ViewBag.ConfirmedBookingId=confirmedBooking?.Id;
+    ViewBag.IsTicketDownloadDisabled=isTicketExpired || isTicketCheckedOut;
     ViewBag.TicketUrl=confirmedBooking==null
     ? BuildAbsoluteUrl($"/Booking/Confirmation?bookingId={booking.Id}")
     : BuildAbsoluteUrl($"/Booking/Confirmation?confirmedBookingId={confirmedBooking.Id}");

@@ -1852,6 +1852,7 @@ z-index:9999;">
                 <option value="CONFIRMED">CONFIRMED</option>
                 <option value="CANCELLED">CANCELLED</option>
                 <option value="EXPIRED">EXPIRED</option>
+                <option value="CHECKED OUT">CHECKED OUT</option>
                 <option value="REFUND_PENDING">REFUND PENDING</option>
                 <option value="REFUNDED">REFUNDED</option>
                 <option value="REJECTED">REJECTED</option>
@@ -2070,7 +2071,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const sortBox = panel.querySelector("[data-app-filter-sort]");
         const resetButton = panel.querySelector("[data-app-filter-reset]");
         const targetSelector = panel.getAttribute("data-app-filter-target") || "tbody tr";
-        const anchor = document.querySelector(".booking-grid")
+        const anchor = document.querySelector(".booking-filter-anchor")
+            || document.querySelector(".booking-grid")
             || document.querySelector(".transaction-table-wrap")
             || document.querySelector(".table-wrapper");
 
@@ -2150,6 +2152,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const query = normalizeFilterValue(searchBox?.value);
             const status = normalizeFilterValue(statusBox?.value);
             const method = normalizeFilterValue(methodBox?.value);
+            const hasActiveFilter = Boolean(query || status || method);
 
             document.querySelectorAll(targetSelector).forEach(function (item) {
                 if (panel.contains(item)) return;
@@ -2162,6 +2165,31 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             sortItems();
+
+            document.querySelectorAll(".booking-category").forEach(function (category) {
+                const cards = Array.from(category.querySelectorAll(".booking-card"));
+                const emptyState = category.querySelector(".booking-category-empty");
+                const activeBookingTab = document.querySelector("[data-booking-tab].active");
+                const activeBookingCategory = activeBookingTab?.dataset.bookingTab;
+
+                if (activeBookingCategory && category.dataset.bookingCategory !== activeBookingCategory) {
+                    category.hidden = true;
+                    return;
+                }
+
+                if (!cards.length) {
+                    category.hidden = hasActiveFilter;
+                    return;
+                }
+
+                category.hidden = cards.every(function (card) {
+                    return card.hidden;
+                });
+
+                if (emptyState) {
+                    emptyState.hidden = hasActiveFilter;
+                }
+            });
         }
 
         searchBox?.addEventListener("input", applyFilters);

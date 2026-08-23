@@ -14,7 +14,32 @@
     var bookingScreens = ViewBag.BookingScreens as Dictionary<long,string> ?? new Dictionary<long,string>();
     var refundLookup = ViewBag.RefundLookup as Dictionary<long,Refund> ?? new Dictionary<long,Refund>();
     var bookingWalletAmounts = ViewBag.BookingWalletAmounts as Dictionary<long,decimal> ?? new Dictionary<long,decimal>();
+    var checkedOutBookingIds = ViewBag.CheckedOutBookingIds as HashSet<long> ?? new HashSet<long>();
     var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+    var sortedBookings = Model
+        .OrderBy(x => x.StartTime)
+        .ThenByDescending(x => x.BookedAt)
+        .ToList();
+    var bookingSections = new[]
+    {
+        new { Key = "booked", Title = "Booked / Confirmed", Note = "Active tickets sorted by show time." },
+        new { Key = "expired", Title = "Expired / Checked Out", Note = "Past shows and tickets already checked in." },
+        new { Key = "cancelled", Title = "Cancelled", Note = "Cancelled tickets and their refund status." }
+    };
+    var bookingCategoryCounts = sortedBookings
+        .GroupBy(item =>
+        {
+            var itemCancelled = item.BookingStatus == "CANCELLED" || item.CancelledAt != null;
+            var itemCheckedOut = checkedOutBookingIds.Contains(item.BookingId);
+            var itemExpired = item.StartTime < now;
+
+            return itemCancelled
+                ? "cancelled"
+                : itemExpired || itemCheckedOut
+                    ? "expired"
+                    : "booked";
+        })
+        .ToDictionary(group => group.Key, group => group.Count());
 }
 
 @if(TempData["Success"]!=null)
@@ -26,12 +51,12 @@
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<section class="my-bookings-page">
+<section id="booking-page-top" class="my-bookings-page">
     <div class="booking-header">
         <div>
-            <span class="booking-kicker">Upcoming Shows</span>
+            <span class="booking-kicker">Ticket History</span>
             <h1>My Bookings</h1>
-            <p>Your upcoming booked shows, payment status, ticket QR, and receipts in one place.</p>
+            <p>Your confirmed, expired, checked-out, and cancelled tickets in one place.</p>
         </div>
         <div class="booking-summary">
             <span>Total Spend</span>
@@ -56,11 +81,67 @@
     }
     else
     {
-        <div class="booking-grid">
-            @foreach (var booking in Model)
+        <div class="booking-filter-anchor"></div>
+
+        <div class="booking-category-tabs no-print" aria-label="Booking categories">
+            @foreach (var category in bookingSections)
+            {
+                var count = bookingCategoryCounts.TryGetValue(category.Key, out var foundCount)
+                    ? foundCount
+                    : 0;
+
+                <a class="booking-category-tab booking-category-tab-@category.Key @(category.Key == "booked" ? "active" : "")"
+                   data-booking-tab="@category.Key"
+                   href="#booking-category-@category.Key">
+                    <span>@category.Title</span>
+                    <strong>@count</strong>
+                </a>
+            }
+        </div>
+
+        <div class="booking-section-list">
+        @foreach (var category in bookingSections)
+        {
+            var sectionBookings = sortedBookings
+                .Where(item =>
+                {
+                    var itemCancelled = item.BookingStatus == "CANCELLED" || item.CancelledAt != null;
+                    var itemCheckedOut = checkedOutBookingIds.Contains(item.BookingId);
+                    var itemExpired = item.StartTime < now;
+                    var itemSection = itemCancelled
+                        ? "cancelled"
+                        : itemExpired || itemCheckedOut
+                            ? "expired"
+                            : "booked";
+
+                    return itemSection == category.Key;
+                })
+                .ToList();
+
+            <section id="booking-category-@category.Key"
+                     class="booking-category booking-category-@category.Key"
+                     data-booking-category="@category.Key"
+                     hidden="@(category.Key != "booked")">
+                <div class="booking-category-head">
+                    <div>
+                        <h2>@category.Title</h2>
+                        <p>@category.Note</p>
+                    </div>
+                    <strong>@sectionBookings.Count</strong>
+                </div>
+
+                @if (!sectionBookings.Any())
+                {
+                    <div class="booking-category-empty" data-category-empty="@category.Key">No tickets in this category.</div>
+                }
+                else
+                {
+                <div class="booking-grid">
+            @foreach (var booking in sectionBookings)
             {
                 var isExpired = booking.StartTime < now;
                 var isCancelled = booking.BookingStatus == "CANCELLED" || booking.CancelledAt != null;
+                var isCheckedOut = checkedOutBookingIds.Contains(booking.BookingId);
                 var minutesUntilShow = (booking.StartTime - now).TotalMinutes;
                 var cancellationClosed = minutesUntilShow < 45;
                 var refundRate = cancellationClosed ? 0m : minutesUntilShow >= 120 ? 1m : 0.5m;
@@ -75,8 +156,8 @@
                 var estimatedSourceRefund = Math.Round(Math.Max(0, booking.PayableAmount ?? booking.TotalAmount) * refundRate, 2, MidpointRounding.AwayFromZero);
                 var estimatedWalletRefund = Math.Round(Math.Max(0, walletAmountUsed) * refundRate, 2, MidpointRounding.AwayFromZero);
                 var estimatedRefundTotal = estimatedSourceRefund + estimatedWalletRefund;
-                var statusClass = isCancelled ? "cancelled" : booking.IsError == 1 ? "failed" : isExpired ? "expired" : "success";
-                var statusText = isCancelled ? "CANCELLED" : isExpired ? "EXPIRED" : booking.BookingStatus;
+                var statusClass = isCancelled ? "cancelled" : booking.IsError == 1 ? "failed" : isExpired || isCheckedOut ? "expired" : "success";
+                var statusText = isCancelled ? "CANCELLED" : isCheckedOut ? "CHECKED OUT" : isExpired ? "EXPIRED" : booking.BookingStatus;
                 var confirmationPath = $"/Booking/Confirmation?confirmedBookingId={booking.BookingId}";
                 var confirmationUrl = $"{publicBaseUrl}{confirmationPath}";
                 var venueDetails = bookingVenues.TryGetValue(booking.BookingId, out var foundVenue) && !string.IsNullOrWhiteSpace(foundVenue)
@@ -86,6 +167,7 @@
                     ? foundScreen
                     : "Screen TBA";
                 var canCancel = !isExpired
+                    && !isCheckedOut
                     && !cancellationClosed
                     && booking.BookingStatus == "CONFIRMED"
                     && booking.PaymentStatus == "SUCCESS"
@@ -199,9 +281,16 @@
                             <a class="btn btn-primary" href="@confirmationPath">View Ticket</a>
                             @if(canUsePrintTools)
                             {
+                                @if(isExpired || isCheckedOut)
+                                {
+                            <button class="btn btn-secondary disabled-download" type="button" disabled title="Download is unavailable for expired or checked-out tickets">Download</button>
+                                }
+                                else
+                                {
                             <a class="btn btn-secondary"
                                href="/Booking/DownloadTicket?confirmedBookingId=@booking.BookingId"
                                download>Download</a>
+                                }
                             }
                         }
                         @if(canCancel)
@@ -225,6 +314,10 @@
                     </div>
                 </article>
             }
+        </div>
+                }
+            </section>
+        }
         </div>
     }
 </section>
@@ -340,6 +433,151 @@
     background: color-mix(in srgb, var(--app-input-disabled) 70%, transparent);
     font-size: 0.78rem;
     font-weight: 850;
+}
+
+.booking-filter-anchor {
+    height: 1px;
+}
+
+.booking-category-tabs {
+    display: grid;
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 0 18px;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 70%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--app-page-surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+}
+
+.booking-category-tab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.booking-category-tab:hover {
+    color: var(--app-card-text);
+    transform: translateY(-1px);
+}
+
+.booking-category-tab.active {
+    border-color: var(--app-primary);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+}
+
+.booking-category-tab span {
+    font-size: 0.86rem;
+    font-weight: 900;
+}
+
+.booking-category-tab strong {
+    display: inline-grid;
+    place-items: center;
+    min-width: 32px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--app-primary);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+.booking-category-tab-booked strong {
+    background: var(--app-accent-strong);
+}
+
+.booking-category-tab-expired strong {
+    background: #6b7280;
+}
+
+.booking-category-tab-cancelled strong {
+    background: #dc2626;
+}
+
+.booking-section-list {
+    display: grid;
+    gap: 24px;
+}
+
+.booking-category {
+    display: grid;
+    gap: 14px;
+}
+
+.booking-category-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+
+.booking-category-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.booking-category-head p {
+    margin: 3px 0 0;
+    color: var(--app-muted);
+    font-size: 0.86rem;
+    font-weight: 750;
+}
+
+.booking-category-head strong {
+    display: inline-grid;
+    place-items: center;
+    min-width: 40px;
+    height: 34px;
+    border-radius: 999px;
+    background: var(--app-primary);
+    color: #fff;
+    font-weight: 900;
+}
+
+.booking-category-booked .booking-category-head {
+    border-color: color-mix(in srgb, var(--app-accent-strong) 38%, var(--app-input-border));
+}
+
+.booking-category-booked .booking-category-head strong {
+    background: var(--app-accent-strong);
+}
+
+.booking-category-expired .booking-category-head strong {
+    background: #6b7280;
+}
+
+.booking-category-cancelled .booking-category-head strong {
+    background: #dc2626;
+}
+
+.booking-category-empty {
+    padding: 16px;
+    border: 1px dashed var(--app-input-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 76%, transparent);
+    color: var(--app-muted);
+    font-weight: 800;
 }
 
 .booking-grid {
@@ -526,6 +764,12 @@
     opacity: 0.6;
 }
 
+.disabled-download {
+    cursor: not-allowed;
+    opacity: 0.72;
+    filter: grayscale(0.4);
+}
+
 .booking-card-cancelled .disabled-cancel {
     opacity: 1;
 }
@@ -595,6 +839,15 @@
         grid-template-columns: 1fr;
     }
 
+    .booking-category-tabs {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-category-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
     .booking-refund-rule {
         align-items: stretch;
         flex-direction: column;
@@ -635,4 +888,41 @@ document.querySelectorAll(".cancel-form").forEach(form => {
         });
     });
 });
+
+(function () {
+    const tabs = Array.from(document.querySelectorAll("[data-booking-tab]"));
+    const categories = Array.from(document.querySelectorAll("[data-booking-category]"));
+
+    if (!tabs.length || !categories.length) return;
+
+    function showCategory(key, shouldScroll) {
+        categories.forEach(category => {
+            category.hidden = category.dataset.bookingCategory !== key;
+        });
+
+        tabs.forEach(tab => {
+            const isActive = tab.dataset.bookingTab === key;
+            tab.classList.toggle("active", isActive);
+            tab.setAttribute("aria-selected", String(isActive));
+        });
+
+        if (shouldScroll) {
+            const target = document.getElementById(`booking-category-${key}`);
+            target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }
+
+    document.addEventListener("click", event => {
+        const link = event.target.closest('a[href^="#booking-category-"]');
+        if (!link) return;
+
+        const key = link.getAttribute("href").replace("#booking-category-", "");
+        if (!key) return;
+
+        event.preventDefault();
+        showCategory(key, true);
+    });
+
+    showCategory("booked", false);
+})();
 </script>

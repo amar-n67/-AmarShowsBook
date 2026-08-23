@@ -10,6 +10,7 @@
     var seatPrice = Model.TotalAmount / seatCount;
     var ticketUrl = ViewBag.TicketUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}/Booking/Ticket/{Model.Id}";
     var confirmedBookingId = ViewBag.ConfirmedBookingId as long?;
+    var isTicketDownloadDisabled = ViewBag.IsTicketDownloadDisabled as bool? ?? false;
     var title = schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Show";
     var venue = schedule?.Location == null ? "Venue to be announced" : $"{schedule.Location.Area}, {schedule.Location.State}";
     string? posterUrl = Convert.ToString(schedule?.Movie?.PosterUrl
@@ -295,6 +296,9 @@ color:var(--primary);
 .download-btn{
 
 border:none;
+display:inline-flex;
+align-items:center;
+justify-content:center;
 
 padding:14px 25px;
 
@@ -307,6 +311,7 @@ font-weight:800;
 cursor:pointer;
 
 color:white;
+text-decoration:none;
 
 background:
 linear-gradient(
@@ -342,6 +347,7 @@ transition:.4s;
 .my-bookings-btn:hover{
 transform:translateY(-4px);
 box-shadow:0 10px 25px rgba(0,0,0,.12);
+text-decoration:none;
 }
 
 .download-btn:hover{
@@ -351,6 +357,21 @@ translateY(-4px);
 
 box-shadow:
 0 10px 25px rgba(255,0,90,.25);
+text-decoration:none;
+}
+
+.download-btn.disabled-download,
+.download-btn:disabled{
+background:#9ca3af;
+box-shadow:none;
+cursor:not-allowed;
+opacity:.74;
+}
+
+.download-btn.disabled-download:hover,
+.download-btn:disabled:hover{
+transform:none;
+box-shadow:none;
 }
 
 
@@ -677,7 +698,7 @@ alt="@title poster"
 
 <div class="value">
 
-₹@seatPrice
+₹@seatPrice.ToString("0.00")
 
 </div>
 
@@ -696,7 +717,7 @@ TOTAL
 
 <div class="total">
 
-₹@Model.TotalAmount
+₹@Model.TotalAmount.ToString("0.00")
 
 </div>
 
@@ -706,7 +727,19 @@ TOTAL
 
 @if(canUsePrintTools)
 {
-    @if(confirmedBookingId.HasValue)
+    @if(isTicketDownloadDisabled)
+    {
+<button
+class="download-btn disabled-download"
+type="button"
+disabled
+title="Download is unavailable for expired or checked-out tickets">
+
+⬇ Download Ticket
+
+</button>
+    }
+    else if(confirmedBookingId.HasValue)
     {
 <a
 class="download-btn"
