@@ -18,13 +18,19 @@ namespace AmarShowsBook.Models
         public string? RoleCode { get; set; }
 
         [Column("menu_id")]
-        public int MenuId { get; set; }
+        public long MenuId { get; set; }
 
         [Column("menu_code")]
         public string? MenuCode { get; set; }
 
         [Column("menu_name")]
         public string? MenuName { get; set; }
+
+        [Column("parent_menu_id")]
+        public long? ParentMenuId { get; set; }
+
+        [Column("parent_menu_name")]
+        public string? ParentMenuName { get; set; }
 
         [Column("route_path")]
         public string? RoutePath { get; set; }

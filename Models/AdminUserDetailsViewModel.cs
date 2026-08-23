@@ -57,9 +57,9 @@ namespace AmarShowsBook.Models.ViewModels
         public decimal BlockedBalance { get; set; }
         public decimal WalletCredits { get; set; }
         public decimal WalletDebits { get; set; }
-        public int LoyaltyPoints { get; set; }
+        public long LoyaltyPoints { get; set; }
         public string? WalletStatus { get; set; }
-        public int TotalWalletTransactions { get; set; }
+        public long TotalWalletTransactions { get; set; }
         public DateTime? LastWalletTransactionAt { get; set; }
 
         public int TotalTransactions { get; set; }

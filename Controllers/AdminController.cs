@@ -992,7 +992,11 @@ FailedRefunds =
                     .Take(pageSize)
                     .ToListAsync();
 
-                ViewBag.SystemEvents = await BuildNotificationSystemEvents();
+                var actionNotifications = await BuildAdminNotificationActions();
+                ViewBag.ActionNotifications = actionNotifications;
+                ViewBag.ActionNotificationCount = actionNotifications.Count;
+                ViewBag.PendingActionCount = actionNotifications.Count(x => x.RequiresAction);
+                ViewBag.CriticalActionCount = actionNotifications.Count(x => x.Priority == "HIGH");
 
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
@@ -1010,7 +1014,10 @@ FailedRefunds =
                 ViewBag.CurrentPage = 1;
                 ViewBag.TotalPages = 1;
                 ViewBag.TotalRecords = 0;
-                ViewBag.SystemEvents = new List<Dictionary<string, string>>();
+                ViewBag.ActionNotifications = new List<AdminNotificationActionItem>();
+                ViewBag.ActionNotificationCount = 0;
+                ViewBag.PendingActionCount = 0;
+                ViewBag.CriticalActionCount = 0;
 
                 return View(new List<VwNotificationCenter>());
             }
@@ -3530,9 +3537,103 @@ private sealed class ManagedShowMetadata
     public decimal? ImdbRating { get; init; }
 }
 
-private async Task<List<Dictionary<string, string>>> BuildNotificationSystemEvents()
+private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActions()
 {
-    var events = new List<Dictionary<string, string>>();
+    var events = new List<AdminNotificationActionItem>();
+
+    var pendingRefunds = await _context.VwRefundSummaries
+        .AsNoTracking()
+        .Where(x => x.RefundStatus == "PENDING" || x.RefundStatus == "FAILED")
+        .OrderByDescending(x => x.RequestedAt ?? x.CreatedAt)
+        .Take(25)
+        .ToListAsync();
+
+    events.AddRange(pendingRefunds.Select(x => new AdminNotificationActionItem
+    {
+        Id = $"refund-{x.RefundId}",
+        Time = x.RequestedAt ?? x.CreatedAt,
+        Category = "REFUND",
+        Title = string.IsNullOrWhiteSpace(x.RefundRef) ? "Refund review needed" : x.RefundRef,
+        Status = string.IsNullOrWhiteSpace(x.RefundStatus) ? "PENDING" : x.RefundStatus,
+        Priority = x.RefundStatus == "FAILED" ? "HIGH" : "MEDIUM",
+        UserName = x.UserName ?? string.Empty,
+        UserEmail = x.UserEmail ?? string.Empty,
+        Detail = $"Booking {NullText(x.BookingRef)} | Amount {CurrencyFormatter.FormatRupees(x.RefundAmount)} | {NullText(x.RefundReason)}",
+        ActionText = x.RefundStatus == "FAILED" ? "Retry Refund" : "Review Refund",
+        ActionUrl = $"/Admin/Refunds?highlight=refund-{x.RefundId}",
+        RequiresAction = true
+    }));
+
+    var cancelledBookings = await _context.VwBookingCompleteDetails
+        .AsNoTracking()
+        .Where(x => x.BookingStatus == "CANCELLED")
+        .OrderByDescending(x => x.CancelledAt ?? x.BookedAt)
+        .Take(25)
+        .ToListAsync();
+
+    events.AddRange(cancelledBookings.Select(x => new AdminNotificationActionItem
+    {
+        Id = $"booking-{x.BookingId}",
+        Time = x.CancelledAt ?? x.BookedAt,
+        Category = "BOOKING",
+        Title = string.IsNullOrWhiteSpace(x.BookingRef) ? "Ticket cancelled" : x.BookingRef,
+        Status = "CANCELLED",
+        Priority = "MEDIUM",
+        UserName = x.UserName ?? string.Empty,
+        UserEmail = x.UserEmail ?? string.Empty,
+        Detail = $"{NullText(x.ShowTitle)} | Seats {NullText(x.SeatNumbers)} | Payment {NullText(x.PaymentStatus)} | Refund {NullText(x.TransactionStatus)}",
+        ActionText = "Open Booking",
+        ActionUrl = $"/Admin/Bookings?highlight=booking-{x.BookingId}",
+        RequiresAction = true
+    }));
+
+    var failedTransactions = await _context.VwBookingTransactionSummaries
+        .AsNoTracking()
+        .Where(x => x.IsPaymentError == 1 || x.TransactionStatus == "FAILED" || x.TransactionStatus == "ERROR")
+        .OrderByDescending(x => x.BookingCreatedAt)
+        .Take(25)
+        .ToListAsync();
+
+    events.AddRange(failedTransactions.Select(x => new AdminNotificationActionItem
+    {
+        Id = x.TransactionId.HasValue ? $"transaction-{x.TransactionId.Value}" : $"booking-{x.BookingId}",
+        Time = x.BookingCreatedAt,
+        Category = "PAYMENT",
+        Title = string.IsNullOrWhiteSpace(x.TransactionRef) ? "Payment failed" : x.TransactionRef,
+        Status = string.IsNullOrWhiteSpace(x.TransactionStatus) ? "FAILED" : x.TransactionStatus,
+        Priority = "HIGH",
+        UserName = x.UserName ?? string.Empty,
+        UserEmail = x.UserEmail ?? string.Empty,
+        Detail = $"{NullText(x.BookingRef)} | {NullText(x.ShowTitle)} | {NullText(x.PaymentMethod)} | {NullText(x.FailureReason)}",
+        ActionText = "Open Transaction",
+        ActionUrl = x.TransactionId.HasValue
+            ? $"/Admin/Transactions?highlight=transaction-{x.TransactionId.Value}"
+            : $"/Admin/Bookings?highlight=booking-{x.BookingId}",
+        RequiresAction = true
+    }));
+
+    var ticketIssues = await _context.VwTicketValidationSummaries
+        .AsNoTracking()
+        .Where(x => x.IsSecurityIssue == 1)
+        .OrderByDescending(x => x.ValidatedAt)
+        .Take(20)
+        .ToListAsync();
+
+    events.AddRange(ticketIssues.Select(x => new AdminNotificationActionItem
+    {
+        Id = $"ticket-{x.TicketId}",
+        Time = x.ValidatedAt ?? DateTime.MinValue,
+        Category = "SECURITY",
+        Title = string.IsNullOrWhiteSpace(x.TicketNumber) ? "Ticket validation issue" : x.TicketNumber,
+        Status = string.IsNullOrWhiteSpace(x.ValidationResult) ? "ISSUE" : x.ValidationResult,
+        Priority = "HIGH",
+        UserName = x.UserName ?? string.Empty,
+        UserEmail = x.UserEmail ?? string.Empty,
+        Detail = $"{NullText(x.BookingRef)} | {NullText(x.ShowTitle)} | {NullText(x.ValidationMessage)}",
+        ActionText = "Open Security",
+        ActionUrl = "/Admin/Security",
+        RequiresAction = true
+    }));
 
     var failedLogs = await _context.ActivityLogs
         .AsNoTracking()
@@ -3549,67 +3650,33 @@ private async Task<List<Dictionary<string, string>>> BuildNotificationSystemEven
         })
         .ToListAsync();
 
-    events.AddRange(failedLogs.Select(x => new Dictionary<string, string>
+    events.AddRange(failedLogs.Select(x => new AdminNotificationActionItem
     {
-        ["Time"] = x.Time.ToString("dd MMM yyyy hh:mm tt"),
-        ["Type"] = string.IsNullOrWhiteSpace(x.Type) ? "LOG" : x.Type,
-        ["Title"] = string.IsNullOrWhiteSpace(x.Title) ? "Application event" : x.Title,
-        ["Detail"] = string.IsNullOrWhiteSpace(x.Detail) ? "No details" : x.Detail,
-        ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "FAILED" : x.Status
-    }));
-
-    var failedTransactions = await _context.VwBookingTransactionSummaries
-        .AsNoTracking()
-        .Where(x => x.IsPaymentError == 1 || x.TransactionStatus == "FAILED")
-        .OrderByDescending(x => x.BookingCreatedAt)
-        .Take(25)
-        .Select(x => new
-        {
-            Time = x.BookingCreatedAt,
-            Type = "TRANSACTION",
-            Title = x.TransactionRef ?? "Failed transaction",
-            Detail = $"{x.UserEmail} | {x.ShowTitle}",
-            Status = x.TransactionStatus ?? "FAILED"
-        })
-        .ToListAsync();
-
-    events.AddRange(failedTransactions.Select(x => new Dictionary<string, string>
-    {
-        ["Time"] = x.Time.ToString("dd MMM yyyy hh:mm tt"),
-        ["Type"] = x.Type,
-        ["Title"] = x.Title,
-        ["Detail"] = x.Detail,
-        ["Status"] = x.Status
-    }));
-
-    var cancelledBookings = await _context.VwBookingCompleteDetails
-        .AsNoTracking()
-        .Where(x => x.BookingStatus == "CANCELLED")
-        .OrderByDescending(x => x.CancelledAt ?? x.BookedAt)
-        .Take(25)
-        .Select(x => new
-        {
-            Time = x.CancelledAt ?? x.BookedAt,
-            Type = "BOOKING",
-            Title = x.BookingRef,
-            Detail = $"{x.UserEmail} | {x.ShowTitle}",
-            Status = "CANCELLED"
-        })
-        .ToListAsync();
-
-    events.AddRange(cancelledBookings.Select(x => new Dictionary<string, string>
-    {
-        ["Time"] = x.Time.ToString("dd MMM yyyy hh:mm tt"),
-        ["Type"] = x.Type,
-        ["Title"] = x.Title,
-        ["Detail"] = x.Detail,
-        ["Status"] = x.Status
+        Id = $"log-{x.Time.Ticks}",
+        Time = x.Time,
+        Category = string.IsNullOrWhiteSpace(x.Type) ? "LOG" : x.Type,
+        Title = string.IsNullOrWhiteSpace(x.Title) ? "Application event" : x.Title,
+        Status = string.IsNullOrWhiteSpace(x.Status) ? "FAILED" : x.Status,
+        Priority = "LOW",
+        Detail = string.IsNullOrWhiteSpace(x.Detail) ? "No details" : x.Detail,
+        ActionText = "Open Logs",
+        ActionUrl = "/Admin/ActivityLogs",
+        RequiresAction = false
     }));
 
     return events
-        .OrderByDescending(x => DateTime.TryParse(x["Time"], out var parsed) ? parsed : DateTime.MinValue)
+        .GroupBy(x => $"{x.Category}|{x.Id}|{x.Status}")
+        .Select(x => x.First())
+        .OrderByDescending(x => x.RequiresAction)
+        .ThenByDescending(x => x.Priority == "HIGH")
+        .ThenByDescending(x => x.Time)
         .Take(50)
         .ToList();
+}
+
+private static string NullText(string? value)
+{
+    return string.IsNullOrWhiteSpace(value) ? "NA" : value.Trim();
 }
 
 private async Task EnsureAdminShowInfrastructure()

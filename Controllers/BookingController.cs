@@ -2432,8 +2432,8 @@ Confirmation(long bookingId, long? confirmedBookingId)
     ViewBag.Email=user?.Email;
     ViewBag.Phone=user?.Mobile;
     ViewBag.TicketUrl=confirmedBooking==null
-    ? BuildAbsoluteUrl($"/Booking/Ticket/{booking.Id}")
-    : BuildAbsoluteUrl($"/Booking/TicketByBooking/{confirmedBooking.Id}");
+    ? BuildAbsoluteUrl($"/Booking/Confirmation?bookingId={booking.Id}")
+    : BuildAbsoluteUrl($"/Booking/Confirmation?confirmedBookingId={confirmedBooking.Id}");
 
     return View(
     booking);

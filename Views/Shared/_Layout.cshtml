@@ -573,11 +573,12 @@ a {
 }
 
 .film-navbar {
+    position: relative;
     margin: 14px;
-    border: 1px solid rgba(247, 215, 116, 0.28);
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
     border-radius: 8px;
     background: var(--app-nav);
-    box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+    box-shadow: 0 12px 28px rgba(15,23,42,0.18);
 }
 
 .film-navbar .container-fluid {
@@ -600,7 +601,7 @@ a {
     justify-content: center;
     width: 34px;
     height: 34px;
-    border: 1px dashed rgba(247, 215, 116, 0.7);
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 20%, transparent);
     border-radius: 10px;
     color: var(--app-accent);
     background: rgba(255,255,255,0.08);
@@ -609,15 +610,29 @@ a {
 .film-mobile-menu-btn {
     display: none;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 9px;
     margin-left: auto;
-    min-height: 40px;
-    border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
+    min-height: 44px;
+    min-width: 118px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 24%, transparent);
     border-radius: 8px;
-    background: color-mix(in srgb, var(--app-card) 22%, transparent);
+    background: color-mix(in srgb, var(--app-card) 72%, transparent);
     color: var(--app-nav-text);
     font-weight: 900;
-    padding: 7px 12px;
+    padding: 8px 16px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 8px 18px rgba(15,23,42,.14);
+    transition: background .16s ease, border-color .16s ease, transform .16s ease;
+}
+
+.film-mobile-menu-btn:hover,
+.film-mobile-menu-btn:focus-visible,
+.film-mobile-menu-btn[aria-expanded="true"] {
+    background: var(--app-accent);
+    border-color: var(--app-accent);
+    color: #231f20;
+    transform: translateY(-1px);
+    outline: none;
 }
 
 .film-mobile-menu-icon,
@@ -635,8 +650,8 @@ a {
 .film-mobile-menu-icon {
     display: grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     border-radius: 8px;
     color: #231f20;
 }
@@ -662,17 +677,14 @@ a {
 .film-navigation-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: flex-end;
-    padding: 7px;
+    padding: 6px;
     border: 1px solid color-mix(in srgb, var(--app-accent) 28%, transparent);
-    border-radius: 22px;
-    background:
-        linear-gradient(135deg,
-        color-mix(in srgb, var(--app-nav-text) 12%, transparent),
-        color-mix(in srgb, var(--app-accent) 10%, transparent));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 14px 34px rgba(0,0,0,0.18);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 42%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
 }
 
 .film-user-card {
@@ -727,22 +739,19 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 0;
     position: relative;
-    min-width: 44px;
+    min-width: 0;
     min-height: 42px;
     border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
-    border-radius: 15px;
-    padding: 7px;
+    border-radius: 8px;
+    padding: 8px 12px;
     font-size: 0.84rem;
     font-weight: 900;
     text-decoration: none;
     color: var(--app-nav-text) !important;
-    background:
-        linear-gradient(135deg,
-        rgba(255,255,255,0.14),
-        rgba(255,255,255,0.06));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 20px rgba(0,0,0,0.13);
+    background: color-mix(in srgb, var(--app-card) 56%, transparent);
+    box-shadow: none;
     transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     white-space: nowrap;
 }
@@ -758,7 +767,7 @@ a {
 }
 
 .film-nav-icon {
-    display: inline-flex;
+    display: none;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
@@ -777,29 +786,28 @@ a {
 }
 
 .film-nav-label {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 50%;
-    z-index: 30;
+    position: static;
+    display: inline;
     max-width: 180px;
-    padding: 6px 9px;
-    border-radius: 8px;
-    background: var(--app-card);
-    color: var(--app-card-text);
-    border: 1px solid var(--app-input-border);
-    box-shadow: 0 12px 26px rgba(15,23,42,.22);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    border: 0;
+    box-shadow: none;
     line-height: 1.05;
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-50%, -4px);
-    transition: opacity .16s ease, transform .16s ease;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .film-nav-btn:hover .film-nav-label,
 .film-nav-btn:focus-visible .film-nav-label {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: none;
 }
 
 .film-profile-btn {
@@ -835,12 +843,9 @@ a {
     gap: 6px;
     padding: 6px;
     border: 1px solid color-mix(in srgb, var(--app-accent) 28%, transparent);
-    border-radius: 18px;
-    background:
-        linear-gradient(135deg,
-        color-mix(in srgb, var(--app-nav-text) 12%, transparent),
-        color-mix(in srgb, var(--app-accent) 8%, transparent));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 12px 28px rgba(0,0,0,0.16);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 42%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
 }
 
 .theme-toggle-btn {
@@ -849,13 +854,140 @@ a {
     gap: 6px;
     border: 1px solid transparent;
     border-radius: 13px;
-    background: rgba(255,255,255,0.08);
+    background: color-mix(in srgb, var(--app-card) 46%, transparent);
     color: var(--app-nav-text);
     min-height: 34px;
     padding: 5px 10px;
     font-size: 12px;
     font-weight: 900;
     transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.film-navbar-home .film-mobile-menu-btn {
+    display: inline-flex;
+}
+
+.film-navbar-home .film-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 1050;
+    display: grid;
+    width: min(760px, calc(100vw - 28px));
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+}
+
+.film-navbar-home .film-menu.open,
+.film-navbar-home .film-menu.hover-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.film-navbar-home .theme-switcher,
+.film-navbar-home .film-actions,
+.film-navbar-home .film-navigation-links,
+.film-navbar-home .film-user-card {
+    background: var(--app-card);
+    color: var(--app-card-text);
+    border-color: var(--app-input-border);
+}
+
+.film-navbar-home .film-menu {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 96%, var(--app-bg));
+    box-shadow: 0 24px 64px rgba(15,23,42,.24);
+}
+
+.film-navbar-home .film-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.film-navbar-home .film-navigation-links {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.film-navbar-home .film-nav-btn {
+    min-height: 44px;
+    justify-content: center;
+    padding: 9px 10px;
+    color: var(--app-card-text) !important;
+    background: color-mix(in srgb, var(--app-input) 86%, var(--app-card));
+    border-color: var(--app-input-border);
+    text-align: center;
+}
+
+.film-navbar-home .film-nav-btn:hover,
+.film-navbar-home .film-nav-btn:focus-visible {
+    background: color-mix(in srgb, var(--app-primary) 13%, var(--app-input));
+    border-color: var(--app-primary);
+    color: var(--app-card-text) !important;
+    transform: none;
+    box-shadow: 0 0 0 .16rem color-mix(in srgb, var(--app-primary) 14%, transparent);
+}
+
+.film-navbar-home .film-profile-btn {
+    background: color-mix(in srgb, var(--app-accent) 18%, var(--app-input));
+}
+
+.film-navbar-home .film-logout-btn {
+    background: color-mix(in srgb, var(--app-danger) 12%, var(--app-input));
+    color: var(--app-card-text) !important;
+}
+
+.film-navbar-home .film-user-card {
+    min-height: 54px;
+    justify-content: space-between;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.film-navbar-home .film-user-meta,
+.film-navbar-home .film-email,
+.film-navbar-home .film-time {
+    color: var(--app-card-text);
+    text-align: left;
+}
+
+.film-navbar-home .film-time {
+    color: var(--app-muted);
+}
+
+.film-navbar-home .theme-switcher {
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+}
+
+.film-navbar-home .theme-toggle-btn {
+    justify-content: center;
+    min-height: 38px;
+    border-radius: 8px;
+    color: var(--app-card-text);
+    background: var(--app-input);
+    border-color: var(--app-input-border);
 }
 
 .theme-toggle-btn:hover,
@@ -1010,13 +1142,17 @@ html[data-theme="system"] .film-nav-icon {
         flex-wrap: nowrap;
         justify-content: stretch;
         align-items: stretch;
-        padding-top: 10px;
-        border-top: 1px solid color-mix(in srgb, var(--app-nav-text) 14%, transparent);
+        padding: 12px;
+        border: 1px solid color-mix(in srgb, var(--app-nav-text) 14%, transparent);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--app-card) 20%, transparent);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
     }
 
-    .film-menu.open {
+    .film-menu.open,
+    .film-menu.hover-open {
         display: grid;
-        gap: 10px;
+        gap: 12px;
     }
 
     .film-actions,
@@ -1025,19 +1161,28 @@ html[data-theme="system"] .film-nav-icon {
         justify-content: stretch;
     }
 
+    .film-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
     .film-navigation-links {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0,1fr));
+        grid-template-columns: repeat(3, minmax(0,1fr));
         gap: 8px;
+        padding: 8px;
         border-radius: 8px;
     }
 
     .film-nav-btn {
         width: 100%;
-        justify-content: flex-start;
-        min-height: 44px;
-        padding: 9px 12px;
+        justify-content: center;
+        min-height: 42px;
+        padding: 9px 10px;
         border-radius: 8px;
+        text-align: center;
+        background: color-mix(in srgb, var(--app-input) 76%, transparent);
     }
 
     .film-nav-icon {
@@ -1062,7 +1207,9 @@ html[data-theme="system"] .film-nav-icon {
 
     .film-user-card {
         width: 100%;
-        justify-content: center;
+        justify-content: space-between;
+        min-height: 54px;
+        border-radius: 8px;
     }
 
     .film-user-meta {
@@ -1075,6 +1222,7 @@ html[data-theme="system"] .film-nav-icon {
         display: grid;
         grid-template-columns: repeat(4, minmax(0,1fr));
         border-radius: 8px;
+        padding: 8px;
     }
 
     .theme-toggle-btn {
@@ -1505,7 +1653,7 @@ z-index:9999;">
 
 <!-- ================= NAVBAR ================= -->
 <header>
-<nav class="navbar navbar-expand-sm film-navbar mb-3">
+<nav class="navbar navbar-expand-sm film-navbar @(Context.Session.GetString("UserEmail") != null ? "film-navbar-home" : "") mb-3">
 <div class="container-fluid">
 
 @{
@@ -1578,7 +1726,7 @@ z-index:9999;">
 
     @if (isLoggedIn)
     {
-    <button class="film-mobile-menu-btn" type="button" aria-expanded="false" aria-controls="filmMenu" onclick="toggleFilmMenu(this)">
+    <button class="film-mobile-menu-btn" type="button" aria-expanded="false" aria-controls="filmMenu" data-film-menu-button onclick="toggleFilmMenu(this)">
         <span class="film-mobile-menu-icon" aria-hidden="true">☰</span>
         <span>Menu</span>
     </button>
@@ -1797,7 +1945,9 @@ function toggleFilmMenu(button) {
     const menu = document.getElementById("filmMenu");
     if (!menu) return;
 
+    menu.classList.remove("hover-open");
     const isOpen = menu.classList.toggle("open");
+    menu.dataset.pinnedOpen = String(isOpen);
     button?.setAttribute("aria-expanded", String(isOpen));
 }
 
@@ -1826,6 +1976,54 @@ function filterCurrentPage(term) {
 
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("appPageSearch");
+    const filmMenu = document.getElementById("filmMenu");
+    const filmMenuButton = document.querySelector("[data-film-menu-button]");
+    let filmMenuCloseTimer = 0;
+
+    function isFilmMenuCollapsed() {
+        return Boolean(filmMenuButton) && window.getComputedStyle(filmMenuButton).display !== "none";
+    }
+
+    function setFilmMenuExpanded(isExpanded) {
+        filmMenuButton?.setAttribute("aria-expanded", String(isExpanded));
+    }
+
+    function openFilmMenuByHover() {
+        if (!filmMenu || !isFilmMenuCollapsed() || filmMenu.dataset.pinnedOpen === "true") return;
+        clearTimeout(filmMenuCloseTimer);
+        filmMenu.classList.add("hover-open");
+        setFilmMenuExpanded(true);
+    }
+
+    function closeFilmMenuByHover() {
+        if (!filmMenu || filmMenu.dataset.pinnedOpen === "true") return;
+        clearTimeout(filmMenuCloseTimer);
+        filmMenuCloseTimer = window.setTimeout(function () {
+            filmMenu.classList.remove("hover-open");
+            setFilmMenuExpanded(filmMenu.classList.contains("open"));
+        }, 140);
+    }
+
+    filmMenuButton?.addEventListener("mouseenter", openFilmMenuByHover);
+    filmMenuButton?.addEventListener("mouseleave", closeFilmMenuByHover);
+    filmMenu?.addEventListener("mouseenter", openFilmMenuByHover);
+    filmMenu?.addEventListener("mouseleave", closeFilmMenuByHover);
+
+    document.addEventListener("click", function (event) {
+        if (!filmMenu || !filmMenuButton || !isFilmMenuCollapsed()) return;
+        if (filmMenu.contains(event.target) || filmMenuButton.contains(event.target)) return;
+
+        filmMenu.classList.remove("open", "hover-open");
+        filmMenu.dataset.pinnedOpen = "false";
+        setFilmMenuExpanded(false);
+    });
+
+    window.addEventListener("resize", function () {
+        if (!filmMenu || !filmMenuButton || isFilmMenuCollapsed()) return;
+        filmMenu.classList.remove("open", "hover-open");
+        filmMenu.dataset.pinnedOpen = "false";
+        setFilmMenuExpanded(false);
+    });
 
     input?.addEventListener("input", function () {
         filterCurrentPage(input.value);

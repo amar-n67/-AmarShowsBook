@@ -142,14 +142,24 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         if (controller.Equals("Booking", StringComparison.OrdinalIgnoreCase))
         {
             return action.Equals("CreateQR", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("Confirmation", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("MobilePay", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("ApprovePayment", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("RejectPayment", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("TicketByBooking", StringComparison.OrdinalIgnoreCase);
         }
 
-        return controller.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
-               action.Equals("Error", StringComparison.OrdinalIgnoreCase);
+        if (controller.Equals("Home", StringComparison.OrdinalIgnoreCase))
+        {
+            return action.Equals("Index", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("Error", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("GetCountries", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("GetStates", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("GetDistricts", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("ShowDates", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return controller.Equals("Amaro", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool RequiresPermission(

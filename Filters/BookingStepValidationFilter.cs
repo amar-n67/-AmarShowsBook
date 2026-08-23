@@ -109,6 +109,7 @@ public class BookingStepValidationFilter : IAsyncActionFilter
     private static bool IsPublicBookingEndpoint(string action)
     {
         return action.Equals("CreateQR", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("Confirmation", StringComparison.OrdinalIgnoreCase) ||
                action.Equals("MobilePay", StringComparison.OrdinalIgnoreCase) ||
                action.Equals("ApprovePayment", StringComparison.OrdinalIgnoreCase) ||
                action.Equals("RejectPayment", StringComparison.OrdinalIgnoreCase) ||

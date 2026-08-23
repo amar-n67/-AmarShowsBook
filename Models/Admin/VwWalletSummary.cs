@@ -50,10 +50,10 @@ public class VwWalletSummary
     public string? WalletStatus { get; set; }
 
     [Column("loyalty_points")]
-    public int LoyaltyPoints { get; set; }
+    public long LoyaltyPoints { get; set; }
 
     [Column("total_wallet_transactions")]
-    public int TotalWalletTransactions { get; set; }
+    public long TotalWalletTransactions { get; set; }
 
     [Column("last_transaction_at")]
     public DateTime? LastTransactionAt { get; set; }

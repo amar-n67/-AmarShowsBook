@@ -68,24 +68,11 @@ public async Task<IActionResult> Index(string type = "Movie")
 {
     try
     {
-        if (HttpContext.Session.GetString("UserEmail") == null)
-        {
-            await _activityLogger.LogAsync(
-                action: "UNAUTHORIZED_ACCESS",
-                module: "HOME",
-                entityType: "PAGE",
-                description: "Unauthorized access to home page",
-                status: "FAILURE",
-                isError: 4
-            );
-
-            return RedirectToAction("Login", "Auth");
-        }
-
         var userEmail = HttpContext.Session.GetString("UserEmail");
 
-        var user = _context.Users
-            .FirstOrDefault(u => u.Email == userEmail);
+        var user = string.IsNullOrWhiteSpace(userEmail)
+            ? null
+            : _context.Users.FirstOrDefault(u => u.Email == userEmail);
 
         // var schedules = _context.ShowSchedules
         //     .Include(s => s.Movie)
@@ -227,7 +214,9 @@ foreach (var show in schedules)
             action: "VIEW_HOME",
             module: "HOME",
             entityType: "SHOW_SCHEDULE",
-            description: $"Viewed {type} schedules",
+            description: string.IsNullOrWhiteSpace(userEmail)
+                ? $"Guest viewed {type} schedules"
+                : $"Viewed {type} schedules",
             status: "SUCCESS",
             isError: 0,
             metadata: new
