@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const searchBox = panel.querySelector("[data-page-filter-search]");
         const statusBox = panel.querySelector("[data-page-filter-status]");
         const methodBox = panel.querySelector("[data-page-filter-method]");
+        const priorityBox = panel.querySelector("[data-page-filter-priority]");
         const resetButton = panel.querySelector("[data-page-filter-reset]");
         const targetSelector = panel.getAttribute("data-page-filter-target") || "tbody tr";
         const tableCard = [...document.querySelectorAll(".card")]
@@ -104,23 +105,27 @@ document.addEventListener("DOMContentLoaded", () => {
             const query = normalize(searchBox?.value);
             const status = normalize(statusBox?.value);
             const method = normalize(methodBox?.value);
+            const priority = normalize(priorityBox?.value);
 
             getRows().forEach((row) => {
                 const text = normalize(row.dataset.filterSearch || row.textContent);
                 const matchesSearch = !query || text.includes(query);
                 const matchesStatus = matchesFilter(row, "filterStatus", status, text);
                 const matchesMethod = matchesFilter(row, "filterMethod", method, text);
-                row.hidden = !(matchesSearch && matchesStatus && matchesMethod);
+                const matchesPriority = matchesFilter(row, "filterPriority", priority, text);
+                row.hidden = !(matchesSearch && matchesStatus && matchesMethod && matchesPriority);
             });
         };
 
         searchBox?.addEventListener("input", applyPanelFilters);
         statusBox?.addEventListener("change", applyPanelFilters);
         methodBox?.addEventListener("change", applyPanelFilters);
+        priorityBox?.addEventListener("change", applyPanelFilters);
         resetButton?.addEventListener("click", () => {
             if (searchBox) searchBox.value = "";
             if (statusBox) statusBox.value = "";
             if (methodBox) methodBox.value = "";
+            if (priorityBox) priorityBox.value = "";
             applyPanelFilters();
             searchBox?.focus();
         });

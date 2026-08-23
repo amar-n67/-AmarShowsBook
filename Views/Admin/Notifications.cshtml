@@ -47,6 +47,22 @@
         return "neutral";
     }
 
+    string CategoryClass(string? category)
+    {
+        var normalized = (category ?? string.Empty).Trim().ToUpperInvariant();
+
+        return normalized switch
+        {
+            "REFUND" => "refund",
+            "BOOKING" => "booking",
+            "PAYMENT" => "payment",
+            "NOTIFICATION" => "delivery",
+            "SECURITY" => "security",
+            "AUTH" => "auth",
+            _ => "system"
+        };
+    }
+
     string FormatDate(DateTime value) =>
         value.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -156,11 +172,14 @@
                     {
                         foreach(var item in actionNotifications)
                         {
+                            var categoryClass = CategoryClass(item.Category);
+                            var priorityClass = BadgeClass(item.Priority);
                             <tr id="@item.Id"
-                                class="@(highlight == item.Id ? "highlight-row" : "")"
+                                class="action-row action-row-@categoryClass @(highlight == item.Id ? "highlight-row" : "")"
                                 data-admin-searchable
                                 data-filter-status="@item.Status"
-                                data-filter-method="@item.Category">
+                                data-filter-method="@item.Category"
+                                data-filter-priority="@item.Priority">
 
                                 <td>
                                     <div class="created-date">
@@ -188,7 +207,12 @@
                                         @item.Title
                                     </div>
                                     <div class="sub-text">
-                                        @item.Category | @item.Status
+                                        <span class="source-chip source-@categoryClass">
+                                            @item.Category
+                                        </span>
+                                        <span class="status-inline">
+                                            @item.Status
+                                        </span>
                                     </div>
                                 </td>
 
@@ -214,7 +238,7 @@
                                 <td>
                                     @if (!string.IsNullOrWhiteSpace(item.ActionUrl))
                                     {
-                                        <a class="notification-action-btn"
+                                        <a class="notification-action-btn action-btn-@priorityClass action-btn-@categoryClass"
                                            href="@item.ActionUrl">
                                             @item.ActionText
                                         </a>
@@ -298,7 +322,8 @@
                         <tr id="@rowId"
                             class="@(highlight == rowId ? "highlight-row" : "")"
                             data-filter-status="@item.Status"
-                            data-filter-method="@item.NotificationType">
+                            data-filter-method="@item.NotificationType"
+                            data-filter-priority="@item.Priority">
 
                             <!-- USER -->
 
@@ -470,6 +495,37 @@
         box-shadow: inset 4px 0 0 #f97316;
     }
 
+    .action-row {
+        position: relative;
+        transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .action-row:hover {
+        transform: translateY(-1px);
+    }
+
+    .action-row-refund {
+        background:
+            linear-gradient(90deg, rgba(255, 247, 237, 0.96), rgba(255, 255, 255, 0.98) 42%);
+        box-shadow: inset 5px 0 0 #f97316;
+    }
+
+    .action-row-payment {
+        box-shadow: inset 5px 0 0 #ef4444;
+    }
+
+    .action-row-security {
+        box-shadow: inset 5px 0 0 #7c3aed;
+    }
+
+    .action-row-booking {
+        box-shadow: inset 5px 0 0 #0f766e;
+    }
+
+    .action-row-delivery {
+        box-shadow: inset 5px 0 0 #2563eb;
+    }
+
     .notification-panel-head {
         display: flex;
         justify-content: space-between;
@@ -538,28 +594,34 @@
         padding: 6px 12px;
         border-radius: 999px;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 800;
         display: inline-block;
+        border: 1px solid transparent;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
     }
 
     .badge.success {
-        background: #dcfce7;
-        color: #166534;
+        background: linear-gradient(135deg, #dcfce7, #99f6e4);
+        color: #065f46;
+        border-color: #86efac;
     }
 
     .badge.danger {
-        background: #fee2e2;
-        color: #991b1b;
+        background: linear-gradient(135deg, #fee2e2, #fecdd3);
+        color: #9f1239;
+        border-color: #fda4af;
     }
 
     .badge.warning {
-        background: #fef3c7;
+        background: linear-gradient(135deg, #fef3c7, #fed7aa);
         color: #92400e;
+        border-color: #fdba74;
     }
 
     .badge.neutral {
-        background: #e5e7eb;
+        background: linear-gradient(135deg, #e5e7eb, #f8fafc);
         color: #374151;
+        border-color: #cbd5e1;
     }
 
     .sub-text {
@@ -625,6 +687,55 @@
         word-break: break-word;
     }
 
+    .source-chip,
+    .status-inline {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .status-inline {
+        margin-left: 6px;
+        background: #f3f4f6;
+        color: #4b5563;
+    }
+
+    .source-refund {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    .source-booking {
+        background: #ccfbf1;
+        color: #115e59;
+    }
+
+    .source-payment {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .source-delivery {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .source-security {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+
+    .source-auth,
+    .source-system {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
     .notification-detail {
         color: #374151;
         line-height: 1.55;
@@ -638,17 +749,45 @@
         justify-content: center;
         padding: 8px 12px;
         border-radius: 8px;
+        border: 1px solid transparent;
         background: #111827;
         color: #fff;
         text-decoration: none;
         font-size: 13px;
         font-weight: 700;
         white-space: nowrap;
+        box-shadow: 0 10px 22px rgba(17, 24, 39, 0.15);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
 
     .notification-action-btn:hover {
-        background: #374151;
+        transform: translateY(-1px);
         color: #fff;
+    }
+
+    .action-btn-danger {
+        background: linear-gradient(135deg, #be123c, #ef4444);
+        box-shadow: 0 10px 22px rgba(190, 18, 60, 0.24);
+    }
+
+    .action-btn-warning {
+        background: linear-gradient(135deg, #b45309, #f59e0b);
+        box-shadow: 0 10px 22px rgba(180, 83, 9, 0.24);
+    }
+
+    .action-btn-success {
+        background: linear-gradient(135deg, #047857, #14b8a6);
+        box-shadow: 0 10px 22px rgba(4, 120, 87, 0.22);
+    }
+
+    .action-btn-neutral {
+        background: linear-gradient(135deg, #374151, #64748b);
+    }
+
+    .action-btn-refund {
+        border-color: rgba(251, 146, 60, 0.72);
+        background: linear-gradient(135deg, #ea580c, #f97316, #f59e0b);
+        box-shadow: 0 12px 26px rgba(249, 115, 22, 0.28);
     }
 
     .created-date {

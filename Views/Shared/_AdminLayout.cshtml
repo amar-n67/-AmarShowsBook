@@ -1,5 +1,4 @@
 @inject AmarShowsBook.Services.RbacService RbacService
-@inject AmarShowsBook.Data.ApplicationDbContext AdminDbContext
 <!DOCTYPE html>
 <html>
 <head>
@@ -129,7 +128,7 @@
         "Bookings" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
         "Transactions" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
         "Wallets" => new[] { "ACTIVE", "DISABLED", "BLOCKED" },
-        "Notifications" => new[] { "SUCCESS", "SENT", "PENDING", "FAILED", "ERROR", "CANCELLED", "REJECTED", "ISSUE" },
+        "Notifications" => new[] { "SUCCESS", "SENT", "DELIVERED", "READ", "PENDING", "PROCESSING", "FAILED", "FAILURE", "ERROR", "CANCELLED", "REJECTED", "ISSUE" },
         "ActivityLogs" => new[] { "SUCCESS", "FAILED", "ERROR", "PENDING" },
         "Versions" => new[] { "CURRENT", "PREVIOUS" },
         _ => Array.Empty<string>()
@@ -144,40 +143,22 @@
     var adminMethodOptions = currentAction switch
     {
         "Transactions" => new[] { "UPI", "CARD", "NETBANKING", "WALLET", "QR" },
-        "Notifications" => new[] { "REFUND", "BOOKING", "PAYMENT", "NOTIFICATION", "SECURITY", "AUTH", "EMAIL", "SMS", "PUSH", "IN_APP", "WHATSAPP" },
+        "Notifications" => new[] { "REFUND", "BOOKING", "PAYMENT", "NOTIFICATION", "SECURITY", "AUTH", "ADMIN", "LOG", "EMAIL", "SMS", "PUSH", "IN_APP", "WHATSAPP" },
         "Bookings" or "ContentManager" => new[] { "MOVIE", "STANDUP", "LIVE" },
+        _ => Array.Empty<string>()
+    };
+    var adminPriorityOptions = currentAction switch
+    {
+        "Notifications" => new[] { "HIGH", "MEDIUM", "LOW", "NORMAL" },
         _ => Array.Empty<string>()
     };
     var canUsePrintTools =
         AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 
-    int CountAdminNotifications(Func<int> count)
-    {
-        try
-        {
-            return count();
-        }
-        catch
-        {
-            return 0;
-        }
-    }
-
     var adminNotificationCount =
-        CountAdminNotifications(() => AdminDbContext.VwRefundSummaries.Count(x =>
-            x.RefundStatus == "PENDING" ||
-            x.RefundStatus == "FAILED" ||
-            x.RefundStatus == "REJECTED")) +
-        CountAdminNotifications(() => AdminDbContext.VwNotificationCenters.Count(x =>
-            x.IsError == 1 ||
-            x.Status == "FAILED" ||
-            x.Status == "ERROR")) +
-        CountAdminNotifications(() => AdminDbContext.VwBookingTransactionSummaries.Count(x =>
-            x.IsPaymentError == 1 ||
-            x.TransactionStatus == "FAILED" ||
-            x.TransactionStatus == "ERROR")) +
-        CountAdminNotifications(() => AdminDbContext.VwTicketValidationSummaries.Count(x =>
-            x.IsSecurityIssue == 1));
+        ViewData["AdminNotificationCount"] is int notificationCount
+            ? notificationCount
+            : 0;
 }
 
 <body>
@@ -298,6 +279,18 @@
                         <select class="form-select rounded-pill" data-page-filter-method>
                             <option value="">All @adminMethodLabel</option>
                             @foreach(var option in adminMethodOptions)
+                            {
+                                <option value="@option">@option</option>
+                            }
+                        </select>
+                    </div>
+                    }
+                    @if(adminPriorityOptions.Any())
+                    {
+                    <div class="col-md-2">
+                        <select class="form-select rounded-pill filter-priority-select" data-page-filter-priority>
+                            <option value="">All Color / Priority</option>
+                            @foreach(var option in adminPriorityOptions)
                             {
                                 <option value="@option">@option</option>
                             }

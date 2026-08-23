@@ -68,6 +68,8 @@ namespace AmarShowsBook.Controllers
                 }
             }
 
+            ViewData["AdminNotificationCount"] = await GetAdminNotificationCount();
+
             await next();
         }
 
@@ -3728,7 +3730,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
                 UserId = x.UserId,
                 EntityType = x.EntityType,
                 EntityId = x.EntityId,
-                Detail = x.ErrorMessage ?? x.Description,
+                Detail = (x.ErrorMessage ?? x.Description) ?? string.Empty,
                 Status = x.Status
             })
             .ToListAsync();
@@ -3761,6 +3763,38 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
         .ThenByDescending(x => x.Time)
         .Take(50)
         .ToList();
+}
+
+private async Task<int> GetAdminNotificationCount()
+{
+    return
+        await CountAdminNotifications(() => _context.VwRefundSummaries.CountAsync(x =>
+            x.RefundStatus == "PENDING" ||
+            x.RefundStatus == "FAILED" ||
+            x.RefundStatus == "REJECTED")) +
+        await CountAdminNotifications(() => _context.VwNotificationCenters.CountAsync(x =>
+            x.IsError == 1 ||
+            x.Status == "FAILED" ||
+            x.Status == "ERROR")) +
+        await CountAdminNotifications(() => _context.VwBookingTransactionSummaries.CountAsync(x =>
+            x.IsPaymentError == 1 ||
+            x.TransactionStatus == "FAILED" ||
+            x.TransactionStatus == "ERROR")) +
+        await CountAdminNotifications(() => _context.VwTicketValidationSummaries.CountAsync(x =>
+            x.IsSecurityIssue == 1));
+}
+
+private static async Task<int> CountAdminNotifications(Func<Task<int>> count)
+{
+    try
+    {
+        return await count();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Admin notification count source failed: {ex.Message}");
+        return 0;
+    }
 }
 
 private static string NullText(string? value)

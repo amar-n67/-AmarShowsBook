@@ -3,6 +3,7 @@
     "AmarShowsBook": {
       "commandName": "Project",
       "launchBrowser": false,
+      "applicationUrl": "http://localhost:9090",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

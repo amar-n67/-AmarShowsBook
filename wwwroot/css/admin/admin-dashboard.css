@@ -71,6 +71,7 @@ html[data-theme="cinema"] {
 
 html {
     font-size: 15px;
+    min-height: 100%;
 }
 
 body {
@@ -179,15 +180,16 @@ html[data-theme="cinema"] body {
 .admin-wrapper {
     display: flex;
     width: 100%;
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
+    align-items: stretch;
 }
 
 .admin-sidebar {
-    position: sticky;
-    top: 0;
+    position: relative;
+    flex: 0 0 270px;
     width: 270px;
-    height: 100vh;
+    min-height: 100dvh;
     padding: 22px 18px;
     overflow-y: auto;
     background:
@@ -197,6 +199,16 @@ html[data-theme="cinema"] body {
     box-shadow: 18px 0 46px rgba(23, 25, 35, 0.2);
     transition: width 0.22s ease, padding 0.22s ease, transform 0.22s ease;
     z-index: 10;
+}
+
+.admin-sidebar::before {
+    content: "";
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 270px;
+    background: inherit;
+    z-index: -1;
+    pointer-events: none;
 }
 
 html[data-theme="white"] .admin-sidebar,
@@ -211,11 +223,16 @@ html[data-theme="cinema"] .admin-sidebar {
 }
 
 .admin-wrapper.nav-collapsed .admin-sidebar {
+    flex-basis: 0;
     width: 0;
     padding-inline: 0;
     border: 0;
     box-shadow: none;
     transform: translateX(-100%);
+}
+
+.admin-wrapper.nav-collapsed .admin-sidebar::before {
+    width: 0;
 }
 
 .admin-logo {
@@ -275,19 +292,24 @@ html[data-theme="cinema"] .admin-sidebar {
 }
 
 .admin-nav-count {
-    min-width: 24px;
-    height: 24px;
+    min-width: 28px;
+    height: 26px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 7px;
+    padding: 0 8px;
     border-radius: 999px;
-    background: #b33d58;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    background:
+        linear-gradient(135deg, #ff3d6e 0%, #ff8a3d 52%, #ffd166 100%);
     color: #fff;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     font-weight: 900;
     line-height: 1;
-    box-shadow: 0 8px 18px rgba(179, 61, 88, 0.28);
+    text-shadow: 0 1px 4px rgba(58, 17, 24, 0.34);
+    box-shadow:
+        0 8px 18px rgba(255, 61, 110, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 
 .admin-nav a:hover,
@@ -307,6 +329,7 @@ html[data-theme="cinema"] .admin-sidebar {
 .admin-main {
     flex: 1;
     min-width: 0;
+    min-height: 100dvh;
     padding: 22px clamp(18px, 3vw, 34px) 38px;
     overflow-x: hidden;
 }
@@ -809,6 +832,11 @@ html[data-theme="cinema"] .admin-topbar {
     }
 
     .admin-sidebar {
+        flex-basis: 236px;
+        width: 236px;
+    }
+
+    .admin-sidebar::before {
         width: 236px;
     }
 }
@@ -827,6 +855,11 @@ html[data-theme="cinema"] .admin-topbar {
         inset: 0 auto 0 0;
         width: min(82vw, 300px);
         height: 100vh;
+        min-height: 100vh;
+    }
+
+    .admin-sidebar::before {
+        display: none;
     }
 
     .admin-wrapper.nav-collapsed .admin-sidebar {
