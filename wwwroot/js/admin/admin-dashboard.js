@@ -72,7 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const targetSelector = panel.getAttribute("data-page-filter-target") || "tbody tr";
         const tableCard = [...document.querySelectorAll(".card")]
             .find((card) => card.querySelector("table"));
-        const anchor = document.querySelector(".table-wrapper")
+        const preferredAnchor = document.querySelector("[data-page-filter-anchor]");
+        const anchor = preferredAnchor
+            || document.querySelector(".table-wrapper")
             || document.querySelector(".access-card-grid")
             || tableCard;
 

@@ -147,7 +147,7 @@
         </form>
     </div>
 
-    <details class="admin-detail-panel security-device-panel">
+    <details class="admin-detail-panel security-device-panel" data-page-filter-anchor>
         <summary>
             <span>Scanner Devices</span>
             <strong>@scannerDevices.Count</strong>
@@ -286,6 +286,23 @@
         box-shadow: inset 5px 0 0 #dc2626;
     }
 
+    .security-page .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .security-page .stat-card {
+        min-width: 0;
+        padding: 18px;
+    }
+
+    .security-page .stat-card span,
+    .security-page .stat-card strong {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
     .security-page .security-review-panel {
         display: flex;
         align-items: center;
@@ -331,6 +348,7 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px;
+        margin-top: 18px;
         margin-bottom: 16px;
     }
 
@@ -539,17 +557,22 @@
         color: #374151;
     }
 
+    #adminContextFilter {
+        clear: both;
+        margin-bottom: 18px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
     #adminContextFilter .row {
         display: grid;
         grid-template-columns:
-            minmax(210px, 1.4fr)
-            minmax(150px, 0.9fr)
-            minmax(180px, 1fr)
-            minmax(180px, 1fr)
-            minmax(170px, 0.9fr)
-            minmax(96px, auto);
+            minmax(220px, 1.5fr)
+            repeat(4, minmax(150px, 1fr))
+            minmax(96px, 0.55fr);
         gap: 12px;
         margin: 0;
+        min-width: 1040px;
     }
 
     #adminContextFilter .row > [class*="col-"] {
@@ -567,12 +590,24 @@
         width: 100%;
     }
 
+    #adminContextFilter .form-control {
+        text-overflow: ellipsis;
+    }
+
     #adminContextFilter .form-select {
         padding-right: 2.25rem;
         text-overflow: ellipsis;
     }
 
+    #adminContextFilter .btn {
+        white-space: nowrap;
+    }
+
     @@media(max-width: 760px) {
+        .security-page .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
         .security-admin-grid,
         .security-form-grid {
             grid-template-columns: 1fr;
@@ -589,13 +624,17 @@
         }
 
         #adminContextFilter .row {
+            grid-template-columns:
+                minmax(220px, 1.5fr)
+                repeat(4, minmax(150px, 1fr))
+                minmax(96px, 0.55fr);
+        }
+    }
+
+    @@media(max-width: 1100px) {
+        .security-admin-grid {
             grid-template-columns: 1fr;
         }
     }
 
-    @@media(min-width: 761px) and (max-width: 1180px) {
-        #adminContextFilter .row {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
 </style>

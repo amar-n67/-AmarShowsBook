@@ -9,7 +9,7 @@
     var reversedCount = Model.Count(x => x.UsageStatus == "REVERSED");
 }
 
-<section class="admin-page">
+<section class="admin-page coupon-page">
     <div class="admin-page-header">
         <div>
             <h1>Coupon Used</h1>
@@ -150,7 +150,39 @@ couponShowType?.addEventListener("change", filterCoupons);
 
 <style>
 .coupon-filter-panel {
+    margin-top: 18px;
     overflow: visible;
+}
+
+.coupon-page .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.coupon-page .stat-card {
+    min-width: 0;
+    padding: 18px;
+}
+
+.coupon-page .stat-card span,
+.coupon-page .stat-card strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.coupon-filter-panel .row {
+    display: grid;
+    grid-template-columns: minmax(240px, 1.4fr) minmax(170px, 0.85fr) minmax(190px, 0.95fr) minmax(108px, auto);
+    gap: 14px;
+    margin: 0;
+}
+
+.coupon-filter-panel .row > [class*="col-"] {
+    max-width: none;
+    min-width: 0;
+    padding: 0;
+    width: auto;
 }
 
 .coupon-filter-label {
@@ -166,6 +198,17 @@ couponShowType?.addEventListener("change", filterCoupons);
 .coupon-filter-panel .form-select,
 .coupon-filter-panel .btn {
     min-height: 44px;
+    min-width: 0;
+    width: 100%;
+}
+
+.coupon-filter-panel .form-control,
+.coupon-filter-panel .form-select {
+    text-overflow: ellipsis;
+}
+
+.coupon-filter-panel .btn {
+    white-space: nowrap;
 }
 
 .coupon-usage-table {
@@ -174,30 +217,31 @@ couponShowType?.addEventListener("change", filterCoupons);
 }
 
 .coupon-usage-table table {
-    min-width: 1120px;
-    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+    table-layout: auto;
 }
 
 .coupon-usage-table th:nth-child(1),
 .coupon-usage-table td:nth-child(1) {
-    width: 9%;
+    width: auto;
 }
 
 .coupon-usage-table th:nth-child(2),
 .coupon-usage-table td:nth-child(2) {
-    width: 16%;
+    width: auto;
 }
 
 .coupon-usage-table th:nth-child(3),
 .coupon-usage-table td:nth-child(3) {
-    width: 17%;
+    width: auto;
 }
 
 .coupon-usage-table th:nth-child(4),
 .coupon-usage-table td:nth-child(4),
 .coupon-usage-table th:nth-child(5),
 .coupon-usage-table td:nth-child(5) {
-    width: 12%;
+    width: auto;
 }
 
 .coupon-usage-table th:nth-child(6),
@@ -206,17 +250,17 @@ couponShowType?.addEventListener("change", filterCoupons);
 .coupon-usage-table td:nth-child(7),
 .coupon-usage-table th:nth-child(8),
 .coupon-usage-table td:nth-child(8) {
-    width: 8%;
+    width: auto;
 }
 
 .coupon-usage-table th:nth-child(9),
 .coupon-usage-table td:nth-child(9) {
-    width: 8%;
+    width: auto;
 }
 
 .coupon-usage-table th:nth-child(10),
 .coupon-usage-table td:nth-child(10) {
-    width: 10%;
+    width: auto;
 }
 
 .coupon-usage-table td,
@@ -224,6 +268,37 @@ couponShowType?.addEventListener("change", filterCoupons);
     vertical-align: top;
     overflow-wrap: normal;
     word-break: normal;
+}
+
+.coupon-usage-table th {
+    white-space: nowrap;
+}
+
+.coupon-code-cell {
+    min-width: 110px;
+}
+
+.coupon-user-cell {
+    min-width: 220px;
+    max-width: 320px;
+}
+
+.coupon-show-cell {
+    min-width: 240px;
+    max-width: 360px;
+}
+
+.coupon-id-cell {
+    min-width: 170px;
+    max-width: 240px;
+}
+
+.coupon-status-cell {
+    min-width: 120px;
+}
+
+.coupon-date-cell {
+    min-width: 170px;
 }
 
 .coupon-usage-table td {
@@ -284,6 +359,18 @@ couponShowType?.addEventListener("change", filterCoupons);
 }
 
 @@media (max-width: 760px) {
+    .coupon-page .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .coupon-filter-panel .row {
+        grid-template-columns: 1fr;
+    }
+
+    .coupon-filter-panel {
+        padding: 16px;
+    }
+
     .coupon-usage-table table {
         min-width: 0;
     }
@@ -345,6 +432,12 @@ couponShowType?.addEventListener("change", filterCoupons);
     .coupon-money-cell,
     .coupon-date-cell {
         white-space: normal;
+    }
+}
+
+@@media (min-width: 761px) and (max-width: 1180px) {
+    .coupon-filter-panel .row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 </style>
