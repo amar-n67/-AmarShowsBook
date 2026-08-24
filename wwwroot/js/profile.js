@@ -264,9 +264,9 @@ function editAddress(oldVal) {
     document.querySelectorAll(".address-part").forEach(el => {
         el.removeAttribute("disabled");
         el.removeAttribute("readonly");
-        el.style.backgroundColor = "#fff";
-        el.style.color = "#000";
-        el.style.borderColor = "#ccc";
+        el.style.backgroundColor = "var(--app-input)";
+        el.style.color = "var(--app-input-text)";
+        el.style.borderColor = "var(--app-input-border)";
     });
 
     document.getElementById("addressCancel").classList.remove("d-none");
@@ -306,9 +306,9 @@ function enableProfileSelect(id) {
     let wrapper = el.closest(".position-relative");
 
     el.removeAttribute("disabled");
-    el.style.backgroundColor = "#fff";
-    el.style.color = "#000";
-    el.style.borderColor = "#ccc";
+    el.style.backgroundColor = "var(--app-input)";
+    el.style.color = "var(--app-input-text)";
+    el.style.borderColor = "var(--app-input-border)";
     wrapper?.querySelector(".dropdown-icon")?.classList.remove("d-none");
     el.focus();
 }

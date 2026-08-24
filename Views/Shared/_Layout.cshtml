@@ -23,6 +23,9 @@
     --app-accent: #f2bd2d;
     --app-accent-strong: #139487;
     --app-danger: #c2415c;
+    --app-success: #148176;
+    --app-warning: #9a6a16;
+    --app-soft: rgba(255, 255, 255, 0.58);
     --app-cursor-color: #139487;
     --app-page-surface: #fffdf7;
     --app-page-text: #22252f;
@@ -52,6 +55,9 @@ html[data-theme="system"] {
     --app-accent: #f2c46d;
     --app-accent-strong: #315f9f;
     --app-danger: #9f3a3a;
+    --app-success: #1d7d79;
+    --app-warning: #a37c40;
+    --app-soft: rgba(249, 251, 255, 0.62);
     --app-cursor-color: #315f9f;
     --app-page-surface: #f9fbff;
     --app-page-text: #1f2937;
@@ -81,6 +87,9 @@ html[data-theme="white"] {
     --app-accent: #2563eb;
     --app-accent-strong: #0f766e;
     --app-danger: #dc2626;
+    --app-success: #0f766e;
+    --app-warning: #b45309;
+    --app-soft: rgba(255, 255, 255, 0.72);
     --app-cursor-color: #3858d6;
     --app-page-surface: #ffffff;
     --app-page-text: #111827;
@@ -111,6 +120,9 @@ html[data-theme="dark"] {
     --app-accent: #ffd166;
     --app-accent-strong: #2dd4bf;
     --app-danger: #dc4c64;
+    --app-success: #2dd4bf;
+    --app-warning: #fbbf24;
+    --app-soft: rgba(248, 250, 252, 0.08);
     --app-cursor-color: #7a8cff;
     --app-page-surface: #2a2c38;
     --app-page-text: #f9fafb;
@@ -141,6 +153,9 @@ html[data-theme="cinema"] {
     --app-accent: #f0bd4f;
     --app-accent-strong: #168f98;
     --app-danger: #bd3e4b;
+    --app-success: #168f98;
+    --app-warning: #b98933;
+    --app-soft: rgba(248, 250, 246, 0.62);
     --app-cursor-color: #168f98;
     --app-page-surface: #fffefa;
     --app-page-text: #182536;
@@ -558,6 +573,114 @@ th {
 
 a {
     color: var(--app-link);
+}
+
+html[data-theme] body,
+html[data-theme] main,
+html[data-theme] .container,
+html[data-theme] .container-fluid {
+    color: var(--app-text);
+}
+
+html[data-theme] .card,
+html[data-theme] .modal-content,
+html[data-theme] .dropdown-menu,
+html[data-theme] .list-group-item,
+html[data-theme] .toast,
+html[data-theme] .offcanvas,
+html[data-theme] .app-themed-surface {
+    background-color: var(--app-card) !important;
+    color: var(--app-card-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+html[data-theme] .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--app-text);
+    --bs-table-border-color: var(--app-input-border);
+    --bs-table-striped-bg: color-mix(in srgb, var(--app-card) 78%, var(--app-accent) 8%);
+    --bs-table-striped-color: var(--app-text);
+    --bs-table-hover-bg: color-mix(in srgb, var(--app-card) 72%, var(--app-accent-strong) 12%);
+    --bs-table-hover-color: var(--app-text);
+    color: var(--app-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+html[data-theme] .table > :not(caption) > * > * {
+    background-color: color-mix(in srgb, var(--app-card) 92%, transparent) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+html[data-theme] .table thead th,
+html[data-theme] .table-light,
+html[data-theme] .table-light > th,
+html[data-theme] .table-light > td {
+    background: color-mix(in srgb, var(--app-card) 82%, var(--app-accent) 18%) !important;
+    color: var(--app-card-text) !important;
+}
+
+html[data-theme] .bg-white,
+html[data-theme] .bg-light {
+    background-color: var(--app-card) !important;
+    color: var(--app-card-text) !important;
+}
+
+html[data-theme] .text-dark,
+html[data-theme] .text-body {
+    color: var(--app-text) !important;
+}
+
+html[data-theme] .border,
+html[data-theme] .border-top,
+html[data-theme] .border-bottom,
+html[data-theme] .border-start,
+html[data-theme] .border-end {
+    border-color: var(--app-input-border) !important;
+}
+
+html[data-theme] .badge.bg-success,
+html[data-theme] .text-bg-success {
+    background-color: var(--app-success) !important;
+    color: #fff !important;
+}
+
+html[data-theme] .badge.bg-warning,
+html[data-theme] .text-bg-warning {
+    background-color: var(--app-warning) !important;
+    color: #231f20 !important;
+}
+
+html[data-theme] .badge.bg-danger,
+html[data-theme] .text-bg-danger {
+    background-color: var(--app-danger) !important;
+    color: #fff !important;
+}
+
+html[data-theme] .badge.bg-secondary,
+html[data-theme] .text-bg-secondary {
+    background-color: var(--app-input-disabled) !important;
+    color: var(--app-input-disabled-text) !important;
+}
+
+html[data-theme="dark"] [style*="background:white"],
+html[data-theme="dark"] [style*="background: white"],
+html[data-theme="dark"] [style*="background:#fff"],
+html[data-theme="dark"] [style*="background: #fff"],
+html[data-theme="dark"] [style*="background-color:white"],
+html[data-theme="dark"] [style*="background-color: white"] {
+    background: var(--app-card) !important;
+    color: var(--app-card-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+html[data-theme="dark"] [style*="color:#111827"],
+html[data-theme="dark"] [style*="color: #111827"],
+html[data-theme="dark"] [style*="color:#000"],
+html[data-theme="dark"] [style*="color: #000"],
+html[data-theme="dark"] [style*="color:black"],
+html[data-theme="dark"] [style*="color: black"] {
+    color: var(--app-text) !important;
 }
 @@keyframes popupFade {
     from {
