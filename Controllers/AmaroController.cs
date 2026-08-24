@@ -1232,8 +1232,8 @@ public class AmaroController : Controller
     {
         return new[]
         {
-            new AmaroQuickOption("Call Support", $"tel:{SupportPhone.Replace(" ", "")}"),
-            new AmaroQuickOption("Email Support", $"mailto:{SupportEmail}"),
+            new AmaroQuickOption("Call", $"tel:{SupportPhone.Replace(" ", "")}"),
+            new AmaroQuickOption("Write to us", $"mailto:{SupportEmail}"),
             new AmaroQuickOption("My Bookings", "/Booking/MyBookings"),
             new AmaroQuickOption("Transactions", "/Transaction/History")
         };

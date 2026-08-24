@@ -898,6 +898,67 @@ a {
     transform: none;
 }
 
+.film-support-menu {
+    position: relative;
+    display: inline-flex;
+}
+
+.film-support-trigger {
+    appearance: none;
+}
+
+.film-support-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 50;
+    display: grid;
+    min-width: 142px;
+    padding: 6px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
+    border-radius: 8px;
+    background: var(--app-card);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.24);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -4px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.film-support-dropdown a {
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    color: var(--app-card-text);
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.film-support-dropdown a:hover,
+.film-support-dropdown a:focus-visible {
+    background: var(--app-accent);
+    color: #231f20;
+    outline: none;
+}
+
+.film-support-menu:hover .film-support-dropdown,
+.film-support-menu:focus-within .film-support-dropdown {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+}
+
+.film-support-menu:hover .film-support-trigger,
+.film-support-menu:focus-within .film-support-trigger {
+    background: var(--app-accent);
+    border-color: var(--app-accent);
+    color: #231f20 !important;
+}
+
 .film-profile-btn {
     background:
         linear-gradient(135deg,
@@ -1271,6 +1332,24 @@ html[data-theme="system"] .film-nav-icon {
         border-radius: 8px;
         text-align: center;
         background: color-mix(in srgb, var(--app-input) 76%, transparent);
+    }
+
+    .film-support-menu {
+        display: grid;
+        width: 100%;
+    }
+
+    .film-support-dropdown {
+        left: 0;
+        right: 0;
+        top: calc(100% + 6px);
+        min-width: 0;
+        transform: translateY(-4px);
+    }
+
+    .film-support-menu:hover .film-support-dropdown,
+    .film-support-menu:focus-within .film-support-dropdown {
+        transform: translateY(0);
     }
 
     .film-nav-icon {
@@ -1864,7 +1943,20 @@ z-index:9999;">
                     <a class="film-nav-btn" href="/Booking/MyBookings" title="My Bookings" aria-label="My Bookings"><span class="film-nav-icon">🎟</span><span class="film-nav-label">My Bookings</span></a>
                     <a class="film-nav-btn" href="/Transaction/History" title="My Transactions" aria-label="My Transactions"><span class="film-nav-icon">💳</span><span class="film-nav-label">My Transactions</span></a>
                     <a class="film-nav-btn" href="/Wallet/MyWallet" title="Wallet" aria-label="Wallet"><span class="film-nav-icon">💰</span><span class="film-nav-label">Wallet</span></a>
-                    <a class="film-nav-btn" href="mailto:arcanaamar67@gmail.com" title="Contact Support: +91 8920993434" aria-label="Contact Support"><span class="film-nav-icon">☎</span><span class="film-nav-label">Support</span></a>
+                    <div class="film-support-menu">
+                        <button class="film-nav-btn film-support-trigger"
+                                type="button"
+                                title="Contact Support"
+                                aria-haspopup="true"
+                                aria-expanded="false">
+                            <span class="film-nav-icon">☎</span>
+                            <span class="film-nav-label">Support</span>
+                        </button>
+                        <div class="film-support-dropdown" role="menu" aria-label="Support options">
+                            <a href="mailto:arcanaamar67@gmail.com" role="menuitem">Write to us</a>
+                            <a href="tel:+918920993434" role="menuitem">Call</a>
+                        </div>
+                    </div>
                     @if (canOpenAdmin)
                     {
                         <a class="film-nav-btn" href="/Admin/Dashboard" title="Admin Dashboard" aria-label="Admin Dashboard"><span class="film-nav-icon">📊</span><span class="film-nav-label">Admin Dashboard</span></a>
@@ -2110,6 +2202,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("appPageSearch");
     const filmMenu = document.getElementById("filmMenu");
     const filmMenuButton = document.querySelector("[data-film-menu-button]");
+    const supportMenus = document.querySelectorAll(".film-support-menu");
     let filmMenuCloseTimer = 0;
 
     function isFilmMenuCollapsed() {
@@ -2140,6 +2233,26 @@ document.addEventListener("DOMContentLoaded", function () {
     filmMenuButton?.addEventListener("mouseleave", closeFilmMenuByHover);
     filmMenu?.addEventListener("mouseenter", openFilmMenuByHover);
     filmMenu?.addEventListener("mouseleave", closeFilmMenuByHover);
+
+    supportMenus.forEach(function (menu) {
+        const trigger = menu.querySelector(".film-support-trigger");
+        menu.addEventListener("mouseenter", function () {
+            trigger?.setAttribute("aria-expanded", "true");
+        });
+        menu.addEventListener("mouseleave", function () {
+            trigger?.setAttribute("aria-expanded", "false");
+        });
+        menu.addEventListener("focusin", function () {
+            trigger?.setAttribute("aria-expanded", "true");
+        });
+        menu.addEventListener("focusout", function () {
+            window.setTimeout(function () {
+                if (!menu.contains(document.activeElement)) {
+                    trigger?.setAttribute("aria-expanded", "false");
+                }
+            }, 0);
+        });
+    });
 
     document.addEventListener("click", function (event) {
         if (!filmMenu || !filmMenuButton || !isFilmMenuCollapsed()) return;
@@ -3033,8 +3146,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (value === "support-options") {
             renderOptions([
-                { label: "Call Support", url: "tel:+918920993434" },
-                { label: "Email Support", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "Call", url: "tel:+918920993434" },
+                { label: "Write to us", url: "mailto:arcanaamar67@gmail.com" },
                 { label: "My Bookings", url: "/Booking/MyBookings" },
                 { label: "Transactions", url: "/Transaction/History" }
             ]);
