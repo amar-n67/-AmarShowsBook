@@ -7,6 +7,10 @@
 
     ViewData["Title"] = "Wallets";
 
+    var walletStatusHistory =
+        ViewBag.WalletStatusHistory as Dictionary<long, List<AmarShowsBook.Models.Admin.WalletStatusHistory>>
+        ?? new Dictionary<long, List<AmarShowsBook.Models.Admin.WalletStatusHistory>>();
+
     int currentPage = ViewBag.CurrentPage ?? 1;
 
     int totalPages = ViewBag.TotalPages ?? 1;
@@ -119,8 +123,16 @@
                         Wallet Status
                     </th>
 
+                    <th style="min-width:260px;">
+                        Suspension Reason
+                    </th>
+
                     <th style="min-width:200px;">
                         Last Transaction
+                    </th>
+
+                    <th style="min-width:180px;">
+                        Action
                     </th>
 
                 </tr>
@@ -133,7 +145,7 @@
                 {
                     <tr>
 
-                        <td colspan="7"
+                        <td colspan="9"
                             class="empty-state">
                             No wallet records found
                         </td>
@@ -144,7 +156,7 @@
                 {
                     @foreach (var item in Model)
                     {
-                        <tr data-filter-status="@item.WalletStatus">
+                        <tr id="wallet-@item.WalletId" data-filter-status="@item.WalletStatus">
 
                             <!-- USER -->
 
@@ -214,12 +226,117 @@
                                         ACTIVE
                                     </span>
                                 }
+                                else if (item.WalletStatus == "SUSPENDED")
+                                {
+                                    <span class="badge danger">
+                                        SUSPENDED
+                                    </span>
+                                }
                                 else
                                 {
                                     <span class="badge warning">
                                         @(string.IsNullOrWhiteSpace(item.WalletStatus)
                                             ? "NA"
                                             : item.WalletStatus)
+                                    </span>
+                                }
+
+                                @{
+                                    var historyRows =
+                                        walletStatusHistory.TryGetValue(item.WalletId, out var foundHistory)
+                                            ? foundHistory
+                                            : new List<AmarShowsBook.Models.Admin.WalletStatusHistory>();
+                                }
+
+                                <details class="wallet-history-panel">
+                                    <summary>
+                                        History (@historyRows.Count)
+                                    </summary>
+
+                                    @if(!historyRows.Any())
+                                    {
+                                        <div class="wallet-history-empty">
+                                            No wallet action history yet.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="wallet-history-list">
+                                            @foreach(var history in historyRows)
+                                            {
+                                                <div class="wallet-history-item">
+                                                    <div class="wallet-history-top">
+                                                        <span class="history-action @history.ActionType.ToLowerInvariant()">
+                                                            @history.ActionType
+                                                        </span>
+                                                        <strong>
+                                                            @(history.PreviousStatus ?? "NA") → @history.NewStatus
+                                                        </strong>
+                                                    </div>
+                                                    <p>
+                                                        @history.ActionReason
+                                                    </p>
+                                                    <small>
+                                                        @history.CreatedAt.ToString("dd MMM yyyy hh:mm tt")
+                                                        · By @(string.IsNullOrWhiteSpace(history.ActionBy) ? "Admin" : history.ActionBy)
+                                                        · Balance @CurrencyFormatter.FormatRupees(history.WalletBalance)
+                                                    </small>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </details>
+
+                            </td>
+
+                            <!-- SUSPENSION REASON -->
+
+                            <td>
+
+                                @if (item.WalletStatus == "SUSPENDED")
+                                {
+                                    <div class="reason-box">
+                                        @(string.IsNullOrWhiteSpace(item.SuspensionReason)
+                                            ? "No suspension reason recorded."
+                                            : item.SuspensionReason)
+                                    </div>
+
+                                    <div class="sub-text">
+                                        Suspended:
+                                        @(item.SuspendedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                                    </div>
+
+                                    <div class="sub-text">
+                                        By:
+                                        @(string.IsNullOrWhiteSpace(item.SuspendedBy)
+                                            ? "Admin"
+                                            : item.SuspendedBy)
+                                    </div>
+                                }
+                                else if(item.ReactivatedAt != null)
+                                {
+                                    <div class="reason-box success-reason">
+                                        @(string.IsNullOrWhiteSpace(item.ReactivationReason)
+                                            ? "No reactivation reason recorded."
+                                            : item.ReactivationReason)
+                                    </div>
+
+                                    <div class="sub-text">
+                                        Reactivated:
+                                        @item.ReactivatedAt?.ToString("dd MMM yyyy hh:mm tt")
+                                    </div>
+
+                                    <div class="sub-text">
+                                        By:
+                                        @(string.IsNullOrWhiteSpace(item.ReactivatedBy)
+                                            ? "Admin"
+                                            : item.ReactivatedBy)
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="sub-text">
+                                        Not suspended
                                     </span>
                                 }
 
@@ -246,6 +363,57 @@
                                     <span class="sub-text">
                                         No Transactions
                                     </span>
+                                }
+
+                            </td>
+
+                            <!-- ACTION -->
+
+                            <td>
+
+                                @if (item.WalletStatus == "SUSPENDED")
+                                {
+                                    <details class="wallet-reactivate-panel">
+                                        <summary>
+                                            Reactivate
+                                        </summary>
+
+                                        <form method="post" action="/Admin/ReactivateWallet" class="wallet-action-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="walletId" value="@item.WalletId" />
+                                            <textarea
+                                                name="reactivationReason"
+                                                rows="3"
+                                                maxlength="500"
+                                                required
+                                                placeholder="Mandatory reactivation reason"></textarea>
+                                            <button type="submit" class="wallet-reactivate-btn">
+                                                Save Reactivation
+                                            </button>
+                                        </form>
+                                    </details>
+                                }
+                                else
+                                {
+                                    <details class="wallet-suspend-panel">
+                                        <summary>
+                                            Suspend
+                                        </summary>
+
+                                        <form method="post" action="/Admin/SuspendWallet" class="wallet-action-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="walletId" value="@item.WalletId" />
+                                            <textarea
+                                                name="suspensionReason"
+                                                rows="3"
+                                                maxlength="500"
+                                                required
+                                                placeholder="Mandatory suspension reason"></textarea>
+                                            <button type="submit" class="wallet-suspend-btn">
+                                                Save Suspension
+                                            </button>
+                                        </form>
+                                    </details>
                                 }
 
                             </td>
@@ -310,6 +478,12 @@
         background: #f9fafb;
     }
 
+    .wallet-table tr:target {
+        outline: 3px solid rgba(239,68,68,.28);
+        outline-offset: -3px;
+        background: #fff7ed;
+    }
+
     .table-wrapper {
         width: 100%;
         overflow-x: auto;
@@ -343,6 +517,259 @@
         font-size: 26px;
         color: #111827;
         line-height: 1.4;
+    }
+
+    .reason-box {
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        font-weight: 800;
+        line-height: 1.35;
+        max-width: 320px;
+    }
+
+    .reason-box.success-reason {
+        background: #ecfdf5;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+
+    .badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .wallet-action-form {
+        margin: 0;
+    }
+
+    .wallet-suspend-panel,
+    .wallet-reactivate-panel {
+        width: 210px;
+    }
+
+    .wallet-suspend-panel summary,
+    .wallet-reactivate-panel summary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 9px 14px;
+        background: #fff;
+        font-weight: 900;
+        cursor: pointer;
+        list-style: none;
+        transition: .18s ease;
+    }
+
+    .wallet-suspend-panel summary {
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .wallet-reactivate-panel summary {
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .wallet-suspend-panel summary::-webkit-details-marker,
+    .wallet-reactivate-panel summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .wallet-suspend-panel summary:hover {
+        background: #fef2f2;
+        transform: translateY(-2px);
+    }
+
+    .wallet-reactivate-panel summary:hover {
+        background: #ecfdf5;
+        transform: translateY(-2px);
+    }
+
+    .wallet-suspend-panel[open] summary,
+    .wallet-reactivate-panel[open] summary {
+        margin-bottom: 10px;
+    }
+
+    .wallet-suspend-panel[open] summary {
+        background: #fef2f2;
+    }
+
+    .wallet-reactivate-panel[open] summary {
+        background: #ecfdf5;
+    }
+
+    .wallet-suspend-panel textarea,
+    .wallet-reactivate-panel textarea {
+        width: 100%;
+        min-height: 82px;
+        resize: vertical;
+        border-radius: 10px;
+        padding: 10px;
+        color: #111827;
+        font-weight: 750;
+        outline: 0;
+    }
+
+    .wallet-suspend-panel textarea {
+        border: 1px solid #fecaca;
+    }
+
+    .wallet-reactivate-panel textarea {
+        border: 1px solid #bbf7d0;
+    }
+
+    .wallet-suspend-panel textarea:focus {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239,68,68,.12);
+    }
+
+    .wallet-reactivate-panel textarea:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,.12);
+    }
+
+    .wallet-history-panel {
+        width: 260px;
+        margin-top: 10px;
+    }
+
+    .wallet-history-panel summary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 8px 13px;
+        color: #1d4ed8;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        font-weight: 900;
+        cursor: pointer;
+        list-style: none;
+        transition: .18s ease;
+    }
+
+    .wallet-history-panel summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .wallet-history-panel summary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(37,99,235,.12);
+    }
+
+    .wallet-history-list {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+        max-height: 260px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .wallet-history-empty,
+    .wallet-history-item {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .wallet-history-empty {
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .wallet-history-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .wallet-history-top strong {
+        color: #111827;
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    .history-action {
+        border-radius: 999px;
+        padding: 3px 7px;
+        font-size: 10px;
+        font-weight: 950;
+        background: #e0f2fe;
+        color: #075985;
+    }
+
+    .history-action.suspend {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .history-action.reactivate {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .wallet-history-item p {
+        margin: 7px 0 5px;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .wallet-history-item small {
+        display: block;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.35;
+    }
+
+    .wallet-reactivate-btn {
+        width: 100%;
+        margin-top: 8px;
+        border: 0;
+        border-radius: 10px;
+        padding: 9px 12px;
+        color: #fff;
+        background: linear-gradient(135deg,#16a34a,#0f766e);
+        font-weight: 900;
+        box-shadow: 0 10px 20px rgba(22,163,74,.18);
+        transition: .18s ease;
+    }
+
+    .wallet-suspend-btn {
+        width: 100%;
+        margin-top: 8px;
+        border: 0;
+        border-radius: 10px;
+        padding: 9px 12px;
+        color: #fff;
+        background: linear-gradient(135deg,#ef4444,#b91c1c);
+        font-weight: 900;
+        box-shadow: 0 10px 20px rgba(239,68,68,.16);
+        transition: .18s ease;
+    }
+
+    .wallet-reactivate-btn:hover,
+    .wallet-suspend-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .wallet-reactivate-btn:hover {
+        box-shadow: 0 12px 24px rgba(22,163,74,.25);
+    }
+
+    .wallet-suspend-btn:hover {
+        box-shadow: 0 12px 24px rgba(239,68,68,.24);
     }
 
     .page-title {

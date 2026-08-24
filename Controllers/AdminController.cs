@@ -1417,6 +1417,8 @@ namespace AmarShowsBook.Controllers
         {
             try
             {
+                await EnsureWalletAdminSchema();
+
                 // Human Comment:
                 // Wallet admin page uses the same 50-row paging contract as other admin lists.
                 const int pageSize = 50;
@@ -1433,6 +1435,21 @@ namespace AmarShowsBook.Controllers
                     .Take(pageSize)
                     .ToListAsync();
 
+                var walletIds =
+                    wallets.Select(x => x.WalletId).ToList();
+
+                var walletHistory =
+                    await _context.WalletStatusHistories
+                        .AsNoTracking()
+                        .Where(x => walletIds.Contains(x.WalletId))
+                        .OrderByDescending(x => x.CreatedAt)
+                        .ToListAsync();
+
+                ViewBag.WalletStatusHistory =
+                    walletHistory
+                        .GroupBy(x => x.WalletId)
+                        .ToDictionary(x => x.Key, x => x.ToList());
+
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
                 ViewBag.TotalRecords = totalCount;
@@ -1447,10 +1464,268 @@ namespace AmarShowsBook.Controllers
                 ViewBag.CurrentPage = 1;
                 ViewBag.TotalPages = 1;
                 ViewBag.TotalRecords = 0;
+                ViewBag.WalletStatusHistory =
+                    new Dictionary<long, List<WalletStatusHistory>>();
 
                 return View(new List<VwWalletSummary>());
             }
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReactivateWallet(long walletId, string reactivationReason)
+        {
+            await EnsureWalletAdminSchema();
+
+            reactivationReason =
+                (reactivationReason ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(reactivationReason))
+            {
+                TempData["Error"] = "Reactivation reason is mandatory.";
+                return RedirectToAction(nameof(Wallets), null, null, $"wallet-{walletId}");
+            }
+
+            var wallet =
+                await _context.VwWalletSummaries
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.WalletId == walletId);
+
+            if (wallet == null)
+            {
+                TempData["Error"] = "Wallet record was not found.";
+                return RedirectToAction(nameof(Wallets));
+            }
+
+            if (!string.Equals(wallet.WalletStatus, "SUSPENDED", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Info"] = "Only suspended wallets need reactivation.";
+                return RedirectToAction(nameof(Wallets));
+            }
+
+            var adminName =
+                HttpContext.Session.GetString("UserName") ??
+                HttpContext.Session.GetString("UserEmail") ??
+                "Admin";
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+UPDATE public.user_wallets
+SET
+    wallet_status = 'ACTIVE',
+    reactivated_at = CURRENT_TIMESTAMP,
+    reactivated_by = {adminName},
+    reactivation_reason = {reactivationReason},
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = {walletId};
+
+INSERT INTO public.wallet_status_history
+(
+    wallet_id,
+    user_id,
+    previous_status,
+    new_status,
+    action_type,
+    action_reason,
+    action_by,
+    wallet_balance,
+    blocked_balance,
+    created_at
+)
+VALUES
+(
+    {walletId},
+    {wallet.UserId},
+    {wallet.WalletStatus ?? "NA"},
+    'ACTIVE',
+    'REACTIVATE',
+    {reactivationReason},
+    {adminName},
+    {wallet.WalletBalance},
+    {wallet.BlockedBalance},
+    CURRENT_TIMESTAMP
+);
+");
+
+            await _activityLogger.LogAsync(
+                action: "REACTIVATE_WALLET",
+                module: "WALLET",
+                entityType: "USER_WALLET",
+                entityId: walletId > int.MaxValue ? null : (int)walletId,
+                description: $"Admin reactivated wallet for {wallet.UserEmail ?? wallet.UserName ?? walletId.ToString(CultureInfo.InvariantCulture)}. Reason: {reactivationReason}",
+                status: "SUCCESS",
+                isError: 0
+            );
+
+            TempData["Success"] = "Wallet account reactivated.";
+            return RedirectToAction(nameof(Wallets));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SuspendWallet(long walletId, string suspensionReason)
+        {
+            await EnsureWalletAdminSchema();
+
+            suspensionReason =
+                (suspensionReason ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(suspensionReason))
+            {
+                TempData["Error"] = "Suspension reason is mandatory.";
+                return RedirectToAction(nameof(Wallets), null, null, $"wallet-{walletId}");
+            }
+
+            var wallet =
+                await _context.VwWalletSummaries
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.WalletId == walletId);
+
+            if (wallet == null)
+            {
+                TempData["Error"] = "Wallet record was not found.";
+                return RedirectToAction(nameof(Wallets));
+            }
+
+            if (string.Equals(wallet.WalletStatus, "SUSPENDED", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Info"] = "Wallet is already suspended.";
+                return RedirectToAction(nameof(Wallets), null, null, $"wallet-{walletId}");
+            }
+
+            var adminName =
+                HttpContext.Session.GetString("UserName") ??
+                HttpContext.Session.GetString("UserEmail") ??
+                "Admin";
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+UPDATE public.user_wallets
+SET
+    wallet_status = 'SUSPENDED',
+    suspension_reason = {suspensionReason},
+    suspended_at = CURRENT_TIMESTAMP,
+    suspended_by = {adminName},
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = {walletId};
+
+INSERT INTO public.wallet_status_history
+(
+    wallet_id,
+    user_id,
+    previous_status,
+    new_status,
+    action_type,
+    action_reason,
+    action_by,
+    wallet_balance,
+    blocked_balance,
+    created_at
+)
+VALUES
+(
+    {walletId},
+    {wallet.UserId},
+    {wallet.WalletStatus ?? "NA"},
+    'SUSPENDED',
+    'SUSPEND',
+    {suspensionReason},
+    {adminName},
+    {wallet.WalletBalance},
+    {wallet.BlockedBalance},
+    CURRENT_TIMESTAMP
+);
+");
+
+            await _activityLogger.LogAsync(
+                action: "SUSPEND_WALLET",
+                module: "WALLET",
+                entityType: "USER_WALLET",
+                entityId: walletId > int.MaxValue ? null : (int)walletId,
+                description: $"Admin suspended wallet for {wallet.UserEmail ?? wallet.UserName ?? walletId.ToString(CultureInfo.InvariantCulture)}. Reason: {suspensionReason}",
+                status: "WARNING",
+                isError: 1
+            );
+
+            TempData["Success"] = "Wallet account suspended.";
+            return RedirectToAction(nameof(Wallets), null, null, $"wallet-{walletId}");
+        }
+
+private async Task EnsureWalletAdminSchema()
+{
+    await _context.Database.ExecuteSqlRawAsync(@"
+ALTER TABLE public.user_wallets
+ADD COLUMN IF NOT EXISTS suspension_reason text;
+
+ALTER TABLE public.user_wallets
+ADD COLUMN IF NOT EXISTS suspended_at timestamp without time zone;
+
+ALTER TABLE public.user_wallets
+ADD COLUMN IF NOT EXISTS suspended_by varchar(255);
+
+ALTER TABLE public.user_wallets
+ADD COLUMN IF NOT EXISTS reactivated_at timestamp without time zone;
+
+ALTER TABLE public.user_wallets
+ADD COLUMN IF NOT EXISTS reactivated_by varchar(255);
+
+ALTER TABLE public.user_wallets
+ADD COLUMN IF NOT EXISTS reactivation_reason text;
+
+CREATE TABLE IF NOT EXISTS public.wallet_status_history
+(
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    wallet_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    previous_status varchar(50),
+    new_status varchar(50) NOT NULL,
+    action_type varchar(50) NOT NULL,
+    action_reason text NOT NULL,
+    action_by varchar(255),
+    wallet_balance numeric(15,2) DEFAULT 0,
+    blocked_balance numeric(15,2) DEFAULT 0,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallet_status_history_wallet
+ON public.wallet_status_history(wallet_id);
+
+CREATE INDEX IF NOT EXISTS idx_wallet_status_history_created
+ON public.wallet_status_history(created_at);
+
+UPDATE public.user_wallets
+SET
+    suspension_reason = COALESCE(NULLIF(suspension_reason, ''), 'Suspended by admin. Review account activity before reactivation.'),
+    suspended_at = COALESCE(suspended_at, updated_at, last_transaction_at, created_at, CURRENT_TIMESTAMP),
+    suspended_by = COALESCE(NULLIF(suspended_by, ''), 'Admin')
+WHERE wallet_status = 'SUSPENDED';
+
+DROP VIEW IF EXISTS public.vw_wallet_summary;
+
+CREATE VIEW public.vw_wallet_summary AS
+SELECT
+    uw.id AS wallet_id,
+    u.""Id"" AS user_id,
+    u.""Name"" AS user_name,
+    u.""Email"" AS user_email,
+    uw.wallet_balance,
+    uw.blocked_balance,
+    uw.loyalty_points,
+    uw.wallet_status,
+    uw.suspension_reason,
+    uw.suspended_at,
+    uw.suspended_by,
+    uw.reactivated_at,
+    uw.reactivated_by,
+    uw.reactivation_reason,
+    uw.last_transaction_at,
+    count(wt.id) AS total_wallet_transactions,
+    COALESCE(sum(CASE WHEN wt.entry_type = 'CREDIT' THEN wt.amount ELSE 0 END), 0) AS total_credits,
+    COALESCE(sum(CASE WHEN wt.entry_type = 'DEBIT' THEN wt.amount ELSE 0 END), 0) AS total_debits
+FROM public.user_wallets uw
+JOIN public.""Users"" u ON uw.user_id = u.""Id""
+LEFT JOIN public.wallet_transactions wt ON uw.id = wt.wallet_id
+GROUP BY uw.id, u.""Id"";
+");
+}
 
         // =====================================================
         // NOTIFICATIONS PAGE
@@ -3823,6 +4098,8 @@ private static bool TryGetAdminPermission(
         [nameof(ExportRefunds)] = ("REFUND", "VIEW"),
 
         [nameof(Wallets)] = ("WALLET", "VIEW"),
+        [nameof(SuspendWallet)] = ("WALLET", "UPDATE"),
+        [nameof(ReactivateWallet)] = ("WALLET", "UPDATE"),
         [nameof(CouponUsage)] = ("COUPON", "VIEW"),
         [nameof(Notifications)] = ("NOTIFICATION", "VIEW")
     };
@@ -4011,6 +4288,35 @@ private void EnsurePermissionSeedData()
     }
 
 	_context.SaveChanges();
+
+    var walletUpdatePermission =
+        _context.Permissions.FirstOrDefault(x => x.PermissionCode == "WALLET_UPDATE");
+
+    if(walletUpdatePermission != null)
+    {
+        var walletAdminRoles =
+            _context.Roles
+            .Where(x =>
+                x.RoleCode == "AMAR_SUPER_ADMIN" ||
+                x.RoleCode == "AMAR_ADMIN" ||
+                x.RoleCode == "AMAR_PAYMENT_MANAGER")
+            .ToList();
+
+        foreach(var role in walletAdminRoles)
+        {
+            if(!_context.RolePermissions.Any(x => x.RoleId == role.Id && x.PermissionId == walletUpdatePermission.Id))
+            {
+                _context.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = role.Id,
+                    PermissionId = walletUpdatePermission.Id,
+                    GrantedAt = now
+                });
+            }
+        }
+
+        _context.SaveChanges();
+    }
 }
 
 private void EnsureDefaultRolePermissions()
@@ -4346,6 +4652,38 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     catch (Exception ex)
     {
         Console.WriteLine($"Notification action booking source failed: {ex.Message}");
+    }
+
+    try
+    {
+        await EnsureWalletAdminSchema();
+
+        var suspendedWallets = await _context.VwWalletSummaries
+            .AsNoTracking()
+            .Where(x => x.WalletStatus == "SUSPENDED")
+            .OrderByDescending(x => x.SuspendedAt ?? x.LastTransactionAt)
+            .Take(25)
+            .ToListAsync();
+
+        events.AddRange(suspendedWallets.Select(x => new AdminNotificationActionItem
+        {
+            Id = $"wallet-{x.WalletId}",
+            Time = x.SuspendedAt ?? x.LastTransactionAt ?? DateTime.MinValue,
+            Category = "WALLET",
+            Title = "Wallet account suspended",
+            Status = "SUSPENDED",
+            Priority = "HIGH",
+            UserName = x.UserName ?? string.Empty,
+            UserEmail = x.UserEmail ?? string.Empty,
+            Detail = $"Reason {NullText(x.SuspensionReason)} | Balance {CurrencyFormatter.FormatRupees(x.WalletBalance)} | Blocked {CurrencyFormatter.FormatRupees(x.BlockedBalance)} | Suspended by {NullText(x.SuspendedBy)}",
+            ActionText = "Review Wallet",
+            ActionUrl = $"/Admin/Wallets?highlight=wallet-{x.WalletId}",
+            RequiresAction = true
+        }));
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Notification action wallet source failed: {ex.Message}");
     }
 
     try

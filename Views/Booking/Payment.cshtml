@@ -976,13 +976,324 @@ translateY(0);
 }
 
 
+/* refined checkout surface */
+
+body{
+background:#f3f5f8;
+}
+
+body::before,
+body::after{
+display:none;
+}
+
+.payment-container{
+max-width:1040px;
+padding:28px 18px 44px;
+animation:none;
+}
+
+.payment-card{
+border-radius:18px;
+padding:0;
+display:grid;
+grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);
+gap:0;
+background:#fff;
+border:1px solid #dfe4ec;
+box-shadow:0 18px 45px rgba(15,23,42,.08);
+animation:none;
+}
+
+.payment-card::before{
+height:0;
+animation:none;
+}
+
+.payment-header{
+grid-column:1 / -1;
+padding:22px 26px;
+margin:0;
+border-bottom:1px solid #e6ebf2;
+background:#fff;
+}
+
+.payment-header h2{
+font-size:24px;
+font-weight:850;
+letter-spacing:0;
+}
+
+.payment-header > div{
+font-size:.92rem;
+font-weight:750;
+}
+
+.payment-card > .payment-step{
+padding:22px 26px;
+margin:0;
+border-bottom:1px solid #eef2f7;
+}
+
+.payment-card > .payment-step:nth-of-type(3){
+border-bottom:0;
+}
+
+.amount-box{
+grid-column:2;
+grid-row:2 / span 4;
+margin:0;
+padding:26px;
+border:0;
+border-left:1px solid #e6ebf2;
+border-radius:0;
+background:#fafbfc;
+display:flex;
+flex-direction:column;
+align-items:flex-start;
+justify-content:flex-start;
+text-align:left;
+transition:none;
+}
+
+.amount-box:hover{
+transform:none;
+}
+
+.amount-box h3{
+margin:8px 0 6px;
+font-size:.86rem;
+font-weight:800;
+color:#64748b;
+text-transform:uppercase;
+letter-spacing:.06em;
+}
+
+.amount{
+font-size:38px;
+font-weight:900;
+color:#111827;
+text-shadow:none;
+animation:none;
+}
+
+.wallet-applied{
+margin-top:10px;
+padding:8px 10px;
+border-radius:10px;
+background:#ecfdf5;
+color:#047857;
+font-size:.86rem;
+font-weight:800;
+}
+
+.payment-deadline{
+grid-column:1;
+margin:0;
+padding:18px 26px;
+border:0;
+border-bottom:1px solid #eef2f7;
+border-radius:0;
+background:#fff;
+box-shadow:none;
+}
+
+.payment-deadline strong{
+font-size:1rem;
+}
+
+.deadline-clock{
+width:82px;
+height:82px;
+min-width:82px;
+box-shadow:0 10px 22px var(--timer-glow);
+}
+
+.clock-hand{
+height:24px;
+}
+
+.clock-time{
+bottom:13px;
+font-size:.68rem;
+}
+
+.step-title{
+margin-bottom:14px;
+}
+
+.step-title span{
+display:none;
+}
+
+.step-title strong{
+font-size:.92rem;
+letter-spacing:.06em;
+text-transform:uppercase;
+color:#475569;
+}
+
+.amount-box .step-title{
+justify-content:flex-start;
+margin-bottom:4px;
+}
+
+.payment-grid{
+grid-template-columns:repeat(4,minmax(0,1fr));
+gap:10px;
+}
+
+.payment-option{
+min-height:56px;
+padding:13px 14px;
+border-radius:12px;
+border:1px solid #dbe2ea;
+background:#fff;
+font-size:.92rem;
+font-weight:800;
+transition:.18s ease;
+}
+
+.payment-option:hover{
+transform:none;
+box-shadow:0 8px 20px rgba(15,23,42,.06);
+border-color:#2563eb;
+}
+
+.payment-option:has(input:checked){
+border-color:#2563eb;
+background:#eff6ff;
+box-shadow:0 0 0 3px rgba(37,99,235,.09);
+}
+
+.payment-option input{
+accent-color:#2563eb;
+}
+
+.method-details{
+padding:18px;
+border-radius:14px;
+border:1px solid #dfe5ed;
+background:#fff;
+animation:none;
+}
+
+.method-title{
+font-size:1rem;
+font-weight:850;
+}
+
+.payment-field input,
+.payment-field select{
+height:42px;
+border-radius:10px;
+font-weight:750;
+background:#fff;
+}
+
+.payment-field input:focus,
+.payment-field select:focus{
+border-color:#2563eb;
+box-shadow:0 0 0 .16rem rgba(37,99,235,.12);
+}
+
+.upi-handle-options button,
+.saved-detail-btn{
+border-radius:10px;
+font-weight:800;
+}
+
+.saved-detail-btn{
+background:#f8fafc;
+color:#1d4ed8;
+border-color:#cbd5e1;
+}
+
+#qrSection{
+border-radius:14px;
+animation:none;
+}
+
+#qrImage{
+border-radius:14px;
+animation:none;
+box-shadow:0 10px 24px rgba(15,23,42,.1);
+}
+
+.payment-status{
+border-radius:12px;
+}
+
+.payment-status-fill{
+background:linear-gradient(90deg,#2563eb,#0f766e);
+}
+
+.action-buttons{
+margin-top:4px;
+gap:10px;
+}
+
+.cancel-btn,
+.pay-btn{
+min-height:46px;
+padding:12px 16px;
+border-radius:12px;
+font-size:15px;
+font-weight:850;
+animation:none;
+transition:.18s ease;
+}
+
+.cancel-btn{
+flex:0 0 135px;
+background:#fff;
+color:#b91c1c;
+border:1px solid #fecaca;
+}
+
+.pay-btn{
+background:#111827;
+color:#fff;
+}
+
+.cancel-btn:hover,
+.pay-btn:hover{
+transform:translateY(-2px);
+}
+
+.cancel-btn:hover{
+box-shadow:0 8px 18px rgba(185,28,28,.12);
+background:#fef2f2;
+}
+
+.pay-btn:hover{
+box-shadow:0 10px 22px rgba(15,23,42,.18);
+}
+
 /* mobile */
 
 @@media(max-width:768px){
 
+.payment-card{
+grid-template-columns:1fr;
+}
+
+.payment-header,
+.payment-deadline,
+.payment-card > .payment-step,
+.amount-box{
+grid-column:1;
+}
+
+.amount-box{
+grid-row:auto;
+border-left:0;
+border-bottom:1px solid #eef2f7;
+}
+
 .payment-grid{
 
-grid-template-columns:1fr;
+grid-template-columns:repeat(2,minmax(0,1fr));
 }
 
 .field-grid,
@@ -999,7 +1310,7 @@ gap:15px;
 
 .amount{
 
-font-size:36px;
+font-size:32px;
 }
 
 }
@@ -1015,7 +1326,7 @@ font-size:36px;
 
 <h2>
 
-💳 Payment
+Payment
 
 </h2>
 
@@ -1104,7 +1415,7 @@ value="UPI"
 checked
 onchange="toggleQR()" />
 
-📱 UPI
+UPI
 
 </label>
 
@@ -1117,7 +1428,7 @@ name="pay"
 value="CARD"
 onchange="toggleQR()" />
 
-💳 Card
+Card
 
 </label>
 
@@ -1130,7 +1441,7 @@ name="pay"
 value="NETBANKING"
 onchange="toggleQR()" />
 
-🏦 Net Banking
+Net Banking
 
 </label>
 
@@ -1143,7 +1454,7 @@ name="pay"
 value="QR"
 onchange="toggleQR()" />
 
-🔳 QR Scan
+QR Scan
 
 </label>
 
@@ -1296,7 +1607,7 @@ type="button"
 class="cancel-btn"
 onclick="cancelBooking()">
 
-❌ Cancel
+Cancel
 
 </button>
 
@@ -1306,7 +1617,7 @@ class="pay-btn"
 type="button"
 onclick="pay()">
 
-Proceed Payment →
+Proceed Payment
 
 </button>
 

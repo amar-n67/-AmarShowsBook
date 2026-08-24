@@ -100,6 +100,9 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<VwWalletSummary>
             VwWalletSummaries { get; set; }
 
+        public DbSet<WalletStatusHistory>
+            WalletStatusHistories { get; set; }
+
         public DbSet<VwNotificationCenter>
             VwNotificationCenters { get; set; }
 

@@ -49,6 +49,24 @@ public class VwWalletSummary
     [Column("wallet_status")]
     public string? WalletStatus { get; set; }
 
+    [Column("suspension_reason")]
+    public string? SuspensionReason { get; set; }
+
+    [Column("suspended_at")]
+    public DateTime? SuspendedAt { get; set; }
+
+    [Column("suspended_by")]
+    public string? SuspendedBy { get; set; }
+
+    [Column("reactivated_at")]
+    public DateTime? ReactivatedAt { get; set; }
+
+    [Column("reactivated_by")]
+    public string? ReactivatedBy { get; set; }
+
+    [Column("reactivation_reason")]
+    public string? ReactivationReason { get; set; }
+
     [Column("loyalty_points")]
     public long LoyaltyPoints { get; set; }
 
