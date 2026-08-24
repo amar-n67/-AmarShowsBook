@@ -15,6 +15,8 @@ namespace AmarShowsBook.Controllers
 {
     public class BookingController : Controller
     {
+        private const int SeatLockMinutes = 7;
+
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
         private readonly RbacService _rbacService;
@@ -331,8 +333,11 @@ public async Task<IActionResult> Seats(int? id)
     }
 
     await NormalizeSeatRowsForScreen(schedule.Id);
+    await ReleaseExpiredSeatLocks(schedule.Id);
 
 
+    var now =
+    DateTime.UtcNow;
 
     var seats =
     await
@@ -341,7 +346,10 @@ public async Task<IActionResult> Seats(int? id)
 
         where s.ScheduleId==schedule.Id
 
-        join l in _context.SeatLocks
+        join l in _context.SeatLocks.Where(x=>
+            x.LockStatus=="CONFIRMED"
+            ||
+            (x.LockStatus=="LOCKED" && x.ExpiresAt>now))
         on s.Id equals l.ScreenSeatId
         into lockGroup
 
@@ -368,7 +376,12 @@ public async Task<IActionResult> Seats(int? id)
             IsLocked=
             lockSeat!=null
             &&
-            lockSeat.LockStatus=="LOCKED"
+            lockSeat.LockStatus=="LOCKED",
+
+            LockExpiresAt=
+            lockSeat!=null && lockSeat.LockStatus=="LOCKED"
+            ? lockSeat.ExpiresAt
+            : null
         }
 
     ).ToListAsync();
@@ -424,6 +437,8 @@ public async Task<IActionResult> Seats(int? id)
         [FromBody]
         SeatLockRequest request)
         {
+            await ReleaseExpiredSeatLocks(request.ScheduleId);
+
             long userId=
             Convert.ToInt64(
             HttpContext.Session.GetString("UserId"));
@@ -446,7 +461,7 @@ public async Task<IActionResult> Seats(int? id)
                 &&
 
                 (
-                x.LockStatus=="LOCKED"
+                (x.LockStatus=="LOCKED" && x.ExpiresAt>DateTime.UtcNow)
                 ||
                 x.LockStatus=="CONFIRMED"
                 ));
@@ -468,7 +483,7 @@ public async Task<IActionResult> Seats(int? id)
                     ScheduleId=request.ScheduleId,
                     ScreenSeatId=seatId,
                     LockedAt=DateTime.UtcNow,
-                    ExpiresAt=DateTime.UtcNow.AddMinutes(5),
+                    ExpiresAt=DateTime.UtcNow.AddMinutes(SeatLockMinutes),
                     LockStatus="LOCKED"
                 });
             }
@@ -535,6 +550,51 @@ new BookingDraft
                 bookingId=booking.Id
             });
         }
+
+[HttpPost]
+public async Task<IActionResult> ReleaseExpiredSeatLocksNow(int scheduleId)
+{
+    await ReleaseExpiredSeatLocks(scheduleId);
+
+    return Json(new
+    {
+        success=true
+    });
+}
+
+private async Task ReleaseExpiredSeatLocks(int? scheduleId=null)
+{
+    var now =
+    DateTime.UtcNow;
+
+    var query =
+    _context.SeatLocks
+    .Where(x=>
+        x.LockStatus=="LOCKED"
+        &&
+        x.ExpiresAt<=now);
+
+    if(scheduleId.HasValue)
+    {
+        query =
+        query.Where(x=>x.ScheduleId==scheduleId.Value);
+    }
+
+    var expiredLocks =
+    await query.ToListAsync();
+
+    if(!expiredLocks.Any())
+    {
+        return;
+    }
+
+    foreach(var seatLock in expiredLocks)
+    {
+        seatLock.LockStatus="RELEASED";
+    }
+
+    await _context.SaveChangesAsync();
+}
 
 // ==========================================
 // BOOKING DETAILS

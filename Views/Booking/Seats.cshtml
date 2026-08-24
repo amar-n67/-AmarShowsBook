@@ -201,6 +201,10 @@ allowfullscreen>
                     cssClass=(seat.Category ?? "Silver").ToLowerInvariant();
                 }
 
+                var lockExpiryIso = seat.LockExpiresAt.HasValue
+                    ? seat.LockExpiresAt.Value.ToUniversalTime().ToString("o")
+                    : "";
+
                 count++;
 
                 <button
@@ -210,8 +214,9 @@ allowfullscreen>
                 data-name="@seat.Row@seat.Number"
                 data-price="@seat.Price"
                 data-category="@seat.Category"
+                data-lock-expires="@lockExpiryIso"
                 onclick="toggleSeat(this)"
-                @(seat.IsBooked||seat.IsLocked?"disabled":"")>
+                aria-disabled="@(seat.IsBooked||seat.IsLocked?"true":"false")">
 
                     <span class="chair-back" aria-hidden="true"></span>
                     <span class="chair-arm chair-arm-left" aria-hidden="true"></span>
@@ -230,6 +235,15 @@ allowfullscreen>
                         ₹@seat.Price
 
                     </div>
+
+                    @if(seat.IsLocked)
+                    {
+                        <div class="seat-lock-tooltip">
+                            <span>Locked seat</span>
+                            <strong data-lock-countdown="@lockExpiryIso">Calculating...</strong>
+                            <small>Auto release if payment is not done</small>
+                        </div>
+                    }
 
                 </button>
 
@@ -1007,6 +1021,82 @@ background:rgba(0,0,0,.42);
 color:#fff;
 }
 
+.seat-lock-tooltip{
+position:absolute;
+left:50%;
+bottom:calc(100% + 12px);
+width:168px;
+padding:10px 12px;
+border:1px solid rgba(167,139,250,.36);
+border-radius:14px;
+background:
+radial-gradient(circle at 18% 15%,rgba(167,139,250,.24),transparent 38%),
+linear-gradient(135deg,#1e1635,#111827);
+color:#fff;
+box-shadow:0 14px 32px rgba(0,0,0,.34),0 0 18px rgba(139,92,246,.24);
+opacity:0;
+pointer-events:none;
+transform:translateX(-50%) translateY(8px) scale(.96);
+transition:.22s ease;
+z-index:30;
+text-align:center;
+}
+
+.seat-lock-tooltip::after{
+content:"";
+position:absolute;
+left:50%;
+bottom:-7px;
+width:14px;
+height:14px;
+background:#111827;
+border-right:1px solid rgba(167,139,250,.3);
+border-bottom:1px solid rgba(167,139,250,.3);
+transform:translateX(-50%) rotate(45deg);
+}
+
+.seat-lock-tooltip span{
+display:block;
+font-size:10px;
+font-weight:950;
+letter-spacing:.08em;
+text-transform:uppercase;
+color:#c4b5fd;
+}
+
+.seat-lock-tooltip strong{
+display:block;
+margin-top:4px;
+font-size:20px;
+font-weight:950;
+font-variant-numeric:tabular-nums;
+color:#facc15;
+text-shadow:0 0 14px rgba(250,204,21,.28);
+}
+
+.seat-lock-tooltip small{
+display:block;
+margin-top:3px;
+font-size:10px;
+font-weight:800;
+line-height:1.25;
+color:#dbeafe;
+}
+
+.seat-btn.locked:hover .seat-lock-tooltip,
+.seat-btn.locked:focus-visible .seat-lock-tooltip{
+opacity:1;
+transform:translateX(-50%) translateY(0) scale(1);
+}
+
+.seat-btn[aria-disabled="true"]{
+cursor:not-allowed;
+}
+
+.seat-btn[aria-disabled="true"]:active{
+transform:translateY(-7px) rotateX(7deg) scale(1.07);
+}
+
 
 
 /* small armrests */
@@ -1751,6 +1841,71 @@ function getYoutubeId(url)
         return "";
     }
 }
+
+function formatSeatLockTime(ms)
+{
+    const totalSeconds=Math.max(0,Math.ceil(ms/1000));
+    const minutes=Math.floor(totalSeconds/60);
+    const seconds=totalSeconds%60;
+    return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+}
+
+let seatLockReleaseRequested=false;
+
+async function releaseExpiredLocksAndRefresh()
+{
+    if(seatLockReleaseRequested)
+    {
+        return;
+    }
+
+    seatLockReleaseRequested=true;
+
+    try
+    {
+        await fetch("/Booking/ReleaseExpiredSeatLocksNow?scheduleId=@Model.Id",
+        {
+            method:"POST"
+        });
+    }
+    catch
+    {
+    }
+
+    window.location.reload();
+}
+
+function updateSeatLockCountdowns()
+{
+    const now=Date.now();
+
+    document.querySelectorAll("[data-lock-countdown]").forEach(timer=>{
+        const expiryText=timer.dataset.lockCountdown || "";
+        const expiryTime=Date.parse(expiryText);
+
+        if(Number.isNaN(expiryTime))
+        {
+            timer.textContent="Release soon";
+            return;
+        }
+
+        const remaining=expiryTime-now;
+
+        if(remaining<=0)
+        {
+            timer.textContent="Releasing...";
+            releaseExpiredLocksAndRefresh();
+            return;
+        }
+
+        timer.textContent=formatSeatLockTime(remaining);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    updateSeatLockCountdowns();
+    setInterval(updateSeatLockCountdowns,1000);
+});
 
 document.addEventListener("DOMContentLoaded", function () {
     const screen = document.querySelector(".screen-line.has-trailer");
