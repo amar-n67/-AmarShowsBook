@@ -1,67 +1,130 @@
-AmarShowsBook RBAC implementation notes
+AmarShowsBook RBAC notes
+Updated: 2026-08-24
 
-Actual roles in the application
+Purpose
+RBAC means Role Based Access Control.
+In simple words, the user's role decides which pages, buttons, reports, and actions they can use.
 
-Only these four roles are valid in AmarShowsBook:
-- AMAR_SUPER_ADMIN
-- AMAR_ADMIN
-- AMAR_DEVELOPER
-- AMAR_USER
+The application uses only four roles
+1. AMAR_SUPER_ADMIN
+2. AMAR_ADMIN
+3. AMAR_DEVELOPER
+4. AMAR_USER
 
-Any old role codes such as AMARSHOW_ADMIN_SUPER, AMARSHOW_ADMIN_PLATFORM,
-AMARSHOW_MANAGER_CONTENT, ADMIN, USER or DEVELOPER are legacy values. The
-application startup normalization maps those old roles into the four roles
-above and deletes noncanonical role records.
+Do not add more roles.
+Old role names from earlier versions are legacy values. Startup code maps old roles into these four roles and removes non-standard roles.
 
-Custom roles are disabled. /Admin/Roles shows only the four system roles.
+Role 1: AMAR_SUPER_ADMIN
+Meaning
+- This is the owner-level role.
+- It has the highest access in the application.
 
-Role definitions
+What this role can do
+- Open all admin pages.
+- Manage users.
+- Assign and remove roles.
+- View roles and permissions.
+- Manage shows and schedules.
+- Manage bookings.
+- View payments and transactions.
+- Manage refunds.
+- View and update wallets.
+- View coupon usage and manage coupons where the page supports it.
+- View notifications.
+- View scanner/security pages.
+- View activity logs and versions.
+- Access developer tools.
+- Use admin export buttons.
+- Ask Amaro for admin summaries, search, export, and developer help.
 
-AMAR_SUPER_ADMIN
-- This is the highest access role.
-- Can access every admin module and every admin permission.
-- Can access developer-only features.
-- Can view and manage users, roles, permissions, shows, bookings, payments,
-  refunds, wallets, coupons, notifications, analytics, scanner/security and
-  activity/version pages.
-- Should be assigned only to the application owner or trusted top-level
-  administrator.
-- This role should stay active and should not be disabled from the UI.
+Limits
+- This role should be given only to the application owner or a fully trusted admin.
+- This role should not be disabled from the UI.
 
-AMAR_ADMIN
-- This is the normal administrator role.
-- Can access all admin and operational modules except developer-only features.
-- Can manage users and user access.
-- Can manage roles only within the fixed four-role system. It cannot create
-  custom roles.
-- Can manage shows, schedules, bookings, payments, refunds, wallets, coupons,
-  notifications, scanner/security and reports.
-- Cannot access DEVELOPER_EDIT permission unless also given AMAR_SUPER_ADMIN
-  or AMAR_DEVELOPER.
+Role 2: AMAR_ADMIN
+Meaning
+- This is the normal admin role for daily operations.
 
-AMAR_DEVELOPER
-- This role is limited to developer/editor access.
-- Has DEVELOPER_EDIT permission.
-- Can open developer profile/editor features.
+What this role can do
+- Open the admin dashboard.
+- Manage users and user access.
+- Work with the fixed four-role system.
+- Manage shows and schedules.
+- Manage bookings.
+- View transactions and payments.
+- Manage refund workflows.
+- View wallets and wallet operations.
+- View coupon usage.
+- View notifications.
+- Use scanner/security pages.
+- View reports, activity logs, and versions.
+- Use admin export buttons.
+- Ask Amaro for admin summaries, admin search, export, refund, booking, wallet, coupon, notification, and scanner help.
+
+Limits
+- Cannot use developer editor tools unless the user also has AMAR_DEVELOPER or AMAR_SUPER_ADMIN.
+- Cannot create random custom roles.
+- Should not bypass RBAC checks in controllers or views.
+
+Role 3: AMAR_DEVELOPER
+Meaning
+- This role is for developer/editor tools only.
+
+What this role can do
+- Open developer profile/editor pages.
+- Update developer profile data where the developer page allows it.
+- Ask Amaro about developer tools.
+
+Limits
 - Does not automatically get admin dashboard access.
-- Does not manage bookings, users, payments, refunds, wallets, coupons,
-  notifications or scanner/security unless another admin role is also assigned.
+- Cannot manage users.
+- Cannot manage bookings.
+- Cannot manage payments or refunds.
+- Cannot manage wallets.
+- Cannot manage coupons.
+- Cannot manage notifications.
+- Cannot use scanner/security pages.
+- Cannot export admin reports unless another admin role is also assigned.
 
-AMAR_USER
-- This is the default customer role.
-- Assigned automatically to normal signup users.
-- Has no admin permissions in role_permissions.
-- Can use normal customer features such as browsing shows, booking tickets,
-  viewing own bookings, wallet/profile workflows and normal account pages.
-- Cannot open admin dashboard pages.
-- Cannot manage users, roles, permissions, shows, payments, refunds, coupons,
-  notifications, scanner/security or analytics.
-- Cannot view other users' bookings or tickets unless a controller explicitly
-  allows that action for the current user.
+Role 4: AMAR_USER
+Meaning
+- This is the normal customer role.
+- It is assigned automatically when a user signs up.
 
-Permission model
+What this role can do
+- Browse showTime.
+- View movies, standup shows, and live streams.
+- Select seats.
+- Book tickets.
+- Use coupons where the booking page allows it.
+- Pay using allowed payment methods.
+- View own bookings.
+- View own tickets.
+- View own transaction history.
+- View own wallet.
+- Edit own profile.
+- Contact support.
+- Ask Amaro for show, booking, ticket, wallet, profile, transaction, support, theme, and cursor help.
 
-RBAC permissions use MODULE_ACTION codes. For example:
+Limits
+- Cannot open /Admin/Dashboard.
+- Cannot open /Admin/Users.
+- Cannot open /Admin/Roles.
+- Cannot open /Admin/UserAccess.
+- Cannot open /Admin/ManageShows.
+- Cannot manage bookings for other users.
+- Cannot view all payments or refunds.
+- Cannot update wallets for other users.
+- Cannot manage coupons or notifications.
+- Cannot use scanner/security validation pages.
+- Cannot open developer editor pages.
+- Cannot use admin export buttons.
+
+Main permission idea
+Permissions use this format:
+MODULE_ACTION
+
+Examples:
 - ADMIN_VIEW
 - USER_GRANT_ACCESS
 - SHOW_CREATE
@@ -71,47 +134,27 @@ RBAC permissions use MODULE_ACTION codes. For example:
 - SCANNER_VALIDATE
 - DEVELOPER_EDIT
 
-Services/RbacService.cs checks access through vw_user_access_matrix by:
-- UserId
-- ModuleCode
-- ActionType
+Where permission checks happen
+- Services/RbacService.cs checks permissions.
+- Helpers/RbacAuthorizationHelper.cs helps controllers and views ask, "Can this user do this?"
+- AdminController checks important admin actions.
+- Views should hide or disable buttons when the current role is not allowed.
+- Amaro also checks RBAC before showing admin actions.
 
-Helpers/RbacAuthorizationHelper.cs reads the logged-in session user and calls
-RbacService.
-
-SessionAuthorizeFilter protects controller routes before action execution.
-AdminController also checks important admin actions through
-RbacAuthorizationHelper.
-
-Role permission grants
-
-AMAR_SUPER_ADMIN:
-- Gets every permission in the permissions table.
-
-AMAR_ADMIN:
-- Gets every permission except permission codes that start with DEVELOPER_.
-
-AMAR_DEVELOPER:
-- Gets only DEVELOPER_EDIT.
-
-AMAR_USER:
-- Gets no admin RBAC permissions.
-
-Admin permission modules
-
+Important modules
 ADMIN
-- VIEW: open the admin dashboard and general admin surfaces.
+- VIEW: open admin dashboard and general admin pages.
 
 USER
-- VIEW: view users and profiles.
-- UPDATE: update user/profile administration records.
-- DISABLE: disable, enable, delete, restore or revoke users.
-- GRANT_ACCESS: assign and remove user roles.
+- VIEW: view users.
+- UPDATE: update user admin data.
+- DISABLE: disable, enable, delete, restore, or revoke users.
+- GRANT_ACCESS: assign or remove user roles.
 
 ROLE
-- VIEW: view role definitions.
-- CREATE: currently blocked because custom role creation is disabled.
-- UPDATE: update allowed system role name, description and active state.
+- VIEW: view the four roles.
+- CREATE: not used for custom roles because custom roles are disabled.
+- UPDATE: update allowed system role details.
 - DELETE: not used for deleting system roles.
 
 PERMISSION
@@ -121,137 +164,126 @@ PERMISSION
 
 SHOW
 - VIEW: view managed shows.
-- CREATE: create movies, standup shows, live streams and schedules.
-- UPDATE: update managed show records.
-- DELETE: delete managed show records.
+- CREATE: create movies, standup shows, live streams, and schedules.
+- UPDATE: update show records.
+- DELETE: delete show records.
 
 BOOKING
-- VIEW: view booking administration pages and booking details.
+- VIEW: view booking admin pages.
 - PRINT: print or download tickets where allowed.
-- CANCEL: perform booking cancellation actions where allowed.
+- CANCEL: cancel bookings where allowed.
 
 PAYMENT
-- VIEW: view payment/transaction administration.
-- REFUND: initiate or manage payment refund actions.
+- VIEW: view transaction/payment admin pages.
+- REFUND: manage refund actions connected to payments.
 
 REFUND
-- VIEW: view refund dashboard/details.
-- APPROVE: approve refund requests.
-- REJECT: reject refund requests.
-- RETRY: retry failed refund workflows.
-- UPDATE: update refund records.
+- VIEW: view refunds.
+- APPROVE: approve refunds.
+- REJECT: reject refunds.
+- RETRY: retry failed refunds.
+- UPDATE: update refund notes/status.
 
 WALLET
-- VIEW: view wallet administration.
+- VIEW: view wallets.
 - UPDATE: perform wallet adjustment/update workflows.
 
 COUPON
-- VIEW: view coupon usage and coupon management records.
+- VIEW: view coupon usage and coupon records.
 - CREATE: create coupons.
 - UPDATE: update coupons.
 - DELETE: delete or deactivate coupons.
 
 NOTIFICATION
-- VIEW: view notifications and templates.
-- UPDATE: update notification templates or notification status.
+- VIEW: view notifications.
+- UPDATE: update notification status or templates.
 
 ANALYTICS
-- VIEW: view reporting/dashboard analytics.
+- VIEW: view dashboard/reporting data.
 
 SUPPORT
 - VIEW: view support/customer investigation pages.
 
 SCANNER
-- VIEW: view scanner/security page.
+- VIEW: open scanner/security pages.
 - VALIDATE: validate tickets at venue entry.
 
 DEVELOPER
-- EDIT: access developer/editor profile features.
+- EDIT: open and edit developer profile tools.
 
-User limits
-
-A normal AMAR_USER is limited to customer-owned workflows:
-- Browse Home/ShowTime.
-- Book tickets using the normal booking flow.
-- View own bookings.
-- View own ticket pages where the booking belongs to that user.
-- Use own wallet/profile pages.
-- Cancel own booking only when the booking cancellation rules allow it.
-
-A normal AMAR_USER cannot:
-- Access /Admin/Dashboard.
-- Access /Admin/Users, /Admin/Roles, /Admin/Permissions or /Admin/UserAccess.
-- Create or edit shows.
-- Manage bookings for other users.
-- View or manage payments/refunds globally.
-- Update wallets for other users.
-- Manage coupons or notifications.
-- Use ticket scanner/security validation pages.
-- Access developer editor pages.
-
-Booking and ticket limits
-
-Booking cancellation:
-- Booking/MyBookings posts to Booking/CancelBooking.
+Booking and ticket rules
+Normal user cancellation
+- A user can cancel only their own booking.
 - Cancellation is blocked after show start time.
-- Cancellation is blocked when already cancelled.
-- Cancellation is blocked when the booking is not confirmed/paid.
-- A refund row is created in refunds for every accepted cancellation.
-- Wallet amount used is credited back through wallet_transactions immediately.
-- UPI, QR, wallet and generic API-source refunds are marked SUCCESS
-  automatically in this local implementation.
-- Card, net banking and bank-like methods remain PENDING for /Admin/Refunds
-  approval.
+- Cancellation is blocked if the booking is already cancelled.
+- Cancellation is blocked if the booking is not confirmed/paid.
+- When cancellation is accepted, a refund row is created.
+- Wallet amount used is credited back through wallet_transactions.
+- Some local payment methods can become SUCCESS automatically.
+- Card/net banking/bank-like refunds can remain PENDING for admin review.
 
-Ticket access:
-- Normal users should only view/download their own tickets.
-- Admin users can view tickets through admin booking permissions.
-- Super Admin can view all tickets.
+Ticket access
+- AMAR_USER should only view their own tickets.
+- AMAR_ADMIN can view tickets through booking admin permissions.
+- AMAR_SUPER_ADMIN can view all tickets.
 
-Data and startup behavior
+Startup behavior
+Program.cs calls RBAC setup code when the application starts.
 
-Application startup calls EnsureRbacStore in Program.cs.
-
-EnsureRbacStore:
-- Seeds the four system roles.
-- Seeds application_modules.
-- Seeds permissions.
-- Maps legacy role assignments to the four canonical roles.
-- Assigns AMAR_USER to users with no active role.
-- Rebuilds role_permissions for the four roles.
-- Deletes roles outside the four-role system.
-- Recreates vw_user_access_matrix and vw_user_application_menus.
+Startup setup does these things:
+- Creates the four standard roles.
+- Creates application modules.
+- Creates permissions.
+- Maps old roles to the four current roles.
+- Gives AMAR_USER to users with no active role.
+- Rebuilds role_permissions.
+- Deletes role records outside the four-role system.
+- Recreates vw_user_access_matrix.
+- Recreates vw_user_application_menus.
 - Updates fn_assign_default_role so new users receive AMAR_USER.
 
 Admin page behavior
-
-/Admin/Roles:
-- Shows only the four system roles.
+/Admin/Roles
+- Shows only the four fixed roles.
 - Custom role creation is disabled.
-- AMAR_SUPER_ADMIN is forced active.
+- AMAR_SUPER_ADMIN stays active.
 
-/Admin/Permissions:
-- Seeds modules and permission records when opened.
-- Rebuilds default role permissions using direct SQL.
+/Admin/UserAccess
+- Assigns and removes only the four fixed roles.
 
-/Admin/UserAccess:
-- Assigns and removes roles for users through user_role_mappings.
-- Only the four canonical roles should be assigned.
+/Admin/ManageShows
+- Creates show content and schedules.
+- Generates seats.
+- Makes schedules appear on /Home/ShowTime.
 
-/Admin/ManageShows:
-- Creates Movie, StandupShow or LiveStream content.
-- Creates ShowSchedules with screen_id.
-- Generates screen_seats.
-- Makes schedules appear on Home/ShowTime.
+/Admin/Refunds
+- Shows refund requests and refund status.
+- Admin actions must follow refund permissions.
 
-Developer checklist for adding new protected buttons/pages
+/Admin/Security
+- Shows scanner activity, validation issues, and scanner devices.
 
-1. Add or reuse a module in application_modules.
-2. Add a permission in permissions using MODULE_ACTION format.
-3. Grant it only to the correct role set.
-4. In the controller action, call:
-   RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "MODULE", "ACTION")
-5. In the view, hide or disable buttons using the same module/action decision
-   passed through ViewBag or a view model.
-6. Do not introduce new role codes. Use only:
-   AMAR_SUPER_ADMIN, AMAR_ADMIN, AMAR_DEVELOPER, AMAR_USER.
+Export behavior
+- Export buttons are role-aware.
+- Admin export should appear only on admin pages where the user has access.
+- Amaro can trigger Export This Page only if the page has an export button.
+
+Amaro behavior with roles
+- AMAR_USER gets customer help only.
+- AMAR_ADMIN gets admin operation help, search, summaries, and export.
+- AMAR_DEVELOPER gets developer help.
+- AMAR_SUPER_ADMIN gets all admin and developer help.
+- Amaro should never offer a role action that the user cannot actually open.
+
+Developer checklist for new protected pages or buttons
+1. Choose the module.
+2. Choose the action.
+3. Add permission as MODULE_ACTION if it does not exist.
+4. Grant it only to the correct role.
+5. In the controller, call RbacAuthorizationHelper.CanAccess.
+6. In the view, hide or disable the button using the same permission.
+7. Do not create a new role code.
+8. Test with AMAR_USER, AMAR_ADMIN, AMAR_DEVELOPER, and AMAR_SUPER_ADMIN.
+
+Golden rule
+If a button changes data, checks money, changes access, exports data, validates tickets, or opens admin data, it must be protected by RBAC.

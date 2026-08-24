@@ -1,220 +1,301 @@
 AmarShowsBook page and file map
-Updated: 2026-06-27
+Updated: 2026-08-24
 
 Purpose
-This guide explains where each user-facing page lives, which controller action serves it, and which supporting model or asset files are commonly involved. The project keeps ASP.NET MVC conventions: Controllers hold route logic, Views hold Razor markup, Models hold database/view models, Services hold reusable business checks, and wwwroot holds public CSS/JS/uploads.
+This file tells you where each important page lives in the code.
+Use it when you want to change a page design, fix a button, update text, or find the controller action behind a URL.
 
-Shared layout and global assets
+How the project is arranged
+- Controllers decide what happens when a URL is opened.
+- Views are .cshtml files that draw the page.
+- Models hold database tables, database views, and page data classes.
+- Services hold shared business logic like RBAC and activity logs.
+- wwwroot holds CSS, JavaScript, images, uploads, and public assets.
+- Docs holds human notes for developers and admins.
+
+Shared layout and common UI
 - Views/Shared/_Layout.cshtml
-  Main application shell, navbar, theme switcher, session popup, cinema popup, global scripts, and version badge.
+  Main user layout. It contains the public navbar, theme switcher, Support menu, Amaro chatbot, session popup, cinema popup, footer, and global theme CSS.
+
 - Views/Shared/_AdminLayout.cshtml
-  Admin shell and admin theme switcher.
-- wwwroot/css/site.css
-  Public site-level CSS loaded after Bootstrap.
-- wwwroot/js/site.js
-  Public site-level JavaScript.
-- wwwroot/uploads/
-  User and developer uploaded images.
+  Admin layout. It contains the admin sidebar, admin topbar, admin theme switcher, admin Amaro chatbot, export button wiring, and admin cursor/theme scripts.
+
+- wwwroot/css/admin/admin-dashboard.css
+  Main admin CSS. It controls admin dashboard layout, tables, filters, buttons, cards, Amaro admin widget, and admin theme compatibility.
+
+- wwwroot/js/admin/admin-dashboard.js
+  Admin helper JavaScript. It handles admin menu toggle and export behavior.
+
+- wwwroot/js/profile.js
+  Profile page JavaScript. It handles profile edit, OTP helpers, address fields, and theme-aware editable inputs.
+
+- wwwroot/images/brand/
+  Application logo files. The current app logo is arcanaamar-showtime-logo-cropped.png.
+
+Branding
+- Main brand name: showTime.
+- Small brand text: arcanaamar.
+- Full application branding: arcanaamar showTime.
+
+Support contact
+- Mobile: +91 8920993434
+- Email: arcanaamar67@gmail.com
+- Public menu Support hover actions:
+  Write to us -> mailto:arcanaamar67@gmail.com
+  Call -> tel:+918920993434
+- Amaro also knows this support contact.
+
+Themes
+- Theme choice is saved in browser localStorage as amarShowsTheme.
+- Current themes: system, dark, white, cinema.
+- Public theme code is mostly in Views/Shared/_Layout.cshtml.
+- Admin theme code is in Views/Shared/_AdminLayout.cshtml and wwwroot/css/admin/admin-dashboard.css.
+- Cursor style is saved in localStorage as amarShowsCursor.
+
+Amaro chatbot
+- Controller: Controllers/AmaroController.cs
+- Public widget: Views/Shared/_Layout.cshtml
+- Admin widget: Views/Shared/_AdminLayout.cshtml
+- Database table: public.amaro_chat_messages
+- Amaro can help with shows, seats, bookings, tickets, transactions, wallet, profile, support, theme, cursor, admin summaries, admin search, and admin export.
+- Amaro follows RBAC. It should not show admin actions that the logged-in user's role cannot use.
 
 Authentication pages
 - /Auth/Login
   Controller: Controllers/AuthController.cs
   View: Views/Auth/Login.cshtml
-  Purpose: Login, password validation, theme-aware auth card.
+  Purpose: User login.
+
 - /Auth/Signup
   Controller: Controllers/AuthController.cs
   View: Views/Auth/Signup.cshtml
-  Purpose: Register user and set default role.
+  Purpose: New user registration. New users receive AMAR_USER by default.
+
 - /Auth/ForgotPassword
   Controller: Controllers/AuthController.cs
   View: Views/Auth/ForgotPassword.cshtml
-  Purpose: Start reset-password OTP flow.
-- /Auth/SendOTP
-  Controller: Controllers/AuthController.cs
-  View after post: Views/Auth/VerifyOTP.cshtml
-  Purpose: Sends reset OTP and shows dev OTP popup when configured.
+  Purpose: Start password reset.
+
 - /Auth/VerifyOTP
   Controller: Controllers/AuthController.cs
   View: Views/Auth/VerifyOTP.cshtml
-  Purpose: Validate reset OTP.
+  Purpose: Verify password reset OTP.
+
 - /Auth/ResetPassword
   Controller: Controllers/AuthController.cs
   View: Views/Auth/ResetPassword.cshtml
-  Purpose: Save new password.
+  Purpose: Save the new password.
 
-Home and show discovery
+Home and show pages
 - /Home/Index
   Controller: Controllers/HomeController.cs
+  Behavior: Redirects to /Home/ShowTime.
+  Note: This is not a separate Index page anymore.
+
+- /Home/ShowTime
+  Controller: Controllers/HomeController.cs
   View: Views/Home/Index.cshtml
-  Model: Models/ViewModels/HomeViewModel.cs and HomeShowViewModel.cs
-  Data view: public.vw_home_show_listing, mapped in Data/ApplicationDbContext.cs
-  Purpose: Show listing, category tabs, location filters, poster/image strip, trailer button, seat booking entry.
+  Models: Models/ViewModels/HomeViewModel.cs and Models/ViewModels/HomeShowViewModel.cs
+  Data view: public.vw_home_show_listing
+  Purpose: Main showTime page for movies, standup, live streams, trailers, venues, dates, and booking entry buttons.
+
 - /Home/ShowDates
   Controller: Controllers/HomeController.cs
   View: Views/Home/ShowDates.cshtml
-  Purpose: Select available show dates.
+  Purpose: Choose available show dates.
+
 - /Home/ShowTimes
   Controller: Controllers/HomeController.cs
   View: Views/Home/ShowTimes.cshtml
-  Purpose: Select available show times.
+  Purpose: Choose available show times.
 
 Booking and tickets
 - /Booking/Seats/{scheduleId}
   Controller: Controllers/BookingController.cs
   View: Views/Booking/Seats.cshtml
-  Models: BookingDraft, ShowSchedule, ScreenSeat, SeatLock
-  Purpose: Seat map, seat locking, booking draft creation.
+  Purpose: Seat map, seat selection, seat locking, and draft booking.
+
 - /Booking/Payment
   Controller: Controllers/BookingController.cs
   View: Views/Booking/Payment.cshtml
-  Models: BookingDraft, PaymentSession, Transaction
-  Purpose: Payment method selection, wallet/coupon usage, QR status checks.
+  Purpose: Payment method, wallet use, coupon use, QR checks, and final booking confirmation.
+
 - /Booking/Confirmation?bookingId={draftId}
   Controller: Controllers/BookingController.cs
   View: Views/Booking/Confirmation.cshtml
-  Purpose: Desktop ticket after booking, QR ticket URL, DB poster from booked schedule.
+  Purpose: Booking confirmation and desktop ticket.
+
 - /Booking/Ticket/{draftId}
   Controller: Controllers/BookingController.cs
-  View rendered: Views/Booking/MobileTicket.cshtml
-  Purpose: Mobile/shareable ticket for draft booking.
+  View used: Views/Booking/MobileTicket.cshtml
+  Purpose: Mobile ticket from a draft booking.
+
 - /Booking/TicketByBooking/{bookingId}
   Controller: Controllers/BookingController.cs
-  View rendered: Views/Booking/MobileTicket.cshtml
-  Purpose: Mobile/shareable ticket for confirmed booking, using the same booked schedule poster.
+  View used: Views/Booking/MobileTicket.cshtml
+  Purpose: Mobile ticket from a confirmed booking.
+
 - /Booking/MyBookings
   Controller: Controllers/BookingController.cs
   View: Views/Booking/MyBookings.cshtml
-  Purpose: User booking history and ticket links.
+  Purpose: User booking history, ticket links, cancellation entry, and filters.
+
 - /Booking/Details
   Controller: Controllers/BookingController.cs
   View: Views/Booking/Details.cshtml
-  Purpose: Booking detail display.
+  Purpose: Booking detail page.
 
-Profile and wallet
+Profile, wallet, and transactions
 - /Profile/MyProfile
   Controller: Controllers/ProfileController.cs
   View: Views/Profile/MyProfile.cshtml
   Script: wwwroot/js/profile.js
-  Purpose: Profile edit, email/mobile OTP verification, profile image upload.
+  Purpose: User profile, profile image, email/mobile OTP, address, genre, and language.
+
 - /Profile/Transactions
   Controller: Controllers/ProfileController.cs
   View: Views/Profile/Transactions.cshtml
   Purpose: Profile transaction list.
-- /Wallet/Index
+
+- /Wallet/MyWallet
   Controller: Controllers/WalletController.cs
   View: Views/Wallet/Index.cshtml
-  Purpose: Wallet summary and wallet activity.
+  Purpose: User wallet balance and wallet activity.
 
-Developer page
+- /Transaction/History
+  Controller: Controllers/TransactionController.cs
+  View: Views/Transaction/History.cshtml
+  Purpose: User transaction history.
+
+- /Transaction/Details/{id}
+  Controller: Controllers/TransactionController.cs
+  View: Views/Transaction/Details.cshtml
+  Purpose: User transaction details.
+  Note: Search bar was removed from this detail page.
+
+Developer pages
 - /Developer/Index
   Controller: Controllers/DeveloperController.cs
   View: Views/Developer/Index.cshtml
-  Model: Models/ViewModels/DeveloperVM.cs
+  Purpose: Developer overview.
+
+- /Developer/Profile
+  Controller: Controllers/DeveloperController.cs
   Database table/view: public.developer_profiles and public.vwDeveloperProfile
-  Purpose: Developer profile, social links, edit form, profile photo upload/change.
+  Purpose: Developer profile editor.
+  Access: AMAR_DEVELOPER or AMAR_SUPER_ADMIN.
 
 Admin pages
 - /Admin/Dashboard
   Controller: Controllers/AdminController.cs
   View: Views/Admin/Dashboard.cshtml
-  CSS/JS: wwwroot/css/admin/admin-dashboard.css, wwwroot/js/admin/admin-dashboard.js
   Purpose: Admin overview and operational metrics.
+
 - /Admin/ManageShows
   Controller: Controllers/AdminController.cs
   View: Views/Admin/ManageShows.cshtml
-  Models: ManageShowsViewModel, Movie, StandupShow, LiveStream, ShowSchedule
-  Purpose: Create/edit shows, poster URLs, image lists, schedule data.
-- /Admin/Bookings and /Admin/Bookings/Index
+  Purpose: Add and edit movies, standup shows, live streams, schedules, screens, and seats.
+
+- /Admin/Bookings
   Controller: Controllers/AdminController.cs
-  Views: Views/Admin/Bookings.cshtml, Views/Admin/Bookings/Index.cshtml
-  Purpose: Booking administration.
+  View: Views/Admin/Bookings.cshtml
+  Purpose: Admin booking list and booking filters.
+
 - /Admin/Transactions
   Controller: Controllers/AdminController.cs
   View: Views/Admin/Transactions.cshtml
-  Purpose: Payment/transaction administration.
-- /Admin/TransactionDetails
+  Purpose: Admin payment and transaction list.
+
+- /Admin/TransactionDetails/{id}
   Controller: Controllers/AdminController.cs
   View: Views/Admin/TransactionDetails.cshtml
   Purpose: Detailed transaction inspection.
-- /Admin/Users and /Admin/UserDetails
+
+- /Admin/Users
   Controller: Controllers/AdminController.cs
-  Views: Views/Admin/Users.cshtml, Views/Admin/UserDetails.cshtml
-  Purpose: User administration and user detail view.
-- /Admin/Roles, /Admin/UserAccess, /Admin/Permissions
+  View: Views/Admin/Users.cshtml
+  Purpose: User administration.
+
+- /Admin/UserDetails/{id}
   Controller: Controllers/AdminController.cs
-  Views: Views/Admin/Roles.cshtml, Views/Admin/UserAccess.cshtml, Views/Admin/Security/Index.cshtml
-  Services: Services/RbacService.cs
-  Purpose: Role, permission, menu, and access management.
+  View: Views/Admin/UserDetails.cshtml
+  Purpose: User detail view.
+
+- /Admin/Roles
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/Roles.cshtml
+  Purpose: Shows the four fixed roles only.
+
+- /Admin/UserAccess
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/UserAccess.cshtml
+  Purpose: Assign or remove one of the four fixed roles from users.
+
 - /Admin/Wallets
   Controller: Controllers/AdminController.cs
   View: Views/Admin/Wallets.cshtml
   Purpose: Wallet administration.
-- /Admin/Notifications and /Admin/Notifications/Index
+
+- /Admin/Notifications
   Controller: Controllers/AdminController.cs
-  Views: Views/Admin/Notifications.cshtml, Views/Admin/Notifications/Index.cshtml
+  View: Views/Admin/Notifications.cshtml
   Purpose: Notification center.
+
 - /Admin/ActivityLogs
   Controller: Controllers/AdminController.cs
   View: Views/Admin/ActivityLogs.cshtml
-  Service: Services/ActivityLogger.cs
   Purpose: Activity audit trail.
+
 - /Admin/CouponUsage
   Controller: Controllers/AdminController.cs
   View: Views/Admin/CouponUsage.cshtml
-  Purpose: Coupon usage reporting.
-- /Admin/Refunds and /Admin/RefundDetails
+  Purpose: Coupon usage report.
+
+- /Admin/Refunds
   Controller: Controllers/AdminController.cs
-  Views: Views/Admin/Refunds.cshtml, Views/Admin/Refunds/Index.cshtml, Views/Admin/RefundDetails.cshtml
-  Purpose: Refund dashboard and refund action detail.
+  View: Views/Admin/Refunds.cshtml
+  Purpose: Refund dashboard.
+
+- /Admin/RefundDetails/{id}
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/RefundDetails.cshtml
+  Purpose: Refund detail and refund actions.
+
+- /Admin/Security
+  Controller: Controllers/AdminController.cs
+  View: Views/Admin/Security/Index.cshtml
+  Purpose: Scanner security dashboard and scanner devices.
+
 - /Admin/Versions
   Controller: Controllers/AdminController.cs
   View: Views/Admin/Versions.cshtml
-  Model: Models/Admin/ApplicationVersion.cs
-  Purpose: Application version records shown in the navbar.
-- /Admin/Invoices/Index
-  Controller: Controllers/AdminController.cs
-  View: Views/Admin/Invoices/Index.cshtml
-  Model: VwInvoiceSummary
-  Purpose: Invoice reporting.
+  Purpose: Application version records.
 
-Scheduling
-- /Schedule/Create
-  Controller: Controllers/ScheduleController.cs
-  View: Views/Schedule/Create.cshtml
-  Purpose: Schedule creation workflow.
-
-Transactions
-- /Transaction/History
-  Controller: Controllers/TransactionController.cs
-  View: Views/Transaction/History.cshtml
-  Purpose: User transaction history.
-- /Transaction/Details
-  Controller: Controllers/TransactionController.cs
-  View: Views/Transaction/Details.cshtml
-  Purpose: Transaction detail display.
+Admin export buttons
+- Export buttons are role-aware.
+- They appear on admin dashboard/table pages where export is allowed.
+- Shared export behavior lives in Views/Shared/_AdminLayout.cshtml and wwwroot/js/admin/admin-dashboard.js.
+- Amaro can trigger Export This Page when the current page has an export button.
 
 Important services and filters
-- Services/RbacService.cs
-  Central permission and role checks.
-- Services/OtpDeliveryService.cs
-  Email/mobile OTP delivery.
-- Services/ActivityLogger.cs and Services/IActivityLogger.cs
-  Server-side activity logging.
-- Filters/SessionAuthorizeFilter.cs
-  Session protection for authenticated routes.
-- Filters/BookingStepValidationFilter.cs
-  Booking step validation.
-- Filters/ActivityLoggingFilter.cs
-  Request-level activity logging.
+- Services/RbacService.cs: main role and permission service.
+- Helpers/RbacAuthorizationHelper.cs: helper used by controllers and views to check access.
+- Services/OtpDeliveryService.cs: sends OTP messages.
+- Services/ActivityLogger.cs: writes activity logs.
+- Filters/SessionAuthorizeFilter.cs: protects routes that need login.
+- Filters/BookingStepValidationFilter.cs: protects booking flow steps.
+- Filters/ActivityLoggingFilter.cs: logs requests.
 
-Database and EF Core
-- Data/ApplicationDbContext.cs
-  DbSet declarations and entity/view mappings.
-- Data/DbSeeder.cs
-  Seed data helpers.
-- Program.cs
-  Startup, middleware, schema guard helpers, default version/developer profile table setup.
-- Database/rebuild_enterprise_schema.sql
-  Full schema rebuild script.
-- Migrations/
-  EF Core migration snapshot and initial migration.
+Database and startup files
+- Data/ApplicationDbContext.cs: EF Core DbSet and view mappings.
+- Data/DbSeeder.cs: seed helper code.
+- Program.cs: startup, middleware, schema guards, RBAC seeding, version setup, developer profile setup, and table/view setup.
+- Database/rebuild_enterprise_schema.sql: full schema rebuild script.
+- Migrations/: EF Core migrations.
+
+Quick rule for making changes
+1. Find the URL in this file.
+2. Open its controller action.
+3. Open its view.
+4. Check shared layout/CSS if the problem is navbar, theme, Amaro, export, cursor, support, or footer.
+5. If it is an admin action, check RBAC before showing or running the button.

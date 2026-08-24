@@ -1,23 +1,38 @@
-AmarShowsBook SQL Query Reference
+AmarShowsBook SQL query notes
+Updated: 2026-08-24
 Database: AmarMovie_DB
-Dialect: PostgreSQL
+Database type: PostgreSQL
 
-Use these as copy-ready templates for inserting, updating, deleting, and viewing the main application data.
+Purpose
+This file keeps useful SQL in one place.
+Use it when you need to check data, fix a record, test a page, or understand which table/view feeds a screen.
+
+Important safety rule
+- Read data first with SELECT.
+- Update or delete only with a clear WHERE condition.
+- Replace sample ids like 1, 23, or 71 with the real id you want.
+- Do not create custom roles. The app supports only AMAR_SUPER_ADMIN, AMAR_ADMIN, AMAR_DEVELOPER, and AMAR_USER.
+
+Quick checks
+
+SELECT current_database();
+SELECT now();
 
 ============================================================
-MOVIES
+SHOW CONTENT
 ============================================================
 
--- View movies
-SELECT * FROM public."Movies" ORDER BY "Id" DESC;
+Movies
 
--- Insert movie
+SELECT *
+FROM public."Movies"
+ORDER BY "Id" DESC;
+
 INSERT INTO public."Movies"
 ("Title", "Director", "Producer", "Cast", "Duration", "PosterUrl", "Images", "TrailerUrl", "Description", "ImdbRating")
 VALUES
 ('Sample Movie', 'Director Name', 'Producer Name', 'Actor One, Actor Two', 150, '/uploads/movie-poster.jpg', '/uploads/movie-1.jpg,/uploads/movie-2.jpg', 'https://www.youtube.com/watch?v=VIDEO_ID', 'Movie description', 8.2);
 
--- Update movie
 UPDATE public."Movies"
 SET "Title" = 'Updated Movie',
     "Director" = 'Updated Director',
@@ -25,134 +40,239 @@ SET "Title" = 'Updated Movie',
     "ImdbRating" = 8.5
 WHERE "Id" = 1;
 
--- Delete movie
-DELETE FROM public."Movies" WHERE "Id" = 1;
+Standup shows
 
-============================================================
-STANDUP SHOWS
-============================================================
-
-SELECT * FROM public."StandupShows" ORDER BY "Id" DESC;
+SELECT *
+FROM public."StandupShows"
+ORDER BY "Id" DESC;
 
 INSERT INTO public."StandupShows"
 ("Title", "Comedian", "Duration", "PosterUrl", "Images", "TrailerUrl", "Description")
 VALUES
 ('Sample Standup Night', 'Comedian Name', 90, '/uploads/standup-poster.jpg', '/uploads/standup-1.jpg', 'https://www.youtube.com/watch?v=VIDEO_ID', 'Standup show description');
 
-UPDATE public."StandupShows"
-SET "Title" = 'Updated Standup Night',
-    "Comedian" = 'Updated Comedian',
-    "Duration" = 95
-WHERE "Id" = 1;
+Live streams
 
-DELETE FROM public."StandupShows" WHERE "Id" = 1;
-
-============================================================
-LIVE STREAMS
-============================================================
-
-SELECT * FROM public."LiveStreams" ORDER BY "Id" DESC;
+SELECT *
+FROM public."LiveStreams"
+ORDER BY "Id" DESC;
 
 INSERT INTO public."LiveStreams"
 ("Title", "Host", "Duration", "PosterUrl", "Images", "TrailerUrl", "Description")
 VALUES
 ('Sample Live Stream', 'Host Name', 120, '/uploads/live-poster.jpg', '/uploads/live-1.jpg', 'https://www.youtube.com/watch?v=VIDEO_ID', 'Live stream description');
 
-UPDATE public."LiveStreams"
-SET "Title" = 'Updated Live Stream',
-    "Host" = 'Updated Host',
-    "Duration" = 110
-WHERE "Id" = 1;
+Home showTime listing
 
-DELETE FROM public."LiveStreams" WHERE "Id" = 1;
+SELECT *
+FROM public.vw_home_show_listing
+WHERE start_time >= now()
+ORDER BY start_time;
 
 ============================================================
-LOCATIONS, VENUES, SCREENS
+LOCATIONS, VENUES, SCREENS, AND SEATS
 ============================================================
 
-SELECT * FROM public."Locations" ORDER BY "Id" DESC;
-SELECT * FROM public.venues ORDER BY id DESC;
-SELECT * FROM public.screens ORDER BY id DESC;
+Locations
+
+SELECT *
+FROM public."Locations"
+ORDER BY "Id" DESC;
 
 INSERT INTO public."Locations" ("Country", "State", "Area")
 VALUES ('India', 'Telangana', 'Hyderabad');
 
-INSERT INTO public.venues (venue_code, venue_name, venue_type, address, city, state, country, total_screens, is_active, created_at, updated_at)
-VALUES ('VEN-SAMPLE-1', 'Sample Cinemas', 'THEATER', 'Road 1, Sample Area', 'Hyderabad', 'Telangana', 'India', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+Venues
 
-INSERT INTO public.screens (venue_id, screen_code, screen_name, total_seats, screen_type, audio_system, is_active, created_at, updated_at)
-VALUES (1, 'SCR-SAMPLE-1', 'Screen 1', 120, 'STANDARD', 'DOLBY', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+SELECT *
+FROM public.venues
+ORDER BY id DESC;
 
-UPDATE public."Locations"
-SET "Area" = 'Updated Area'
-WHERE "Id" = 1;
+INSERT INTO public.venues
+(venue_code, venue_name, venue_type, address, city, state, country, total_screens, is_active, created_at, updated_at)
+VALUES
+('VEN-SAMPLE-1', 'Sample Cinemas', 'THEATER', 'Road 1, Sample Area', 'Hyderabad', 'Telangana', 'India', 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-DELETE FROM public."Locations" WHERE "Id" = 1;
+Screens
+
+SELECT *
+FROM public.screens
+ORDER BY id DESC;
+
+INSERT INTO public.screens
+(venue_id, screen_code, screen_name, total_seats, screen_type, audio_system, is_active, created_at, updated_at)
+VALUES
+(1, 'SCR-SAMPLE-1', 'Screen 1', 120, 'STANDARD', 'DOLBY', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+Screen seats
+
+SELECT *
+FROM public.screen_seats
+WHERE "ScheduleId" = 1
+ORDER BY seat_row, seat_number;
 
 ============================================================
 SHOW SCHEDULES
 ============================================================
 
-SELECT * FROM public."ShowSchedules" ORDER BY "StartTime" DESC;
+SELECT *
+FROM public."ShowSchedules"
+ORDER BY "StartTime" DESC;
 
--- Insert movie schedule
+Movie schedule sample
+
 INSERT INTO public."ShowSchedules"
 ("MovieId", "StandupShowId", "LiveStreamId", "LocationId", screen_id, "StartTime", "EndTime", "Type")
 VALUES
-(1, NULL, NULL, 1, 1, '2026-07-25 18:30:00+05:30', '2026-07-25 21:00:00+05:30', 'Movie');
+(1, NULL, NULL, 1, 1, '2026-08-25 18:30:00+05:30', '2026-08-25 21:00:00+05:30', 'Movie');
 
--- Insert standup schedule
+Standup schedule sample
+
 INSERT INTO public."ShowSchedules"
 ("MovieId", "StandupShowId", "LiveStreamId", "LocationId", screen_id, "StartTime", "EndTime", "Type")
 VALUES
-(NULL, 1, NULL, 1, 1, '2026-07-26 19:00:00+05:30', '2026-07-26 20:30:00+05:30', 'Standup');
+(NULL, 1, NULL, 1, 1, '2026-08-26 19:00:00+05:30', '2026-08-26 20:30:00+05:30', 'Standup');
 
--- Insert live stream schedule
+Live schedule sample
+
 INSERT INTO public."ShowSchedules"
 ("MovieId", "StandupShowId", "LiveStreamId", "LocationId", screen_id, "StartTime", "EndTime", "Type")
 VALUES
-(NULL, NULL, 1, 1, 1, '2026-07-27 20:00:00+05:30', '2026-07-27 22:00:00+05:30', 'Live');
+(NULL, NULL, 1, 1, 1, '2026-08-27 20:00:00+05:30', '2026-08-27 22:00:00+05:30', 'Live');
+
+Move a schedule time
 
 UPDATE public."ShowSchedules"
-SET "StartTime" = '2026-07-25 20:00:00+05:30',
-    "EndTime" = '2026-07-25 22:30:00+05:30'
+SET "StartTime" = '2026-08-25 20:00:00+05:30',
+    "EndTime" = '2026-08-25 22:30:00+05:30'
 WHERE "Id" = 1;
 
-DELETE FROM public."ShowSchedules" WHERE "Id" = 1;
-
 ============================================================
-USERS, ROLES, PERMISSIONS
+USERS, ROLES, ACCESS, AND MENUS
 ============================================================
 
-SELECT "Id", "Name", "Email", is_active, is_deleted FROM public."Users" ORDER BY "Id" DESC;
-SELECT id, role_code, role_name, is_active FROM public.roles ORDER BY id;
-SELECT * FROM public.vw_user_access_matrix ORDER BY user_id, module_code, action_type;
+Users
 
-INSERT INTO public.roles (role_code, role_name, description, is_active, created_at, updated_at)
-VALUES ('CUSTOM_ROLE', 'Custom Role', 'Custom role description', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+SELECT "Id", "Name", "Email", is_active, is_deleted
+FROM public."Users"
+ORDER BY "Id" DESC;
 
-UPDATE public.roles
-SET role_name = 'Updated Role Name',
-    updated_at = CURRENT_TIMESTAMP
-WHERE role_code = 'CUSTOM_ROLE';
+Standard roles
 
-DELETE FROM public.roles WHERE role_code = 'CUSTOM_ROLE';
+SELECT id, role_code, role_name, is_active
+FROM public.roles
+ORDER BY id;
+
+User role mappings
+
+SELECT urm.user_id, u."Email", r.role_code, r.role_name, urm.is_active
+FROM public.user_role_mappings urm
+JOIN public."Users" u ON u."Id" = urm.user_id
+JOIN public.roles r ON r.id = urm.role_id
+ORDER BY u."Id", r.role_code;
+
+Access matrix
+
+SELECT user_id, user_email, role_code, module_code, action_type, permission_code
+FROM public.vw_user_access_matrix
+ORDER BY user_id, module_code, action_type;
+
+Menus visible to users
+
+SELECT user_id, role_code, menu_code, menu_name, route_path, can_view, can_create, can_update, can_delete
+FROM public.vw_user_application_menus
+ORDER BY user_id, display_order;
+
+Give one of the four roles to a user
+
+INSERT INTO public.user_role_mappings
+(user_id, role_id, assigned_by, assigned_at, is_active)
+SELECT u."Id", r.id, NULL, CURRENT_TIMESTAMP, true
+FROM public."Users" u
+JOIN public.roles r ON r.role_code = 'AMAR_ADMIN'
+WHERE u."Email" = 'admin@example.com'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM public.user_role_mappings existing
+      WHERE existing.user_id = u."Id"
+        AND existing.role_id = r.id
+        AND existing.is_active = true
+  );
+
+Disable a user's role mapping
+
+UPDATE public.user_role_mappings
+SET is_active = false
+WHERE user_id = 1
+  AND role_id = (
+      SELECT id
+      FROM public.roles
+      WHERE role_code = 'AMAR_ADMIN'
+  );
 
 ============================================================
-BOOKINGS, TICKETS, PAYMENTS
+BOOKINGS, TICKETS, AND PAYMENTS
 ============================================================
 
-SELECT * FROM public.booking_drafts ORDER BY "Id" DESC;
-SELECT * FROM public.bookings ORDER BY id DESC;
-SELECT * FROM public.transactions ORDER BY id DESC;
-SELECT * FROM public.tickets ORDER BY id DESC;
-SELECT * FROM public.vw_booking_complete_details ORDER BY booking_id DESC;
+Booking drafts
+
+SELECT *
+FROM public.booking_drafts
+ORDER BY "Id" DESC;
+
+Confirmed bookings
+
+SELECT *
+FROM public.bookings
+ORDER BY id DESC;
+
+Booking full details
+
+SELECT *
+FROM public.vw_booking_complete_details
+ORDER BY booking_id DESC;
+
+Booking and transaction summary
+
+SELECT *
+FROM public.vw_booking_transaction_summary
+ORDER BY booking_id DESC;
+
+Transactions
+
+SELECT *
+FROM public.transactions
+ORDER BY id DESC;
+
+Admin transaction view
+
+SELECT *
+FROM public.vw_admin_transaction_complete
+ORDER BY transaction_id DESC;
+
+Tickets
+
+SELECT *
+FROM public.tickets
+ORDER BY id DESC;
+
+Find a user's bookings
+
+SELECT b.*
+FROM public.bookings b
+JOIN public."Users" u ON u."Id" = b.user_id
+WHERE lower(u."Email") = lower('user@example.com')
+ORDER BY b.id DESC;
+
+Mark a booking confirmed
 
 UPDATE public.bookings
 SET booking_status = 'CONFIRMED',
     payment_status = 'SUCCESS',
     updated_at = CURRENT_TIMESTAMP
 WHERE id = 1;
+
+Cancel a booking from SQL only when you know this is the correct record
 
 UPDATE public.bookings
 SET booking_status = 'CANCELLED',
@@ -161,33 +281,176 @@ SET booking_status = 'CANCELLED',
     cancellation_reason = 'Admin cancelled'
 WHERE id = 1;
 
-DELETE FROM public.booking_drafts WHERE "Id" = 1;
-
 ============================================================
-APPLICATION VERSIONS
+REFUNDS
 ============================================================
 
-SELECT * FROM public.application_versions ORDER BY is_current DESC, updated_at DESC;
+Refund rows
+
+SELECT *
+FROM public.refunds
+ORDER BY id DESC;
+
+Refund summary view
+
+SELECT *
+FROM public.vw_refund_summary
+ORDER BY requested_at DESC;
+
+Refund action log
+
+SELECT *
+FROM public.refund_action_logs
+ORDER BY created_at DESC;
+
+Pending refunds
+
+SELECT *
+FROM public.vw_refund_summary
+WHERE refund_status IN ('PENDING', 'PROCESSING')
+ORDER BY requested_at DESC;
+
+============================================================
+WALLETS
+============================================================
+
+Wallet summary
+
+SELECT *
+FROM public.vw_wallet_summary
+ORDER BY wallet_id DESC;
+
+User wallets
+
+SELECT *
+FROM public.user_wallets
+ORDER BY id DESC;
+
+Wallet transactions
+
+SELECT *
+FROM public.wallet_transactions
+ORDER BY id DESC;
+
+Wallet status history
+
+SELECT *
+FROM public.wallet_status_history
+ORDER BY created_at DESC;
+
+============================================================
+COUPONS
+============================================================
+
+Coupons
+
+SELECT *
+FROM public.coupons
+ORDER BY id DESC;
+
+Coupon usage
+
+SELECT *
+FROM public.coupon_usage
+ORDER BY id DESC;
+
+Admin coupon usage report
+
+SELECT *
+FROM public.vw_coupon_usage_admin
+ORDER BY coupon_id DESC;
+
+Active coupons that users can try during booking
+
+SELECT coupon_code, coupon_name, discount_type, discount_value, coupon_status
+FROM public.coupons
+WHERE coupon_status = 'ACTIVE'
+ORDER BY coupon_code;
+
+============================================================
+NOTIFICATIONS, ACTIVITY, AND VERSIONS
+============================================================
+
+Notification center
+
+SELECT *
+FROM public.vw_notification_center
+ORDER BY created_at DESC;
+
+Activity logs
+
+SELECT *
+FROM public.activity_logs
+ORDER BY created_at DESC;
+
+Enterprise activity view
+
+SELECT *
+FROM public.vw_enterprise_activity_logs
+ORDER BY created_at DESC;
+
+Application versions
+
+SELECT *
+FROM public.application_versions
+ORDER BY is_current DESC, updated_at DESC;
 
 INSERT INTO public.application_versions
 (version_number, release_title, release_notes, updated_at, created_at, created_by, is_current)
 VALUES
 ('1.0.1', 'Patch release', 'Release notes here', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Admin', true);
 
-UPDATE public.application_versions
-SET release_title = 'Updated release title',
-    release_notes = 'Updated release notes',
-    is_current = true,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = 1;
+============================================================
+SCANNER AND SECURITY
+============================================================
 
-DELETE FROM public.application_versions WHERE id = 1;
+Scanner devices
+
+SELECT *
+FROM public.scanner_devices
+ORDER BY id DESC;
+
+Ticket validation summary
+
+SELECT *
+FROM public.vw_ticket_validation_summary
+ORDER BY scanned_at DESC;
+
+Ticket validation logs
+
+SELECT *
+FROM public.ticket_validation_logs
+ORDER BY scanned_at DESC;
 
 ============================================================
 AMARO CHATBOT
 ============================================================
 
-SELECT * FROM public.amaro_chat_messages ORDER BY created_at DESC;
+Chat history
+
+SELECT *
+FROM public.amaro_chat_messages
+ORDER BY created_at DESC;
+
+Clean old chat rows
 
 DELETE FROM public.amaro_chat_messages
 WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '90 days';
+
+============================================================
+SUPPORT AND BRANDING NOTES
+============================================================
+
+Application name
+- Main name: showTime.
+- Small name above it: arcanaamar.
+- Full brand: arcanaamar showTime.
+
+Support contact
+- Mobile: +91 8920993434
+- Email: arcanaamar67@gmail.com
+
+Theme and cursor
+- Theme is stored in browser localStorage as amarShowsTheme.
+- Cursor style is stored in browser localStorage as amarShowsCursor.
+- These are browser settings, so there is no normal SQL query for changing them.
