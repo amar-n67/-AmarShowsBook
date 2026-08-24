@@ -78,7 +78,7 @@ public async Task<IActionResult> TicketByBooking(long id)
     var canViewAnyTicket =
         _rbacService.HasPermission((int)currentUserId, "BOOKING", "VIEW") ||
         _rbacService.HasPermission((int)currentUserId, "ADMIN", "VIEW") ||
-        _rbacService.HasAnyActiveRole((int)currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "ADMIN");
+        _rbacService.HasAnyActiveRole((int)currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
 
     if(currentUserId!=bookingSummary.UserId && !canViewAnyTicket)
     {
@@ -2862,7 +2862,7 @@ public async Task<IActionResult> DownloadTicket(long confirmedBookingId)
     var canViewAnyTicket =
         _rbacService.HasPermission((int)currentUserId,"BOOKING","VIEW") ||
         _rbacService.HasPermission((int)currentUserId,"ADMIN","VIEW") ||
-        _rbacService.HasAnyActiveRole((int)currentUserId,"AMAR_SUPER_ADMIN","AMAR_ADMIN","ADMIN");
+        _rbacService.HasAnyActiveRole((int)currentUserId,"AMAR_SUPER_ADMIN","AMAR_ADMIN");
 
     if(currentUserId!=booking.UserId && !canViewAnyTicket)
     {

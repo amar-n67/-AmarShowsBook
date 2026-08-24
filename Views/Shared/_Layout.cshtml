@@ -1768,10 +1768,10 @@ z-index:9999;">
     var hasCurrentUserId = int.TryParse(Context.Session.GetString("UserId"), out var currentUserId);
     var canOpenAdmin = hasCurrentUserId &&
         (RbacService.HasPermission(currentUserId, "ADMIN", "VIEW") ||
-         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "ADMIN"));
+         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN"));
     var canOpenDeveloper = hasCurrentUserId &&
         (RbacService.HasPermission(currentUserId, "DEVELOPER", "EDIT") ||
-         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER", "DEVELOPER"));
+         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER"));
     var sessionDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
     var normalizedDisplayName = string.IsNullOrWhiteSpace(sessionDisplayName)
         ? "User"

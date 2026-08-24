@@ -158,7 +158,7 @@ DO UPDATE SET
                 HttpContext.Session.GetString("UserId");
 
             return int.TryParse(userIdText, out var userId) &&
-                (_rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER", "DEVELOPER") ||
+                (_rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER") ||
                  _rbacService.HasPermission(userId, "DEVELOPER", "EDIT"));
         }
 

@@ -345,7 +345,7 @@ public class AmaroController : Controller
         }
 
         if ((normalized.Contains("admin") || normalized.Contains("user") || normalized.Contains("version")) &&
-            (_rbacService.HasPermission(userId, "ADMIN", "VIEW") || _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "ADMIN")))
+            (_rbacService.HasPermission(userId, "ADMIN", "VIEW") || _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN")))
         {
             var userCount = await _context.Users.CountAsync();
             var bookingCount = await _context.VwBookingCompleteDetails.CountAsync();
@@ -714,13 +714,13 @@ VALUES
         };
 
         if (_rbacService.HasPermission(userId, "ADMIN", "VIEW") ||
-            _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "ADMIN"))
+            _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN"))
         {
             pageOptions.Add(new AmaroQuickOption("Admin Dashboard", "/Admin/Dashboard"));
         }
 
         if (_rbacService.HasPermission(userId, "DEVELOPER", "EDIT") ||
-            _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER", "DEVELOPER"))
+            _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER"))
         {
             pageOptions.Add(new AmaroQuickOption("Developer Page", "/Developer/Profile"));
         }

@@ -83,7 +83,7 @@ DECLARE
 BEGIN
     SELECT id INTO v_role_id
     FROM public.roles
-    WHERE role_code = 'USER'
+    WHERE role_code = 'AMAR_USER'
     LIMIT 1;
 
     IF v_role_id IS NOT NULL THEN
@@ -1403,8 +1403,10 @@ FOR EACH ROW EXECUTE FUNCTION public.fn_wallet_balance_update();
 
 INSERT INTO public.roles (role_code, role_name, role_description, is_system_role)
 VALUES
-    ('ADMIN', 'Administrator', 'Full administrative access', true),
-    ('USER', 'User', 'Default customer role', true)
+    ('AMAR_SUPER_ADMIN', 'Super Admin', 'Full access to every application module, including developer tools.', true),
+    ('AMAR_ADMIN', 'Administrator', 'Administrative access to operations, users, shows, bookings, payments, refunds, wallet, coupons, notifications, scanner, and analytics.', true),
+    ('AMAR_DEVELOPER', 'Developer', 'Developer profile and developer-only editor access.', true),
+    ('AMAR_USER', 'User', 'Default customer role for booking and profile workflows.', true)
 ON CONFLICT (role_code) DO UPDATE
 SET role_name = EXCLUDED.role_name,
     role_description = EXCLUDED.role_description,

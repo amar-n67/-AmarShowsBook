@@ -8,7 +8,7 @@
     <div class="admin-page-header">
         <div>
             <h1>Roles Management</h1>
-            <p>Create and maintain role definitions used by RBAC.</p>
+            <p>Maintain the four system roles used by RBAC.</p>
         </div>
         <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
     </div>
@@ -22,26 +22,11 @@
         <div class="alert alert-danger">@TempData["Error"]</div>
     }
 
-    <div class="admin-detail-panel mb-4" data-admin-searchable>
-        <h2 class="h5 mb-3">New Role</h2>
-        <form asp-action="CreateRole" method="post" class="row g-3">
-            @Html.AntiForgeryToken()
-            <div class="col-md-3">
-                <label class="form-label">Role Code</label>
-                <input name="roleCode" class="form-control" placeholder="AMAR_CONTENT_MANAGER" required />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Role Name</label>
-                <input name="roleName" class="form-control" placeholder="Content Manager" required />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Description</label>
-                <input name="roleDescription" class="form-control" placeholder="What this role can manage" />
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button class="btn btn-primary w-100" type="submit">Add Role</button>
-            </div>
-        </form>
+    <div class="admin-detail-panel mb-4">
+        <h2 class="h5 mb-2">System Roles Only</h2>
+        <p class="mb-0 text-muted">
+            Custom roles are disabled. Use Super Admin, Administrator, Developer, and User for all access control.
+        </p>
     </div>
 
     <div class="card p-4">
@@ -56,8 +41,9 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach(var role in Model)
+                @foreach(var role in Model.Where(x => x.RoleCode == "AMAR_SUPER_ADMIN" || x.RoleCode == "AMAR_ADMIN" || x.RoleCode == "AMAR_DEVELOPER" || x.RoleCode == "AMAR_USER"))
                 {
+                    var isSuperAdmin = string.Equals(role.RoleCode, "AMAR_SUPER_ADMIN", StringComparison.OrdinalIgnoreCase);
                     <tr data-admin-searchable data-filter-status="@(role.IsActive ? "ACTIVE" : "INACTIVE")">
                         <form asp-action="UpdateRole" method="post">
                             @Html.AntiForgeryToken()
@@ -66,10 +52,14 @@
                             <td><strong>@role.RoleCode</strong></td>
                             <td><input name="roleDescription" class="form-control" value="@role.RoleDescription" /></td>
                             <td>
-                                <select name="isActive" class="form-select">
+                                <select name="isActive" class="form-select" disabled="@isSuperAdmin">
                                     <option value="true" selected="@role.IsActive">Active</option>
                                     <option value="false" selected="@(!role.IsActive)">Inactive</option>
                                 </select>
+                                @if(isSuperAdmin)
+                                {
+                                    <input type="hidden" name="isActive" value="true" />
+                                }
                             </td>
                             <td>
                                 <button class="btn btn-warning" type="submit">Save</button>

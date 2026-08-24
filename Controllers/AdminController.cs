@@ -692,37 +692,7 @@ namespace AmarShowsBook.Controllers
                 return RedirectToAction(nameof(Roles));
             }
 
-            roleCode = NormalizeCode(roleCode);
-            roleName = (roleName ?? string.Empty).Trim();
-
-            if (string.IsNullOrWhiteSpace(roleCode) || string.IsNullOrWhiteSpace(roleName))
-            {
-                TempData["Error"] = "Role code and role name are required.";
-                return RedirectToAction(nameof(Roles));
-            }
-
-            if (await _context.Roles.AnyAsync(x => x.RoleCode == roleCode))
-            {
-                TempData["Error"] = "Role code already exists.";
-                return RedirectToAction(nameof(Roles));
-            }
-
-          var now = DateTime.UtcNow;
-            _context.Roles.Add(new Role
-            {
-                RoleCode = roleCode,
-                RoleName = roleName,
-                RoleDescription = roleDescription?.Trim(),
-                IsSystemRole = false,
-                IsActive = true,
-                CreatedAt = now,
-                UpdatedAt = now,
-                CreatedBy = HttpContext.Session.GetString("UserName") ?? "Admin",
-                UpdatedBy = HttpContext.Session.GetString("UserName") ?? "Admin"
-            });
-
-            await _context.SaveChangesAsync();
-            TempData["Success"] = "Role created successfully.";
+            TempData["Error"] = "Custom roles are disabled. Use only Super Admin, Administrator, Developer, and User.";
             return RedirectToAction(nameof(Roles));
         }
 
@@ -743,9 +713,24 @@ namespace AmarShowsBook.Controllers
                 return RedirectToAction(nameof(Roles));
             }
 
+            var allowedRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "AMAR_SUPER_ADMIN",
+                "AMAR_ADMIN",
+                "AMAR_DEVELOPER",
+                "AMAR_USER"
+            };
+
+            if (!allowedRoles.Contains(role.RoleCode))
+            {
+                TempData["Error"] = "Only the four system roles can be edited.";
+                return RedirectToAction(nameof(Roles));
+            }
+
             role.RoleName = (roleName ?? role.RoleName).Trim();
             role.RoleDescription = roleDescription?.Trim();
-            role.IsActive = isActive;
+            role.IsActive = role.RoleCode == "AMAR_SUPER_ADMIN" || isActive;
+            role.IsSystemRole = true;
             role.UpdatedAt = DateTime.UtcNow;
             role.UpdatedBy = HttpContext.Session.GetString("UserName") ?? "Admin";
 
@@ -4211,7 +4196,7 @@ private void EnsurePermissionSeedData()
         ("PAYMENT", "Payments", "/Admin/Transactions", 70),
         ("REFUND", "Refunds", "/Admin/Refunds", 80),
         ("WALLET", "Wallets", "/Admin/Wallets", 90),
-        ("COUPON", "Coupons", "/Admin/Coupons", 100),
+        ("COUPON", "Coupons", "/Admin/CouponUsage", 100),
         ("NOTIFICATION", "Notifications", "/Admin/Notifications", 110),
         ("ANALYTICS", "Analytics", "/Admin/Dashboard", 120),
         ("SUPPORT", "Support", "/Admin/UserAccess", 130),
@@ -4298,8 +4283,7 @@ private void EnsurePermissionSeedData()
             _context.Roles
             .Where(x =>
                 x.RoleCode == "AMAR_SUPER_ADMIN" ||
-                x.RoleCode == "AMAR_ADMIN" ||
-                x.RoleCode == "AMAR_PAYMENT_MANAGER")
+                x.RoleCode == "AMAR_ADMIN")
             .ToList();
 
         foreach(var role in walletAdminRoles)
@@ -4321,102 +4305,59 @@ private void EnsurePermissionSeedData()
 
 private void EnsureDefaultRolePermissions()
 {
-    if (_context.RolePermissions.Any())
-    {
-        return;
-    }
-
-    var permissionLookup = _context.Permissions
-        .AsNoTracking()
-        .ToDictionary(x => x.PermissionCode, x => x.Id, StringComparer.OrdinalIgnoreCase);
-
-    var roleLookup = _context.Roles
-        .ToDictionary(x => x.RoleCode, x => x.Id, StringComparer.OrdinalIgnoreCase);
-
-    var grants = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["AMAR_SUPER_ADMIN"] = permissionLookup.Keys.ToArray(),
-        ["AMAR_ADMIN"] = permissionLookup.Keys.Where(x => !x.StartsWith("DEVELOPER_", StringComparison.OrdinalIgnoreCase)).ToArray(),
-        ["AMAR_OPERATIONS_MANAGER"] = new[]
-        {
-            "ADMIN_VIEW", "USER_VIEW", "SHOW_VIEW", "BOOKING_VIEW", "PAYMENT_VIEW", "REFUND_VIEW",
-            "WALLET_VIEW", "COUPON_VIEW", "NOTIFICATION_VIEW", "ANALYTICS_VIEW", "SUPPORT_VIEW"
-        },
-        ["AMAR_BOOKING_MANAGER"] = new[]
-        {
-            "ADMIN_VIEW", "BOOKING_VIEW", "BOOKING_PRINT", "BOOKING_CANCEL", "USER_VIEW", "SUPPORT_VIEW"
-        },
-        ["AMAR_PAYMENT_MANAGER"] = new[]
-        {
-            "ADMIN_VIEW", "PAYMENT_VIEW", "PAYMENT_REFUND", "BOOKING_VIEW", "WALLET_VIEW"
-        },
-        ["AMAR_REFUND_MANAGER"] = new[]
-        {
-            "ADMIN_VIEW", "REFUND_VIEW", "REFUND_APPROVE", "REFUND_REJECT", "REFUND_RETRY", "REFUND_UPDATE",
-            "PAYMENT_VIEW", "BOOKING_VIEW"
-        },
-        ["AMAR_CONTENT_MANAGER"] = new[]
-        {
-            "ADMIN_VIEW", "SHOW_VIEW", "SHOW_CREATE", "SHOW_UPDATE", "SHOW_DELETE",
-            "COUPON_VIEW", "COUPON_CREATE", "COUPON_UPDATE", "COUPON_DELETE"
-        },
-        ["AMAR_NOTIFICATION_MANAGER"] = new[]
-        {
-            "ADMIN_VIEW", "NOTIFICATION_VIEW", "NOTIFICATION_UPDATE", "USER_VIEW"
-        },
-        ["AMAR_ANALYTICS_MANAGER"] = new[]
-        {
-            "ADMIN_VIEW", "ANALYTICS_VIEW", "BOOKING_VIEW", "PAYMENT_VIEW", "REFUND_VIEW", "WALLET_VIEW"
-        },
-        ["AMAR_SUPPORT_EXECUTIVE"] = new[]
-        {
-            "ADMIN_VIEW", "SUPPORT_VIEW", "USER_VIEW", "BOOKING_VIEW", "PAYMENT_VIEW", "REFUND_VIEW"
-        },
-        ["AMAR_SCANNER_OPERATOR"] = new[]
-        {
-            "SCANNER_VALIDATE"
-        },
-        ["AMAR_USER"] = Array.Empty<string>(),
-        ["ADMIN"] = permissionLookup.Keys.Where(x => !x.StartsWith("DEVELOPER_", StringComparison.OrdinalIgnoreCase)).ToArray(),
-        ["USER"] = Array.Empty<string>()
-    };
-
     long? grantedBy = null;
     if (long.TryParse(HttpContext.Session.GetString("UserId"), out var currentUserId))
     {
         grantedBy = currentUserId;
     }
 
-    foreach (var grant in grants)
-    {
-        if (!roleLookup.TryGetValue(grant.Key, out var roleId))
-        {
-            continue;
-        }
+    _context.Database.ExecuteSqlInterpolated($@"
+DELETE FROM public.role_permissions
+WHERE role_id IN
+(
+    SELECT id
+    FROM public.roles
+    WHERE role_code IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+);
 
-        foreach (var permissionCode in grant.Value.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            if (!permissionLookup.TryGetValue(permissionCode, out var permissionId))
-            {
-                continue;
-            }
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, {grantedBy}, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON true
+WHERE r.role_code = 'AMAR_SUPER_ADMIN'
+ON CONFLICT DO NOTHING;
 
-            if (_context.RolePermissions.Any(x => x.RoleId == roleId && x.PermissionId == permissionId))
-            {
-                continue;
-            }
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, {grantedBy}, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON p.permission_code NOT LIKE 'DEVELOPER_%'
+WHERE r.role_code = 'AMAR_ADMIN'
+ON CONFLICT DO NOTHING;
 
-            _context.RolePermissions.Add(new RolePermission
-            {
-                RoleId = roleId,
-                PermissionId = permissionId,
-                GrantedBy = grantedBy,
-                GrantedAt = DateTime.UtcNow
-            });
-        }
-    }
-
-    _context.SaveChanges();
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, {grantedBy}, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON p.permission_code = 'DEVELOPER_EDIT'
+WHERE r.role_code = 'AMAR_DEVELOPER'
+ON CONFLICT DO NOTHING;");
 }
 
 private static ShowSchedule CreateSchedule(

@@ -125,6 +125,7 @@ pattern:
 EnsureApplicationVersionTable(app);
 EnsureDeveloperProfileStore(app);
 EnsureAmaroChatStore(app);
+EnsureRbacStore(app);
 
 
 // ========================================
@@ -528,6 +529,519 @@ ON public.amaro_chat_messages(user_id, created_at DESC);
         app.Logger.LogWarning(
         ex,
         "Amaro chatbot schema check skipped"
+        );
+    }
+}
+
+static void EnsureRbacStore(WebApplication app)
+{
+    using var scope =
+    app.Services.CreateScope();
+
+    try
+    {
+        var context =
+        scope.ServiceProvider
+        .GetRequiredService<
+        ApplicationDbContext>();
+
+        context.Database.ExecuteSqlRaw(@"
+CREATE OR REPLACE FUNCTION public.fn_assign_default_role()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_role_id bigint;
+BEGIN
+    SELECT id INTO v_role_id
+    FROM public.roles
+    WHERE role_code = 'AMAR_USER'
+    LIMIT 1;
+
+    IF v_role_id IS NOT NULL THEN
+        INSERT INTO public.user_roles (user_id, role_id, assigned_by, is_active)
+        VALUES (NEW.""Id"", v_role_id, NULL, true)
+        ON CONFLICT DO NOTHING;
+
+        INSERT INTO public.user_role_mappings (user_id, role_id, assigned_by, is_active)
+        VALUES (NEW.""Id"", v_role_id, NULL, true)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    INSERT INTO public.user_wallets (user_id, wallet_balance, blocked_balance, loyalty_points, wallet_status)
+    VALUES (NEW.""Id"", 0, 0, 0, 'ACTIVE')
+    ON CONFLICT (user_id) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$;
+
+INSERT INTO public.roles
+(
+    role_code,
+    role_name,
+    role_description,
+    is_system_role,
+    is_active,
+    created_at,
+    updated_at
+)
+VALUES
+    ('AMAR_SUPER_ADMIN', 'Super Admin', 'Full access to every application module, including developer tools.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('AMAR_ADMIN', 'Administrator', 'Administrative access to operations, users, shows, bookings, payments, refunds, wallet, coupons, notifications, scanner, and analytics.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('AMAR_DEVELOPER', 'Developer', 'Developer profile and developer-only editor access.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('AMAR_USER', 'User', 'Default customer role for booking and profile workflows.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (role_code) DO UPDATE
+SET role_name = EXCLUDED.role_name,
+    role_description = EXCLUDED.role_description,
+    is_system_role = true,
+    is_active = true,
+    updated_at = CURRENT_TIMESTAMP;
+
+INSERT INTO public.application_modules
+(
+    module_code,
+    module_name,
+    route_path,
+    icon_name,
+    display_order,
+    is_active,
+    created_at
+)
+VALUES
+    ('ADMIN', 'Admin Dashboard', '/Admin/Dashboard', 'admin', 10, true, CURRENT_TIMESTAMP),
+    ('USER', 'Users and Profiles', '/Admin/Users', 'user', 20, true, CURRENT_TIMESTAMP),
+    ('ROLE', 'Roles', '/Admin/Roles', 'role', 30, true, CURRENT_TIMESTAMP),
+    ('PERMISSION', 'Permissions', '/Admin/Roles', 'permission', 40, true, CURRENT_TIMESTAMP),
+    ('SHOW', 'Manage Shows', '/Admin/ManageShows', 'show', 50, true, CURRENT_TIMESTAMP),
+    ('BOOKING', 'Bookings and Tickets', '/Admin/Bookings', 'booking', 60, true, CURRENT_TIMESTAMP),
+    ('PAYMENT', 'Payments', '/Admin/Transactions', 'payment', 70, true, CURRENT_TIMESTAMP),
+    ('REFUND', 'Refunds', '/Admin/Refunds', 'refund', 80, true, CURRENT_TIMESTAMP),
+    ('WALLET', 'Wallets', '/Admin/Wallets', 'wallet', 90, true, CURRENT_TIMESTAMP),
+    ('COUPON', 'Coupons', '/Admin/CouponUsage', 'coupon', 100, true, CURRENT_TIMESTAMP),
+    ('NOTIFICATION', 'Notifications', '/Admin/Notifications', 'notification', 110, true, CURRENT_TIMESTAMP),
+    ('ANALYTICS', 'Analytics', '/Admin/Dashboard', 'analytics', 120, true, CURRENT_TIMESTAMP),
+    ('SUPPORT', 'Support', '/Admin/UserAccess', 'support', 130, true, CURRENT_TIMESTAMP),
+    ('SCANNER', 'Ticket Scanner', '/Admin/Security', 'scanner', 140, true, CURRENT_TIMESTAMP),
+    ('DEVELOPER', 'Developer Editor', '/Developer/Profile', 'developer', 150, true, CURRENT_TIMESTAMP)
+ON CONFLICT (module_code) DO UPDATE
+SET module_name = EXCLUDED.module_name,
+    route_path = EXCLUDED.route_path,
+    icon_name = EXCLUDED.icon_name,
+    display_order = EXCLUDED.display_order,
+    is_active = true;
+
+WITH permission_seed(module_code, action_type) AS
+(
+    VALUES
+        ('ADMIN', 'VIEW'),
+        ('USER', 'VIEW'), ('USER', 'UPDATE'), ('USER', 'DISABLE'), ('USER', 'GRANT_ACCESS'),
+        ('ROLE', 'VIEW'), ('ROLE', 'CREATE'), ('ROLE', 'UPDATE'), ('ROLE', 'DELETE'),
+        ('PERMISSION', 'VIEW'), ('PERMISSION', 'CREATE'), ('PERMISSION', 'ASSIGN'),
+        ('SHOW', 'VIEW'), ('SHOW', 'CREATE'), ('SHOW', 'UPDATE'), ('SHOW', 'DELETE'),
+        ('BOOKING', 'VIEW'), ('BOOKING', 'PRINT'), ('BOOKING', 'CANCEL'),
+        ('PAYMENT', 'VIEW'), ('PAYMENT', 'REFUND'),
+        ('REFUND', 'VIEW'), ('REFUND', 'APPROVE'), ('REFUND', 'REJECT'), ('REFUND', 'RETRY'), ('REFUND', 'UPDATE'),
+        ('WALLET', 'VIEW'), ('WALLET', 'UPDATE'),
+        ('COUPON', 'VIEW'), ('COUPON', 'CREATE'), ('COUPON', 'UPDATE'), ('COUPON', 'DELETE'),
+        ('NOTIFICATION', 'VIEW'), ('NOTIFICATION', 'UPDATE'),
+        ('ANALYTICS', 'VIEW'),
+        ('SUPPORT', 'VIEW'),
+        ('SCANNER', 'VIEW'), ('SCANNER', 'VALIDATE'),
+        ('DEVELOPER', 'EDIT')
+)
+INSERT INTO public.permissions
+(
+    module_id,
+    permission_code,
+    permission_name,
+    action_type,
+    description,
+    created_at
+)
+SELECT
+    am.id,
+    permission_seed.module_code || '_' || permission_seed.action_type,
+    replace(permission_seed.module_code || ' ' || permission_seed.action_type, '_', ' '),
+    permission_seed.action_type,
+    'Allows ' || lower(permission_seed.action_type) || ' access for ' || permission_seed.module_code || '.',
+    CURRENT_TIMESTAMP
+FROM permission_seed
+JOIN public.application_modules am ON am.module_code = permission_seed.module_code
+ON CONFLICT (permission_code) DO UPDATE
+SET module_id = EXCLUDED.module_id,
+    permission_name = EXCLUDED.permission_name,
+    action_type = EXCLUDED.action_type,
+    description = EXCLUDED.description;
+
+WITH role_map(old_code, new_code) AS
+(
+    VALUES
+        ('AMARSHOW_ADMIN_SUPER', 'AMAR_SUPER_ADMIN'),
+        ('AMARSHOW_ADMIN_PLATFORM', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SECURITY', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_BOOKING', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_PAYMENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SUPPORT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_CONTENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_REPORTS', 'AMAR_ADMIN'),
+        ('AMARSHOW_USER_PREMIUM', 'AMAR_USER'),
+        ('AMARSHOW_USER_STANDARD', 'AMAR_USER'),
+        ('ADMIN', 'AMAR_ADMIN'),
+        ('USER', 'AMAR_USER'),
+        ('DEVELOPER', 'AMAR_DEVELOPER')
+)
+INSERT INTO public.user_role_mappings
+(
+    user_id,
+    role_id,
+    assigned_by,
+    assigned_at,
+    is_active
+)
+SELECT DISTINCT
+    urm.user_id,
+    canonical.id,
+    urm.assigned_by,
+    COALESCE(urm.assigned_at, CURRENT_TIMESTAMP),
+    true
+FROM public.user_role_mappings urm
+JOIN public.roles old_role ON old_role.id = urm.role_id
+JOIN role_map ON role_map.old_code = old_role.role_code
+JOIN public.roles canonical ON canonical.role_code = role_map.new_code
+WHERE urm.is_active = true
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM public.user_role_mappings existing
+      WHERE existing.user_id = urm.user_id
+        AND existing.role_id = canonical.id
+  )
+ON CONFLICT DO NOTHING;
+
+WITH role_map(old_code, new_code) AS
+(
+    VALUES
+        ('AMARSHOW_ADMIN_SUPER', 'AMAR_SUPER_ADMIN'),
+        ('AMARSHOW_ADMIN_PLATFORM', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SECURITY', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_BOOKING', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_PAYMENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SUPPORT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_CONTENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_REPORTS', 'AMAR_ADMIN'),
+        ('AMARSHOW_USER_PREMIUM', 'AMAR_USER'),
+        ('AMARSHOW_USER_STANDARD', 'AMAR_USER'),
+        ('ADMIN', 'AMAR_ADMIN'),
+        ('USER', 'AMAR_USER'),
+        ('DEVELOPER', 'AMAR_DEVELOPER')
+),
+old_active AS
+(
+    SELECT DISTINCT urm.user_id, canonical.id AS role_id
+    FROM public.user_role_mappings urm
+    JOIN public.roles old_role ON old_role.id = urm.role_id
+    JOIN role_map ON role_map.old_code = old_role.role_code
+    JOIN public.roles canonical ON canonical.role_code = role_map.new_code
+    WHERE urm.is_active = true
+)
+UPDATE public.user_role_mappings existing
+SET is_active = true,
+    assigned_at = COALESCE(existing.assigned_at, CURRENT_TIMESTAMP)
+FROM old_active
+WHERE existing.user_id = old_active.user_id
+  AND existing.role_id = old_active.role_id;
+
+WITH role_map(old_code, new_code) AS
+(
+    VALUES
+        ('AMARSHOW_ADMIN_SUPER', 'AMAR_SUPER_ADMIN'),
+        ('AMARSHOW_ADMIN_PLATFORM', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SECURITY', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_BOOKING', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_PAYMENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SUPPORT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_CONTENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_REPORTS', 'AMAR_ADMIN'),
+        ('AMARSHOW_USER_PREMIUM', 'AMAR_USER'),
+        ('AMARSHOW_USER_STANDARD', 'AMAR_USER'),
+        ('ADMIN', 'AMAR_ADMIN'),
+        ('USER', 'AMAR_USER'),
+        ('DEVELOPER', 'AMAR_DEVELOPER')
+)
+INSERT INTO public.user_roles
+(
+    user_id,
+    role_id,
+    assigned_by,
+    assigned_at,
+    is_active
+)
+SELECT DISTINCT
+    ur.user_id,
+    canonical.id,
+    ur.assigned_by,
+    COALESCE(ur.assigned_at, CURRENT_TIMESTAMP),
+    true
+FROM public.user_roles ur
+JOIN public.roles old_role ON old_role.id = ur.role_id
+JOIN role_map ON role_map.old_code = old_role.role_code
+JOIN public.roles canonical ON canonical.role_code = role_map.new_code
+WHERE ur.is_active = true
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM public.user_roles existing
+      WHERE existing.user_id = ur.user_id
+        AND existing.role_id = canonical.id
+  )
+ON CONFLICT DO NOTHING;
+
+WITH role_map(old_code, new_code) AS
+(
+    VALUES
+        ('AMARSHOW_ADMIN_SUPER', 'AMAR_SUPER_ADMIN'),
+        ('AMARSHOW_ADMIN_PLATFORM', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SECURITY', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_BOOKING', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_PAYMENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_ADMIN_SUPPORT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_CONTENT', 'AMAR_ADMIN'),
+        ('AMARSHOW_MANAGER_REPORTS', 'AMAR_ADMIN'),
+        ('AMARSHOW_USER_PREMIUM', 'AMAR_USER'),
+        ('AMARSHOW_USER_STANDARD', 'AMAR_USER'),
+        ('ADMIN', 'AMAR_ADMIN'),
+        ('USER', 'AMAR_USER'),
+        ('DEVELOPER', 'AMAR_DEVELOPER')
+),
+old_active AS
+(
+    SELECT DISTINCT ur.user_id, canonical.id AS role_id
+    FROM public.user_roles ur
+    JOIN public.roles old_role ON old_role.id = ur.role_id
+    JOIN role_map ON role_map.old_code = old_role.role_code
+    JOIN public.roles canonical ON canonical.role_code = role_map.new_code
+    WHERE ur.is_active = true
+)
+UPDATE public.user_roles existing
+SET is_active = true,
+    assigned_at = COALESCE(existing.assigned_at, CURRENT_TIMESTAMP)
+FROM old_active
+WHERE existing.user_id = old_active.user_id
+  AND existing.role_id = old_active.role_id;
+
+INSERT INTO public.user_role_mappings
+(
+    user_id,
+    role_id,
+    assigned_by,
+    assigned_at,
+    is_active
+)
+SELECT
+    u.""Id"",
+    r.id,
+    NULL,
+    CURRENT_TIMESTAMP,
+    true
+FROM public.""Users"" u
+JOIN public.roles r ON r.role_code = 'AMAR_USER'
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.user_role_mappings existing
+    WHERE existing.user_id = u.""Id""
+      AND existing.is_active = true
+)
+ON CONFLICT DO NOTHING;
+
+UPDATE public.user_role_mappings existing
+SET is_active = true,
+    assigned_at = CURRENT_TIMESTAMP
+FROM public.roles r
+WHERE existing.role_id = r.id
+  AND r.role_code = 'AMAR_USER'
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM public.user_role_mappings active_role
+      WHERE active_role.user_id = existing.user_id
+        AND active_role.is_active = true
+  );
+
+INSERT INTO public.user_roles
+(
+    user_id,
+    role_id,
+    assigned_by,
+    assigned_at,
+    is_active
+)
+SELECT
+    u.""Id"",
+    r.id,
+    NULL,
+    CURRENT_TIMESTAMP,
+    true
+FROM public.""Users"" u
+JOIN public.roles r ON r.role_code = 'AMAR_USER'
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.user_roles existing
+    WHERE existing.user_id = u.""Id""
+      AND existing.is_active = true
+)
+ON CONFLICT DO NOTHING;
+
+UPDATE public.user_roles existing
+SET is_active = true,
+    assigned_at = CURRENT_TIMESTAMP
+FROM public.roles r
+WHERE existing.role_id = r.id
+  AND r.role_code = 'AMAR_USER'
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM public.user_roles active_role
+      WHERE active_role.user_id = existing.user_id
+        AND active_role.is_active = true
+  );
+
+DELETE FROM public.role_permissions
+WHERE true;
+
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, NULL, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON true
+WHERE r.role_code = 'AMAR_SUPER_ADMIN';
+
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, NULL, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON p.permission_code NOT LIKE 'DEVELOPER_%'
+WHERE r.role_code = 'AMAR_ADMIN';
+
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, NULL, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON p.permission_code = 'DEVELOPER_EDIT'
+WHERE r.role_code = 'AMAR_DEVELOPER';
+
+DELETE FROM public.role_menu_access
+WHERE role_id IN
+(
+    SELECT id
+    FROM public.roles
+    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+);
+
+DELETE FROM public.user_role_mappings
+WHERE role_id IN
+(
+    SELECT id
+    FROM public.roles
+    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+);
+
+DELETE FROM public.user_roles
+WHERE role_id IN
+(
+    SELECT id
+    FROM public.roles
+    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+);
+
+DELETE FROM public.roles
+WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER');
+
+CREATE OR REPLACE VIEW public.vw_user_access_matrix AS
+SELECT
+    u.""Id"" AS user_id,
+    u.""Name"" AS user_name,
+    u.""Email"" AS user_email,
+    r.role_code,
+    r.role_name,
+    am.module_code,
+    am.module_name,
+    p.permission_code,
+    p.permission_name,
+    p.action_type,
+    urm.assigned_at,
+    urm.is_active
+FROM public.""Users"" u
+JOIN public.user_role_mappings urm ON u.""Id"" = urm.user_id
+JOIN public.roles r ON urm.role_id = r.id
+JOIN public.role_permissions rp ON r.id = rp.role_id
+JOIN public.permissions p ON rp.permission_id = p.id
+JOIN public.application_modules am ON p.module_id = am.id
+WHERE urm.is_active = true
+  AND r.is_active = true
+  AND am.is_active = true;
+
+CREATE OR REPLACE VIEW public.vw_user_application_menus AS
+SELECT
+    u.""Id"" AS user_id,
+    u.""Name"" AS user_name,
+    r.role_code,
+    am.id AS menu_id,
+    am.module_code AS menu_code,
+    am.module_name AS menu_name,
+    NULL::bigint AS parent_menu_id,
+    NULL::varchar(255) AS parent_menu_name,
+    am.route_path,
+    am.icon_name,
+    1 AS menu_level,
+    am.display_order,
+    true AS can_view,
+    bool_or(p.action_type = 'CREATE') AS can_create,
+    bool_or(p.action_type = 'UPDATE') AS can_update,
+    bool_or(p.action_type = 'DELETE') AS can_delete
+FROM public.""Users"" u
+JOIN public.user_role_mappings urm ON u.""Id"" = urm.user_id
+JOIN public.roles r ON urm.role_id = r.id
+JOIN public.role_permissions rp ON r.id = rp.role_id
+JOIN public.permissions p ON rp.permission_id = p.id
+JOIN public.application_modules am ON p.module_id = am.id
+WHERE urm.is_active = true
+  AND r.is_active = true
+  AND am.is_active = true
+GROUP BY
+    u.""Id"",
+    u.""Name"",
+    r.role_code,
+    am.id,
+    am.module_code,
+    am.module_name,
+    am.route_path,
+    am.icon_name,
+    am.display_order;
+");
+    }
+    catch(Exception ex)
+    {
+        app.Logger.LogWarning(
+        ex,
+        "RBAC schema normalization skipped"
         );
     }
 }

@@ -48,9 +48,7 @@ namespace AmarShowsBook.Services
                     userId,
                     "AMAR_SUPER_ADMIN",
                     "AMAR_ADMIN",
-                    "ADMIN",
-                    "AMAR_DEVELOPER",
-                    "DEVELOPER")
+                    "AMAR_DEVELOPER")
                 || HasPermissionStrict(userId, "ADMIN", "VIEW")
                 || HasPermissionStrict(userId, "DEVELOPER", "EDIT");
         }
