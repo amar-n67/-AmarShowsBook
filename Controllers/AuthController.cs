@@ -3,12 +3,12 @@ using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using AmarShowsBook.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace AmarShowsBook.Controllers
 {
+    // This controller creates the session identity that the rest of the app trusts for RBAC and user-owned data.
     public class AuthController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -22,19 +22,10 @@ namespace AmarShowsBook.Controllers
         private static readonly Regex PasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", RegexOptions.Compiled);
         private const string PasswordRuleMessage = "Password must be at least 8 characters and include uppercase, lowercase, and special character.";
 
-        // OTP temporary storage (dev only)
-        //private static string generatedOTP; //comment to handle nullability in the database
         private static string? generatedOTP;
         private static DateTime resetOtpExpiresAtUtc;
-        //private static string resetEmail; //comment to handle nullability in the database
         private static string? resetEmail;
 
-        // public AuthController(
-        //     ApplicationDbContext context,
-        //     IHostApplicationLifetime applicationLifetime,
-        //     OtpDeliveryService otpDeliveryService,
-        //     IConfiguration configuration,
-        //     IWebHostEnvironment environment)
         public AuthController(
     ApplicationDbContext context,
     IHostApplicationLifetime applicationLifetime,
@@ -51,109 +42,12 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        // ================= LOGIN =================
-
         public IActionResult Login()
         {
             return View();
         }
 
        [HttpPost]
-// public async Task<IActionResult> Login(string email, string password)
-// {
-//     try
-//     {
-//     if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-//     {
-//         ViewBag.Error = "Missing credentials. The show cannot start without email and password.";
-//         return View();
-//     }
-
-//     if (!EmailRegex.IsMatch(email.Trim().ToLower()))
-//     {
-//         ViewBag.Error = "Only Gmail or Outlook email is allowed.";
-//         return View();
-//     }
-
-//     if (!PasswordRegex.IsMatch(password))
-//     {
-//         ViewBag.Error = PasswordRuleMessage;
-//         return View();
-//     }
-
-//     // normalize email
-//     email = email.Trim().ToLower();
-
-//     var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == email);
-
-//     if (user == null)
-//     {
-//         ViewBag.Error = "No performer found with this email.";
-//         return View();
-//     }
-
-//     bool isValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
-
-//     // if (isValid)
-//     // {
-//     //     HttpContext.Session.SetString("UserEmail", user.Email);
-//     //     HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
-//     //     HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
-//     //     HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
-
-//     //     HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
-
-//     //     return RedirectToAction("ShowTime", "Home");
-//     // }
-//     if (isValid)
-// {
-//     HttpContext.Session.SetString("UserEmail", user.Email);
-//     HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
-//     HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
-//     HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
-
-//     HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
-
-//     // _activityLogger.LogAsync(
-//     //     userId: user.Id,
-//     //     action: "LOGIN",
-//     //     module: "AUTH",
-//     //     entityType: "USER",
-//     //     entityId: user.Id,
-//     //     description: "User logged in successfully"
-//     // );
-//     await _activityLogger.LogAsync(
-//     userId: user.Id,
-//     action: "LOGIN",
-//     module: "AUTH",
-//     entityType: "USER",
-//     entityId: user.Id,
-//     description: "User logged in successfully"
-// );
-
-//     return RedirectToAction("ShowTime", "Home");
-// }
-//     else
-//     {
-//         _activityLogger.LogAsync(
-//             userId: user.Id,
-//             action: "FAILED_LOGIN",
-//             module: "AUTH",
-//             entityType: "USER",
-//             entityId: user.Id,
-//             description: "User failed to log in with incorrect password",
-//             status: "FAILURE"
-//         );
-
-//     ViewBag.Error = "Wrong script. Password did not match.";
-//     return View();
-//     }
-//     catch
-//     {
-//         ViewBag.Error = "The projector had a technical pause. Please try login again.";
-//         return View();
-//     }
-// }
 public async Task<IActionResult> Login(string email, string password)
 {
     try
@@ -185,10 +79,6 @@ public async Task<IActionResult> Login(string email, string password)
             ViewBag.Error = "No performer found with this email.";
             return View();
         }
-        // =====================================================
-// HUMAN COMMENT:
-// BLOCK LOGIN FOR DISABLED OR DELETED USERS
-// =====================================================
 
 if (!user.is_active || user.is_deleted)
 {
@@ -202,7 +92,6 @@ if (!user.is_active || user.is_deleted)
 
         if (isValid)
         {
-            // Store logged-in user id for RBAC permission checks
 HttpContext.Session.SetString(
     "UserId",
     user.Id.ToString()
@@ -246,7 +135,7 @@ HttpContext.Session.SetString(
     }
     catch (Exception ex)
     {
-        Console.WriteLine(ex);
+        System.Diagnostics.Debug.WriteLine(ex);
 
         ViewBag.Error = "The projector had a technical pause. Please try login again.";
         return View();
@@ -257,6 +146,7 @@ HttpContext.Session.SetString(
         int userId,
         string userEmail)
         {
+            // The welcome wallet credit is idempotent, so repeated logins do not duplicate the bonus.
             var reference =
             $"FIRSTLOGIN-10000-{userId}";
 
@@ -391,7 +281,6 @@ WHERE uw.user_id = {userId}
             return View("Signup", user);
         }
 
-        // ================= SIGNUP =================
 
         public IActionResult Signup()
         {
@@ -399,11 +288,11 @@ WHERE uw.user_id = {userId}
         }
 
         [HttpPost]
-        // public IActionResult Signup(User user)
         public async Task<IActionResult> Signup(User user)
         {
             try
             {
+            // Signup stores a valid customer account, then AssignDefaultUserRole gives it AMAR_USER.
             if (!ValidateSignup(user))
             {
                 return View(user);
@@ -419,14 +308,9 @@ WHERE uw.user_id = {userId}
                 return SignupError(user, "This email is already registered. Try login or use another email.");
             }
 
-            // Hash password
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             user.CreatedAt = DateTime.UtcNow;
 
-// =====================================================
-// HUMAN COMMENT:
-// DEFAULT ACCOUNT STATUS FOR NEW USERS
-// =====================================================
 
 user.is_active = true;
 
@@ -438,40 +322,13 @@ if (string.IsNullOrEmpty(user.Genre))
 if (string.IsNullOrEmpty(user.Language))
     user.Language = "English";
 
-            // _context.Users.Add(user);
-            // _context.SaveChanges();
 
-            // return RedirectToAction("Login");
             _context.Users.Add(user);
 
 await _context.SaveChangesAsync();
 
 await AssignDefaultUserRole(user.Id);
 
-//  _activityLogger.LogAsync(
-//     userId: user.Id,
-//     action: "SIGNUP",
-//     module: "AUTH",
-//     entityType: "USER",
-//     entityId: user.Id,
-//     description: "New user account created",
-//     newValue: user
-// );
-// await _activityLogger.LogAsync(
-//     userId: user.Id,
-//     action: "SIGNUP",
-//     module: "AUTH",
-//     entityType: "USER",
-//     entityId: user.Id,
-//     description: "New user account created",
-//     //newValue: user
-//     newValue: new
-// {
-//     user.Id,
-//     user.Name,
-//     user.Email
-// }
-// );
 await _activityLogger.LogAsync(
     userId: user.Id,
     action: "SIGNUP",
@@ -552,14 +409,12 @@ WHERE user_id = {userId}
   AND role_id = {userRole.Id};");
         }
 
-        // ================= FORGOT PASSWORD =================
 
         public IActionResult ForgotPassword()
         {
             return View();
         }
 
-        // STEP 1: Send OTP
         [HttpPost]
         public async Task<IActionResult> SendOTP(string email)
         {
@@ -588,7 +443,7 @@ WHERE user_id = {userId}
             {
                 if (!result.IsConfigured && _environment.IsDevelopment() && _configuration.GetValue("Otp:ExposeDevOtp", true))
                 {
-                    Console.WriteLine($"Reset password OTP for {email}: {generatedOTP}");
+                    System.Diagnostics.Debug.WriteLine($"Reset password OTP for {email}: {generatedOTP}");
                     ViewBag.Message = "OTP sent. Check the popup for the development code.";
                     ViewBag.DevOtp = generatedOTP;
                     return View("VerifyOTP");
@@ -606,7 +461,6 @@ WHERE user_id = {userId}
             return View("VerifyOTP");
         }
 
-        // STEP 2: Verify OTP
         [HttpPost]
         public IActionResult VerifyOTP(string otp)
         {
@@ -621,7 +475,6 @@ WHERE user_id = {userId}
             return View("VerifyOTP");
         }
 
-        // STEP 3: Reset Password
         [HttpPost]
         public async Task<IActionResult> ResetPassword(string password, string confirmPassword)
         {
@@ -639,11 +492,6 @@ WHERE user_id = {userId}
 
             var user = _context.Users.FirstOrDefault(u => u.Email == resetEmail);
 
-            // if (user != null)
-            // {
-            //     user.Password = BCrypt.Net.BCrypt.HashPassword(password);
-            //     _context.SaveChanges();
-            // }
             if (user != null)
 {
     user.Password = BCrypt.Net.BCrypt.HashPassword(password);
@@ -663,13 +511,7 @@ WHERE user_id = {userId}
             return RedirectToAction("Login");
         }
 
-        // ================= LOGOUT =================
 
-        // public IActionResult Logout()
-        // {
-        //     HttpContext.Session.Clear();
-        //     return RedirectToAction("Login");
-        // }
         public async Task<IActionResult> Logout()
 {
     var email = HttpContext.Session.GetString("UserEmail");

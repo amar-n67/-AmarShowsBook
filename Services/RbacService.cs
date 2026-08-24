@@ -16,8 +16,7 @@ namespace AmarShowsBook.Services
             _configuration = configuration;
         }
 
-        // ================= ROLE CHECK =================
-
+        // Normal checks allow the development bypass setting; strict checks are used for actions that should still prove role access.
         public bool HasPermission(
             int userId,
             string moduleCode,
@@ -91,12 +90,10 @@ namespace AmarShowsBook.Services
             string actionType,
             bool allowDeveloperBypass)
         {
-            // Developer override mode
             var bypass =
                 _configuration.GetValue<bool>(
                     "DeveloperSettings:BypassRBAC");
 
-            // Allow everything in development
             if (allowDeveloperBypass && bypass)
             {
                 return true;
@@ -107,7 +104,7 @@ namespace AmarShowsBook.Services
                 return true;
             }
 
-            // Real RBAC validation
+            // Runtime permissions come from vw_user_access_matrix, which is rebuilt from the four fixed roles.
             return _context.VwUserAccessMatrices.Any(x =>
                 x.UserId == userId &&
                 x.ModuleCode == moduleCode &&
@@ -116,8 +113,8 @@ namespace AmarShowsBook.Services
             );
         }
 
-        // ================= MENU ACCESS =================
 
+        // Admin navigation is also RBAC-driven, so hidden pages and blocked actions follow the same role source.
         public List<Models.VwUserApplicationMenu> GetMenus(
             int userId)
         {
@@ -125,8 +122,6 @@ namespace AmarShowsBook.Services
                 _configuration.GetValue<bool>(
                     "DeveloperSettings:BypassRBAC");
 
-            // Developer mode:
-            // return all menus
             if (bypass)
             {
                 return _context.VwUserApplicationMenus
@@ -141,8 +136,6 @@ namespace AmarShowsBook.Services
                     .ToList();
             }
 
-            // Production mode:
-            // return user-specific menus
             return _context.VwUserApplicationMenus
                 .Where(x => x.UserId == userId)
                 .OrderBy(x => x.DisplayOrder)

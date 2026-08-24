@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace AmarShowsBook.Models
 {
-    // Ticket security analytics SQL view
     [Keyless]
     public class VwTicketValidationSummary
     {

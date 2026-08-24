@@ -1,4 +1,3 @@
-/* Human Comment: Shared cinematic admin dashboard theme and page utilities. */
 :root {
     --admin-ink: #171923;
     --admin-muted: #657083;
@@ -95,7 +94,6 @@ html[data-theme="cinema"] {
     --admin-shadow: 0 20px 52px rgba(22, 59, 77, 0.18);
 }
 
-* {
     box-sizing: border-box;
 }
 

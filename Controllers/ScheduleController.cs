@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
-using System;
-using System.Linq;
 
 namespace AmarShowsBook.Controllers
 {
@@ -52,7 +50,6 @@ namespace AmarShowsBook.Controllers
 
             DateTime endTime = startTime.AddMinutes(duration);
 
-            // ❗ CLASH CHECK (ONLY FOR STANDUP)
             if (type == "Standup")
             {
                 bool clash = _context.ShowSchedules.Any(s =>

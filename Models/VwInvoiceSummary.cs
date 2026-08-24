@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models
 {
-    // Invoice analytics SQL view
     [Keyless]
     public class VwInvoiceSummary
     {

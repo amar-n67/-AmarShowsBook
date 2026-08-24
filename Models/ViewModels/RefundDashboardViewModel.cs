@@ -4,16 +4,10 @@ namespace AmarShowsBook.Models.ViewModels
 {
     public class RefundDashboardViewModel
     {
-        // =====================================================
-        // REFUND LIST
-        // =====================================================
 
         public List<VwRefundSummary> Refunds { get; set; }
             = new();
 
-        // =====================================================
-        // DASHBOARD COUNTS
-        // =====================================================
 
         public int TotalRefunds { get; set; }
 
@@ -25,15 +19,9 @@ namespace AmarShowsBook.Models.ViewModels
 
         public int RejectedCount { get; set; }
 
-        // =====================================================
-        // REFUND TOTALS
-        // =====================================================
 
         public decimal TotalRefundAmount { get; set; }
 
-        // =====================================================
-        // ANALYTICS
-        // =====================================================
 
         public double SuccessRate { get; set; }
     }

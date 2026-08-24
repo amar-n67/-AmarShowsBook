@@ -27,9 +27,6 @@
 
 <section class="admin-page">
 
-    <!-- ===================================================== -->
-    <!-- PAGE HEADER -->
-    <!-- ===================================================== -->
 
     <div class="admin-page-header">
 
@@ -53,9 +50,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- STATS -->
-    <!-- ===================================================== -->
 
     <div class="stats-grid">
 
@@ -79,9 +73,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- TABLE -->
-    <!-- ===================================================== -->
 
     <div class="table-wrapper">
 
@@ -117,7 +108,6 @@
                     {
                         <tr data-filter-status="@item.status">
 
-                            <!-- TIME -->
 
                             <td>
                                 <div class="log-date">
@@ -129,7 +119,6 @@
                                 </div>
                             </td>
 
-                            <!-- MODULE -->
 
                             <td>
                                 <span class="badge warning">
@@ -139,13 +128,11 @@
                                 </span>
                             </td>
 
-                            <!-- ACTION -->
 
                             <td class="text-wrap">
                                 @ResolveActionName(item)
                             </td>
 
-                            <!-- USER -->
 
                             <td class="text-wrap">
                                 @(string.IsNullOrWhiteSpace(item.user_name)
@@ -153,7 +140,6 @@
                                     : item.user_name)
                             </td>
 
-                            <!-- EMAIL -->
 
                             <td class="email-cell">
                                 @(string.IsNullOrWhiteSpace(item.user_email)
@@ -161,7 +147,6 @@
                                     : item.user_email)
                             </td>
 
-                            <!-- REFERENCE -->
 
                             <td class="text-wrap">
                                 @(string.IsNullOrWhiteSpace(item.reference_no)
@@ -169,7 +154,6 @@
                                     : item.reference_no)
                             </td>
 
-                            <!-- STATUS -->
 
                             <td>
 
@@ -196,7 +180,6 @@
 
                             </td>
 
-                            <!-- DESCRIPTION -->
 
                             <td class="description-cell">
                                 @(string.IsNullOrWhiteSpace(item.description)
@@ -204,7 +187,6 @@
                                     : item.description)
                             </td>
 
-                            <!-- ERROR -->
 
                             <td class="error-cell">
 
@@ -242,9 +224,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- PAGINATION -->
-    <!-- ===================================================== -->
 
     <div class="pagination-area">
 
@@ -260,9 +239,6 @@
 
 </section>
 
-<!-- ===================================================== -->
-<!-- PAGE CSS -->
-<!-- ===================================================== -->
 
 <style>
 

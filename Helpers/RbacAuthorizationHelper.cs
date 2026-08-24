@@ -4,7 +4,6 @@ namespace AmarShowsBook.Helpers
 {
     public static class RbacAuthorizationHelper
     {
-        // Central permission validation helper
         public static bool CanAccess(
             HttpContext context,
             RbacService rbacService,

@@ -12,33 +12,20 @@ using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
+    // Admin pages all pass through OnActionExecutionAsync, so page access and button actions use the same RBAC map.
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        // =====================================================
-        // ACTIVITY LOGGER
-        // =====================================================
 
         private readonly IActivityLogger _activityLogger;
 
-        // =====================================================
-        // ROLE BASED ACCESS SERVICE
-        // =====================================================
 
         private readonly RbacService _rbacService;
 
         private readonly OtpDeliveryService _emailDeliveryService;
 
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
 
-        // Human Comment:
-        // Injecting:
-        // 1. Database access
-        // 2. Activity logging service
-        // 3. RBAC permission validation service
 
         public AdminController(
             ApplicationDbContext context,
@@ -77,19 +64,10 @@ namespace AmarShowsBook.Controllers
             await next();
         }
 
-        // =====================================================
-        // ADMIN DASHBOARD
-        // =====================================================
 
         public async Task<IActionResult> Dashboard()
         {
-            // =====================================================
-            // ROLE ACCESS VALIDATION
-            // =====================================================
 
-            // Human Comment:
-            // Only users with ADMIN VIEW permission
-            // can access admin dashboard
 
             if (!RbacAuthorizationHelper.CanAccess(
                 HttpContext,
@@ -100,17 +78,14 @@ namespace AmarShowsBook.Controllers
                 return RedirectToAction("ShowTime", "Home");
             }
 
-            // =====================================================
-            // LOAD DASHBOARD COUNTS
-            // =====================================================
 
             var today = DateTime.UtcNow.Date;
             var tomorrow = today.AddDays(1);
             var now = DateTime.UtcNow;
 
+            // These counts come from reporting views, which keeps dashboard cards consistent with admin tables.
             var vm = new AdminDashboardViewModel
             {
-                // ================= BOOKINGS =================
 
                 TotalBookings =
                     _context.VwBookingCompleteDetails.Count(),
@@ -143,7 +118,6 @@ namespace AmarShowsBook.Controllers
                     _context.VwBookingCompleteDetails
                         .Sum(x => x.PayableAmount ?? (decimal?)x.TotalAmount) ?? 0,
 
-                // ================= PAYMENTS =================
 
                 SuccessfulPayments =
                     _context.VwBookingTransactionSummaries
@@ -158,7 +132,6 @@ namespace AmarShowsBook.Controllers
                         .Where(x => x.IsPaymentError == 0)
                         .Sum(x => x.TransactionAmount) ?? 0,
 
-                // ================= REFUNDS =================
 
                 TotalRefunds =
                     _context.VwRefundSummaries.Count(),
@@ -183,13 +156,11 @@ namespace AmarShowsBook.Controllers
                     _context.VwRefundSummaries
                         .Sum(x => x.RefundAmount) ?? 0,
 
-                // ================= INVOICES =================
 
                 InvoiceFailures =
                     _context.VwInvoiceSummaries
                         .Count(x => x.IsInvoiceError == 1),
 
-                // ================= NOTIFICATIONS =================
 
                 NotificationFailures =
                     _context.VwNotificationCenters
@@ -210,7 +181,6 @@ namespace AmarShowsBook.Controllers
                     _context.VwNotificationCenters
                         .Count(x => x.Priority == "HIGH"),
 
-                // ================= SECURITY =================
 
                 TicketValidationIssues =
                     _context.VwTicketValidationSummaries
@@ -220,7 +190,6 @@ namespace AmarShowsBook.Controllers
                     _context.VwTicketValidationSummaries
                         .Count(x => x.IsSecurityIssue == 0),
 
-                // ================= WALLET =================
 
                 TotalWalletBalance =
                     _context.VwWalletSummaries
@@ -238,7 +207,6 @@ namespace AmarShowsBook.Controllers
                     _context.VwWalletSummaries
                         .Sum(x => (decimal?)x.BlockedBalance) ?? 0,
 
-                // ================= CONTENT / ACCESS =================
 
                 TotalUsers =
                     _context.Users.Count(),
@@ -359,9 +327,6 @@ namespace AmarShowsBook.Controllers
                 .ToList();
             
 
-            // =====================================================
-            // ACTIVITY LOG
-            // =====================================================
 
             await _activityLogger.LogAsync(
                 action: "VIEW_ADMIN_DASHBOARD",
@@ -375,12 +340,7 @@ namespace AmarShowsBook.Controllers
             return View(vm);
         }
 
-        // =====================================================
-        // ROLES PAGE
-        // =====================================================
 
-        // Human Comment:
-        // Admin role management screen
 
         public IActionResult Roles()
         {
@@ -392,12 +352,10 @@ namespace AmarShowsBook.Controllers
             return View(roles);
         }
 
-        // =====================================================
-        // SECURITY PAGE
-        // =====================================================
 
         public async Task<IActionResult> Security(int page = 1)
         {
+            // Security joins scanner devices with ticket validation logs for gate-entry investigation.
             const int pageSize = 50;
 
             await EnsureSecurityInfrastructure();
@@ -739,12 +697,7 @@ namespace AmarShowsBook.Controllers
             return RedirectToAction(nameof(Roles));
         }
 
-        // =====================================================
-        // PERMISSIONS PAGE
-        // =====================================================
 
-        // Human Comment:
-        // Permission master screen
 
       public IActionResult Permissions()
         {
@@ -837,6 +790,7 @@ namespace AmarShowsBook.Controllers
 
         public async Task<IActionResult> ManageShows()
         {
+            // This is the admin entry point for content, schedules, venues, screens, and generated seats.
             if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "SHOW", "VIEW"))
             {
                 return RedirectToAction("Dashboard");
@@ -1127,8 +1081,6 @@ namespace AmarShowsBook.Controllers
 
         public IActionResult Users(int page = 1)
         {
-            // Human Comment:
-            // Load users in 50-row pages so the admin table stays fast and readable.
 
             const int pageSize = 50;
             page = Math.Max(page, 1);
@@ -1151,15 +1103,10 @@ namespace AmarShowsBook.Controllers
             return View(users);
         }
 
-        // =====================================================
-        // ADMIN USER STATUS ACTIONS
-        // =====================================================
 
         [HttpPost]
         public async Task<IActionResult> DisableUser(int id)
         {
-            // Human Comment:
-            // Soft-disable keeps the user record while blocking account use.
 
             var user = await _context.Users.FindAsync(id);
 
@@ -1188,14 +1135,9 @@ namespace AmarShowsBook.Controllers
             return RedirectToAction(nameof(Users));
         }
 
-        // =====================================================
-        // BOOKINGS PAGE
-        // =====================================================
 
         public IActionResult Bookings(int page = 1)
         {
-            // Human Comment:
-            // Load booking summary data in 50-row pages for admin tables.
 
             const int pageSize = 50;
             page = Math.Max(page, 1);
@@ -1219,14 +1161,9 @@ namespace AmarShowsBook.Controllers
             return View(bookings);
         }
 
-        // =====================================================
-        // TRANSACTIONS PAGE
-        // =====================================================
 
         public async Task<IActionResult> Transactions(int page = 1)
         {
-            // Human Comment:
-            // Show 50 transaction rows per page for admin readability.
 
             const int pageSize = 50;
 
@@ -1236,8 +1173,6 @@ namespace AmarShowsBook.Controllers
                 .AsNoTracking()
                 .OrderByDescending(x => x.BookingCreatedAt);
 
-            // Human Comment:
-            // One aggregate query replaces three separate full scans of the transaction view.
             var summary = await _context.VwBookingTransactionSummaries
                 .AsNoTracking()
                 .GroupBy(x => 1)
@@ -1265,14 +1200,9 @@ namespace AmarShowsBook.Controllers
             return View(transactions);
         }
 
-        // =====================================================
-        // TRANSACTION DETAILS PAGE
-        // =====================================================
 
         public async Task<IActionResult> TransactionDetails(int id)
         {
-            // Human Comment:
-            // Opens the transaction View button from the admin transaction table.
 
             var transaction = await _context.VwBookingTransactionSummaries
                 .AsNoTracking()
@@ -1286,14 +1216,9 @@ namespace AmarShowsBook.Controllers
             return View(transaction);
         }
 
-        // =====================================================
-        // ACTIVITY LOGS PAGE
-        // =====================================================
 
         public IActionResult ActivityLogs(int page = 1)
         {
-            // Human Comment:
-            // Activity logs use the same 50-row admin pagination pattern as transactions.
 
             const int pageSize = 50;
             page = Math.Max(page, 1);
@@ -1317,14 +1242,9 @@ namespace AmarShowsBook.Controllers
             return View(logs);
         }
 
-        // =====================================================
-        // ACCESS MANAGEMENT PAGE
-        // =====================================================
 
         public IActionResult AccessManagement()
         {
-            // Human Comment:
-            // Load user access matrix
 
             var access =
                 _context.VwUserAccessMatrices
@@ -1334,14 +1254,9 @@ namespace AmarShowsBook.Controllers
             return View(access);
         }
 
-        // =====================================================
-        // MENUS PAGE
-        // =====================================================
 
         public IActionResult Menus()
         {
-            // Human Comment:
-            // Load role based menus
 
             var menus =
                 _context.VwUserApplicationMenus
@@ -1351,16 +1266,11 @@ namespace AmarShowsBook.Controllers
             return View(menus);
         }
 
-        // =====================================================
-        // REFUNDS PAGE
-        // =====================================================
 
         public async Task<IActionResult> Refunds(int page = 1)
         {
             try
             {
-                // Human Comment:
-                // Refunds follow the shared 50-row admin page size while keeping page layout intact.
                 const int pageSize = 50;
                 page = Math.Max(page, 1);
 
@@ -1383,8 +1293,6 @@ namespace AmarShowsBook.Controllers
             }
             catch
             {
-                // Human Comment:
-                // Return empty list if database fails
 
                 ViewBag.CurrentPage = 1;
                 ViewBag.TotalPages = 1;
@@ -1394,9 +1302,6 @@ namespace AmarShowsBook.Controllers
             }
         }
 
-        // =====================================================
-        // WALLETS PAGE
-        // =====================================================
 
         public async Task<IActionResult> Wallets(int page = 1)
         {
@@ -1404,8 +1309,6 @@ namespace AmarShowsBook.Controllers
             {
                 await EnsureWalletAdminSchema();
 
-                // Human Comment:
-                // Wallet admin page uses the same 50-row paging contract as other admin lists.
                 const int pageSize = 50;
                 page = Math.Max(page, 1);
 
@@ -1443,8 +1346,6 @@ namespace AmarShowsBook.Controllers
             }
             catch
             {
-                // Human Comment:
-                // Return empty list if wallet query fails
 
                 ViewBag.CurrentPage = 1;
                 ViewBag.TotalPages = 1;
@@ -1712,9 +1613,6 @@ GROUP BY uw.id, u.""Id"";
 ");
 }
 
-        // =====================================================
-        // NOTIFICATIONS PAGE
-        // =====================================================
 
         public async Task<IActionResult> Notifications(int page = 1)
         {
@@ -1730,8 +1628,6 @@ GROUP BY uw.id, u.""Id"";
 
             try
             {
-                // Human Comment:
-                // Notification admin page uses the shared 50-row pagination contract.
                 const int pageSize = 50;
                 page = Math.Max(page, 1);
 
@@ -1754,10 +1650,6 @@ GROUP BY uw.id, u.""Id"";
             }
             catch
             {
-                // IMPORTANT FIX:
-                // Your previous code used:
-                // List<VwNotificationCenters>()
-                // That class DOES NOT exist
 
                 ViewBag.CurrentPage = 1;
                 ViewBag.TotalPages = 1;
@@ -1766,392 +1658,104 @@ GROUP BY uw.id, u.""Id"";
                 return View(new List<VwNotificationCenter>());
             }
         }
-// public async Task<IActionResult> RefundDetails(long id)
-// {
-//     var refund = await _context
-//         .VwRefundSummaries
-//         .AsNoTracking()
-//         .FirstOrDefaultAsync(x => x.RefundId == id);
-
-//     if (refund == null)
-//     {
-//         return NotFound();
-//     }
-
-//     return View(refund);
-// }
-// public IActionResult ActivityLogs(int page = 1)
-// {
-//     int pageSize = 50;
-
-//     var query = _context
-//         .VwEnterpriseActivityLogs
-//         .AsNoTracking()
-//         .OrderByDescending(x => x.activity_time);
-
-//     int totalCount = query.Count();
-
-//     var logs = query
-//         .Skip((page - 1) * pageSize)
-//         .Take(pageSize)
-//         .ToList();
-
-//     ViewBag.CurrentPage = page;
 
-//     ViewBag.TotalPages =
-//         (int)Math.Ceiling(
-//             totalCount / (double)pageSize);
 
-//     return View(logs);
-// }
-// // =====================================================
-// // APPROVE REFUND
-// // =====================================================
 
-// [HttpPost]
-// public async Task<IActionResult> ApproveRefund(long id)
-// {
-//     var refund = await _context.Refunds
-//         .FirstOrDefaultAsync(x => x.id == id);
 
-//     if (refund == null)
-//     {
-
-//         // =====================================================
-// // RBAC VALIDATION
-// // =====================================================
-
-// if (!RbacAuthorizationHelper.CanAccess(
-//     HttpContext,
-//     _rbacService,
-//     "REFUND",
-//     "APPROVE"))
-// {
-//     TempData["Error"] =
-//         "You do not have permission to approve refunds.";
 
-//     return RedirectToAction("Refunds");
-// }
 
-//         TempData["Error"] =
-//             "Refund not found.";
 
-//         return RedirectToAction("Refunds");
-//     }
 
-//     // =====================================================
-//     // UPDATE STATUS
-//     // =====================================================
 
-//     refund.refund_status = "APPROVED";
 
-//     refund.workflow_action =
-//         "APPROVED BY ADMIN";
 
-//     refund.processed_at =
-//         DateTime.UtcNow;
 
-//     refund.updated_at =
-//         DateTime.UtcNow;
 
-//     // =====================================================
-//     // ADMIN DETAILS
-//     // =====================================================
 
-//     refund.approved_by =
-//         HttpContext.Session.GetString("UserName");
 
-//     refund.approved_at =
-//         DateTime.UtcNow;
-//         refund.admin_notes =
-//     "Refund approved by admin";
 
-// refund.workflow_action =
-//     "APPROVED BY ADMIN";
 
-// refund.approved_by =
-//     HttpContext.Session.GetString("UserName");
 
-// refund.approved_at =
-//     DateTime.UtcNow;
 
-//     // =====================================================
-//     // SAVE
-//     // =====================================================
 
-//     await _context.SaveChangesAsync();
 
-//     // =====================================================
-//     // ACTIVITY LOG
-//     // =====================================================
-// _context.RefundActionLogs.Add(
-//     new RefundActionLog
-//     {
-//         refund_id = refund.id,
 
-//         refund_ref = refund.refund_ref,
 
-//         action_name = "APPROVE_REFUND",
 
-//         action_by =
-//             HttpContext.Session.GetString("UserName"),
 
-//         action_time = DateTime.UtcNow,
 
-//         action_notes =
-//             "Refund approved successfully",
 
-//         ip_address =
-//             HttpContext.Connection.RemoteIpAddress?.ToString(),
 
-//         created_at = DateTime.UtcNow
-//     });
 
-// await _context.SaveChangesAsync();
-//     await _activityLogger.LogAsync(
-//         action: "APPROVE_REFUND",
-//         module: "NOTIFICATION",
-//         entityType: "REFUND",
-//         description:
-//             $"Refund approved: {refund.refund_ref}",
-//         status: "SUCCESS",
-//         isError: 0
-//     );
 
-//     TempData["Success"] =
-//         "Refund approved successfully.";
 
-//     return RedirectToAction("Refunds");
-// }
 
 
-// // =====================================================
-// // REJECT REFUND
-// // =====================================================
 
-// [HttpPost]
-// public async Task<IActionResult> RejectRefund(long id)
-// {
-//     var refund = await _context.Refunds
-//         .FirstOrDefaultAsync(x => x.id == id);
 
-//     if (refund == null)
-//     {
-//         TempData["Error"] =
-//             "Refund not found.";
 
-//         return RedirectToAction("Refunds");
-//     }
 
-//     // =====================================================
-//     // UPDATE STATUS
-//     // =====================================================
 
-//     refund.refund_status = "REJECTED";
 
-//     refund.workflow_action =
-//         "REJECTED BY ADMIN";
 
-//     refund.updated_at =
-//         DateTime.UtcNow;
 
-//     // =====================================================
-//     // ADMIN DETAILS
-//     // =====================================================
 
-//     refund.rejected_by =
-//         HttpContext.Session.GetString("UserName");
 
-//     refund.rejected_at =
-//         DateTime.UtcNow;
 
-//     // =====================================================
-//     // SAVE
-//     // =====================================================
 
-//     await _context.SaveChangesAsync();
 
-//     // =====================================================
-//     // ACTIVITY LOG
-//     // =====================================================
 
-//     await _activityLogger.LogAsync(
-//         action: "REJECT_REFUND",
-//         module: "REFUND",
-//         entityType: "REFUND",
-//         description:
-//             $"Refund rejected: {refund.refund_ref}",
-//         status: "SUCCESS",
-//         isError: 0
-//     );
 
-//     TempData["Success"] =
-//         "Refund rejected successfully.";
 
-//     return RedirectToAction("Refunds");
-// }
 
 
-// // =====================================================
-// // RETRY REFUND
-// // =====================================================
 
-// [HttpPost]
-// public async Task<IActionResult> RetryRefund(long id)
-// {
-//     var refund = await _context.Refunds
-//         .FirstOrDefaultAsync(x => x.id == id);
 
-//     if (refund == null)
-//     {
-//         TempData["Error"] =
-//             "Refund not found.";
 
-//         return RedirectToAction("Refunds");
-//     }
 
-//     // =====================================================
-//     // UPDATE STATUS
-//     // =====================================================
 
-//     refund.refund_status = "PROCESSING";
 
-//     refund.workflow_action =
-//         "RETRIED BY ADMIN";
 
-//     refund.failure_reason = null;
 
-//     refund.updated_at =
-//         DateTime.UtcNow;
 
-//     // =====================================================
-//     // ADMIN DETAILS
-//     // =====================================================
 
-//     refund.retried_by =
-//         HttpContext.Session.GetString("UserName");
 
-//     refund.retried_at =
-//         DateTime.UtcNow;
 
-//     // =====================================================
-//     // SAVE
-//     // =====================================================
 
-//     await _context.SaveChangesAsync();
 
-//     // =====================================================
-//     // ACTIVITY LOG
-//     // =====================================================
-
-//     await _activityLogger.LogAsync(
-//         action: "RETRY_REFUND",
-//         module: "REFUND",
-//         entityType: "REFUND",
-//         description:
-//             $"Refund retry initiated: {refund.refund_ref}",
-//         status: "SUCCESS",
-//         isError: 0
-//     );
-
-//     TempData["Success"] =
-//         "Refund retry initiated successfully.";
-
-//     return RedirectToAction("Refunds");
-// }
-
-// [HttpPost]
-// public async Task<IActionResult> SaveRefundNotes(
-//     long refundId,
-//     string notes)
-// {
-//     var refund = await _context.Refunds
-//         .FirstOrDefaultAsync(x => x.id == refundId);
-
-//     if (refund == null)
-//     {
-//         TempData["Error"] = "Refund not found.";
-
-//         return RedirectToAction("Refunds");
-//     }
-
-//     refund.admin_notes = notes;
-
-//     refund.updated_at = DateTime.UtcNow;
-
-//     await _context.SaveChangesAsync();
-
-//     await _activityLogger.LogAsync(
-//         action: "SAVE_REFUND_NOTES",
-//         module: "REFUND",
-//         entityType: "REFUND",
-//         description: $"Admin notes updated for {refund.refund_ref}",
-//         status: "SUCCESS",
-//         isError: 0
-//     );
-
-//     TempData["Success"] =
-//         "Admin notes saved successfully.";
-
-//     return RedirectToAction(
-//         "RefundDetails",
-//         new { id = refundId });
-// }
-// // =====================================================
-// // EXPORT REFUNDS CSV
-// // =====================================================
-
-// public IActionResult ExportRefunds()
-// {
-//     var refunds = _context.VwRefundSummaries
-//         .AsNoTracking()
-//         .ToList();
-
-//     var builder = new System.Text.StringBuilder();
-
-//     // =====================================================
-//     // CSV HEADER
-//     // =====================================================
-
-//     builder.AppendLine(
-//         "RefundRef,BookingRef,TransactionRef,UserName,UserEmail,RefundAmount,RefundStatus,RefundMethod,RequestedAt");
-
-//     // =====================================================
-//     // CSV ROWS
-//     // =====================================================
-
-//     foreach (var item in refunds)
-//     {
-//         builder.AppendLine(
-//             $"{item.RefundRef}," +
-//             $"{item.BookingRef}," +
-//             $"{item.TransactionRef}," +
-//             $"{item.UserName}," +
-//             $"{item.UserEmail}," +
-//             $"{item.RefundAmount}," +
-//             $"{item.RefundStatus}," +
-//             $"{item.RefundMethod}," +
-//             $"{item.RequestedAt}"
-//         );
-//     }
-
-//     // =====================================================
-//     // DOWNLOAD CSV FILE
-//     // =====================================================
-
-//     return File(
-//         System.Text.Encoding.UTF8.GetBytes(builder.ToString()),
-//         "text/csv",
-//         $"refunds_{DateTime.Now:yyyyMMddHHmmss}.csv"
-//     );
-// }
-
-// =====================================================
-// REFUND DETAILS PAGE
-// =====================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 public async Task<IActionResult> RefundDetails(long id)
 {
+    // Refund actions keep an audit trail and update the booking/payment state connected to the refund.
     var refund = await _context
         .VwRefundSummaries
         .AsNoTracking()
@@ -2165,16 +1769,10 @@ public async Task<IActionResult> RefundDetails(long id)
     return View(refund);
 }
 
-// =====================================================
-// APPROVE REFUND
-// =====================================================
 
 [HttpPost]
 public async Task<IActionResult> ApproveRefund(long id)
 {
-    // =====================================================
-    // RBAC VALIDATION
-    // =====================================================
 
     if (!RbacAuthorizationHelper.CanAccess(
         HttpContext,
@@ -2188,9 +1786,6 @@ public async Task<IActionResult> ApproveRefund(long id)
         return RedirectToAction("Refunds");
     }
 
-    // =====================================================
-    // LOAD REFUND
-    // =====================================================
 
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
@@ -2203,9 +1798,6 @@ public async Task<IActionResult> ApproveRefund(long id)
         return RedirectToAction("Refunds");
     }
 
-    // =====================================================
-    // UPDATE REFUND STATUS
-    // =====================================================
 
     refund.refund_status = "SUCCESS";
 
@@ -2218,9 +1810,6 @@ public async Task<IActionResult> ApproveRefund(long id)
     refund.updated_at =
         DateTime.UtcNow;
 
-    // =====================================================
-    // ADMIN TRACKING
-    // =====================================================
 
     refund.approved_by =
         HttpContext.Session.GetString("UserName");
@@ -2231,9 +1820,6 @@ public async Task<IActionResult> ApproveRefund(long id)
     refund.admin_notes =
         "Refund approved by admin";
 
-    // =====================================================
-    // SAVE AUDIT LOG
-    // =====================================================
 
     _context.RefundActionLogs.Add(
         new RefundActionLog
@@ -2263,15 +1849,9 @@ public async Task<IActionResult> ApproveRefund(long id)
                 DateTime.UtcNow
         });
 
-    // =====================================================
-    // SAVE CHANGES
-    // =====================================================
 
     await _context.SaveChangesAsync();
 
-    // =====================================================
-    // ACTIVITY LOG
-    // =====================================================
 
     await _activityLogger.LogAsync(
         action: "APPROVE_REFUND",
@@ -2283,9 +1863,6 @@ public async Task<IActionResult> ApproveRefund(long id)
         isError: 0
     );
 
-    // =====================================================
-    // NOTIFICATION LOG
-    // =====================================================
 
     await _activityLogger.LogAsync(
         action: "REFUND_NOTIFICATION",
@@ -2303,16 +1880,10 @@ public async Task<IActionResult> ApproveRefund(long id)
     return RedirectToAction("Refunds");
 }
 
-// =====================================================
-// REJECT REFUND
-// =====================================================
 
 [HttpPost]
 public async Task<IActionResult> RejectRefund(long id)
 {
-    // =====================================================
-    // RBAC VALIDATION
-    // =====================================================
 
     if (!RbacAuthorizationHelper.CanAccess(
         HttpContext,
@@ -2326,9 +1897,6 @@ public async Task<IActionResult> RejectRefund(long id)
         return RedirectToAction("Refunds");
     }
 
-    // =====================================================
-    // LOAD REFUND
-    // =====================================================
 
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
@@ -2352,9 +1920,6 @@ public async Task<IActionResult> RejectRefund(long id)
     refund.updated_at =
         DateTime.UtcNow;
 
-    // =====================================================
-    // ADMIN TRACKING
-    // =====================================================
 
     refund.rejected_by =
         HttpContext.Session.GetString("UserName");
@@ -2367,9 +1932,6 @@ public async Task<IActionResult> RejectRefund(long id)
 
     await RestoreBookingAfterRefundRejection(refund);
 
-    // =====================================================
-    // SAVE AUDIT LOG
-    // =====================================================
 
     _context.RefundActionLogs.Add(
         new RefundActionLog
@@ -2399,16 +1961,10 @@ public async Task<IActionResult> RejectRefund(long id)
                 DateTime.UtcNow
         });
 
-    // =====================================================
-    // SAVE CHANGES
-    // =====================================================
 
     await _context.SaveChangesAsync();
     await dbTransaction.CommitAsync();
 
-    // =====================================================
-    // ACTIVITY LOG
-    // =====================================================
 
     await _activityLogger.LogAsync(
         action: "REJECT_REFUND",
@@ -2420,9 +1976,6 @@ public async Task<IActionResult> RejectRefund(long id)
         isError: 0
     );
 
-    // =====================================================
-    // NOTIFICATION LOG
-    // =====================================================
 
     var notificationResult =
         await TrySendRefundRejectionUserNotification(refund);
@@ -2653,16 +2206,10 @@ private async Task<OtpDeliveryResult> TrySendRefundRejectionUserNotification(Ref
     }
 }
 
-// =====================================================
-// RETRY REFUND
-// =====================================================
 
 [HttpPost]
 public async Task<IActionResult> RetryRefund(long id)
 {
-    // =====================================================
-    // RBAC VALIDATION
-    // =====================================================
 
     if (!RbacAuthorizationHelper.CanAccess(
         HttpContext,
@@ -2676,9 +2223,6 @@ public async Task<IActionResult> RetryRefund(long id)
         return RedirectToAction("Refunds");
     }
 
-    // =====================================================
-    // LOAD REFUND
-    // =====================================================
 
     var refund = await _context.Refunds
         .FirstOrDefaultAsync(x => x.id == id);
@@ -2691,9 +2235,6 @@ public async Task<IActionResult> RetryRefund(long id)
         return RedirectToAction("Refunds");
     }
 
-    // =====================================================
-    // RESET REFUND STATUS
-    // =====================================================
 
     refund.refund_status = "PENDING";
 
@@ -2705,9 +2246,6 @@ public async Task<IActionResult> RetryRefund(long id)
     refund.updated_at =
         DateTime.UtcNow;
 
-    // =====================================================
-    // ADMIN TRACKING
-    // =====================================================
 
     refund.retried_by =
         HttpContext.Session.GetString("UserName");
@@ -2718,9 +2256,6 @@ public async Task<IActionResult> RetryRefund(long id)
     refund.admin_notes =
         "Refund retry initiated by admin";
 
-    // =====================================================
-    // SAVE AUDIT LOG
-    // =====================================================
 
     _context.RefundActionLogs.Add(
         new RefundActionLog
@@ -2750,15 +2285,9 @@ public async Task<IActionResult> RetryRefund(long id)
                 DateTime.UtcNow
         });
 
-    // =====================================================
-    // SAVE CHANGES
-    // =====================================================
 
     await _context.SaveChangesAsync();
 
-    // =====================================================
-    // ACTIVITY LOG
-    // =====================================================
 
     await _activityLogger.LogAsync(
         action: "RETRY_REFUND",
@@ -2770,9 +2299,6 @@ public async Task<IActionResult> RetryRefund(long id)
         isError: 0
     );
 
-    // =====================================================
-    // NOTIFICATION LOG
-    // =====================================================
 
     await _activityLogger.LogAsync(
         action: "REFUND_NOTIFICATION",
@@ -2790,9 +2316,6 @@ public async Task<IActionResult> RetryRefund(long id)
     return RedirectToAction("Refunds");
 }
 
-// =====================================================
-// SAVE REFUND NOTES
-// =====================================================
 
 [HttpPost]
 public async Task<IActionResult> SaveRefundNotes(
@@ -2835,9 +2358,6 @@ public async Task<IActionResult> SaveRefundNotes(
         new { id = refundId });
 }
 
-// =====================================================
-// EXPORT REFUNDS CSV
-// =====================================================
 
 public IActionResult ExportRefunds()
 {
@@ -2848,16 +2368,10 @@ public IActionResult ExportRefunds()
     var builder =
         new System.Text.StringBuilder();
 
-    // =====================================================
-    // CSV HEADER
-    // =====================================================
 
     builder.AppendLine(
         "RefundRef,BookingRef,TransactionRef,UserName,UserEmail,RefundAmount,RefundStatus,RefundMethod,RequestedAt");
 
-    // =====================================================
-    // CSV ROWS
-    // =====================================================
 
     foreach (var item in refunds)
     {
@@ -2874,9 +2388,6 @@ public IActionResult ExportRefunds()
         );
     }
 
-    // =====================================================
-    // DOWNLOAD CSV FILE
-    // =====================================================
 
     return File(
         System.Text.Encoding.UTF8.GetBytes(
@@ -3323,10 +2834,6 @@ public IActionResult UserDetails(long id)
         return NotFound();
     }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // LOAD USER ROLES
-    // =====================================================
 
     var userRoles = _context.UserRoleMappings
         .Where(x =>
@@ -3341,10 +2848,6 @@ public IActionResult UserDetails(long id)
         .Distinct()
         .ToList();
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // LOAD TRANSACTIONS AND BOOKINGS
-    // =====================================================
 
     var transactions = _context.VwBookingTransactionSummaries
         .Where(x => x.UserId == id)
@@ -3356,10 +2859,6 @@ public IActionResult UserDetails(long id)
         .OrderByDescending(x => x.BookedAt)
         .ToList();
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // CALCULATE TRANSACTION STATS
-    // =====================================================
 
     var successCount =
         transactions.Count(x =>
@@ -3382,18 +2881,10 @@ public IActionResult UserDetails(long id)
     var lastTransaction =
         transactions.FirstOrDefault();
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // LOAD WALLET DATA
-    // =====================================================
 
     var wallet = _context.VwWalletSummaries
         .FirstOrDefault(x => x.UserId == id);
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // BUILD RECENT ACTIVITIES
-    // =====================================================
 
     var recentActivities = new List<string>();
 
@@ -3426,10 +2917,6 @@ public IActionResult UserDetails(long id)
 
     );
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // CREATE VIEW MODEL
-    // =====================================================
 
     var model = new AdminUserDetailsViewModel
     {
@@ -3485,10 +2972,6 @@ public IActionResult UserDetails(long id)
                 ? "NA"
                 : user.Pincode,
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // PROFILE IMAGE
-        // =====================================================
 
         ProfileImagePath =
             string.IsNullOrWhiteSpace(user.ProfileImagePath)
@@ -3504,10 +2987,6 @@ public IActionResult UserDetails(long id)
         LastLoginAt =
     user.UpdatedAt ?? user.CreatedAt,
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // WALLET
-        // =====================================================
 
         WalletBalance =
             wallet?.WalletBalance ?? 0,
@@ -3533,10 +3012,6 @@ public IActionResult UserDetails(long id)
         LastWalletTransactionAt =
             wallet?.LastTransactionAt,
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // TRANSACTION STATS
-        // =====================================================
 
         TotalTransactions = transactions.Count,
 
@@ -3557,48 +3032,24 @@ public IActionResult UserDetails(long id)
         LastTransactionDate =
             lastTransaction?.BookingCreatedAt,
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // LAST TRANSACTIONS
-        // =====================================================
 
         LastTransactions = transactions,
 
         Bookings = bookings,
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // ACTIVITIES
-        // =====================================================
 
         RecentActivities = recentActivities,
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // USER ACCESS ROLES
-        // =====================================================
 
         UserAccess = userRoles
     };
 
     return View(model);
 }
-// =====================================================
-// HUMAN COMMENT:
-// ADMIN USER ACCESS PAGE
-// =====================================================
 
-// =====================================================
-// HUMAN COMMENT:
-// ADMIN USER ACCESS PAGE
-// =====================================================
 
 public IActionResult UserAccess()
 {
-    // =====================================================
-    // HUMAN COMMENT:
-    // LOAD ACTIVE USERS
-    // =====================================================
 
     var users = _context.Users
         .AsNoTracking()
@@ -3606,29 +3057,17 @@ public IActionResult UserAccess()
         .OrderBy(x => x.Name)
         .ToList();
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // LOAD ACTIVE USER ROLE MAPPINGS
-    // =====================================================
 
     var mappings = _context.UserRoleMappings
         .AsNoTracking()
         .Where(x => x.IsActive)
         .ToList();
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // LOAD ALL ROLES
-    // =====================================================
 
     var roles = _context.Roles
         .AsNoTracking()
         .ToList();
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // BUILD USER ROLE VIEW MODEL
-    // =====================================================
 
     var model = users.Select(user => new AdminUserRoleViewModel
     {
@@ -3646,10 +3085,6 @@ public IActionResult UserAccess()
 
         IsActive = user.is_active,
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // CURRENT USER ROLE IDS
-        // =====================================================
 
         RoleIds = mappings
             .Where(x => x.UserId == user.Id)
@@ -3657,10 +3092,6 @@ public IActionResult UserAccess()
             .Distinct()
             .ToList(),
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // CURRENT USER ROLE NAMES
-        // =====================================================
 
         Roles = mappings
             .Where(x => x.UserId == user.Id)
@@ -3679,10 +3110,6 @@ public IActionResult UserAccess()
 
     return View(model);
 }
-// =====================================================
-// HUMAN COMMENT:
-// TOGGLE USER ACTIVE STATUS
-// =====================================================
 
 public IActionResult ToggleUserStatus(long id)
 {
@@ -3703,9 +3130,6 @@ public IActionResult ToggleUserStatus(long id)
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
 {
-    // =====================================================
-    // VALIDATE USER EXISTS
-    // =====================================================
 
     var userExists =
         _context.Users.Any(x =>
@@ -3719,9 +3143,6 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
         return RedirectToAction("UserAccess");
     }
 
-    // =====================================================
-    // VALIDATE ROLE EXISTS
-    // =====================================================
 
     var roleExists =
         _context.Roles.Any(x =>
@@ -3736,9 +3157,6 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
         return RedirectToAction("UserAccess");
     }
 
-    // =====================================================
-    // CHECK EXISTING ROLE MAPPING
-    // =====================================================
 
     var existingMapping =
         _context.UserRoleMappings
@@ -3746,9 +3164,6 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
                 x.UserId == request.UserId &&
                 x.RoleId == request.RoleId);
 
-    // =====================================================
-    // REACTIVATE OLD ROLE
-    // =====================================================
 
     if (existingMapping != null)
     {
@@ -3780,9 +3195,6 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
         return RedirectToAction("UserAccess");
     }
 
-    // =====================================================
-    // CREATE NEW ROLE MAPPING
-    // =====================================================
 
     var mapping = new UserRoleMapping
     {
@@ -3815,10 +3227,6 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> RemoveUserRole(long userId, long roleId)
 {
-    // =====================================================
-    // HUMAN COMMENT:
-    // FIND ACTIVE ROLE MAPPING
-    // =====================================================
 
     var mapping = _context.UserRoleMappings
         .FirstOrDefault(x =>
@@ -3847,10 +3255,6 @@ public async Task<IActionResult> RemoveUserRole(long userId, long roleId)
         }
     }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // DEACTIVATE ROLE ACCESS
-    // =====================================================
 
     mapping.IsActive = false;
 
@@ -3888,11 +3292,6 @@ SET is_active = {isActive},
 WHERE user_id = {userId}
   AND role_id = {roleId};");
 }
-// =====================================================
-// HUMAN COMMENT:
-// SOFT DELETE USER
-// USER MOVES TO deleted_users TABLE
-// =====================================================
 
 public IActionResult DeleteUser(int id)
 {
@@ -3903,10 +3302,6 @@ public IActionResult DeleteUser(int id)
         return RedirectToAction("Users");
     }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // STORE USER SNAPSHOT IN deleted_users TABLE
-    // =====================================================
 
     var deletedUser = new DeletedUser
     {
@@ -3937,41 +3332,21 @@ public IActionResult DeleteUser(int id)
 
         is_revoked = false
     };
-// =====================================================
-// HUMAN COMMENT:
-// SAVE USER SNAPSHOT INTO deleted_users TABLE
-// =====================================================
 
 _context.DeletedUsers.Add(deletedUser);
 
-// =====================================================
-// HUMAN COMMENT:
-// MARK USER AS DELETED
-// =====================================================
 
 user.is_deleted = true;
 user.is_active = false;
 
 user.UpdatedAt = DateTime.UtcNow;
 
-// =====================================================
-// HUMAN COMMENT:
-// SAVE ALL CHANGES
-// =====================================================
 
 _context.SaveChanges();
 
     return RedirectToAction("Users");
 }
-// =====================================================
-// HUMAN COMMENT:
-// RESTORE USER FROM DELETED STATE
-// =====================================================
 
-// =====================================================
-// HUMAN COMMENT:
-// REVOKE USER FROM deleted_users TABLE
-// =====================================================
 
 public IActionResult RevokeUser(int id)
 {
@@ -3985,10 +3360,6 @@ public IActionResult RevokeUser(int id)
     user.is_deleted = false;
     user.is_active = true;
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // UPDATE deleted_users TABLE
-    // =====================================================
 
     var deletedRecord = _context.DeletedUsers
         .FirstOrDefault(x =>
@@ -4546,7 +3917,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification action refund source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification action refund source failed: {ex.Message}");
     }
 
     try
@@ -4592,7 +3963,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification action booking source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification action booking source failed: {ex.Message}");
     }
 
     try
@@ -4624,7 +3995,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification action wallet source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification action wallet source failed: {ex.Message}");
     }
 
     try
@@ -4657,7 +4028,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification action delivery source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification action delivery source failed: {ex.Message}");
     }
 
     try
@@ -4689,7 +4060,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification action payment source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification action payment source failed: {ex.Message}");
     }
 
     try
@@ -4719,7 +4090,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification action security source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification action security source failed: {ex.Message}");
     }
 
     try
@@ -4759,7 +4130,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification action log source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification action log source failed: {ex.Message}");
     }
 
     return events
@@ -4840,7 +4211,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationArch
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification archive refund source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification archive refund source failed: {ex.Message}");
     }
 
     try
@@ -4875,7 +4246,7 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationArch
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Notification archive delivery source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Notification archive delivery source failed: {ex.Message}");
     }
 
     return events
@@ -4902,7 +4273,7 @@ private static async Task<int> CountAdminNotifications(Func<Task<int>> count)
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Admin notification count source failed: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"Admin notification count source failed: {ex.Message}");
         return 0;
     }
 }

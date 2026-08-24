@@ -13,6 +13,7 @@ using System.Text;
 
 namespace AmarShowsBook.Controllers
 {
+    // Booking flow: choose a schedule, lock seats, create a draft, pay, then issue tickets and QR data.
     public class BookingController : Controller
     {
         private const int SeatLockMinutes = 7;
@@ -57,6 +58,7 @@ public async Task<IActionResult> Ticket(long id)
 [Route("Booking/TicketByBooking/{id:long}")]
 public async Task<IActionResult> TicketByBooking(long id)
 {
+    // Ticket links are public-looking URLs, so ownership and admin permission are checked before rendering.
     var bookingSummary =
     await _context.VwBookingCompleteDetails
     .AsNoTracking()
@@ -226,16 +228,13 @@ private async Task EnsureTicketsForConfirmedBooking(
     await _context.SaveChangesAsync();
 }
 
-        // ==========================================
-        // SEATS
-        // ==========================================
 
  [Route("Booking/Seats/{id?}")]
 public async Task<IActionResult> Seats(int? id)
 {
+    // Seat selection always works from one schedule; missing ids fall back to the nearest available show.
     ShowSchedule? schedule;
 
-    // If no id passed -> automatically select nearest/current show
     if(!id.HasValue)
     {
         schedule =
@@ -427,9 +426,6 @@ public async Task<IActionResult> Seats(int? id)
 
     return View(schedule);
 }
-        // ==========================================
-        // LOCK SEATS
-        // ==========================================
 
         [HttpPost]
         public async Task<IActionResult>
@@ -437,6 +433,7 @@ public async Task<IActionResult> Seats(int? id)
         [FromBody]
         SeatLockRequest request)
         {
+            // Seat locks prevent two users from paying for the same seat during the checkout window.
             await ReleaseExpiredSeatLocks(request.ScheduleId);
 
             long userId=
@@ -490,22 +487,9 @@ public async Task<IActionResult> Seats(int? id)
 
             await _context.SaveChangesAsync();
 
-            // var booking=
-            // new BookingDraft
-            // {
-            //     UserId=userId,
-            //     ScheduleId=request.ScheduleId,
-            //     SeatNumbers=
-            //     string.Join(",",request.SeatIds),
 
-            //     TotalAmount=
-            //     request.TotalAmount,
 
-            //     Status="PENDING",
 
-            //     CreatedAt=
-            //     DateTime.UtcNow
-            // };
             var seatNames=
 
 await _context.ScreenSeats
@@ -596,43 +580,13 @@ private async Task ReleaseExpiredSeatLocks(int? scheduleId=null)
     await _context.SaveChangesAsync();
 }
 
-// ==========================================
-// BOOKING DETAILS
-// ==========================================
 
-// public async Task<IActionResult>
-// Details(long id)
-// {
-//     var booking =
 
-//     await _context
-//     .BookingDrafts
-//     .FirstOrDefaultAsync(
-//     x=>x.Id==id);
 
-//     if(booking==null)
-//     {
-//         return NotFound();
-//     }
 
-//     var schedule=
 
-//     await _context
-//     .ShowSchedules
-//     .Include(x=>x.Movie)
-//     .Include(x=>x.StandupShow)
-//     .Include(x=>x.LiveStream)
-//     .Include(x=>x.Location)
-//     .FirstOrDefaultAsync(
-//     x=>x.Id==
-//     booking.ScheduleId);
 
-//     ViewBag.Schedule=
-//     schedule;
 
-//     return View(
-//     booking);
-// }
 public async Task<IActionResult>
 Details(long id)
 {
@@ -699,13 +653,11 @@ Details(long id)
     return View(
     booking);
 }
-        // ==========================================
-        // PAYMENT PAGE
-        // ==========================================
 
         public async Task<IActionResult>
         Payment(long bookingId)
         {
+            // Payment reads the draft plus any wallet and coupon amounts stored for this checkout session.
             var booking=
 
             await _context
@@ -793,9 +745,6 @@ Details(long id)
             "Details",
             new { id=booking.Id });
         }
-// ==========================================
-// MY BOOKINGS
-// ==========================================
 
 public async Task<IActionResult> MyBookings()
 {
@@ -937,6 +886,7 @@ public async Task<IActionResult> MyBookings()
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
 {
+    // Cancellation changes booking, ticket, seat lock, transaction, wallet, coupon, and refund records together.
     var userIdText = HttpContext.Session.GetString("UserId");
 
     if(!long.TryParse(userIdText,out var userId))
@@ -1089,9 +1039,6 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
 
 
 
-        // ==========================================
-        // GENERATE QR
-        // ==========================================
 
         public async Task<IActionResult>
         GenerateQR(long bookingId)
@@ -1138,9 +1085,6 @@ DROP CONSTRAINT IF EXISTS fk_payment_session_booking;");
 
 
 
-        // ==========================================
-        // CREATE QR IMAGE
-        // ==========================================
 
         public IActionResult
         CreateQR(string text)
@@ -1171,33 +1115,12 @@ DROP CONSTRAINT IF EXISTS fk_payment_session_booking;");
 
 
 
-        // ==========================================
-        // MOBILE PAYMENT PAGE
-        // ==========================================
 
-        // public async Task<IActionResult>
-        // MobilePay(string token)
-        // {
-        //     var session=
 
-        //     await _context
-        //     .PaymentSessions
-        //     .FirstOrDefaultAsync(
-        //     x=>x.SessionToken==token);
 
-        //     if(session==null)
-        //         return NotFound();
 
-        //     var booking=
 
-        //     await _context
-        //     .BookingDrafts
-        //     .FindAsync(
-        //     session.BookingId);
 
-        //     return View(
-        //     booking);
-        // }
 public async Task<IActionResult>
 MobilePay(string token)
 {
@@ -1724,6 +1647,7 @@ decimal walletAmountUsed,
 decimal couponDiscount,
 long? couponId)
 {
+    // Finalization turns a draft into a confirmed booking and writes all payment-side records in one path.
     couponDiscount =
     Math.Min(
     Math.Max(0,couponDiscount),
@@ -2238,9 +2162,6 @@ SET used_count =
     updated_at = CURRENT_TIMESTAMP
 WHERE c.id = {couponId};");
 }
-// ==========================================
-// APPROVE QR PAYMENT
-// ==========================================
 
 [HttpPost]
 public async Task<IActionResult>
@@ -2356,9 +2277,6 @@ ApprovePayment(string token)
 }
 
 
-// ==========================================
-// REJECT QR PAYMENT
-// ==========================================
 [HttpPost]
 public async Task<IActionResult>
 RejectPayment(string token)
@@ -2446,9 +2364,6 @@ RejectPayment(string token)
         success=true
     });
 }
-// ==========================================
-// CHECK PAYMENT STATUS
-// ==========================================
 
 [HttpGet]
 public async Task<IActionResult>
@@ -2478,9 +2393,6 @@ CheckPaymentStatus(long bookingId)
     });
 }
 
-        // ==========================================
-        // COMPLETE PAYMENT
-        // ==========================================
 
         [HttpPost]
         public async Task<IActionResult>
@@ -2716,9 +2628,6 @@ long confirmedBookingId)
 
     _context.PaymentMethodDetails.Add(detail);
 }
-// ==========================================
-// CONFIRMATION
-// ==========================================
 
 public async Task<IActionResult>
 Confirmation(long bookingId, long? confirmedBookingId)

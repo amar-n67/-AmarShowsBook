@@ -5,11 +5,9 @@ using AmarShowsBook.Models.ViewModels;
 
 namespace AmarShowsBook.Data
 {
+    // One EF context maps both writable tables and read-only SQL views used by public pages, admin reports, RBAC, and Amaro.
     public class ApplicationDbContext : DbContext
     {
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
 
         public ApplicationDbContext(
             DbContextOptions<ApplicationDbContext> options)
@@ -68,10 +66,7 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<Region> Regions { get; set; }
         
 
-        // =====================================================
-        // USER ROLE ACCESS TABLES
-        // =====================================================
-
+        // RBAC tables define the four roles, their permissions, and the menu links each role can see.
         public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
 
         public DbSet<Role> Roles { get; set; }
@@ -81,10 +76,7 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<ApplicationMenu> ApplicationMenus { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
 
-        // =====================================================
-        // ADMIN SQL VIEW TABLES
-        // =====================================================
-
+        // These views are rebuilt by startup/admin helpers and should be treated as read-only query models.
         public DbSet<VwEnterpriseActivityLog>
             VwEnterpriseActivityLogs { get; set; }
 
@@ -124,23 +116,14 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<VwCouponUsage>
             VwCouponUsages { get; set; }
 
-        // =====================================================
-        // ADMIN TRANSACTION VIEW
-        // =====================================================
 
         public DbSet<AdminTransactionViewModel>
             AdminTransactions { get; set; }
     
-        // =====================================================
-        // MODEL CONFIGURATION
-        // =====================================================
 
         protected override void OnModelCreating(
 ModelBuilder modelBuilder)
 {
-    // =========================================
-    // TABLES
-    // =========================================
  base.OnModelCreating(modelBuilder);
 
     modelBuilder.Entity<DeveloperVM>(entity =>
@@ -284,9 +267,6 @@ modelBuilder.Entity<Booking>(entity =>
 
 
 
-    // =========================================
-    // SCREEN
-    // =========================================
 
     modelBuilder.Entity<Screen>(entity =>
     {
@@ -345,9 +325,6 @@ modelBuilder.Entity<Booking>(entity =>
 
 
 
-    // =========================================
-    // SCREEN SEATS
-    // =========================================
 
     modelBuilder.Entity<ScreenSeat>(entity =>
     {
@@ -388,9 +365,6 @@ modelBuilder.Entity<Booking>(entity =>
 
 
 
-    // =========================================
-    // SHOW RELATIONSHIPS
-    // =========================================
 
     modelBuilder.Entity<ShowSchedule>()
         .ToTable("ShowSchedules");
@@ -459,9 +433,6 @@ modelBuilder.Entity<Booking>(entity =>
 
 
 
-    // =========================================
-    // VIEWS
-    // =========================================
 
     modelBuilder.Entity<HomeShowViewModel>(entity =>
     {

@@ -1,4 +1,3 @@
-// Human Comment: Admin shell controls for nav visibility and per-page search.
 document.addEventListener("DOMContentLoaded", () => {
     const shell = document.getElementById("adminShell");
     const toggle = document.getElementById("adminNavToggle");
@@ -6,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const clear = document.getElementById("adminSearchClear");
     const exportButton = document.querySelector("[data-admin-export]");
 
+    // This script is shared by admin pages for sidebar state, page search, and CSV export.
     if (shell && toggle) {
         const refreshToggleLabel = () => {
             const isCompact = window.matchMedia("(max-width: 820px)").matches;

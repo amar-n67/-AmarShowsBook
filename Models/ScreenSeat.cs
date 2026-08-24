@@ -7,10 +7,8 @@ namespace AmarShowsBook.Models
         public long ScreenId { get; set; }
         public Screen Screen { get; set; }
 
-        // ONLY ONE FK PROPERTY
         public int ScheduleId { get; set; }
 
-        // ONLY ONE NAVIGATION PROPERTY
         public ShowSchedule Schedule { get; set; }
 
         public string SeatRow { get; set; }

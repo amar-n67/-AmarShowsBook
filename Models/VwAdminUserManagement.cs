@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models
 {
-    // Represents admin user management analytics view
     [Keyless]
     public class VwAdminUserManagement
     {

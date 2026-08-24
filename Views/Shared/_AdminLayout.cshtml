@@ -8,6 +8,7 @@
 
     <script>
         (function () {
+            // Admin pages reuse the same saved theme and cursor choices as the public site.
             const savedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
             const savedCursor = localStorage.getItem("amarShowsCursor") || "liquid";
             const savedCursorColor = localStorage.getItem("amarShowsCursorColor");
@@ -260,7 +261,6 @@
 
 <div class="admin-wrapper" id="adminShell">
 
-    <!-- Human Comment: Shared readable admin navigation with a hide/show top button. -->
     <aside class="admin-sidebar" id="adminSidebar">
 
         <div class="admin-logo">
@@ -336,7 +336,6 @@
                 <button type="button" data-admin-theme="cinema" onclick="setAdminTheme('cinema')">Cinema</button>
             </div>
 
-            <!-- Human Comment: Shared admin search filters visible tables and dashboard cards on the current page. -->
             <form class="admin-search" role="search" onsubmit="return false;">
                 <label for="adminPageSearch" class="visually-hidden">Search this page</label>
                 <span aria-hidden="true">⌕</span>
@@ -529,6 +528,7 @@
 </script>
 <script>
 (function () {
+    // Admin Amaro can trigger local export only when the current role can see the export button.
     const widget = document.querySelector("[data-amaro-widget]");
     if (!widget) return;
 

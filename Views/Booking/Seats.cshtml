@@ -21,9 +21,6 @@
     :
     $"{Model.Location.Area}, {Model.Location.State}, {Model.Location.Country}";
 
-    @* var seats=
-    ViewBag.Seats
-    as List<AmarShowsBook.Models.ViewModels.SeatVM>; *@
     var seats=
 ViewBag.Seats
 as List<AmarShowsBook.Models.ViewModels.SeatVM>;
@@ -133,11 +130,6 @@ availableDates
      data-trailer-url="@trailerUrl"
      data-trailer-start="@trailerStartSeconds">
 
-@* <span>
-
-SCREEN
-
-</span> *@
 
 <iframe
 id="seatTrailerFrame"
@@ -429,7 +421,6 @@ body{
     color:white;
 }
 
-/* HERO */
 
 .booking-hero{
     display:flex;
@@ -491,7 +482,6 @@ body{
 
 
 
-/* DATE BUTTONS */
 
 .show-dates{
 
@@ -538,7 +528,6 @@ border-color:var(--red);
 
 
 
-/* SCREEN */
 
 .screen-line{
 
@@ -638,7 +627,6 @@ z-index:1;
 }
 
 
-/* SEATS */
 
 .seat-board{
 padding:26px 18px 30px;
@@ -739,7 +727,6 @@ width:48px;
 height:1px;
 }
 
-/* REALISTIC 3D CINEMA CHAIR */
 
 .seat-btn{
 
@@ -888,7 +875,6 @@ z-index:2;
 }
 
 
-/* hover animation */
 
 .seat-btn:hover{
 
@@ -907,7 +893,6 @@ transform:translateY(-2px) scale(.96);
 
 
 
-/* AVAILABLE */
 
 .available,
 .silver{
@@ -924,7 +909,6 @@ color:black;
 }
 
 
-/* SELECTED */
 
 .selected{
 --seat-back:linear-gradient(180deg,#7cff9f,#20d655 58%,#0f8d36);
@@ -935,7 +919,6 @@ filter:drop-shadow(0 0 12px rgba(51,255,119,.62));
 }
 
 
-/* BOOKED */
 
 .booked{
 --seat-back:linear-gradient(180deg,#ff8a8a,#e11d48 58%,#8f0a20);
@@ -946,7 +929,6 @@ filter:saturate(.72) brightness(.82);
 }
 
 
-/* LOCKED */
 
 .locked{
 --seat-back:linear-gradient(180deg,#c4b5fd,#8b5cf6 58%,#5b21b6);
@@ -956,7 +938,6 @@ cursor:not-allowed;
 }
 
 
-/* GOLD */
 
 .gold{
 --seat-back:linear-gradient(180deg,#ffd08a,#f59e0b 58%,#b45309);
@@ -966,7 +947,6 @@ color:black;
 filter:drop-shadow(0 0 8px rgba(246,173,85,.24));
 }
 
-/* PREMIUM */
 
 .premium{
 --seat-back:linear-gradient(180deg,#fff3a8,#facc15 52%,#b7791f);
@@ -987,7 +967,6 @@ animation:selectedChairPulse 1.2s ease-in-out infinite;
 
 
 
-/* seat text */
 
 .seat-name{
 
@@ -1099,7 +1078,6 @@ transform:translateY(-7px) rotateX(7deg) scale(1.07);
 
 
 
-/* small armrests */
 
 .seat-btn .arm-left,
 .seat-btn .arm-right{
@@ -1109,7 +1087,6 @@ display:none;
 
 
 
-/* mobile */
 @@media(max-width:768px){
 
 .booking-hero,
@@ -1160,7 +1137,6 @@ padding:6px 10px;
 
 }
 
-/* LEGEND */
 
 .legend{
 
@@ -1255,7 +1231,6 @@ background:linear-gradient(180deg,#f6ad55,#c66a14);
 background:linear-gradient(180deg,#fff3a8,#facc15 52%,#b7791f);
 }
 
-/* right side */
 
 .cinema-side{
 
@@ -1269,7 +1244,6 @@ width:280px;
 }
 
 
-/* action card */
 
 .booking-action-card{
 min-height:220px;
@@ -1363,7 +1337,6 @@ filter:blur(1px);
 }
 
 
-/* next button */
 
 .next-btn:hover{
 
@@ -1470,7 +1443,6 @@ height:50px;
 }
 
 }
-/* RECEIPT STYLE */
 
 .booking-summary{
 
@@ -1485,8 +1457,6 @@ gap:30px;
 margin-top:50px;
 }
 
-/* MINIMAL RECEIPT */
-/* RECEIPT */
 
 .ticket-receipt{
 
@@ -1735,7 +1705,6 @@ transition:none!important;
 }
 
 
-/* cut circles */
 
 .ticket-cut-left,
 .ticket-cut-right{

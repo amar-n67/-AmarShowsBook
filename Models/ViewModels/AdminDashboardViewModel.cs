@@ -1,9 +1,7 @@
 namespace AmarShowsBook.Models.ViewModels
 {
-    // Central admin analytics dashboard model
     public class AdminDashboardViewModel
     {
-        // ================= BOOKINGS =================
 
         public int TotalBookings { get; set; }
 
@@ -21,7 +19,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public decimal PayableBookingAmount { get; set; }
 
-        // ================= TRANSACTIONS =================
 
         public int SuccessfulPayments { get; set; }
 
@@ -29,7 +26,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public decimal SuccessfulPaymentAmount { get; set; }
 
-        // ================= REFUNDS =================
 
         public int TotalRefunds { get; set; }
 
@@ -43,11 +39,9 @@ namespace AmarShowsBook.Models.ViewModels
 
         public decimal RequestedRefundAmount { get; set; }
 
-        // ================= INVOICES =================
 
         public int InvoiceFailures { get; set; }
 
-        // ================= NOTIFICATIONS =================
 
         public int NotificationFailures { get; set; }
 
@@ -59,13 +53,11 @@ namespace AmarShowsBook.Models.ViewModels
 
         public int HighPriorityNotifications { get; set; }
 
-        // ================= SECURITY =================
 
         public int TicketValidationIssues { get; set; }
 
         public int ValidatedTickets { get; set; }
 
-        // ================= WALLET =================
 
         public decimal TotalWalletBalance { get; set; }
 
@@ -75,7 +67,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public decimal BlockedWalletBalance { get; set; }
 
-        // ================= CONTENT / ACCESS =================
 
         public int TotalUsers { get; set; }
 

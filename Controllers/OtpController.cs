@@ -45,7 +45,7 @@ public class OtpController : Controller
 
         if (CanExposeDevOtp(result))
         {
-            Console.WriteLine($"Email OTP for {email} ({cleanPurpose}): {otp}");
+            System.Diagnostics.Debug.WriteLine($"Email OTP for {email} ({cleanPurpose}): {otp}");
             return Json(new { success = true, message = "Development OTP generated.", devOtp = otp });
         }
 
@@ -90,7 +90,7 @@ public class OtpController : Controller
 
         if (CanExposeDevOtp(result))
         {
-            Console.WriteLine($"Mobile OTP for {mobile} ({cleanPurpose}): {otp}");
+            System.Diagnostics.Debug.WriteLine($"Mobile OTP for {mobile} ({cleanPurpose}): {otp}");
             return Json(new { success = true, message = "Development OTP generated.", devOtp = otp });
         }
 

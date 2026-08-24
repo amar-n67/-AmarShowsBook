@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace AmarShowsBook.Filters;
 
+// Writes a simple audit row after each MVC action so admin activity pages can show who did what.
 public class ActivityLoggingFilter : IAsyncActionFilter
 {
     private readonly IActivityLogger _activityLogger;

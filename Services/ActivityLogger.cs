@@ -1,7 +1,3 @@
-// =========================================================
-// Activity Logger Service for .NET Web Application
-// Movie Booking System
-// =========================================================
 namespace AmarShowsBook.Services
 {
 using AmarShowsBook.Helpers;
@@ -23,17 +19,7 @@ public class ActivityLogger : IActivityLogger
         _httpContextAccessor = httpContextAccessor;
     }
 
-    // public async Task LogAsync(
-    //     long? userId,
-    //     string action,
-    //     string module,
-    //     string entityType = null,
-    //     long? entityId = null,
-    //     string description = null,
-    //     string status = "SUCCESS",
-    //     object oldValue = null,
-    //     object newValue = null,
-    //     object metadata = null
+    // Every controller can call this without caring whether the action succeeded, failed, or changed data.
      public async Task LogAsync(
     int? userId,
     string action,
@@ -56,11 +42,10 @@ public class ActivityLogger : IActivityLogger
     {
         try
         {
-            Console.WriteLine("LOGGER STARTED");
             var context = _httpContextAccessor.HttpContext;
 
+            // The request snapshot makes activity logs useful from the admin audit page.
             var requestMethod = context?.Request?.Method;
-           // var endpoint = context?.Request?.Path;
            var endpoint = context?.Request?.Path.ToString();
             var ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
             var userAgent = context?.Request?.Headers["User-Agent"].ToString();
@@ -73,43 +58,7 @@ public class ActivityLogger : IActivityLogger
 
             await connection.OpenAsync();
 
-            //var query = @"
-                // INSERT INTO activity_logs
-                // (
-                //     user_id,
-                //     action,
-                //     module,
-                //     entity_type,
-                //     entity_id,
-                //     description,
-                //     request_method,
-                //     endpoint,
-                //     ip_address,
-                //     user_agent,
-                //     status,
-                //     old_value,
-                //     new_value,
-                //     metadata
-                // )
-                // VALUES
-                // (
-                //     @user_id,
-                //     @action,
-                //     @module,
-                //     @entity_type,
-                //     @entity_id,
-                //     @description,
-                //     @request_method,
-                //     @endpoint,
-                //     @ip_address,
-                //     @user_agent,
-                //     @status,
-                //     CAST(@old_value AS JSONB),
-                //     CAST(@new_value AS JSONB),
-                //     CAST(@metadata AS JSONB)
-                // );
                 
-            //";
 var query = @"
 INSERT INTO activity_logs
 (
@@ -158,8 +107,6 @@ VALUES
 ";
             await using var command = new NpgsqlCommand(query, connection);
 
-            // command.Parameters.AddWithValue("@user_id",
-            //     (object?)userId ?? DBNull.Value);
             command.Parameters.AddWithValue(
     "@user_id",
     userId.HasValue ? userId.Value : DBNull.Value
@@ -169,15 +116,11 @@ VALUES
 
             command.Parameters.AddWithValue("@module", module);
 
-            // command.Parameters.AddWithValue("@entity_type",
-            //     (object?)entityType ?? DBNull.Value);
             command.Parameters.AddWithValue(
     "@entity_type",
     entityType ?? (object)DBNull.Value
 );
 
-            // command.Parameters.AddWithValue("@entity_id",
-            //     (object?)entityId ?? DBNull.Value);
             command.Parameters.AddWithValue(
     "@entity_id",
     entityId.HasValue ? entityId.Value : DBNull.Value
@@ -212,14 +155,8 @@ command.Parameters.AddWithValue("@stack_trace",
     (object?)stackTrace ?? DBNull.Value);
 
 command.Parameters.AddWithValue("@is_error", isError);
-            // command.Parameters.AddWithValue("@old_value",
-            //     JsonSerializer.Serialize(oldValue));
 
-            // command.Parameters.AddWithValue("@new_value",
-            //     JsonSerializer.Serialize(newValue));
 
-            // command.Parameters.AddWithValue("@metadata",
-            //     JsonSerializer.Serialize(metadata));
 command.Parameters.AddWithValue(
     "@old_value",
     NpgsqlTypes.NpgsqlDbType.Jsonb,
@@ -244,27 +181,11 @@ command.Parameters.AddWithValue(
         : "{}"
 );
 
-           // await command.ExecuteNonQueryAsync();
-           Console.WriteLine("EXECUTING INSERT");
-
 await command.ExecuteNonQueryAsync();
-
-Console.WriteLine("INSERT SUCCESS");
         }
-        // catch
-        // {
-        //     // Optional:
-        //     // Store internal logger exception into file/serilog
-        // }
-//         catch (Exception ex)
-// {
-//     Console.WriteLine(ex.ToString());
-// }
 catch (Exception ex)
 {
-    Console.WriteLine("LOGGER ERROR:");
-    Console.WriteLine(ex.Message);
-    Console.WriteLine(ex.StackTrace);
+    System.Diagnostics.Debug.WriteLine($"Activity log skipped: {ex.Message}");
 }
     }
 }

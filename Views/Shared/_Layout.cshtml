@@ -884,7 +884,6 @@ html[data-theme="dark"] [style*="color: black"] {
     justify-content: flex-end;
 }
 
-/* Main navigation links section */
 .film-navigation-links {
     display: flex;
     align-items: center;
@@ -1538,6 +1537,7 @@ html[data-theme="system"] .film-nav-icon {
 </style>
 <script>
 (function () {
+    // Theme and cursor settings live in localStorage so public pages, profile pages, and admin pages stay in sync.
     if (localStorage.getItem("amarShowsThemeVersion") !== "3") {
         localStorage.setItem("amarShowsTheme", "cinema");
         localStorage.setItem("amarShowsThemeVersion", "3");
@@ -1563,7 +1563,6 @@ html[data-theme="system"] .film-nav-icon {
 <link rel="stylesheet" href="~/css/site.css" />
 
 <style>
-/* Final theme pass after Bootstrap/site.css so every page obeys the active theme. */
 html,
 body {
     background: var(--app-bg) !important;
@@ -1914,7 +1913,6 @@ footer {
             </div>
         </div>
 </div>
-<!-- ================= SESSION POPUP ================= -->
 <div id="sessionPopup" style="
 display:none;
 position:fixed;
@@ -1960,7 +1958,6 @@ z-index:9999;">
     </div>
 </div>
 
-<!-- ================= NAVBAR ================= -->
 <header>
 <nav class="navbar navbar-expand-sm film-navbar @(Context.Session.GetString("UserEmail") != null ? "film-navbar-home" : "") mb-3">
 <div class="container-fluid">
@@ -2126,7 +2123,6 @@ z-index:9999;">
 </nav>
 </header>
 
-<!-- ================= BODY ================= -->
 <div class="container mt-5">
     @if (showAppSearch)
     {
@@ -2229,14 +2225,12 @@ z-index:9999;">
         </section>
 </div>
 
-<!-- ================= FOOTER ================= -->
 <footer class="border-top footer text-muted">
 <div class="container">
     &copy; 2026 - showTime · Support: <a href="tel:+918920993434">+91 8920993434</a> · <a href="mailto:arcanaamar67@gmail.com">arcanaamar67@gmail.com</a>
 </div>
 </footer>
 
-<!-- ================= SCRIPTS ================= -->
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -2544,7 +2538,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-<!-- ✅ DATE + TIME -->
 <script>
 function updateDateTime() {
     let liveDateTime = document.getElementById("liveDateTime");
@@ -2591,7 +2584,6 @@ updateDateTime();
 })();
 </script>
 
-<!-- LOGOUT CONFIRM -->
 <script>
 function confirmLogout() {
     showCinemaPopup("Interval or exit? Your show will close and you will be logged out.", "confirm", {
@@ -2610,8 +2602,6 @@ function confirmLogout() {
 <script>
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Human Comment:
-    // Inactivity validation only runs for logged-in users, never on login/logout pages.
     const isSessionUserLoggedIn = @isLoggedIn.ToString().ToLowerInvariant();
 
     if (!isSessionUserLoggedIn) {
@@ -2623,7 +2613,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let timeLeft = 30;
     let popupVisible = false;
 
-    const INACTIVITY_TIME = 3 * 60 * 1000; // ✅ 3 minutes (change if needed)
+    const INACTIVITY_TIME = 3 * 60 * 1000;
 
     const cinemaMessages = [
         "🍿 Audience gone missing...",
@@ -2650,11 +2640,10 @@ document.addEventListener("DOMContentLoaded", function () {
         let popup = document.getElementById("sessionPopup");
         let text = document.getElementById("cinemaText");
 
-        if (!popup || !text) return; // ✅ safety
+        if (!popup || !text) return;
 
         popup.style.display = "block";
 
-        // random message
         text.innerText = cinemaMessages[Math.floor(Math.random() * cinemaMessages.length)];
 
         timeLeft = 30;
@@ -2680,7 +2669,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         el.innerText = "-" + timeLeft;
 
-        // subtle animation
         el.style.transform = "scale(1.1)";
         setTimeout(() => {
             el.style.transform = "scale(1)";
@@ -2709,12 +2697,10 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = "/Auth/Logout";
     }
 
-    // USER ACTIVITY TRACK
     ["click","mousemove","keypress","scroll","touchstart"].forEach(event => {
         document.addEventListener(event, resetTimer);
     });
 
-    // START
     resetTimer();
 
 });
@@ -3185,6 +3171,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script>
 (function () {
+    // Amaro sends app questions to the controller and handles local commands like theme, cursor, and export here.
     const widget = document.querySelector("[data-amaro-widget]");
     if (!widget) return;
 

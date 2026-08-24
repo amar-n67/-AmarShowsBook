@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmarShowsBook.Filters;
 
+// Keeps users inside their own booking flow: draft pages, QR payment, and confirmation must match the session user.
 public class BookingStepValidationFilter : IAsyncActionFilter
 {
     private readonly ApplicationDbContext _context;

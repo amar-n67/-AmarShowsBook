@@ -9,10 +9,6 @@ public class VwBookingCompleteDetails
     [Column("booking_id")]
     public long BookingId { get; set; }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // PostgreSQL column booked_at mapped to C# PascalCase
-    // =====================================================
 
     [Column("booked_at")]
     public DateTime BookedAt { get; set; }

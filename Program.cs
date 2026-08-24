@@ -17,10 +17,8 @@ const string ApplicationPort =
 builder.WebHost.UseUrls(
 $"http://0.0.0.0:{ApplicationPort}"
 );
-// ========================================
-// Services
-// ========================================
 
+// Request flow starts here: filters protect sessions, booking steps, and audit logging before MVC actions run.
 builder.Services.AddScoped<SessionAuthorizeFilter>();
 builder.Services.AddScoped<ActivityLoggingFilter>();
 builder.Services.AddScoped<BookingStepValidationFilter>();
@@ -43,11 +41,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSession();
 
-
-// ========================================
-// Database
-// ========================================
-
+// One database connection feeds MVC pages, RBAC views, booking tables, and admin reports.
 var connectionString =
 DatabaseConnectionStringResolver.GetDatabaseConnectionString(
 builder.Configuration);
@@ -91,11 +85,6 @@ new ForwardedHeadersOptions
 forwardedHeadersOptions.KnownIPNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 
-
-// ========================================
-// Middleware
-// ========================================
-
 if(!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler(
@@ -122,15 +111,11 @@ pattern:
 "{controller=Auth}/{action=Login}/{id?}"
 );
 
+// Startup keeps old databases usable by creating the small tables and views that newer pages depend on.
 EnsureApplicationVersionTable(app);
 EnsureDeveloperProfileStore(app);
 EnsureAmaroChatStore(app);
 EnsureRbacStore(app);
-
-
-// ========================================
-// Seed Data
-// ========================================
 
 app.Lifetime.ApplicationStarted.Register(
 ()=>
@@ -148,10 +133,7 @@ try
     ApplicationDbContext>();
 
 
-    // ==========================
-    // Dummy card seed
-    // ==========================
-
+    // Local payment testing expects these cards to exist.
     if(
     !context.DummyCards.Any()
     )
@@ -210,10 +192,7 @@ try
     }
 
 
-    // ==========================
-    // Existing seed
-    // ==========================
-
+    // Main seed adds demo shows, locations, coupons, and wallet starter data.
     DbSeeder.Seed(
     context
     );
@@ -229,10 +208,7 @@ catch(Exception ex)
 });
 
 
-// ========================================
-// Auto open browser
-// ========================================
-
+// Development convenience only: open the local site after Kestrel starts.
 if(
 app.Environment.IsDevelopment()
 )

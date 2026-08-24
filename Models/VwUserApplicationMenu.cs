@@ -3,8 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models
 {
-    // SQL VIEW:
-    // vw_user_application_menus
     [Keyless]
     public class VwUserApplicationMenu
     {
@@ -44,7 +42,6 @@ namespace AmarShowsBook.Models
         [Column("display_order")]
         public int DisplayOrder { get; set; }
 
-        // PostgreSQL uses snake_case column names
         [Column("can_view")]
         public bool CanView { get; set; }
 

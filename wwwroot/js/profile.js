@@ -1,13 +1,9 @@
 let isEmailVerified = false;
 let isMobileVerified = false;
 let isPasswordEmailVerified = false;
-// ================= REGEX =================
 const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$/;
 const mobileRegex = /^[0-9]{10}$/;
 
-// =====================================================
-// 🔐 EMAIL
-// =====================================================
 
 function editEmail(oldVal) {
     let field = document.getElementById("emailField");
@@ -20,7 +16,6 @@ function editEmail(oldVal) {
     document.getElementById("emailCancel").classList.remove("d-none");
     document.getElementById("emailOtpSection").classList.remove("d-none");
 
-    // hide old tick
     document.getElementById("emailVerifiedTick")?.classList.add("d-none");
 }
 
@@ -156,9 +151,6 @@ function verifyPasswordEmailOtp() {
     });
 }
 
-// =====================================================
-// 📱 MOBILE
-// =====================================================
 
 function editMobile(oldVal) {
     let field = document.getElementById("mobileField");
@@ -253,9 +245,6 @@ function verifyMobileOtp() {
     });
 }
 
-// =====================================================
-// 🏠 ADDRESS
-// =====================================================
 
 function editAddress(oldVal) {
     let field = document.getElementById("addressField");
@@ -297,9 +286,6 @@ function cancelAddress(oldVal) {
     document.querySelectorAll(".dropdown-icon").forEach(icon => icon.classList.add("d-none"));
 }
 
-// =====================================================
-// 🎬 DROPDOWN
-// =====================================================
 
 function enableProfileSelect(id) {
     let el = document.getElementById(id);
@@ -336,9 +322,6 @@ function cancelSelect(id, value, cancelBtn) {
     document.getElementById(cancelBtn).classList.add("d-none");
 }
 
-// =====================================================
-// 🖼 IMAGE
-// =====================================================
 
 let oldImageSrc = "";
 
@@ -428,7 +411,6 @@ function validateProfileForm() {
 
     let image = document.getElementById("profileImage").value;
 
-    // ================= EMPTY CHECK =================
     if (!name || !email || !mobile) {
         showPopup("Stage name, email, and mobile are required.");
         return false;
@@ -454,7 +436,6 @@ function validateProfileForm() {
         return false;
     }
 
-    // ================= CHANGE CHECK =================
     let isChanged =
         email !== oldEmail ||
         mobile !== oldMobile ||

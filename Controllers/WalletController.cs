@@ -1,18 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Services;
-using System.Linq;
 
 namespace AmarShowsBook.Controllers
 {
+    // Customer wallet pages read the wallet summary view; balance changes are written by booking and admin flows.
     public class WalletController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
 
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
 
         public WalletController(
             ApplicationDbContext context,
@@ -22,9 +19,6 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        // =====================================================
-        // WALLET DASHBOARD
-        // =====================================================
 
         public IActionResult Index()
         {
@@ -33,11 +27,9 @@ namespace AmarShowsBook.Controllers
 
         public async Task<IActionResult> MyWallet()
         {
-            // Get logged in user email
             var userEmail =
                 HttpContext.Session.GetString("UserEmail");
 
-            // Redirect guest users
             if (string.IsNullOrWhiteSpace(userEmail))
             {
                 return RedirectToAction(
@@ -46,13 +38,11 @@ namespace AmarShowsBook.Controllers
                 );
             }
 
-            // Get wallet summary from view
             var wallet = _context
                 .VwWalletSummaries
                 .FirstOrDefault(x =>
                     x.UserEmail == userEmail);
 
-            // Wallet not found
             if (wallet == null)
             {
                 TempData["Error"] =
@@ -64,7 +54,6 @@ namespace AmarShowsBook.Controllers
                 );
             }
 
-            // Store activity log
             await _activityLogger.LogAsync(
                 userId: (int)wallet.UserId,
                 action: "VIEW_WALLET",
@@ -77,7 +66,6 @@ namespace AmarShowsBook.Controllers
                 isError: 0
             );
 
-            // Return wallet page
             return View("Index", wallet);
         }
     }

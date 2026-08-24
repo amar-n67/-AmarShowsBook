@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmarShowsBook.Controllers;
 
+// Amaro answers from app data first, then limits every admin shortcut to the user's current roles.
 public class AmaroController : Controller
 {
     private const string SupportPhone = "+91 8920993434";
@@ -60,6 +61,7 @@ public class AmaroController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Ask([FromBody] AmaroAskRequest request)
     {
+        // Guests can get show and support help; account, booking, wallet, and admin answers require login.
         var message = (request.Message ?? string.Empty).Trim();
 
         if (string.IsNullOrWhiteSpace(message))
@@ -98,6 +100,7 @@ public class AmaroController : Controller
 
     private async Task<AmaroAskResponse> BuildReply(int userId, string message)
     {
+        // Direct intents are answered before broad menu suggestions, so short commands stay predictable.
         var normalized = message.ToLowerInvariant();
         var menuItems = await GetAccessibleMenus(userId);
         var quickLinks = menuItems
@@ -669,6 +672,7 @@ public class AmaroController : Controller
         string normalized,
         List<AmaroMenuItem> menuItems)
     {
+        // Admin and developer answers are only built after RBAC confirms the matching module.
         var wantsAdmin =
             normalized.Contains("admin") ||
             normalized.Contains("dashboard") ||

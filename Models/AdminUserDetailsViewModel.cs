@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-
 namespace AmarShowsBook.Models.ViewModels
 {
     public class AdminUserDetailsViewModel
     {
-        // =====================================================
-        // HUMAN COMMENT:
-        // BASIC USER DETAILS
-        // =====================================================
 
         public long UserId { get; set; }
         public List<string> UserAccess { get; set; } = new();
@@ -35,10 +28,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public string? ProfileImagePath { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // USER ACCOUNT STATUS
-        // =====================================================
 
         public bool IsActive { get; set; }
 
@@ -48,10 +37,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public DateTime? LastLoginAt { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // WALLET & PAYMENT SUMMARY
-        // =====================================================
 
         public decimal WalletBalance { get; set; }
         public decimal BlockedBalance { get; set; }
@@ -72,10 +57,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public decimal TotalSpent { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // LAST TRANSACTION DETAILS
-        // =====================================================
 
         public string? LastTransactionRef { get; set; }
 

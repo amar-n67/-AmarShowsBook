@@ -1,7 +1,5 @@
 using AmarShowsBook.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
 
 namespace AmarShowsBook.Data
 {
@@ -9,7 +7,6 @@ namespace AmarShowsBook.Data
     {
         public static void Seed(ApplicationDbContext context)
         {
-            // ================= MOVIES =================
             if (!context.Movies.Any())
             {
                 context.Movies.AddRange(
@@ -26,7 +23,6 @@ namespace AmarShowsBook.Data
                 );
             }
 
-            // ================= STANDUP =================
             if (!context.StandupShows.Any())
             {
                 context.StandupShows.AddRange(
@@ -37,7 +33,6 @@ namespace AmarShowsBook.Data
                 );
             }
 
-            // ================= LIVE STREAM =================
             if (!context.LiveStreams.Any())
             {
                 for (int i = 1; i <= 20; i++)
@@ -51,7 +46,6 @@ namespace AmarShowsBook.Data
                 }
             }
 
-            // ================= LOCATION (MANDATORY) =================
             if (!context.Locations.Any())
             {
                 context.Locations.Add(new Location
@@ -64,7 +58,6 @@ namespace AmarShowsBook.Data
 
             context.SaveChanges();
 
-            // ================= AUTO GENERATE 100+ SCHEDULES =================
 if (!context.ShowSchedules.Any())
 {
     var movies = context.Movies.ToList();
@@ -73,14 +66,13 @@ if (!context.ShowSchedules.Any())
 
     var location = context.Locations.First();
 
-    DateTime baseTime = DateTime.UtcNow.Date.AddHours(9); // 9 AM start
+    DateTime baseTime = DateTime.UtcNow.Date.AddHours(9);
 
     int totalShows = 0;
 
-    // 🎬 MOVIES (repeat across day)
     foreach (var movie in movies)
     {
-        for (int i = 0; i < 2; i++) // repeat each movie twice
+        for (int i = 0; i < 2; i++)
         {
             context.ShowSchedules.Add(new ShowSchedule
             {
@@ -96,7 +88,6 @@ if (!context.ShowSchedules.Any())
         }
     }
 
-    // 🎤 STANDUP (NO OVERLAP)
     foreach (var standup in standups)
     {
         context.ShowSchedules.Add(new ShowSchedule
@@ -112,7 +103,6 @@ if (!context.ShowSchedules.Any())
         totalShows++;
     }
 
-    // 📡 LIVE (parallel allowed)
     for (int i = 0; i < 100; i++)
     {
         var live = lives[i % lives.Count];
@@ -129,11 +119,8 @@ if (!context.ShowSchedules.Any())
         totalShows++;
     }
 
-    Console.WriteLine($"✅ Generated {totalShows} shows");
-
     context.SaveChanges();
 }
-// COUNTRIES
 if (!context.Countries.Any())
 {
     context.Countries.AddRange(
@@ -143,7 +130,6 @@ if (!context.Countries.Any())
     context.SaveChanges();
 }
 
-// STATES
 if (!context.States.Any())
 {
     var india = context.Countries.First(c => c.Code == "IN");
@@ -155,7 +141,6 @@ if (!context.States.Any())
     context.SaveChanges();
 }
 
-// DISTRICTS
 if (!context.Districts.Any())
 {
     var delhi = context.States.First(s => s.Name == "Delhi");

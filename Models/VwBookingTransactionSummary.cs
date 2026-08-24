@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models
 {
-    // Map SQL view: vw_booking_transaction_summary
     [Keyless]
     public class VwBookingTransactionSummary
     {

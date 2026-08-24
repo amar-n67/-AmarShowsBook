@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace AmarShowsBook.Filters;
 
+// Runs before controller actions to require login and block role-protected routes early.
 public class SessionAuthorizeFilter : IAsyncActionFilter
 {
     private static readonly HashSet<string> PublicAuthActions =
@@ -50,6 +51,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             var userId =
             TryGetUserId(http.Session.GetString("UserId"));
 
+            // RBAC-denied API calls return 403 JSON; page requests go back to the customer showTime page.
             if (RequiresPermission(controller, action, out var moduleCode, out var actionType) &&
                 (userId == null || !_rbacService.HasPermission(userId.Value, moduleCode, actionType)))
             {

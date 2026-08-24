@@ -1,12 +1,11 @@
-using AmarShowsBook.Services; // Added for activity logging
-using Npgsql;                 // Added for PostgreSQL exception handling
+using AmarShowsBook.Services;
+using Npgsql;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.ViewModels;
-using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
@@ -14,16 +13,8 @@ namespace AmarShowsBook.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
-        private readonly IActivityLogger _activityLogger; //Added for logging activities
+        private readonly IActivityLogger _activityLogger;
 
-        // ====================== commented out old constructor ======================
-        // ✅ Inject BOTH logger + DB context
-        // public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
-        // {
-        //     _logger = logger;
-        //     _context = context;
-        // }
-        // ====================== Updated constructor to include activity logger ======================
         public HomeController(
         ILogger<HomeController> logger,
         ApplicationDbContext context,
@@ -33,106 +24,24 @@ namespace AmarShowsBook.Controllers
             _context = context;
             _activityLogger = activityLogger;
         }
-        // ====================== End of updated constructor ======================
 
-        //=================== commented out old Index action ======================
-        // ================= HOME =================
+        public IActionResult Index(string type = "Movie")
+        {
+            return RedirectToAction(nameof(ShowTime), new { type });
+        }
 
-        // public IActionResult Index(string type = "Movie")
-        // {
-        //     // 🔐 Protect page (only logged in users)
-        //     if (HttpContext.Session.GetString("UserEmail") == null)
-        //     {
-        //         return RedirectToAction("Login", "Auth");
-        //     }
+        // The public landing page is the showTime feed: it reads the SQL view, enriches venue text, then logs the visit.
+        public async Task<IActionResult> ShowTime(string type = "Movie")
+        {
+            try
+            {
+                var userEmail = HttpContext.Session.GetString("UserEmail");
 
-        //     // 📦 Fetch schedules based on type
-        //     var schedules = _context.ShowSchedules
-        //         .Include(s => s.Movie)
-        //         .Include(s => s.StandupShow)
-        //         .Include(s => s.LiveStream)
-        //         .Include(s => s.Location)
-        //         .Where(s => s.Type == type)
-        //         .OrderBy(s => s.StartTime)
-        //         .ToList();
+                var user = string.IsNullOrWhiteSpace(userEmail)
+                    ? null
+                    : _context.Users.FirstOrDefault(u => u.Email == userEmail);
 
-        //     var vm = new HomeViewModel
-        //     {
-        //         Schedules = schedules
-        //     };
-
-        //     return View(vm);
-        // }
-        // ====================== Updated Index action to log activity ======================
-public IActionResult Index(string type = "Movie")
-{
-    return RedirectToAction(nameof(ShowTime), new { type });
-}
-
-public async Task<IActionResult> ShowTime(string type = "Movie")
-{
-    try
-    {
-        var userEmail = HttpContext.Session.GetString("UserEmail");
-
-        var user = string.IsNullOrWhiteSpace(userEmail)
-            ? null
-            : _context.Users.FirstOrDefault(u => u.Email == userEmail);
-
-        // var schedules = _context.ShowSchedules
-        //     .Include(s => s.Movie)
-        //     .Include(s => s.StandupShow)
-        //     .Include(s => s.LiveStream)
-        //     .Include(s => s.Location)
-        //     .Where(s => s.Type == type)
-        //     .OrderBy(s => s.StartTime)
-        //     .ToList();
-        string dbType = type switch
-{
-    "Movie" => "Movie",
-    "Standup" => "StandupShow",
-    "Live" => "LiveStream",
-    _ => "Movie"
-};
-
-// var schedules = await _context.HomeShows
-//     .Where(x => x.ShowType == type)
-//     .Where(x => x.StartTime >= DateTime.UtcNow)
-//     .OrderByDescending(x => x.StartTime)
-//     .ToListAsync();
-
-// var vm = new HomeViewModel
-// {
-//     HomeShows = schedules
-// };
-
-// var schedules = await _context.HomeShows
-//     .Where(x => x.ShowType == type)
-//     .Where(x => x.StartTime >= DateTime.UtcNow)
-//     .OrderByDescending(x => x.StartTime)
-//     .Select(x => new HomeShowViewModel
-//     {
-//         ScheduleId = x.ScheduleId,
-
-//         Title = x.Title,
-//         Description = x.Description,
-
-//         PosterUrl = x.PosterUrl,
-//         Images = x.Images,
-//         TrailerUrl = x.TrailerUrl,
-
-//         StartTime = x.StartTime,
-//         EndTime = x.EndTime,
-
-//         Location = x.Location,
-//         State = x.State,
-//         Country = x.Country,
-
-//         ShowType = x.ShowType
-//     })
-//     .ToListAsync();
-
-await EnsureHomeShowListingView();
+                await EnsureHomeShowListingView();
 
 var schedules = await _context.HomeShows
 .Where(x => x.ShowType == type)
@@ -140,7 +49,7 @@ var schedules = await _context.HomeShows
 .OrderBy(x => x.StartTime)
 .Select(x => new HomeShowViewModel
 {
-    ScheduleId = x.ScheduleId, // REQUIRED
+    ScheduleId = x.ScheduleId,
 
     ShowId = x.ShowId,
 
@@ -268,9 +177,9 @@ foreach (var show in schedules)
         throw;
     }
 }
-// ====================== End of updated Index action ======================
         private async Task EnsureHomeShowListingView()
         {
+            // This keeps older local databases compatible before the home page queries the listing view.
             await _context.Database.ExecuteSqlRawAsync(@"
 ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Description"" text;
 ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
@@ -327,14 +236,12 @@ LEFT JOIN public.venues v ON sc.venue_id = v.id;
 ");
         }
 
-        // ================= PRIVACY =================
 
         public IActionResult Privacy()
         {
             return View();
         }
 
-        // ================= ERROR =================
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

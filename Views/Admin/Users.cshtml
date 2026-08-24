@@ -98,7 +98,6 @@
 
                             <div class="admin-actions">
 
-                                <!-- DETAILS -->
 
                                 <a href="/Admin/UserDetails/@user.Id"
                                    class="btn btn-primary">
@@ -107,7 +106,6 @@
 
                                 </a>
 
-                                <!-- ENABLE / DISABLE -->
 
                                 @if (user.is_active)
                                 {
@@ -138,7 +136,6 @@
                                     </form>
                                 }
 
-                                <!-- DELETE / REVOKE -->
 
                                 @if (user.is_deleted)
                                 {
@@ -177,7 +174,6 @@
 
     </div>
 
-    <!-- Human Comment: Admin tables show 50 rows per page and share the transaction pagination style. -->
     <div class="pagination-area">
 
         @for (int i = 1; i <= totalPages; i++)

@@ -5,12 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmarShowsBook.Controllers
 {
+    // Customer transaction pages always filter by the signed-in user before showing payment history or details.
     public class TransactionController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
 
-        // Inject database context and activity logger
         public TransactionController(
             ApplicationDbContext context,
             IActivityLogger activityLogger)
@@ -19,24 +19,19 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        // ================= TRANSACTION HISTORY =================
 
         public async Task<IActionResult> History()
         {
-            // Get logged-in user email from session
             var userEmail =
                 HttpContext.Session.GetString("UserEmail");
             var userIdText =
                 HttpContext.Session.GetString("UserId");
 
-            // Prevent guest users from accessing transactions
             if (string.IsNullOrWhiteSpace(userEmail))
             {
                 return RedirectToAction("Login", "Auth");
             }
 
-            // Human Comment:
-            // User id is the stable lookup key; email remains as a compatibility fallback.
             var userId = long.TryParse(userIdText, out var parsedUserId)
                 ? parsedUserId
                 : 0;
@@ -51,7 +46,6 @@ namespace AmarShowsBook.Controllers
                 .OrderByDescending(x => x.BookingCreatedAt)
                 .ToListAsync();
 
-            // Log successful transaction page access
             await _activityLogger.LogAsync(
                 action: "VIEW_TRANSACTIONS",
                 module: "TRANSACTION",
