@@ -7,6 +7,9 @@ namespace AmarShowsBook.Controllers;
 
 public class AmaroController : Controller
 {
+    private const string SupportPhone = "+91 8920993434";
+    private const string SupportEmail = "arcanaamar67@gmail.com";
+
     private readonly ApplicationDbContext _context;
     private readonly RbacService _rbacService;
 
@@ -27,17 +30,29 @@ public class AmaroController : Controller
             {
                 isLoggedIn = false,
                 greeting = "Hey guest, I'm Amaro. I can find today's shows now; login is needed only when you book or view account details.",
-                options = new[] { "Today's show times", "Movies", "Standup", "Live streams", "Login" }
+                options = new[]
+                {
+                    new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
+                    new AmaroQuickOption("Movies", "", "filter-type:Movie"),
+                    new AmaroQuickOption("Standup", "", "filter-type:Standup"),
+                    new AmaroQuickOption("Live Streams", "", "filter-type:Live"),
+                    new AmaroQuickOption("Contact Support", "", "support-options"),
+                    new AmaroQuickOption("Login", "/Auth/Login")
+                }
             });
         }
 
         var menuItems = await GetAccessibleMenus(userId);
+        var proactiveOptions = await BuildProactiveMenuOptions(userId, menuItems);
+        var pageName = GetCurrentPageName();
 
         return Json(new
         {
             isLoggedIn = true,
-            greeting = $"Hey {GetDisplayName()}, I'm Amaro. How may I help you?",
-            options = BuildMenuOptions(menuItems, userId)
+            greeting = string.IsNullOrWhiteSpace(pageName)
+                ? $"Hey {GetDisplayName()}, I'm Amaro. How may I help you?"
+                : $"Hey {GetDisplayName()}, I'm Amaro. I can help with {pageName} and your role-allowed actions.",
+            options = proactiveOptions.Any() ? proactiveOptions : BuildMenuOptions(menuItems, userId)
         });
     }
 
@@ -50,8 +65,8 @@ public class AmaroController : Controller
         if (string.IsNullOrWhiteSpace(message))
         {
             return Json(new AmaroAskResponse(
-                "Ask me about bookings, tickets, wallet, transactions, profile, admin access, or available menus.",
-                Array.Empty<AmaroQuickOption>()));
+                $"Ask me about bookings, tickets, wallet, transactions, profile, admin access, support, or available menus. Support: {SupportPhone}, {SupportEmail}.",
+                BuildSupportOptions()));
         }
 
         if (!TryGetCurrentUserId(out var userId))
@@ -98,8 +113,13 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, check wallet/profile/transactions, and switch theme or cursor.",
-                BuildAssistantOptions(menuItems, userId).Take(5).ToArray());
+                $"I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, check wallet/profile/transactions, switch theme or cursor, and connect you to support. Support: {SupportPhone}, {SupportEmail}.",
+                BuildAssistantOptions(menuItems, userId).Take(6).ToArray());
+        }
+
+        if (IsSupportIntent(normalized))
+        {
+            return BuildSupportReply();
         }
 
         if (IsThemeIntent(normalized))
@@ -126,6 +146,15 @@ public class AmaroController : Controller
                     new AmaroQuickOption("Precision Cursor", "", "cursor:precision"),
                     new AmaroQuickOption("Spotlight Cursor", "", "cursor:spotlight")
                 });
+        }
+
+        if (IsProactiveIntent(normalized))
+        {
+            var proactiveReply = await BuildProactiveReply(userId, normalized, menuItems);
+            if (proactiveReply != null)
+            {
+                return proactiveReply;
+            }
         }
 
         if (normalized.Contains("available") || normalized.Contains("price") || normalized.Contains("prices") || normalized.Contains("seat map"))
@@ -185,6 +214,12 @@ public class AmaroController : Controller
             return new AmaroAskResponse(
                 $"Your active role access: {FormatList(roles)}. Available modules: {FormatList(modules)}.",
                 quickLinks);
+        }
+
+        var adminReply = await BuildRoleAwareOperationsReply(userId, normalized, menuItems);
+        if (adminReply != null)
+        {
+            return adminReply;
         }
 
         if (normalized.Contains("upcoming") && (normalized.Contains("booked") || normalized.Contains("booking") || normalized.Contains("ticket")))
@@ -371,7 +406,7 @@ public class AmaroController : Controller
         return new AmaroAskResponse(
             matchedMenus.Any()
                 ? $"I found related app areas: {FormatList(matchedMenus.Select(x => x.Label))}."
-                : "I can help with your allowed menus, bookings, tickets, wallet, transactions, shows, profile, and admin summaries when your role permits it.",
+                : $"I can help with your allowed menus, bookings, tickets, wallet, transactions, shows, profile, support, and admin summaries when your role permits it. Support: {SupportPhone}, {SupportEmail}.",
             matchedMenus.Any() ? matchedMenus : quickLinks);
     }
 
@@ -395,12 +430,18 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I can find today's shows, filter movies/standup/live streams, show times and venues, and help start booking. Login is required when you choose seats or view account details.",
+                $"I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, and connect you to support. Support: {SupportPhone}, {SupportEmail}. Login is required when you choose seats or view account details.",
                 new[]
                 {
                     new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
+                    new AmaroQuickOption("Contact Support", "", "support-options"),
                     new AmaroQuickOption("Login", "/Auth/Login")
                 });
+        }
+
+        if (IsSupportIntent(normalized))
+        {
+            return BuildSupportReply();
         }
 
         if (IsThemeIntent(normalized))
@@ -623,6 +664,581 @@ public class AmaroController : Controller
             .ToListAsync();
     }
 
+    private async Task<AmaroAskResponse?> BuildRoleAwareOperationsReply(
+        int userId,
+        string normalized,
+        List<AmaroMenuItem> menuItems)
+    {
+        var wantsAdmin =
+            normalized.Contains("admin") ||
+            normalized.Contains("dashboard") ||
+            normalized.Contains("manage") ||
+            normalized.Contains("report") ||
+            normalized.Contains("summary") ||
+            normalized.Contains("export") ||
+            normalized.Contains("refund") ||
+            normalized.Contains("wallet") ||
+            normalized.Contains("notification") ||
+            normalized.Contains("security") ||
+            normalized.Contains("scanner") ||
+            normalized.Contains("coupon") ||
+            normalized.Contains("activity") ||
+            normalized.Contains("version") ||
+            normalized.Contains("role") ||
+            normalized.Contains("permission") ||
+            normalized.Contains("user");
+
+        var wantsDeveloper =
+            normalized.Contains("developer") ||
+            normalized.Contains("profile editor") ||
+            normalized.Contains("portfolio");
+
+        if (!wantsAdmin && !wantsDeveloper)
+        {
+            return null;
+        }
+
+        var allowedModules = await _context.VwUserAccessMatrices
+            .AsNoTracking()
+            .Where(x => x.UserId == userId && x.IsActive)
+            .Select(x => new { x.ModuleCode, x.ModuleName, x.ActionType })
+            .Distinct()
+            .ToListAsync();
+
+        var allowedModuleCodes = allowedModules
+            .Select(x => x.ModuleCode ?? string.Empty)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        bool Can(string module, string action = "VIEW")
+        {
+            return _rbacService.HasPermission(userId, module, action) ||
+                allowedModules.Any(x =>
+                    string.Equals(x.ModuleCode, module, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(x.ActionType, action, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (wantsDeveloper && !Can("DEVELOPER", "EDIT") && !_rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER"))
+        {
+            return new AmaroAskResponse(
+                "Your current role does not include developer tools. I can still help with your allowed pages, bookings, shows, wallet, profile, and transactions.",
+                BuildPageOptions(menuItems, userId, normalized).Take(5).ToArray());
+        }
+
+        if (wantsAdmin && !allowedModuleCodes.Any(code => code is "ADMIN" or "USER" or "ROLE" or "SHOW" or "BOOKING" or "PAYMENT" or "REFUND" or "WALLET" or "COUPON" or "NOTIFICATION" or "SCANNER"))
+        {
+            return new AmaroAskResponse(
+                "Your current role does not include admin operations. I will only show account and booking actions that your role allows.",
+                BuildPageOptions(menuItems, userId, normalized).Take(5).ToArray());
+        }
+
+        if (normalized.Contains("export"))
+        {
+            var exportOptions = BuildPageOptions(menuItems, userId, normalized)
+                .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase))
+                .Take(4)
+                .Append(new AmaroQuickOption("Export This Page", "", "admin-export"))
+                .ToArray();
+
+            return new AmaroAskResponse(
+                "Export follows page access. Open any allowed admin table, apply filters if needed, then use Export This Page.",
+                exportOptions);
+        }
+
+        if (normalized.Contains("search") || normalized.Contains("find") || normalized.Contains("lookup"))
+        {
+            var searchReply = await BuildAdminSearchReply(userId, normalized, Can);
+            if (searchReply != null)
+            {
+                return searchReply;
+            }
+        }
+
+        if (IsAdminOverviewIntent(normalized))
+        {
+            return await BuildAdminOverviewReply(userId, menuItems, Can);
+        }
+
+        if (normalized.Contains("refund") && Can("REFUND"))
+        {
+            var pending = await _context.VwRefundSummaries.CountAsync(x => x.RefundStatus == "PENDING");
+            var failed = await _context.VwRefundSummaries.CountAsync(x => x.RefundStatus == "FAILED" || x.IsRefundError == 1);
+
+            return new AmaroAskResponse(
+                $"Refund desk: {pending} pending, {failed} failed/error. Approve, reject, retry, and notes still run through the refund detail page for audit safety.",
+                new[]
+                {
+                    new AmaroQuickOption("Refunds", "/Admin/Refunds"),
+                    new AmaroQuickOption("Admin Dashboard", "/Admin/Dashboard"),
+                    new AmaroQuickOption("Export Refunds", "/Admin/ExportRefunds")
+                });
+        }
+
+        if ((normalized.Contains("security") || normalized.Contains("scanner") || normalized.Contains("ticket scan")) && Can("SCANNER"))
+        {
+            var issues = await _context.VwTicketValidationSummaries.CountAsync(x => x.IsSecurityIssue == 1);
+            var invalid = await _context.VwTicketValidationSummaries.CountAsync(x => x.ValidationStatus == "INVALID" || x.ValidationStatus == "DUPLICATE");
+            var devices = await _context.ScannerDevices.CountAsync();
+
+            return new AmaroAskResponse(
+                $"Security desk: {issues} open issue rows, {invalid} invalid/duplicate scans, {devices} scanner devices registered.",
+                new[]
+                {
+                    new AmaroQuickOption("Security", "/Admin/Security"),
+                    new AmaroQuickOption("Scanner Devices", "/Admin/Security", "ask:open security scanner devices"),
+                    new AmaroQuickOption("Export Security", "", "admin-export")
+                });
+        }
+
+        if ((normalized.Contains("wallet") || normalized.Contains("balance")) && Can("WALLET"))
+        {
+            var active = await _context.VwWalletSummaries.CountAsync(x => x.WalletStatus == "ACTIVE");
+            var blocked = await _context.VwWalletSummaries.CountAsync(x => x.WalletStatus == "BLOCKED" || x.WalletStatus == "SUSPENDED");
+            var totalBalance = await _context.VwWalletSummaries.SumAsync(x => x.WalletBalance);
+
+            return new AmaroAskResponse(
+                $"Wallet desk: {active} active wallets, {blocked} blocked/suspended wallets, total balance INR {totalBalance:0.00}.",
+                new[]
+                {
+                    new AmaroQuickOption("Wallets", "/Admin/Wallets"),
+                    new AmaroQuickOption("Export Wallets", "", "admin-export")
+                });
+        }
+
+        if ((normalized.Contains("notification") || normalized.Contains("message")) && Can("NOTIFICATION"))
+        {
+            var pending = await _context.VwNotificationCenters.CountAsync(x => x.Status == "PENDING" || x.Status == "PROCESSING");
+            var errors = await _context.VwNotificationCenters.CountAsync(x => x.IsError == 1 || x.Status == "FAILED" || x.Status == "ERROR");
+
+            return new AmaroAskResponse(
+                $"Notification center: {pending} pending/processing, {errors} failed/error.",
+                new[]
+                {
+                    new AmaroQuickOption("Notifications", "/Admin/Notifications"),
+                    new AmaroQuickOption("Export Notifications", "", "admin-export")
+                });
+        }
+
+        if ((normalized.Contains("coupon") || normalized.Contains("discount")) && Can("COUPON"))
+        {
+            var used = await _context.VwCouponUsages.CountAsync();
+            var discount = await _context.VwCouponUsages.SumAsync(x => x.DiscountAmount ?? 0);
+
+            return new AmaroAskResponse(
+                $"Coupon usage: {used} usage rows, total discount INR {discount:0.00}.",
+                new[]
+                {
+                    new AmaroQuickOption("Coupon Used", "/Admin/CouponUsage"),
+                    new AmaroQuickOption("Export Coupons", "", "admin-export")
+                });
+        }
+
+        if ((normalized.Contains("transaction") || normalized.Contains("payment")) && Can("PAYMENT"))
+        {
+            var success = await _context.VwBookingTransactionSummaries.CountAsync(x => x.TransactionStatus == "SUCCESS");
+            var failed = await _context.VwBookingTransactionSummaries.CountAsync(x => x.TransactionStatus == "FAILED" || x.IsPaymentError == 1);
+
+            return new AmaroAskResponse(
+                $"Payment desk: {success} successful transactions, {failed} failed/error transactions.",
+                new[]
+                {
+                    new AmaroQuickOption("Admin Transactions", "/Admin/Transactions"),
+                    new AmaroQuickOption("Export Transactions", "", "admin-export")
+                });
+        }
+
+        if ((normalized.Contains("booking") || normalized.Contains("ticket")) && Can("BOOKING"))
+        {
+            var confirmed = await _context.VwBookingCompleteDetails.CountAsync(x => x.BookingStatus == "CONFIRMED");
+            var cancelled = await _context.VwBookingCompleteDetails.CountAsync(x => x.BookingStatus == "CANCELLED");
+
+            return new AmaroAskResponse(
+                $"Booking desk: {confirmed} confirmed bookings, {cancelled} cancelled bookings.",
+                new[]
+                {
+                    new AmaroQuickOption("Admin Bookings", "/Admin/Bookings"),
+                    new AmaroQuickOption("Export Bookings", "", "admin-export")
+                });
+        }
+
+        if ((normalized.Contains("role") || normalized.Contains("permission") || normalized.Contains("access")) && (Can("ROLE") || Can("PERMISSION") || Can("USER", "GRANT_ACCESS")))
+        {
+            var roles = await GetRoleNames(userId);
+            var modules = allowedModules
+                .Select(x => x.ModuleName ?? x.ModuleCode)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .Take(12)
+                .ToList();
+
+            return new AmaroAskResponse(
+                $"Your roles: {FormatList(roles)}. Allowed operation areas: {FormatList(modules)}. I will not show actions outside this access.",
+                new[]
+                {
+                    new AmaroQuickOption("Roles", "/Admin/Roles"),
+                    new AmaroQuickOption("User Access", "/Admin/UserAccess"),
+                    new AmaroQuickOption("Users", "/Admin/Users")
+                }.Where(x => menuItems.Any(m => string.Equals(m.RoutePath, x.Url, StringComparison.OrdinalIgnoreCase))).ToArray());
+        }
+
+        if (wantsDeveloper && (Can("DEVELOPER", "EDIT") || _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER")))
+        {
+            return new AmaroAskResponse(
+                "Developer tools are available for your role. You can update the developer profile and inspect app implementation notes from the developer page.",
+                new[]
+                {
+                    new AmaroQuickOption("Developer Profile", "/Developer/Profile"),
+                    new AmaroQuickOption("Developer Overview", "/Developer/Index")
+                });
+        }
+
+        var adminLinks = BuildPageOptions(menuItems, userId, normalized)
+            .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase) || x.Url.StartsWith("/Developer/", StringComparison.OrdinalIgnoreCase))
+            .Take(5)
+            .ToArray();
+
+        if (adminLinks.Any())
+        {
+            return new AmaroAskResponse(
+                $"I can help with these role-allowed operation pages: {FormatList(adminLinks.Select(x => x.Label))}. Ask for a summary, search, export, refund, wallet, security, users, roles, shows, or notifications.",
+                adminLinks);
+        }
+
+        return null;
+    }
+
+    private async Task<AmaroAskResponse?> BuildAdminSearchReply(
+        int userId,
+        string normalized,
+        Func<string, string, bool> can)
+    {
+        var terms = ExtractSearchTerms(normalized)
+            .Where(x => !new[] { "search", "find", "lookup", "admin", "user", "booking", "transaction", "refund", "wallet", "notification", "security" }
+                .Contains(x, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        if (!terms.Any())
+        {
+            return new AmaroAskResponse(
+                "Tell me what to search, for example: find user amar, search booking BKG, lookup refund RF, or find failed payment.",
+                Array.Empty<AmaroQuickOption>());
+        }
+
+        var results = new List<string>();
+        var options = new List<AmaroQuickOption>();
+
+        if (can("USER", "VIEW"))
+        {
+            var users = await _context.Users
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .Take(200)
+                .Select(x => new { x.Id, x.Name, x.Email, x.Mobile })
+                .ToListAsync();
+
+            users = users
+                .Where(x => terms.Any(term =>
+                    (x.Name ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.Email ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.Mobile ?? "").Contains(term, StringComparison.OrdinalIgnoreCase)))
+                .Take(3)
+                .ToList();
+
+            results.AddRange(users.Select(x => $"User {x.Id}: {NullText(x.Name)} ({NullText(x.Email)})"));
+            options.AddRange(users.Select(x => new AmaroQuickOption($"User {x.Id}", $"/Admin/UserDetails/{x.Id}")));
+        }
+
+        if (can("BOOKING", "VIEW"))
+        {
+            var bookings = await _context.VwBookingCompleteDetails
+                .AsNoTracking()
+                .OrderByDescending(x => x.BookedAt)
+                .Take(200)
+                .Select(x => new { x.BookingId, x.BookingRef, x.ShowTitle, x.BookingStatus, x.UserName, x.UserEmail })
+                .ToListAsync();
+
+            bookings = bookings
+                .Where(x => terms.Any(term =>
+                    (x.BookingRef ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.ShowTitle ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.UserName ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.UserEmail ?? "").Contains(term, StringComparison.OrdinalIgnoreCase)))
+                .Take(3)
+                .ToList();
+
+            results.AddRange(bookings.Select(x => $"{x.BookingRef}: {x.ShowTitle}, {x.BookingStatus}"));
+            options.AddRange(bookings.Select(x => new AmaroQuickOption($"Booking {x.BookingRef}", $"/Admin/Bookings")));
+        }
+
+        if (can("REFUND", "VIEW"))
+        {
+            var refunds = await _context.VwRefundSummaries
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(200)
+                .Select(x => new { x.RefundId, x.RefundRef, x.BookingRef, x.TransactionRef, x.UserName, x.UserEmail, x.RefundStatus, x.RefundAmount })
+                .ToListAsync();
+
+            refunds = refunds
+                .Where(x => terms.Any(term =>
+                    (x.RefundRef ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.BookingRef ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.TransactionRef ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.UserName ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.UserEmail ?? "").Contains(term, StringComparison.OrdinalIgnoreCase)))
+                .Take(3)
+                .ToList();
+
+            results.AddRange(refunds.Select(x => $"{x.RefundRef}: {x.RefundStatus}, INR {(x.RefundAmount ?? 0):0.00}"));
+            options.AddRange(refunds.Select(x => new AmaroQuickOption($"Refund {x.RefundRef}", $"/Admin/RefundDetails/{x.RefundId}")));
+        }
+
+        if (can("PAYMENT", "VIEW"))
+        {
+            var payments = await _context.VwBookingTransactionSummaries
+                .AsNoTracking()
+                .OrderByDescending(x => x.BookingCreatedAt)
+                .Take(200)
+                .Select(x => new { x.TransactionId, x.TransactionRef, x.BookingRef, x.UserName, x.UserEmail, x.TransactionStatus, x.TransactionAmount })
+                .ToListAsync();
+
+            payments = payments
+                .Where(x => terms.Any(term =>
+                    (x.TransactionRef ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.BookingRef ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.UserName ?? "").Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (x.UserEmail ?? "").Contains(term, StringComparison.OrdinalIgnoreCase)))
+                .Take(3)
+                .ToList();
+
+            results.AddRange(payments.Select(x => $"{x.TransactionRef}: {x.TransactionStatus}, INR {(x.TransactionAmount ?? 0):0.00}"));
+            options.AddRange(payments
+                .Where(x => x.TransactionId.HasValue)
+                .Select(x => new AmaroQuickOption($"Txn {x.TransactionRef}", $"/Admin/TransactionDetails/{x.TransactionId}")));
+        }
+
+        return results.Any()
+            ? new AmaroAskResponse($"Found: {string.Join(" | ", results.Take(6))}", options.Take(5).ToArray())
+            : new AmaroAskResponse(
+                "No matching role-allowed records found. I did not search areas your role cannot view.",
+                Array.Empty<AmaroQuickOption>());
+    }
+
+    private async Task<AmaroQuickOption[]> BuildProactiveMenuOptions(int userId, List<AmaroMenuItem> menuItems)
+    {
+        var path = GetCurrentPath();
+        var options = new List<AmaroQuickOption>();
+
+        if (path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase))
+        {
+            options.Add(new AmaroQuickOption("This Page Summary", "", "ask:what should i do on this page"));
+            options.Add(new AmaroQuickOption("Search Records", "", "ask:search admin records"));
+            options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+            options.Add(new AmaroQuickOption("Admin Overview", "", "ask:admin overview"));
+        }
+        else if (path.StartsWith("/Booking/Seats", StringComparison.OrdinalIgnoreCase))
+        {
+            options.Add(new AmaroQuickOption("Seat Prices", "", "ask:available seats and prices"));
+            options.Add(new AmaroQuickOption("My Bookings", "/Booking/MyBookings"));
+            options.Add(new AmaroQuickOption("Wallet", "/Wallet/MyWallet"));
+        }
+        else if (path.StartsWith("/Booking/", StringComparison.OrdinalIgnoreCase))
+        {
+            options.Add(new AmaroQuickOption("Upcoming Bookings", "", "ask:my upcoming bookings"));
+            options.Add(new AmaroQuickOption("Transactions", "/Transaction/History"));
+            options.Add(new AmaroQuickOption("Browse Shows", "/Home/ShowTime"));
+        }
+        else if (path.StartsWith("/Transaction/", StringComparison.OrdinalIgnoreCase))
+        {
+            options.Add(new AmaroQuickOption("Payment Status", "", "ask:my payments summary"));
+            options.Add(new AmaroQuickOption("My Bookings", "/Booking/MyBookings"));
+            options.Add(new AmaroQuickOption("Wallet", "/Wallet/MyWallet"));
+        }
+        else if (path.StartsWith("/Wallet/", StringComparison.OrdinalIgnoreCase))
+        {
+            options.Add(new AmaroQuickOption("Wallet Summary", "", "ask:wallet summary"));
+            options.Add(new AmaroQuickOption("Transactions", "/Transaction/History"));
+            options.Add(new AmaroQuickOption("Book Shows", "/Home/ShowTime"));
+        }
+        else
+        {
+            options.Add(new AmaroQuickOption("Recommended Shows", "", "ask:recommend shows"));
+            options.Add(new AmaroQuickOption("Movies", "", "filter-type:Movie"));
+            options.Add(new AmaroQuickOption("Available Seats", "", "show-suggestions"));
+            options.Add(new AmaroQuickOption("Contact Support", "", "support-options"));
+        }
+
+        var roleOptions = BuildMenuOptions(menuItems, userId)
+            .Where(x => options.All(existing =>
+                !string.Equals(existing.Label, x.Label, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(existing.Url, x.Url, StringComparison.OrdinalIgnoreCase)))
+            .Take(4);
+
+        options.AddRange(roleOptions);
+        return await Task.FromResult(options.Take(8).ToArray());
+    }
+
+    private async Task<AmaroAskResponse?> BuildProactiveReply(
+        int userId,
+        string normalized,
+        List<AmaroMenuItem> menuItems)
+    {
+        var path = GetCurrentPath();
+
+        if (path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("admin") ||
+            normalized.Contains("alert") ||
+            normalized.Contains("risk"))
+        {
+            var allowedModules = await _context.VwUserAccessMatrices
+                .AsNoTracking()
+                .Where(x => x.UserId == userId && x.IsActive)
+                .Select(x => new { x.ModuleCode, x.ActionType })
+                .Distinct()
+                .ToListAsync();
+
+            bool Can(string module, string action = "VIEW")
+            {
+                return _rbacService.HasPermission(userId, module, action) ||
+                    allowedModules.Any(x =>
+                        string.Equals(x.ModuleCode, module, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(x.ActionType, action, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (Can("ADMIN") || Can("REFUND") || Can("PAYMENT") || Can("SCANNER") || Can("BOOKING"))
+            {
+                return await BuildAdminOverviewReply(userId, menuItems, Can);
+            }
+        }
+
+        if (path.StartsWith("/Booking/Seats", StringComparison.OrdinalIgnoreCase))
+        {
+            var seatReply = await BuildSeatAndPriceReply(normalized);
+            return seatReply ?? new AmaroAskResponse(
+                "On this page, the strongest next step is to compare available seat categories, pick adjacent seats, then continue to payment. I can also open wallet or your bookings.",
+                new[]
+                {
+                    new AmaroQuickOption("Browse Shows", "/Home/ShowTime"),
+                    new AmaroQuickOption("My Bookings", "/Booking/MyBookings"),
+                    new AmaroQuickOption("Wallet", "/Wallet/MyWallet")
+                });
+        }
+
+        if (path.StartsWith("/Transaction/", StringComparison.OrdinalIgnoreCase))
+        {
+            return new AmaroAskResponse(
+                "For transactions, I can quickly separate success, pending, failed, and refund-related payments for your account.",
+                new[]
+                {
+                    new AmaroQuickOption("Successful Payments", "", "ask:successful payments"),
+                    new AmaroQuickOption("Failed Payments", "", "ask:failed payments"),
+                    new AmaroQuickOption("My Bookings", "/Booking/MyBookings")
+                });
+        }
+
+        if (path.StartsWith("/Wallet/", StringComparison.OrdinalIgnoreCase))
+        {
+            return new AmaroAskResponse(
+                "For wallet work, I can show balance, blocked balance, and connect wallet activity back to bookings and transactions.",
+                new[]
+                {
+                    new AmaroQuickOption("Wallet Summary", "", "ask:wallet summary"),
+                    new AmaroQuickOption("Transactions", "/Transaction/History"),
+                    new AmaroQuickOption("Book Shows", "/Home/ShowTime")
+                });
+        }
+
+        return new AmaroAskResponse(
+            $"Smart next steps: browse shows, check seats and prices, review your bookings, contact support, or open a role-allowed page. Support: {SupportPhone}, {SupportEmail}. I will keep actions inside your access.",
+            BuildAssistantOptions(menuItems, userId).Take(6).ToArray());
+    }
+
+    private async Task<AmaroAskResponse> BuildAdminOverviewReply(
+        int userId,
+        List<AmaroMenuItem> menuItems,
+        Func<string, string, bool> can)
+    {
+        var alerts = new List<string>();
+        var options = new List<AmaroQuickOption>();
+
+        if (can("REFUND", "VIEW"))
+        {
+            var pendingRefunds = await _context.VwRefundSummaries.CountAsync(x => x.RefundStatus == "PENDING");
+            var failedRefunds = await _context.VwRefundSummaries.CountAsync(x => x.RefundStatus == "FAILED" || x.IsRefundError == 1);
+            alerts.Add($"refunds {pendingRefunds} pending, {failedRefunds} error");
+            options.Add(new AmaroQuickOption("Refunds", "/Admin/Refunds"));
+        }
+
+        if (can("PAYMENT", "VIEW"))
+        {
+            var failedPayments = await _context.VwBookingTransactionSummaries.CountAsync(x => x.TransactionStatus == "FAILED" || x.IsPaymentError == 1);
+            var pendingPayments = await _context.VwBookingTransactionSummaries.CountAsync(x => x.TransactionStatus == "PENDING");
+            alerts.Add($"payments {failedPayments} failed, {pendingPayments} pending");
+            options.Add(new AmaroQuickOption("Transactions", "/Admin/Transactions"));
+        }
+
+        if (can("SCANNER", "VIEW"))
+        {
+            var securityIssues = await _context.VwTicketValidationSummaries.CountAsync(x => x.IsSecurityIssue == 1);
+            var invalidScans = await _context.VwTicketValidationSummaries.CountAsync(x => x.ValidationStatus == "INVALID" || x.ValidationStatus == "DUPLICATE");
+            alerts.Add($"scanner {securityIssues} security issues, {invalidScans} invalid scans");
+            options.Add(new AmaroQuickOption("Security", "/Admin/Security"));
+        }
+
+        if (can("BOOKING", "VIEW"))
+        {
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+            var todayBookings = await _context.VwBookingCompleteDetails.CountAsync(x => x.BookedAt >= today && x.BookedAt < tomorrow);
+            alerts.Add($"bookings {todayBookings} created today");
+            options.Add(new AmaroQuickOption("Bookings", "/Admin/Bookings"));
+        }
+
+        if (can("NOTIFICATION", "VIEW"))
+        {
+            var notificationErrors = await _context.VwNotificationCenters.CountAsync(x => x.IsError == 1 || x.Status == "FAILED" || x.Status == "ERROR");
+            alerts.Add($"notifications {notificationErrors} errors");
+            options.Add(new AmaroQuickOption("Notifications", "/Admin/Notifications"));
+        }
+
+        options.Add(new AmaroQuickOption("Search Records", "", "ask:search admin records"));
+        options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+        options.AddRange(BuildPageOptions(menuItems, userId, "admin dashboard")
+            .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase)));
+
+        var message = alerts.Any()
+            ? $"Role-aware operations overview: {string.Join(" | ", alerts)}. Start with the highest pending/error area, then export filtered rows if you need a report."
+            : "Your role has admin access, but I do not see urgent operational alerts in the modules I can inspect.";
+
+        return new AmaroAskResponse(
+            message,
+            options
+                .Where(x => !string.IsNullOrWhiteSpace(x.Label))
+                .GroupBy(x => $"{x.Label}|{x.Url}|{x.Command}", StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.First())
+                .Take(6)
+                .ToArray());
+    }
+
+    private static AmaroAskResponse BuildSupportReply()
+    {
+        return new AmaroAskResponse(
+            $"Contact support anytime: mobile {SupportPhone}, email {SupportEmail}. For booking/payment/refund problems, include your booking reference or transaction reference if you have it.",
+            BuildSupportOptions());
+    }
+
+    private static AmaroQuickOption[] BuildSupportOptions()
+    {
+        return new[]
+        {
+            new AmaroQuickOption("Call Support", $"tel:{SupportPhone.Replace(" ", "")}"),
+            new AmaroQuickOption("Email Support", $"mailto:{SupportEmail}"),
+            new AmaroQuickOption("My Bookings", "/Booking/MyBookings"),
+            new AmaroQuickOption("Transactions", "/Transaction/History")
+        };
+    }
+
     private async Task SaveConversation(int? userId, string message, string reply)
     {
         await _context.Database.ExecuteSqlInterpolatedAsync($@"
@@ -657,26 +1273,50 @@ VALUES
             ?? "User";
     }
 
-    private static string[] BuildMenuOptions(List<AmaroMenuItem> menuItems, int userId)
+    private AmaroQuickOption[] BuildMenuOptions(List<AmaroMenuItem> menuItems, int userId)
     {
         var options = menuItems
-            .Select(x => x.MenuName ?? x.MenuCode)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Where(x => !string.IsNullOrWhiteSpace(x.RoutePath))
+            .Select(x => new AmaroQuickOption(x.MenuName ?? x.MenuCode ?? "Open", x.RoutePath!))
             .Take(5)
             .ToList();
 
         if (!options.Any())
         {
-            options.AddRange(new[] { "My Bookings", "Wallet", "Browse Shows" });
+            options.AddRange(new[]
+            {
+                new AmaroQuickOption("My Bookings", "/Booking/MyBookings"),
+                new AmaroQuickOption("Wallet", "/Wallet/MyWallet"),
+                new AmaroQuickOption("Browse Shows", "/Home/ShowTime")
+            });
         }
 
-        options.AddRange(new[] { "Book a show", "Available seats", "Transactions", "Change theme", "Change cursor" });
+        options.AddRange(new[]
+        {
+            new AmaroQuickOption("Book a Show", "/Home/ShowTime"),
+            new AmaroQuickOption("Available Seats", "", "show-suggestions"),
+            new AmaroQuickOption("Transactions", "/Transaction/History"),
+            new AmaroQuickOption("Contact Support", "", "support-options"),
+            new AmaroQuickOption("Change Theme", "", "theme-options"),
+            new AmaroQuickOption("Change Cursor", "", "cursor-options")
+        });
+
+        if (_rbacService.HasPermission(userId, "ADMIN", "VIEW") ||
+            _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN"))
+        {
+            options.AddRange(new[]
+            {
+                new AmaroQuickOption("Admin Summary", "", "ask:admin summary"),
+                new AmaroQuickOption("Search Admin Records", "", "ask:search admin records"),
+                new AmaroQuickOption("Export This Page", "", "admin-export")
+            });
+        }
 
         return options
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(5)
-            .Select(x => x!)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Label))
+            .GroupBy(x => $"{x.Label}|{x.Url}|{x.Command}", StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.First())
+            .Take(8)
             .ToArray();
     }
 
@@ -692,6 +1332,7 @@ VALUES
         yield return new AmaroQuickOption("Transactions", "/Transaction/History");
         yield return new AmaroQuickOption("Wallet", "/Wallet/MyWallet");
         yield return new AmaroQuickOption("Profile", "/Profile/MyProfile");
+        yield return new AmaroQuickOption("Contact Support", "", "support-options");
         yield return new AmaroQuickOption("Theme", "", "theme-options");
         yield return new AmaroQuickOption("Cursor", "", "cursor-options");
 
@@ -761,6 +1402,45 @@ VALUES
         return normalized.Contains("cursor") ||
             normalized.Contains("mouse style") ||
             normalized.Contains("pointer style");
+    }
+
+    private static bool IsSupportIntent(string normalized)
+    {
+        return normalized.Contains("support") ||
+            normalized.Contains("contact") ||
+            normalized.Contains("helpdesk") ||
+            normalized.Contains("customer care") ||
+            normalized.Contains("call") ||
+            normalized.Contains("mobile") ||
+            normalized.Contains("phone") ||
+            normalized.Contains("email");
+    }
+
+    private static bool IsProactiveIntent(string normalized)
+    {
+        return normalized.Contains("what should i do") ||
+            normalized.Contains("suggest") ||
+            normalized.Contains("recommend") ||
+            normalized.Contains("next step") ||
+            normalized.Contains("guide") ||
+            normalized.Contains("this page") ||
+            normalized.Contains("smart") ||
+            normalized.Contains("proactive") ||
+            normalized.Contains("alert") ||
+            normalized.Contains("risk") ||
+            normalized.Contains("priority");
+    }
+
+    private static bool IsAdminOverviewIntent(string normalized)
+    {
+        return normalized.Contains("admin overview") ||
+            normalized.Contains("admin summary") ||
+            normalized.Contains("dashboard summary") ||
+            normalized.Contains("operation summary") ||
+            normalized.Contains("operations summary") ||
+            normalized.Contains("report") ||
+            normalized.Contains("alerts") ||
+            normalized.Contains("priority");
     }
 
     private static bool IsOpenPageIntent(string normalized)
@@ -855,6 +1535,33 @@ VALUES
     private static string NullText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? "NA" : value;
+    }
+
+    private string GetCurrentPath()
+    {
+        var referer = HttpContext.Request.Headers.Referer.ToString();
+        if (Uri.TryCreate(referer, UriKind.Absolute, out var uri))
+        {
+            return uri.AbsolutePath;
+        }
+
+        return HttpContext.Request.Path.Value ?? string.Empty;
+    }
+
+    private string GetCurrentPageName()
+    {
+        var path = GetCurrentPath().Trim('/');
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return "the home page";
+        }
+
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var last = parts.LastOrDefault() ?? path;
+
+        return last
+            .Replace("-", " ")
+            .Replace("_", " ");
     }
 
     private record AmaroMenuItem(string? MenuCode, string? MenuName, string? RoutePath);

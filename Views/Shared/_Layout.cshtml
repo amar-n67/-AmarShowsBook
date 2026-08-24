@@ -1864,6 +1864,7 @@ z-index:9999;">
                     <a class="film-nav-btn" href="/Booking/MyBookings" title="My Bookings" aria-label="My Bookings"><span class="film-nav-icon">🎟</span><span class="film-nav-label">My Bookings</span></a>
                     <a class="film-nav-btn" href="/Transaction/History" title="My Transactions" aria-label="My Transactions"><span class="film-nav-icon">💳</span><span class="film-nav-label">My Transactions</span></a>
                     <a class="film-nav-btn" href="/Wallet/MyWallet" title="Wallet" aria-label="Wallet"><span class="film-nav-icon">💰</span><span class="film-nav-label">Wallet</span></a>
+                    <a class="film-nav-btn" href="mailto:arcanaamar67@gmail.com" title="Contact Support: +91 8920993434" aria-label="Contact Support"><span class="film-nav-icon">☎</span><span class="film-nav-label">Support</span></a>
                     @if (canOpenAdmin)
                     {
                         <a class="film-nav-btn" href="/Admin/Dashboard" title="Admin Dashboard" aria-label="Admin Dashboard"><span class="film-nav-icon">📊</span><span class="film-nav-label">Admin Dashboard</span></a>
@@ -1997,11 +1998,12 @@ z-index:9999;">
                 <button type="button" data-amaro-prompt="My upcoming bookings">Upcoming</button>
                 <button type="button" data-amaro-prompt="Change theme">Theme</button>
                 <button type="button" data-amaro-prompt="Change cursor">Cursor</button>
+                <button type="button" data-amaro-prompt="Contact support">Support</button>
             </div>
             <div class="amaro-options" data-amaro-options></div>
             <div class="amaro-thread" data-amaro-thread>
                 <div class="amaro-message amaro-message-bot">
-                    Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows, show times, or how to book.
+                    Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows, show times, support, or how to book.
                 </div>
             </div>
             <form class="amaro-form" data-amaro-form>
@@ -2015,7 +2017,7 @@ z-index:9999;">
 <!-- ================= FOOTER ================= -->
 <footer class="border-top footer text-muted">
 <div class="container">
-    &copy; 2026 - showTime
+    &copy; 2026 - showTime · Support: <a href="tel:+918920993434">+91 8920993434</a> · <a href="mailto:arcanaamar67@gmail.com">arcanaamar67@gmail.com</a>
 </div>
 </footer>
 
@@ -3029,14 +3031,40 @@ document.addEventListener("DOMContentLoaded", function () {
             return true;
         }
 
+        if (value === "support-options") {
+            renderOptions([
+                { label: "Call Support", url: "tel:+918920993434" },
+                { label: "Email Support", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "My Bookings", url: "/Booking/MyBookings" },
+                { label: "Transactions", url: "/Transaction/History" }
+            ]);
+            addMessage("Support is available at +91 8920993434 and arcanaamar67@gmail.com. For booking or payment issues, include your booking or transaction reference.", "bot");
+            return true;
+        }
+
         if (value.startsWith("ask:")) {
             sendMessage(value.slice(4));
             return true;
         }
 
+        if (value === "admin-export") {
+            const exportButton = document.querySelector("[data-admin-export]");
+            if (exportButton) {
+                exportButton.click();
+                addMessage((label || "Export") + " started for the visible rows on this page.", "bot");
+            } else {
+                addMessage("Open an admin table page first, then I can export its visible rows.", "bot");
+            }
+            return true;
+        }
+
         if (value.startsWith("theme:")) {
             const theme = value.split(":")[1] || "cinema";
-            window.setAppTheme?.(theme);
+            if (window.setAppTheme) {
+                window.setAppTheme(theme);
+            } else if (window.setAdminTheme) {
+                window.setAdminTheme(theme);
+            }
             addMessage((label || "Theme") + " applied.", "bot");
             return true;
         }
@@ -3057,12 +3085,40 @@ document.addEventListener("DOMContentLoaded", function () {
         return false;
     }
 
+    function normalizeOption(item) {
+        const option = typeof item === "string"
+            ? { label: item, url: "", command: "" }
+            : { label: item.label || item.url || "", url: item.url || "", command: item.command || "" };
+        const label = String(option.label || "").trim();
+        const key = label.toLowerCase();
+
+        if (!option.command && !option.url) {
+            if (key === "login") option.url = "/Auth/Login";
+            if (key === "signup") option.url = "/Auth/Signup";
+            if (key.includes("today") || key.includes("browse") || key === "book a show" || key === "book shows") option.url = "/Home/ShowTime";
+            if (key === "movies" || key === "movie") option.command = "filter-type:Movie";
+            if (key === "standup") option.command = "filter-type:Standup";
+            if (key.includes("live")) option.command = "filter-type:Live";
+            if (key.includes("seat")) option.command = "show-suggestions";
+            if (key.includes("theme")) option.command = "theme-options";
+            if (key.includes("cursor")) option.command = "cursor-options";
+            if (key.includes("support") || key.includes("contact")) option.command = "support-options";
+            if (key.includes("export")) option.command = "admin-export";
+            if (key.includes("admin summary")) option.command = "ask:admin summary";
+            if (key.includes("search admin")) option.command = "ask:search admin records";
+            if (key.includes("booking") && key.includes("my")) option.url = "/Booking/MyBookings";
+            if (key === "wallet") option.url = "/Wallet/MyWallet";
+            if (key.includes("transaction")) option.url = "/Transaction/History";
+            if (key === "profile") option.url = "/Profile/MyProfile";
+        }
+
+        return { label, url: option.url || "", command: option.command || "" };
+    }
+
     function renderOptions(items) {
         options.innerHTML = "";
         items.slice(0, 5).forEach(item => {
-            const option = typeof item === "string"
-                ? { label: item, url: "" }
-                : { label: item.label || item.url || "", url: item.url || "", command: item.command || "" };
+            const option = normalizeOption(item);
 
             if (!option.label) return;
 
@@ -3074,7 +3130,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                if (option.url && option.url.startsWith("/")) {
+                if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:"))) {
                     window.location.href = option.url;
                     return;
                 }

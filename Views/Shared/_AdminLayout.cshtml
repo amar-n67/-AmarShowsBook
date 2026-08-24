@@ -450,6 +450,51 @@
 
 </div>
 
+<div class="admin-amaro-widget no-print" data-amaro-widget>
+    <button class="admin-amaro-launcher"
+            type="button"
+            data-amaro-toggle
+            aria-expanded="false"
+            aria-controls="adminAmaroPanel">
+        <span>A</span>
+        <strong>Amaro</strong>
+    </button>
+    <section id="adminAmaroPanel"
+             class="admin-amaro-panel"
+             aria-label="Amaro role assistant"
+             hidden>
+        <div class="admin-amaro-header">
+            <div>
+                <span>Amaro</span>
+                <strong data-amaro-greeting>Ask me for admin summaries, search, exports, and role-allowed actions.</strong>
+            </div>
+            <button type="button" data-amaro-close aria-label="Close Amaro">×</button>
+        </div>
+        <div class="admin-amaro-deck" data-amaro-command-deck>
+            <button type="button" data-amaro-prompt="admin summary">Summary</button>
+            <button type="button" data-amaro-prompt="search admin records">Search</button>
+            <button type="button" data-amaro-prompt="export this page">Export</button>
+            <button type="button" data-amaro-prompt="what can I do">Access</button>
+            <button type="button" data-amaro-prompt="contact support">Support</button>
+        </div>
+        <div class="admin-amaro-options" data-amaro-options></div>
+        <div class="admin-amaro-thread" data-amaro-thread>
+            <div class="admin-amaro-message admin-amaro-message-bot">
+                I follow your RBAC role. Ask for refunds, users, bookings, security, wallet, notifications, coupons, support, versions, shows, or developer tools.
+            </div>
+        </div>
+        <form class="admin-amaro-form" data-amaro-form>
+            @Html.AntiForgeryToken()
+            <input data-amaro-input
+                   type="text"
+                   maxlength="300"
+                   placeholder="Ask Amaro to summarize, search, open, export, or guide actions"
+                   autocomplete="off" />
+            <button type="submit">Send</button>
+        </form>
+    </section>
+</div>
+
 <script src="~/js/admin/admin-dashboard.js"></script>
 <script>
 (function () {
@@ -479,6 +524,239 @@
     document.addEventListener("DOMContentLoaded", function () {
         const saved = localStorage.getItem("amarShowsTheme") || "cinema";
         window.setAdminTheme(saved);
+    });
+})();
+</script>
+<script>
+(function () {
+    const widget = document.querySelector("[data-amaro-widget]");
+    if (!widget) return;
+
+    const toggle = widget.querySelector("[data-amaro-toggle]");
+    const close = widget.querySelector("[data-amaro-close]");
+    const panel = widget.querySelector("#adminAmaroPanel");
+    const form = widget.querySelector("[data-amaro-form]");
+    const input = widget.querySelector("[data-amaro-input]");
+    const thread = widget.querySelector("[data-amaro-thread]");
+    const options = widget.querySelector("[data-amaro-options]");
+    const greeting = widget.querySelector("[data-amaro-greeting]");
+    const commandDeck = widget.querySelector("[data-amaro-command-deck]");
+    const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
+
+    function addMessage(text, kind) {
+        const bubble = document.createElement("div");
+        bubble.className = "admin-amaro-message admin-amaro-message-" + kind;
+        bubble.textContent = text;
+        thread.appendChild(bubble);
+        thread.scrollTop = thread.scrollHeight;
+    }
+
+    function runCommand(command, label) {
+        const value = String(command || "");
+
+        if (value === "theme-options") {
+            renderOptions([
+                { label: "Cinema Theme", command: "theme:cinema" },
+                { label: "Dark Theme", command: "theme:dark" },
+                { label: "White Theme", command: "theme:white" },
+                { label: "System Theme", command: "theme:system" }
+            ]);
+            addMessage("Choose a theme option.", "bot");
+            return true;
+        }
+
+        if (value === "cursor-options") {
+            renderOptions([
+                { label: "Native Cursor", command: "cursor:native" },
+                { label: "Liquid Cursor", command: "cursor:liquid" },
+                { label: "Precision Cursor", command: "cursor:precision" },
+                { label: "Spotlight Cursor", command: "cursor:spotlight" }
+            ]);
+            addMessage("Choose a cursor style.", "bot");
+            return true;
+        }
+
+        if (value === "show-suggestions") {
+            renderOptions([
+                { label: "Upcoming Shows", url: "/Home/ShowTime" },
+                { label: "Movies", command: "filter-type:Movie" },
+                { label: "Standup", command: "filter-type:Standup" },
+                { label: "Live Streams", command: "filter-type:Live" },
+                { label: "Today Shows", command: "ask:today shows" }
+            ]);
+            addMessage("Choose how you want to explore shows.", "bot");
+            return true;
+        }
+
+        if (value === "support-options") {
+            renderOptions([
+                { label: "Call Support", url: "tel:+918920993434" },
+                { label: "Email Support", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "Admin Dashboard", url: "/Admin/Dashboard" },
+                { label: "My Bookings", url: "/Booking/MyBookings" }
+            ]);
+            addMessage("Support is available at +91 8920993434 and arcanaamar67@gmail.com. Share the booking, transaction, or refund reference when possible.", "bot");
+            return true;
+        }
+
+        if (value === "admin-export") {
+            const exportButton = document.querySelector("[data-admin-export]");
+            if (exportButton) {
+                exportButton.click();
+                addMessage((label || "Export") + " started for the visible rows on this page.", "bot");
+            } else {
+                addMessage("Open an admin table page first, then I can export its visible rows.", "bot");
+            }
+            return true;
+        }
+
+        if (value.startsWith("ask:")) {
+            sendMessage(value.slice(4));
+            return true;
+        }
+
+        if (value.startsWith("theme:")) {
+            const theme = value.split(":")[1] || "cinema";
+            if (window.setAdminTheme) {
+                window.setAdminTheme(theme);
+            } else if (window.setAppTheme) {
+                window.setAppTheme(theme);
+            }
+            addMessage((label || "Theme") + " applied.", "bot");
+            return true;
+        }
+
+        if (value.startsWith("cursor:")) {
+            const cursor = value.split(":")[1] || "native";
+            window.setAppCursorStyle?.(cursor);
+            addMessage((label || "Cursor") + " applied across the app.", "bot");
+            return true;
+        }
+
+        if (value.startsWith("filter-type:")) {
+            const showType = value.split(":")[1] || "Movie";
+            window.location.href = "/Home/ShowTime?type=" + encodeURIComponent(showType);
+            return true;
+        }
+
+        return false;
+    }
+
+    function normalizeOption(item) {
+        const option = typeof item === "string"
+            ? { label: item, url: "", command: "" }
+            : { label: item.label || item.url || "", url: item.url || "", command: item.command || "" };
+        const label = String(option.label || "").trim();
+        const key = label.toLowerCase();
+
+        if (!option.command && !option.url) {
+            if (key === "login") option.url = "/Auth/Login";
+            if (key === "signup") option.url = "/Auth/Signup";
+            if (key.includes("today") || key.includes("browse") || key === "book a show" || key === "book shows") option.url = "/Home/ShowTime";
+            if (key === "movies" || key === "movie") option.command = "filter-type:Movie";
+            if (key === "standup") option.command = "filter-type:Standup";
+            if (key.includes("live")) option.command = "filter-type:Live";
+            if (key.includes("seat")) option.command = "show-suggestions";
+            if (key.includes("theme")) option.command = "theme-options";
+            if (key.includes("cursor")) option.command = "cursor-options";
+            if (key.includes("support") || key.includes("contact")) option.command = "support-options";
+            if (key.includes("export")) option.command = "admin-export";
+            if (key.includes("admin summary")) option.command = "ask:admin summary";
+            if (key.includes("search admin")) option.command = "ask:search admin records";
+            if (key.includes("booking") && key.includes("my")) option.url = "/Booking/MyBookings";
+            if (key === "wallet") option.url = "/Wallet/MyWallet";
+            if (key.includes("transaction")) option.url = "/Transaction/History";
+            if (key === "profile") option.url = "/Profile/MyProfile";
+        }
+
+        return { label, url: option.url || "", command: option.command || "" };
+    }
+
+    function renderOptions(items) {
+        options.innerHTML = "";
+        items.slice(0, 6).forEach(item => {
+            const option = normalizeOption(item);
+
+            if (!option.label) return;
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = option.label;
+            button.addEventListener("click", () => {
+                if (option.command && runCommand(option.command, option.label)) {
+                    return;
+                }
+
+                if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:"))) {
+                    window.location.href = option.url;
+                    return;
+                }
+
+                sendMessage(option.label);
+            });
+            options.appendChild(button);
+        });
+    }
+
+    function sendMessage(text) {
+        const clean = (text || "").trim();
+        if (!clean) return;
+
+        addMessage(clean, "user");
+        input.value = "";
+
+        fetch("/Amaro/Ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "RequestVerificationToken": token
+            },
+            body: JSON.stringify({ message: clean })
+        })
+        .then(response => response.json())
+        .then(data => {
+            addMessage(data.message || "I could not find details for that yet.", "bot");
+            renderOptions(data.options || []);
+        })
+        .catch(() => addMessage("I could not reach Amaro right now. Please try again.", "bot"));
+    }
+
+    function loadMenu() {
+        fetch("/Amaro/Menu")
+            .then(response => response.json())
+            .then(data => {
+                if (data.greeting && greeting) {
+                    greeting.textContent = data.greeting;
+                }
+                renderOptions(data.options || []);
+            })
+            .catch(() => renderOptions(["Admin Summary", "Search Records", "Export This Page"]));
+    }
+
+    commandDeck?.querySelectorAll("[data-amaro-prompt]").forEach(button => {
+        button.addEventListener("click", function () {
+            sendMessage(button.dataset.amaroPrompt || button.textContent);
+        });
+    });
+
+    toggle?.addEventListener("click", function () {
+        const isOpen = panel.hidden;
+        panel.hidden = !isOpen;
+        toggle.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) {
+            loadMenu();
+            setTimeout(() => input.focus(), 60);
+        }
+    });
+
+    close?.addEventListener("click", function () {
+        panel.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+    });
+
+    form?.addEventListener("submit", function (event) {
+        event.preventDefault();
+        sendMessage(input.value);
     });
 })();
 </script>
