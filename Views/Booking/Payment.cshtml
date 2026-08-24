@@ -345,12 +345,13 @@ justify-content:space-between;
 gap:14px;
 margin-bottom:22px;
 padding:14px 16px;
-border:1px solid rgba(255,45,85,.16);
+border:1px solid rgba(22,163,74,.18);
 border-radius:18px;
 background:
-radial-gradient(circle at 12% 18%,rgba(255,45,85,.12),transparent 34%),
-linear-gradient(135deg,#fff,#fff7fb);
-box-shadow:0 10px 26px rgba(255,45,85,.08);
+radial-gradient(circle at 12% 18%,rgba(22,163,74,.13),transparent 34%),
+linear-gradient(135deg,#fff,#f0fdf4);
+box-shadow:0 10px 26px rgba(22,163,74,.08);
+transition:.25s ease;
 }
 
 .payment-deadline span{
@@ -374,23 +375,50 @@ color:var(--text);
 min-width:104px;
 padding:9px 12px;
 border-radius:14px;
-background:linear-gradient(135deg,var(--primary),var(--primary2));
+background:linear-gradient(135deg,#16a34a,#0f766e);
 color:#fff;
 font-size:1.35rem;
 font-weight:950;
 text-align:center;
 font-variant-numeric:tabular-nums;
-box-shadow:0 12px 24px rgba(255,45,85,.22);
+box-shadow:0 12px 24px rgba(22,163,74,.22);
+transition:.25s ease;
 }
 
-.payment-deadline.warning .deadline-clock{
+.payment-deadline.low-time{
+border-color:rgba(245,158,11,.28);
+background:
+radial-gradient(circle at 12% 18%,rgba(245,158,11,.16),transparent 34%),
+linear-gradient(135deg,#fff,#fffbeb);
+box-shadow:0 10px 26px rgba(245,158,11,.12);
+}
+
+.payment-deadline.low-time .deadline-clock{
+background:linear-gradient(135deg,#f59e0b,#d97706);
+box-shadow:0 12px 24px rgba(245,158,11,.24);
+}
+
+.payment-deadline.danger-time{
+border-color:rgba(220,38,38,.32);
+background:
+radial-gradient(circle at 12% 18%,rgba(220,38,38,.18),transparent 34%),
+linear-gradient(135deg,#fff,#fef2f2);
+box-shadow:0 10px 26px rgba(220,38,38,.14);
+}
+
+.payment-deadline.danger-time .deadline-clock{
+background:linear-gradient(135deg,#ef4444,#b91c1c);
+box-shadow:0 12px 24px rgba(220,38,38,.28);
+}
+
+.payment-deadline.danger-time .deadline-clock{
 animation:deadlinePulse .8s ease-in-out infinite;
 }
 
 @@keyframes deadlinePulse{
 50%{
 transform:scale(1.04);
-box-shadow:0 14px 30px rgba(255,45,85,.36);
+box-shadow:0 14px 30px rgba(220,38,38,.42);
 }
 }
 
@@ -1343,6 +1371,17 @@ function formatPaymentSeconds(totalSeconds)
     return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
 }
 
+function updatePaymentTimerState(deadline,totalSeconds)
+{
+    if(!deadline)
+    {
+        return;
+    }
+
+    deadline.classList.toggle("low-time",totalSeconds<=60 && totalSeconds>30);
+    deadline.classList.toggle("danger-time",totalSeconds<=30);
+}
+
 function startPaymentTimer()
 {
     const clock=document.getElementById("paymentCountdown");
@@ -1353,6 +1392,7 @@ function startPaymentTimer()
     }
 
     clock.textContent=formatPaymentSeconds(paymentSecondsRemaining);
+    updatePaymentTimerState(deadline,paymentSecondsRemaining);
 
     paymentTimerId=setInterval(()=>{
         if(paymentCompleted)
@@ -1363,7 +1403,7 @@ function startPaymentTimer()
 
         paymentSecondsRemaining-=1;
         clock.textContent=formatPaymentSeconds(Math.max(0,paymentSecondsRemaining));
-        deadline?.classList.toggle("warning",paymentSecondsRemaining<=60);
+        updatePaymentTimerState(deadline,paymentSecondsRemaining);
 
         if(paymentSecondsRemaining<=0)
         {
