@@ -29,6 +29,8 @@ namespace AmarShowsBook.Data
 
 public DbSet<BookingTransaction> BookingTransactions { get; set; }
 
+public DbSet<PaymentMethodDetail> PaymentMethodDetails { get; set; }
+
 public DbSet<SeatLock> SeatLocks { get; set; }
 
 public DbSet<DummyCard> DummyCards { get; set; }
@@ -156,6 +158,9 @@ ModelBuilder modelBuilder)
 
     modelBuilder.Entity<BookingTransaction>()
         .ToTable("booking_transactions");
+
+    modelBuilder.Entity<PaymentMethodDetail>()
+        .ToTable("payment_method_details");
 
     modelBuilder.Entity<DummyCard>()
         .ToTable("dummy_cards");

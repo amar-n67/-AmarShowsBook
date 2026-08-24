@@ -655,6 +655,8 @@ Details(long id)
             if(booking==null)
                 return NotFound();
 
+            await EnsurePaymentMethodDetailsCompatibility();
+
             var walletAmountUsed =
             GetWalletUsage(booking.Id);
 
@@ -669,6 +671,14 @@ Details(long id)
 
             ViewBag.PayableAmount =
             Math.Max(0,booking.TotalAmount-walletAmountUsed-couponDiscount);
+
+            ViewBag.SavedPaymentDetails =
+            await _context.PaymentMethodDetails
+            .AsNoTracking()
+            .Where(x=>x.UserId==booking.UserId)
+            .GroupBy(x=>x.PaymentMethod)
+            .Select(x=>x.OrderByDescending(detail=>detail.CreatedAt).First())
+            .ToListAsync();
 
             return View(booking);
         }
@@ -2418,6 +2428,8 @@ CheckPaymentStatus(long bookingId)
         [FromBody]
         PaymentRequest request)
         {
+            await EnsurePaymentMethodDetailsCompatibility();
+
             var booking=
 
             await _context
@@ -2474,6 +2486,11 @@ CheckPaymentStatus(long bookingId)
                 _context
                 .BookingTransactions
                 .Add(transaction);
+
+                await SavePaymentMethodDetails(
+                request,
+                booking,
+                confirmedBooking.Id);
             }
             catch(Exception ex)
             {
@@ -2504,6 +2521,141 @@ CheckPaymentStatus(long bookingId)
                 success=true
             });
         }
+
+private async Task EnsurePaymentMethodDetailsCompatibility()
+{
+    await _context.Database.ExecuteSqlRawAsync(@"
+CREATE TABLE IF NOT EXISTS public.payment_method_details (
+    ""Id"" bigserial PRIMARY KEY,
+    ""BookingId"" bigint NOT NULL DEFAULT 0,
+    ""BookingDraftId"" bigint NOT NULL DEFAULT 0,
+    ""UserId"" bigint NOT NULL DEFAULT 0,
+    ""PaymentMethod"" varchar(50) NOT NULL DEFAULT '',
+    ""UpiName"" varchar(80),
+    ""UpiId"" varchar(120),
+    ""UpiHandle"" varchar(40),
+    ""CardLast4"" varchar(4),
+    ""CardExpiry"" varchar(5),
+    ""CardNetwork"" varchar(40),
+    ""NetBank"" varchar(80),
+    ""NetBankUserIdMasked"" varchar(80),
+    ""OtpVerified"" boolean NOT NULL DEFAULT false,
+    ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_payment_method_details_user_method
+ON public.payment_method_details (""UserId"", ""PaymentMethod"", ""CreatedAt"" DESC);
+");
+}
+
+private async Task SavePaymentMethodDetails(
+PaymentRequest request,
+BookingDraft draft,
+long confirmedBookingId)
+{
+    var method =
+    (request.PaymentMethod ?? "")
+    .Trim()
+    .ToUpperInvariant();
+
+    if(method=="QR")
+    {
+        return;
+    }
+
+    static string? CleanText(string? value,int maxLength)
+    {
+        if(string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var cleaned =
+        new string(value.Trim()
+        .Where(ch=>char.IsLetterOrDigit(ch) || ch==' ' || ch=='.' || ch=='_' || ch=='-' || ch=='@' || ch=='/')
+        .ToArray());
+
+        return cleaned.Length>maxLength
+        ? cleaned[..maxLength]
+        : cleaned;
+    }
+
+    static string? Last4(string? value)
+    {
+        var digits =
+        new string((value ?? "").Where(char.IsDigit).ToArray());
+
+        return digits.Length>=4 ? digits[^4..] : null;
+    }
+
+    static string? DetectCardNetwork(string? value)
+    {
+        var digits =
+        new string((value ?? "").Where(char.IsDigit).ToArray());
+
+        if(digits.StartsWith("4"))
+        {
+            return "VISA";
+        }
+
+        if(digits.StartsWith("5"))
+        {
+            return "MASTERCARD";
+        }
+
+        if(digits.StartsWith("3"))
+        {
+            return "AMEX";
+        }
+
+        if(digits.StartsWith("6"))
+        {
+            return "RUPAY/DISCOVER";
+        }
+
+        return string.IsNullOrWhiteSpace(digits) ? null : "CARD";
+    }
+
+    static string? MaskUserId(string? value)
+    {
+        var clean =
+        CleanText(value,80);
+
+        if(string.IsNullOrWhiteSpace(clean))
+        {
+            return null;
+        }
+
+        return clean.Length<=4
+        ? new string('*',clean.Length)
+        : $"{clean[..2]}***{clean[^2..]}";
+    }
+
+    var upiId =
+    method=="UPI"
+    ? CleanText(request.UpiId?.ToLowerInvariant(),120)
+    : null;
+
+    var detail =
+    new PaymentMethodDetail
+    {
+        BookingId=confirmedBookingId,
+        BookingDraftId=draft.Id,
+        UserId=draft.UserId,
+        PaymentMethod=method,
+        UpiName=method=="UPI" ? CleanText(request.UpiName,80) : null,
+        UpiId=upiId,
+        UpiHandle=upiId?.Contains('@')==true ? upiId.Split('@').LastOrDefault() : null,
+        CardLast4=method=="CARD" ? Last4(request.CardNumber) : null,
+        CardExpiry=method=="CARD" ? CleanText(request.CardExpiry,5) : null,
+        CardNetwork=method=="CARD" ? DetectCardNetwork(request.CardNumber) : null,
+        NetBank=method=="NETBANKING" ? CleanText(request.NetBank,80) : null,
+        NetBankUserIdMasked=method=="NETBANKING" ? MaskUserId(request.NetBankUserId) : null,
+        OtpVerified=request.OtpVerified,
+        CreatedAt=DateTime.UtcNow
+    };
+
+    _context.PaymentMethodDetails.Add(detail);
+}
 // ==========================================
 // CONFIRMATION
 // ==========================================

@@ -249,14 +249,16 @@ allowfullscreen>
 
 <div class="legend">
 
+<div class="legend-group">
+<span class="legend-title">Seat Status</span>
 <div class="legend-item">
 <div class="legend-box available"></div>
-Available
+Available seat
 </div>
 
 <div class="legend-item">
 <div class="legend-box selected"></div>
-Selected
+Selected seat
 </div>
 
 <div class="legend-item">
@@ -268,20 +270,24 @@ Locked
 <div class="legend-box booked"></div>
 Booked
 </div>
+</div>
 
+<div class="legend-group">
+<span class="legend-title">Seat Category / Price</span>
 <div class="legend-item">
 <div class="legend-box silver"></div>
-Silver
+Silver available
 </div>
 
 <div class="legend-item">
 <div class="legend-box gold"></div>
-Gold
+Gold available
 </div>
 
 <div class="legend-item">
 <div class="legend-box premium"></div>
-Premium
+Premium available
+</div>
 </div>
 
 </div>
@@ -347,25 +353,23 @@ Premium
 
     <div class="cinema-side">
 
-        <div class="cinema-animation">
+        <div class="booking-action-card">
 
-            <div style="font-size:40px">
-                🍿
+            <div class="booking-action-icon" aria-hidden="true">
+                🎟
             </div>
 
-            <div class="reel-track">
-
-                <div class="reel-dot">
-
-                    ●
-
-                </div>
-
+            <div class="booking-action-copy">
+                <span>Booking Flow</span>
+                <strong>Choose seats, then continue</strong>
+                <small>Your selected seats and total update on the receipt.</small>
             </div>
 
-            <p>
-                Enjoy the show!
-            </p>
+            <div class="booking-flow-steps" aria-hidden="true">
+                <span class="active">1</span>
+                <span>2</span>
+                <span>3</span>
+            </div>
 
         </div>
 
@@ -559,6 +563,19 @@ box-shadow:
 position:relative;
 
 overflow:hidden;
+animation:screenGlow 3.8s ease-in-out infinite;
+}
+
+.screen-line::before{
+content:"";
+position:absolute;
+inset:-28px 8% auto;
+height:90px;
+border-radius:50%;
+background:radial-gradient(ellipse,rgba(255,45,85,.32),transparent 68%);
+filter:blur(16px);
+animation:screenBeam 4.2s ease-in-out infinite;
+pointer-events:none;
 }
 
 .screen-line span{
@@ -632,6 +649,7 @@ background:linear-gradient(90deg,rgba(255,45,85,.18),rgba(255,255,255,.04));
 color:#f8fafc;
 font-size:13px;
 font-weight:800;
+animation:fadeSlideDown .45s ease both;
 }
 
 .seat-orientation span,
@@ -663,7 +681,18 @@ min-width:760px;
 padding:6px 10px;
 border-radius:14px;
 transition:background .2s ease, box-shadow .2s ease;
+animation:seatRowIn .52s ease both;
 }
+
+.seat-row:nth-of-type(2){animation-delay:.04s;}
+.seat-row:nth-of-type(3){animation-delay:.08s;}
+.seat-row:nth-of-type(4){animation-delay:.12s;}
+.seat-row:nth-of-type(5){animation-delay:.16s;}
+.seat-row:nth-of-type(6){animation-delay:.2s;}
+.seat-row:nth-of-type(7){animation-delay:.24s;}
+.seat-row:nth-of-type(8){animation-delay:.28s;}
+.seat-row:nth-of-type(9){animation-delay:.32s;}
+.seat-row:nth-of-type(10){animation-delay:.36s;}
 
 .seat-row.premium-row{
 background:linear-gradient(90deg,rgba(255,217,92,.12),rgba(255,217,92,.04));
@@ -734,6 +763,7 @@ transform-style:preserve-3d;
 font-weight:700;
 
 box-shadow:none;
+animation:chairSettle .5s ease both;
 
 }
 
@@ -857,6 +887,10 @@ scale(1.07);
 filter:brightness(1.08) saturate(1.08);
 }
 
+.seat-btn:active{
+transform:translateY(-2px) scale(.96);
+}
+
 
 
 /* AVAILABLE */
@@ -934,6 +968,7 @@ filter:drop-shadow(0 0 12px rgba(255,215,0,.42));
 --seat-side:linear-gradient(180deg,#33ff77,#078b31);
 color:black!important;
 filter:drop-shadow(0 0 14px rgba(51,255,119,.7)) saturate(1.08);
+animation:selectedChairPulse 1.2s ease-in-out infinite;
 }
 
 
@@ -1039,19 +1074,38 @@ padding:6px 10px;
 
 .legend{
 
-display:flex;
-
+display:grid;
+grid-template-columns:repeat(2,minmax(0,auto));
 justify-content:center;
-
-gap:30px;
+gap:16px;
 
 margin:40px 0;
 
-padding:20px;
+padding:16px;
 
-border-radius:50px;
+border-radius:18px;
 
 background:#0d1118;
+}
+
+.legend-group{
+display:flex;
+flex-wrap:wrap;
+align-items:center;
+gap:12px;
+padding:10px 14px;
+border:1px solid rgba(255,255,255,.1);
+border-radius:14px;
+background:rgba(255,255,255,.04);
+}
+
+.legend-title{
+width:100%;
+color:#ffb3c3;
+font-size:11px;
+font-weight:900;
+letter-spacing:.1em;
+text-transform:uppercase;
 }
 
 .legend-item{
@@ -1060,7 +1114,9 @@ display:flex;
 
 align-items:center;
 
-gap:10px;
+gap:8px;
+font-size:13px;
+font-weight:800;
 }
 
 .legend-box{
@@ -1076,7 +1132,13 @@ inset 0 2px 4px rgba(255,255,255,.28),
 }
 
 .legend-box.available{
-background:linear-gradient(180deg,#ffffff,#d5d5d5);
+background:
+linear-gradient(180deg,#f8fafc,#cbd5e1);
+border:2px solid #38bdf8;
+box-shadow:
+0 0 0 3px rgba(56,189,248,.14),
+inset 0 2px 4px rgba(255,255,255,.28),
+0 6px 12px rgba(0,0,0,.32);
 }
 
 .legend-box.selected{
@@ -1117,92 +1179,96 @@ width:280px;
 }
 
 
-/* animation card */
+/* action card */
 
-.cinema-animation{
-
-background:
-
-linear-gradient(
-145deg,
-#0f1016,
-#1b1d25
-);
-
+.booking-action-card{
+min-height:220px;
+display:grid;
+align-content:center;
+gap:16px;
+padding:22px;
+border:1px solid rgba(255,255,255,.12);
 border-radius:20px;
+background:
+radial-gradient(circle at 20% 14%,rgba(255,45,85,.2),transparent 36%),
+linear-gradient(145deg,#0f1016,#1b1d25);
+box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
 
-padding:25px;
-
-height:220px;
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:center;
-
-align-items:center;
-
-overflow:hidden;
-
-position:relative;
-
+.booking-action-icon{
+display:grid;
+place-items:center;
+width:54px;
+height:54px;
+border-radius:16px;
+background:linear-gradient(145deg,#ff2d55,#7d4dff);
+font-size:28px;
 box-shadow:
-0 10px 30px rgba(0,0,0,.4);
+inset 0 1px 0 rgba(255,255,255,.28),
+0 14px 28px rgba(255,45,85,.2);
 }
 
-.cinema-animation p{
-
-margin-top:20px;
-
-font-size:18px;
-
-font-weight:700;
-
-color:#ff2d55;
+.booking-action-copy{
+display:grid;
+gap:5px;
 }
 
-
-/* cinema motion strip */
-
-.reel-track{
-
-width:100%;
-
-height:40px;
-
-position:relative;
-
-overflow:hidden;
-
-margin-top:15px;
+.booking-action-copy span{
+color:#ffb3c3;
+font-size:11px;
+font-weight:900;
+letter-spacing:.12em;
+text-transform:uppercase;
 }
 
-
-.reel-dot{
-
-position:absolute;
-
-font-size:30px;
-line-height:1;
-color:#ff2d55;
-text-shadow:
-0 0 14px rgba(255,45,85,.75),
-28px 0 0 #facc15,
-56px 0 0 #38bdf8;
-
-animation:
-runReel 5s linear infinite;
+.booking-action-copy strong{
+color:#fff;
+font-size:20px;
+font-weight:900;
+line-height:1.16;
 }
 
-@@keyframes runReel{
-
-0%{
-left:-50px;
+.booking-action-copy small{
+color:#cbd5e1;
+font-size:12px;
+font-weight:750;
+line-height:1.35;
 }
 
-100%{
-left:100%;
+.booking-flow-steps{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:8px;
+}
+
+.booking-flow-steps span{
+display:grid;
+place-items:center;
+height:30px;
+border:1px solid rgba(255,255,255,.14);
+border-radius:999px;
+background:rgba(255,255,255,.05);
+color:#cbd5e1;
+font-size:12px;
+font-weight:900;
+}
+
+.booking-flow-steps span.active{
+background:#ff2d55;
+border-color:#ff2d55;
+color:#fff;
+box-shadow:0 0 18px rgba(255,45,85,.34);
+}
+
+.booking-page.page-leaving{
+animation:bookingPageLeave .26s ease both;
+}
+
+@@keyframes bookingPageLeave{
+to{
+opacity:.42;
+transform:translateY(8px);
+filter:blur(1px);
 }
 }
 
@@ -1221,6 +1287,10 @@ box-shadow:
 
 @@media(max-width:768px){
 
+.legend{
+grid-template-columns:1fr;
+}
+
 .booking-summary{
 
 flex-direction:column;
@@ -1236,15 +1306,15 @@ width:100%;
 
 .next-btn{
 
-width:350px;
+width:100%;
 
-height:65px;
+height:50px;
 
-font-size:24px;
+font-size:17px;
 
 font-weight:800;
 
-border-radius:18px;
+border-radius:14px;
 
 background:
 
@@ -1257,7 +1327,7 @@ linear-gradient(
 color:white;
 
 box-shadow:
-0 10px 30px rgba(255,0,70,.4);
+0 8px 22px rgba(255,0,70,.32);
 
 transition:.35s;
 }
@@ -1267,10 +1337,36 @@ transition:.35s;
 
 transform:
 translateY(-5px)
-scale(1.03);
+scale(1.02);
 
 box-shadow:
-0 15px 40px rgba(255,0,70,.6);
+0 12px 30px rgba(255,0,70,.48);
+}
+
+.next-btn.loading,
+.next-btn:disabled{
+cursor:progress;
+opacity:.86;
+transform:none;
+}
+
+.next-btn.loading::after{
+content:"";
+display:inline-block;
+width:14px;
+height:14px;
+margin-left:10px;
+border:2px solid rgba(255,255,255,.46);
+border-top-color:#fff;
+border-radius:50%;
+vertical-align:-2px;
+animation:nextButtonSpin .7s linear infinite;
+}
+
+@@keyframes nextButtonSpin{
+to{
+transform:rotate(360deg);
+}
 }
 
 
@@ -1279,8 +1375,8 @@ box-shadow:
 .next-btn{
 
 width:100%;
-font-size:18px;
-height:58px;
+font-size:16px;
+height:50px;
 }
 
 }
@@ -1449,6 +1545,103 @@ border-top:
 color:#ff2d55;
 
 font-size:38px;
+}
+
+.receipt-data.receipt-bump,
+.receipt-total.receipt-bump{
+animation:receiptBump .34s ease;
+}
+
+@@keyframes screenGlow{
+0%,100%{
+box-shadow:0 0 40px rgba(255,0,0,.3);
+}
+50%{
+box-shadow:0 0 62px rgba(255,45,85,.48),0 0 110px rgba(255,45,85,.14);
+}
+}
+
+@@keyframes screenBeam{
+0%,100%{
+opacity:.48;
+transform:scaleX(.92);
+}
+50%{
+opacity:.86;
+transform:scaleX(1.08);
+}
+}
+
+@@keyframes fadeSlideDown{
+from{
+opacity:0;
+transform:translateY(-10px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+@@keyframes seatRowIn{
+from{
+opacity:0;
+transform:translateY(18px) scale(.98);
+}
+to{
+opacity:1;
+transform:translateY(0) scale(1);
+}
+}
+
+@@keyframes chairSettle{
+from{
+opacity:0;
+transform:translateY(16px) rotateX(18deg) scale(.92);
+}
+to{
+opacity:1;
+transform:translateY(0) rotateX(0) scale(1);
+}
+}
+
+@@keyframes selectedChairPulse{
+0%,100%{
+filter:drop-shadow(0 0 12px rgba(51,255,119,.62)) saturate(1.08);
+}
+50%{
+filter:drop-shadow(0 0 22px rgba(51,255,119,.9)) saturate(1.16) brightness(1.06);
+}
+}
+
+@@keyframes receiptBump{
+0%{
+transform:scale(.98);
+opacity:.72;
+}
+60%{
+transform:scale(1.025);
+opacity:1;
+}
+100%{
+transform:scale(1);
+}
+}
+
+@@media (prefers-reduced-motion: reduce){
+.screen-line,
+.screen-line::before,
+.seat-orientation,
+.seat-row,
+.seat-btn,
+.seat-btn.selected,
+.receipt-data.receipt-bump,
+.receipt-total.receipt-bump,
+.booking-page.page-leaving,
+.next-btn.loading::after{
+animation:none!important;
+transition:none!important;
+}
 }
 
 
@@ -1684,6 +1877,41 @@ document.getElementById(
 "totalAmount"
 ).innerText=
 "₹"+total;
+
+animateReceiptUpdate();
+}
+
+function animateReceiptUpdate()
+{
+    [
+        document.getElementById("selectedSeatsContainer"),
+        document.getElementById("seatPriceContainer"),
+        document.querySelector(".receipt-total")
+    ]
+    .filter(Boolean)
+    .forEach(element=>{
+        element.classList.remove("receipt-bump");
+        void element.offsetWidth;
+        element.classList.add("receipt-bump");
+    });
+}
+
+function startPageTransition(nextUrl)
+{
+    const prefersReducedMotion=
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+    if(prefersReducedMotion)
+    {
+        window.location=nextUrl;
+        return;
+    }
+
+    document.querySelector(".booking-page")?.classList.add("page-leaving");
+
+    setTimeout(()=>{
+        window.location=nextUrl;
+    },260);
 }
 
 function nextStep()
@@ -1728,6 +1956,16 @@ function nextStep()
     0
     );
 
+    const nextButton=
+    document.querySelector(".next-btn");
+
+    if(nextButton)
+    {
+        nextButton.disabled=true;
+        nextButton.classList.add("loading");
+        nextButton.dataset.originalText=nextButton.textContent.trim();
+        nextButton.textContent="Locking seats";
+    }
 
     fetch(
     "/Booking/LockSeats",
@@ -1762,18 +2000,14 @@ function nextStep()
     {
         if(result.success)
         {
-            showCinemaPopup(
-            "Seats Locked",
-            "success"
+            startPageTransition(
+            "/Booking/Details?id=" + result.bookingId
             );
-
-            window.location=
-            "/Booking/Details?id="
-            +
-            result.bookingId;
         }
         else
         {
+            resetNextButton();
+
             showCinemaPopup(
             result.message,
             "error"
@@ -1786,12 +2020,29 @@ function nextStep()
     {
         console.log(error);
 
+        resetNextButton();
+
         showCinemaPopup(
         "Something went wrong",
         "error"
         );
     });
 
+}
+
+function resetNextButton()
+{
+    const nextButton=
+    document.querySelector(".next-btn");
+
+    if(!nextButton)
+    {
+        return;
+    }
+
+    nextButton.disabled=false;
+    nextButton.classList.remove("loading");
+    nextButton.textContent=nextButton.dataset.originalText || "Next →";
 }
 
 </script>

@@ -1,10 +1,16 @@
 @model BookingDraft
 @using AmarShowsBook.Helpers
+@using System.Text.Json
 
 @{
     var walletAmountUsed = ViewBag.WalletAmountUsed as decimal? ?? 0;
     var couponDiscount = ViewBag.CouponDiscount as decimal? ?? 0;
     var payableAmount = ViewBag.PayableAmount as decimal? ?? Model.TotalAmount;
+    var savedDetails = ViewBag.SavedPaymentDetails as List<AmarShowsBook.Models.PaymentMethodDetail>
+        ?? new List<AmarShowsBook.Models.PaymentMethodDetail>();
+    var savedUpi = savedDetails.FirstOrDefault(x => x.PaymentMethod == "UPI");
+    var savedCard = savedDetails.FirstOrDefault(x => x.PaymentMethod == "CARD");
+    var savedNetbanking = savedDetails.FirstOrDefault(x => x.PaymentMethod == "NETBANKING");
 }
 
 <style>
@@ -332,6 +338,97 @@ font-weight:700;
 color:var(--success);
 }
 
+.payment-deadline{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:14px;
+margin-bottom:22px;
+padding:14px 16px;
+border:1px solid rgba(255,45,85,.16);
+border-radius:18px;
+background:
+radial-gradient(circle at 12% 18%,rgba(255,45,85,.12),transparent 34%),
+linear-gradient(135deg,#fff,#fff7fb);
+box-shadow:0 10px 26px rgba(255,45,85,.08);
+}
+
+.payment-deadline span{
+display:block;
+color:var(--muted);
+font-size:.78rem;
+font-weight:900;
+letter-spacing:.08em;
+text-transform:uppercase;
+}
+
+.payment-deadline strong{
+display:block;
+margin-top:3px;
+font-size:.94rem;
+font-weight:900;
+color:var(--text);
+}
+
+.deadline-clock{
+min-width:104px;
+padding:9px 12px;
+border-radius:14px;
+background:linear-gradient(135deg,var(--primary),var(--primary2));
+color:#fff;
+font-size:1.35rem;
+font-weight:950;
+text-align:center;
+font-variant-numeric:tabular-nums;
+box-shadow:0 12px 24px rgba(255,45,85,.22);
+}
+
+.payment-deadline.warning .deadline-clock{
+animation:deadlinePulse .8s ease-in-out infinite;
+}
+
+@@keyframes deadlinePulse{
+50%{
+transform:scale(1.04);
+box-shadow:0 14px 30px rgba(255,45,85,.36);
+}
+}
+
+.payment-step{
+margin-top:22px;
+}
+
+.step-title{
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:12px;
+color:var(--text);
+}
+
+.step-title span{
+display:grid;
+place-items:center;
+width:30px;
+height:30px;
+border-radius:50%;
+background:linear-gradient(135deg,var(--primary),var(--primary2));
+color:white;
+font-size:.82rem;
+font-weight:900;
+box-shadow:0 8px 18px rgba(255,45,85,.2);
+}
+
+.step-title strong{
+font-size:1rem;
+font-weight:900;
+}
+
+.amount-box .step-title{
+justify-content:center;
+margin-bottom:16px;
+}
+
 
 /* payment methods */
 
@@ -452,6 +549,199 @@ margin-top:15px;
 font-weight:700;
 
 color:#666;
+}
+
+.method-details{
+display:none;
+padding:22px;
+border:1px solid #ececec;
+border-radius:22px;
+background:white;
+animation:fadeUp .35s ease;
+}
+
+.method-details.active{
+display:block;
+}
+
+.method-title{
+margin:0 0 14px;
+font-size:1rem;
+font-weight:900;
+color:var(--text);
+}
+
+.field-grid{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:14px;
+}
+
+.payment-field{
+display:grid;
+gap:6px;
+}
+
+.payment-field.full{
+grid-column:1 / -1;
+}
+
+.payment-field label{
+font-size:.76rem;
+font-weight:900;
+color:var(--muted);
+text-transform:uppercase;
+letter-spacing:.04em;
+}
+
+.payment-field input,
+.payment-field select{
+width:100%;
+height:44px;
+border:1px solid #e5e7eb;
+border-radius:12px;
+padding:0 12px;
+font-weight:800;
+color:var(--text);
+background:#f8fafc;
+}
+
+.payment-field input:focus,
+.payment-field select:focus{
+outline:0;
+border-color:var(--primary);
+box-shadow:0 0 0 .16rem rgba(255,45,85,.14);
+background:#fff;
+}
+
+.field-hint{
+font-size:.78rem;
+font-weight:700;
+color:var(--muted);
+}
+
+.upi-handle-options.hidden{
+display:none;
+}
+
+.upi-handle-options{
+display:flex;
+flex-wrap:wrap;
+gap:7px;
+margin-top:4px;
+animation:fadeUp .24s ease;
+}
+
+.upi-handle-options button{
+border:1px solid color-mix(in srgb, var(--primary) 24%, #e5e7eb);
+border-radius:999px;
+padding:7px 10px;
+background:#fff;
+color:var(--text);
+font-size:.78rem;
+font-weight:900;
+}
+
+.upi-handle-options button.active,
+.upi-handle-options button:hover{
+border-color:var(--primary);
+background:rgba(255,45,85,.09);
+color:var(--primary);
+}
+
+.saved-detail-btn{
+justify-self:start;
+border:1px solid color-mix(in srgb, var(--primary) 28%, #e5e7eb);
+border-radius:999px;
+padding:8px 12px;
+background:#fff7fb;
+color:var(--primary);
+font-size:.82rem;
+font-weight:900;
+}
+
+.saved-detail-btn:hover{
+background:rgba(255,45,85,.1);
+}
+
+.otp-row{
+display:none;
+grid-template-columns:minmax(0,1fr) auto;
+gap:10px;
+align-items:end;
+margin-top:14px;
+}
+
+.otp-row.active{
+display:grid;
+}
+
+.otp-send-btn{
+height:44px;
+border:0;
+border-radius:12px;
+padding:0 16px;
+font-weight:900;
+color:#fff;
+background:linear-gradient(90deg,#16a34a,#0f766e);
+}
+
+.validation-message{
+display:none;
+margin-top:12px;
+padding:10px 12px;
+border-radius:12px;
+font-weight:800;
+font-size:.86rem;
+}
+
+.validation-message.show{
+display:block;
+}
+
+.validation-message.error{
+background:#fee2e2;
+color:#991b1b;
+}
+
+.validation-message.success{
+background:#dcfce7;
+color:#166534;
+}
+
+.payment-status{
+display:none;
+margin-top:14px;
+padding:14px;
+border:1px solid #e5e7eb;
+border-radius:16px;
+background:#fff;
+}
+
+.payment-status.active{
+display:block;
+}
+
+.payment-status-text{
+margin-bottom:9px;
+font-size:.86rem;
+font-weight:900;
+color:var(--muted);
+}
+
+.payment-status-track{
+height:9px;
+overflow:hidden;
+border-radius:999px;
+background:#eef2f7;
+}
+
+.payment-status-fill{
+width:0%;
+height:100%;
+border-radius:999px;
+background:linear-gradient(90deg,var(--primary),var(--primary2),#16db65);
+transition:width .45s ease;
 }
 
 /* buttons container */
@@ -593,6 +883,11 @@ translateY(0);
 grid-template-columns:1fr;
 }
 
+.field-grid,
+.otp-row{
+grid-template-columns:1fr;
+}
+
 .payment-header{
 
 flex-direction:column;
@@ -630,8 +925,19 @@ Booking #@Model.Id
 
 </div>
 
+<div id="paymentDeadline" class="payment-deadline">
+    <div>
+        <span>Payment window</span>
+        <strong>Complete payment before the timer ends</strong>
+    </div>
+    <div id="paymentCountdown" class="deadline-clock">04:30</div>
+</div>
 
 <div class="amount-box">
+
+<div class="step-title">
+<strong>Review payable amount</strong>
+</div>
 
 <h3>
 
@@ -676,6 +982,10 @@ couponDiscount
 </div>
 
 
+<div class="payment-step">
+<div class="step-title">
+<strong>Select payment method</strong>
+</div>
 
 <div class="payment-grid">
 
@@ -732,8 +1042,126 @@ onchange="toggleQR()" />
 </label>
 
 </div>
+</div>
 
+<div class="payment-step">
+<div class="step-title">
+<strong>Payment details</strong>
+</div>
 
+<div id="upiDetails" class="method-details active" data-method-panel="UPI">
+    <h3 class="method-title">UPI Details</h3>
+    <div class="field-grid">
+        @if(savedUpi!=null)
+        {
+            <button type="button" class="saved-detail-btn payment-field full" onclick="fillLastPaymentDetails('UPI')">
+                Use last saved UPI details
+            </button>
+        }
+        <div class="payment-field">
+            <label for="upiName">UPI Name</label>
+            <input id="upiName" type="text" maxlength="40" placeholder="Your name" autocomplete="name" />
+        </div>
+        <div class="payment-field">
+            <label for="upiId">UPI ID</label>
+            <input id="upiId" type="text" maxlength="60" placeholder="name@@bank" autocomplete="off" />
+            <div class="field-hint">Type your UPI name/number, then type @@ to choose bank/app.</div>
+            <div id="upiHandleOptions" class="upi-handle-options hidden" aria-label="UPI bank/app options">
+                <button type="button" data-upi-handle="paytm" onclick="selectUpiHandle('paytm')">Paytm</button>
+                <button type="button" data-upi-handle="sbi" onclick="selectUpiHandle('sbi')">SBI</button>
+                <button type="button" data-upi-handle="pz" onclick="selectUpiHandle('pz')">PZ</button>
+                <button type="button" data-upi-handle="okaxis" onclick="selectUpiHandle('okaxis')">Axis</button>
+                <button type="button" data-upi-handle="okhdfcbank" onclick="selectUpiHandle('okhdfcbank')">HDFC</button>
+                <button type="button" data-upi-handle="okicici" onclick="selectUpiHandle('okicici')">ICICI</button>
+                <button type="button" data-upi-handle="oksbi" onclick="selectUpiHandle('oksbi')">SBI UPI</button>
+                <button type="button" data-upi-handle="ybl" onclick="selectUpiHandle('ybl')">YBL</button>
+                <button type="button" data-upi-handle="ibl" onclick="selectUpiHandle('ibl')">IBL</button>
+                <button type="button" data-upi-handle="upi" onclick="selectUpiHandle('upi')">BHIM</button>
+            </div>
+        </div>
+    </div>
+    <div id="upiOtpRow" class="otp-row">
+        <div class="payment-field full">
+            <label for="upiOtp">OTP</label>
+            <input id="upiOtp" type="password" inputmode="numeric" maxlength="6" placeholder="Enter 6 digit OTP" />
+        </div>
+    </div>
+</div>
+
+<div id="cardDetails" class="method-details" data-method-panel="CARD">
+    <h3 class="method-title">Card Details</h3>
+    <div class="field-grid">
+        @if(savedCard!=null)
+        {
+            <button type="button" class="saved-detail-btn payment-field full" onclick="fillLastPaymentDetails('CARD')">
+                Use last saved card ending @(savedCard.CardLast4 ?? "****")
+            </button>
+        }
+        <div class="payment-field full">
+            <label for="cardNumber">Card Number</label>
+            <input id="cardNumber" type="text" inputmode="numeric" maxlength="19" placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
+        </div>
+        <div class="payment-field">
+            <label for="cardExpiry">Expiry MM/YY</label>
+            <input id="cardExpiry" type="text" inputmode="numeric" maxlength="5" placeholder="MM/YY" autocomplete="cc-exp" />
+        </div>
+        <div class="payment-field">
+            <label for="cardCvv">CVV</label>
+            <input id="cardCvv" type="password" inputmode="numeric" maxlength="4" placeholder="•••" autocomplete="cc-csc" />
+        </div>
+    </div>
+    <div id="cardOtpRow" class="otp-row">
+        <div class="payment-field full">
+            <label for="cardOtp">OTP</label>
+            <input id="cardOtp" type="password" inputmode="numeric" maxlength="6" placeholder="Enter 6 digit OTP" />
+        </div>
+    </div>
+</div>
+
+<div id="netbankingDetails" class="method-details" data-method-panel="NETBANKING">
+    <h3 class="method-title">Netbanking Details</h3>
+    <div class="field-grid">
+        @if(savedNetbanking!=null)
+        {
+            <button type="button" class="saved-detail-btn payment-field full" onclick="fillLastPaymentDetails('NETBANKING')">
+                Use last saved netbanking details
+            </button>
+        }
+        <div class="payment-field">
+            <label for="netBank">Bank</label>
+            <select id="netBank">
+                <option value="">Select bank</option>
+                <option value="SBI">State Bank of India</option>
+                <option value="HDFC">HDFC Bank</option>
+                <option value="ICICI">ICICI Bank</option>
+                <option value="AXIS">Axis Bank</option>
+                <option value="KOTAK">Kotak Mahindra Bank</option>
+                <option value="PNB">Punjab National Bank</option>
+                <option value="BOB">Bank of Baroda</option>
+                <option value="CANARA">Canara Bank</option>
+            </select>
+        </div>
+        <div class="payment-field">
+            <label for="netUser">User ID</label>
+            <input id="netUser" type="text" maxlength="40" placeholder="Customer/User ID" autocomplete="username" />
+        </div>
+    </div>
+    <div id="netOtpRow" class="otp-row">
+        <div class="payment-field full">
+            <label for="netOtp">OTP</label>
+            <input id="netOtp" type="password" inputmode="numeric" maxlength="6" placeholder="Enter 6 digit OTP" />
+        </div>
+    </div>
+</div>
+
+<div id="paymentValidation" class="validation-message"></div>
+
+<div id="paymentStatus" class="payment-status" aria-live="polite">
+    <div id="paymentStatusText" class="payment-status-text">Waiting for payment verification</div>
+    <div class="payment-status-track">
+        <div id="paymentStatusFill" class="payment-status-fill"></div>
+    </div>
+</div>
 
 <div id="qrSection">
 
@@ -748,6 +1176,13 @@ Scan QR using any UPI app
 </div>
 
 </div>
+</div>
+
+<div class="payment-step">
+<div class="step-title">
+<strong>Confirm payment</strong>
+</div>
+
 <div class="action-buttons">
 
 <button
@@ -771,19 +1206,574 @@ Proceed Payment →
 
 </div>
 </div>
+</div>
 <script>
 
 let statusChecker=null;
+let generatedPaymentOtp="";
+let pendingOtpMethod="";
+let paymentInProgress=false;
+let paymentCompleted=false;
+let paymentTimerId=null;
+let paymentExpiryRedirectId=null;
+let paymentSecondsRemaining=270;
+const savedPaymentDetails={
+    upi:{
+        name:@Html.Raw(JsonSerializer.Serialize(savedUpi?.UpiName ?? "")),
+        id:@Html.Raw(JsonSerializer.Serialize(savedUpi?.UpiId ?? ""))
+    },
+    card:{
+        last4:@Html.Raw(JsonSerializer.Serialize(savedCard?.CardLast4 ?? "")),
+        expiry:@Html.Raw(JsonSerializer.Serialize(savedCard?.CardExpiry ?? ""))
+    },
+    netbanking:{
+        bank:@Html.Raw(JsonSerializer.Serialize(savedNetbanking?.NetBank ?? "")),
+        user:@Html.Raw(JsonSerializer.Serialize(savedNetbanking?.NetBankUserIdMasked ?? ""))
+    }
+};
+
+const upiHandles=[
+    "paytm",
+    "sbi",
+    "pz",
+    "okaxis",
+    "okhdfcbank",
+    "okicici",
+    "oksbi",
+    "ybl",
+    "ibl",
+    "upi"
+];
+
+document.addEventListener("DOMContentLoaded",function(){
+    document.getElementById("upiId")?.addEventListener("input",function(){
+        this.value=this.value.toLowerCase().replace(/[^a-z0-9._@@-]/g,"");
+        toggleUpiBankOptions();
+    });
+    document.getElementById("cardNumber")?.addEventListener("input",formatCardNumber);
+    document.getElementById("cardExpiry")?.addEventListener("input",formatCardExpiry);
+    document.getElementById("cardCvv")?.addEventListener("input",function(){
+        this.value=this.value.replace(/\D/g,"").slice(0,4);
+    });
+    document.getElementById("upiOtp")?.addEventListener("input",handleOtpInput);
+    document.getElementById("cardOtp")?.addEventListener("input",function(){
+        this.value=this.value.replace(/\D/g,"").slice(0,6);
+        handleOtpInput.call(this);
+    });
+    document.getElementById("netOtp")?.addEventListener("input",function(){
+        this.value=this.value.replace(/\D/g,"").slice(0,6);
+        handleOtpInput.call(this);
+    });
+    toggleUpiBankOptions();
+    toggleQR();
+    startPaymentTimer();
+});
+
+function showPaymentMessage(message,type)
+{
+    const box=document.getElementById("paymentValidation");
+    if(!box)
+    {
+        if(type==="error" && typeof showCinemaPopup==="function")
+        {
+            showCinemaPopup(message,"error");
+        }
+        return;
+    }
+
+    box.textContent=message;
+    box.className="validation-message show " + (type || "error");
+}
+
+function clearPaymentMessage()
+{
+    const box=document.getElementById("paymentValidation");
+    if(box)
+    {
+        box.className="validation-message";
+        box.textContent="";
+    }
+}
+
+function setPaymentStatus(message,percent)
+{
+    const panel=document.getElementById("paymentStatus");
+    const text=document.getElementById("paymentStatusText");
+    const fill=document.getElementById("paymentStatusFill");
+
+    if(panel)
+    {
+        panel.classList.add("active");
+    }
+
+    if(text)
+    {
+        text.textContent=message;
+    }
+
+    if(fill)
+    {
+        fill.style.width=`${Math.max(0,Math.min(100,percent))}%`;
+    }
+}
+
+function resetPaymentStatus()
+{
+    const panel=document.getElementById("paymentStatus");
+    const fill=document.getElementById("paymentStatusFill");
+    if(panel)
+    {
+        panel.classList.remove("active");
+    }
+    if(fill)
+    {
+        fill.style.width="0%";
+    }
+}
+
+function wait(ms)
+{
+    return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+function formatPaymentSeconds(totalSeconds)
+{
+    const minutes=Math.floor(totalSeconds/60);
+    const seconds=totalSeconds%60;
+    return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+}
+
+function startPaymentTimer()
+{
+    const clock=document.getElementById("paymentCountdown");
+    const deadline=document.getElementById("paymentDeadline");
+    if(!clock)
+    {
+        return;
+    }
+
+    clock.textContent=formatPaymentSeconds(paymentSecondsRemaining);
+
+    paymentTimerId=setInterval(()=>{
+        if(paymentCompleted)
+        {
+            clearInterval(paymentTimerId);
+            return;
+        }
+
+        paymentSecondsRemaining-=1;
+        clock.textContent=formatPaymentSeconds(Math.max(0,paymentSecondsRemaining));
+        deadline?.classList.toggle("warning",paymentSecondsRemaining<=60);
+
+        if(paymentSecondsRemaining<=0)
+        {
+            clearInterval(paymentTimerId);
+            expirePaymentWindow();
+        }
+    },1000);
+}
+
+function stopPaymentTimer()
+{
+    paymentCompleted=true;
+    if(paymentTimerId)
+    {
+        clearInterval(paymentTimerId);
+    }
+    if(paymentExpiryRedirectId)
+    {
+        clearTimeout(paymentExpiryRedirectId);
+    }
+}
+
+function expirePaymentWindow()
+{
+    if(paymentCompleted)
+    {
+        return;
+    }
+
+    const seatsUrl="/Booking/Seats/@Model.ScheduleId";
+    const homeUrl="/Home/Index";
+    const message="Payment time expired. You can return to the same seat page or go to Home.";
+
+    if(typeof showCinemaPopup==="function")
+    {
+        showCinemaPopup(
+            message,
+            "confirm",
+            {
+                okText:"Same Seat Page",
+                cancelText:"Home",
+                onOk:function(){ window.location.href=seatsUrl; },
+                onCancel:function(){ window.location.href=homeUrl; }
+            });
+    }
+    else
+    {
+        showPaymentMessage(message,"error");
+    }
+
+    paymentExpiryRedirectId=setTimeout(()=>{
+        if(!paymentCompleted)
+        {
+            window.location.href=seatsUrl;
+        }
+    },10000);
+}
+
+function currentPaymentMethod()
+{
+    return document.querySelector('input[name="pay"]:checked')?.value || "UPI";
+}
+
+function fillLastPaymentDetails(method)
+{
+    clearPaymentMessage();
+    resetPaymentStatus();
+    generatedPaymentOtp="";
+    pendingOtpMethod="";
+
+    if(method==="UPI")
+    {
+        document.getElementById("upiName").value=savedPaymentDetails.upi.name || "";
+        document.getElementById("upiId").value=savedPaymentDetails.upi.id || "";
+        toggleUpiBankOptions();
+        showPaymentMessage("Last saved UPI details filled. Please review and proceed.","success");
+        return;
+    }
+
+    if(method==="CARD")
+    {
+        const last4=savedPaymentDetails.card.last4 || "";
+        document.getElementById("cardNumber").value=last4 ? `**** **** **** ${last4}` : "";
+        document.getElementById("cardExpiry").value=savedPaymentDetails.card.expiry || "";
+        document.getElementById("cardCvv").value="";
+        document.getElementById("cardCvv").focus();
+        showPaymentMessage("Saved card reference filled. Enter CVV to continue.","success");
+        return;
+    }
+
+    if(method==="NETBANKING")
+    {
+        document.getElementById("netBank").value=savedPaymentDetails.netbanking.bank || "";
+        document.getElementById("netUser").value=savedPaymentDetails.netbanking.user || "";
+        showPaymentMessage("Last saved netbanking details filled. Please review and proceed.","success");
+    }
+}
+
+function selectUpiHandle(handle)
+{
+    const upi=document.getElementById("upiId");
+    if(!upi || !upiHandles.includes(handle))
+    {
+        return;
+    }
+
+    const prefix=(upi.value.split("@@")[0] || "").replace(/[^a-z0-9._-]/gi,"");
+    upi.value=prefix ? `${prefix.toLowerCase()}@@${handle}` : `@@${handle}`;
+    toggleUpiBankOptions();
+    upi.focus();
+}
+
+function toggleUpiBankOptions()
+{
+    const upi=document.getElementById("upiId");
+    const options=document.getElementById("upiHandleOptions");
+    if(!upi || !options)
+    {
+        return;
+    }
+
+    const value=upi.value.toLowerCase();
+    const hasAt=value.includes("@@");
+    options.classList.toggle("hidden",!hasAt);
+
+    if(!hasAt)
+    {
+        options.querySelectorAll("button").forEach(button=>button.classList.remove("active"));
+        return;
+    }
+
+    const handle=(value.split("@@")[1] || "").replace(/[^a-z0-9]/g,"");
+    options.querySelectorAll("button").forEach(button=>{
+        button.classList.toggle("active",button.dataset.upiHandle===handle);
+    });
+}
+
+function formatCardNumber()
+{
+    const digits=this.value.replace(/\D/g,"").slice(0,16);
+    this.value=digits.replace(/(.{4})/g,"$1 ").trim();
+}
+
+function formatCardExpiry()
+{
+    let digits=this.value.replace(/\D/g,"").slice(0,4);
+    if(digits.length>=3)
+    {
+        digits=digits.slice(0,2)+"/"+digits.slice(2);
+    }
+    this.value=digits;
+}
+
+function isValidExpiry(value)
+{
+    const match=/^(0[1-9]|1[0-2])\/(\d{2})$/.exec(value || "");
+    if(!match)
+    {
+        return false;
+    }
+
+    const month=Number(match[1]);
+    const year=2000+Number(match[2]);
+    const expiry=new Date(year,month,0,23,59,59);
+    return expiry>=new Date();
+}
+
+function validateUpi()
+{
+    const upiName=(document.getElementById("upiName")?.value || "").trim();
+    const upiId=(document.getElementById("upiId")?.value || "").trim().toLowerCase();
+    const upiPattern=/^[a-z0-9][a-z0-9._-]{1,48}@@[a-z0-9]{2,20}$/;
+    const handle=upiId.split("@@")[1] || "";
+
+    if(!/^[a-zA-Z0-9 ]{2,40}$/.test(upiName))
+    {
+        showPaymentMessage("Enter a valid UPI name using letters and numbers.","error");
+        return false;
+    }
+
+    if(!upiPattern.test(upiId) || !upiHandles.includes(handle))
+    {
+        showPaymentMessage("Enter a valid UPI ID and choose a handle after @@, like name@@paytm, name@@sbi, name@@okaxis, or name@@ybl.","error");
+        return false;
+    }
+
+    clearPaymentMessage();
+    showPaymentMessage("UPI ID verified. Click Proceed Payment to receive OTP.","success");
+    return true;
+}
+
+function validateCardBase()
+{
+    const cardNumber=(document.getElementById("cardNumber")?.value || "").replace(/\D/g,"");
+    const cardRaw=document.getElementById("cardNumber")?.value || "";
+    const cardExpiry=document.getElementById("cardExpiry")?.value || "";
+    const cardCvv=(document.getElementById("cardCvv")?.value || "").replace(/\D/g,"");
+
+    if(!/^\d{16}$/.test(cardNumber) && !(/\*/.test(cardRaw) && /^\d{4}$/.test(cardNumber)))
+    {
+        showPaymentMessage("Enter a valid 16 digit card number or use the saved masked card.","error");
+        return false;
+    }
+
+    if(!isValidExpiry(cardExpiry))
+    {
+        showPaymentMessage("Enter a valid future expiry in MM/YY format.","error");
+        return false;
+    }
+
+    if(!/^\d{3,4}$/.test(cardCvv))
+    {
+        showPaymentMessage("Enter a valid 3 or 4 digit CVV.","error");
+        return false;
+    }
+
+    return true;
+}
+
+function validateNetbankingBase()
+{
+    const bank=document.getElementById("netBank")?.value || "";
+    const user=(document.getElementById("netUser")?.value || "").trim();
+
+    if(!bank)
+    {
+        showPaymentMessage("Select your bank for netbanking.","error");
+        return false;
+    }
+
+    if(!/^[a-zA-Z0-9._*-]{4,40}$/.test(user))
+    {
+        showPaymentMessage("Enter a valid netbanking user ID.","error");
+        return false;
+    }
+
+    return true;
+}
+
+function getOtpInput(method)
+{
+    if(method==="UPI")
+    {
+        return document.getElementById("upiOtp");
+    }
+
+    if(method==="CARD")
+    {
+        return document.getElementById("cardOtp");
+    }
+
+    return document.getElementById("netOtp");
+}
+
+function getOtpRow(method)
+{
+    if(method==="UPI")
+    {
+        return document.getElementById("upiOtpRow");
+    }
+
+    if(method==="CARD")
+    {
+        return document.getElementById("cardOtpRow");
+    }
+
+    return document.getElementById("netOtpRow");
+}
+
+function validateBaseForMethod(method)
+{
+    if(method==="UPI")
+    {
+        return validateUpi();
+    }
+
+    if(method==="CARD")
+    {
+        return validateCardBase();
+    }
+
+    if(method==="NETBANKING")
+    {
+        return validateNetbankingBase();
+    }
+
+    return true;
+}
+
+function generatePaymentOtp(method)
+{
+    if(!validateBaseForMethod(method))
+    {
+        return;
+    }
+
+    pendingOtpMethod=method;
+    generatedPaymentOtp=String(Math.floor(100000+Math.random()*900000));
+    const otpRow=getOtpRow(method);
+    const otpInput=getOtpInput(method);
+    otpRow?.classList.add("active");
+    if(otpInput)
+    {
+        otpInput.value="";
+    }
+    otpInput?.focus();
+
+    const label=
+    method==="UPI"
+    ? "UPI"
+    : method==="CARD"
+        ? "card"
+        : "netbanking";
+
+    showPaymentMessage(`OTP sent for ${label} verification. Demo OTP: ${generatedPaymentOtp}`,"success");
+}
+
+function validateOtp(method)
+{
+    const row=getOtpRow(method);
+    const otp=(getOtpInput(method)?.value || "").trim();
+
+    row?.classList.add("active");
+
+    if(!generatedPaymentOtp)
+    {
+        showPaymentMessage("Please send OTP first.","error");
+        return false;
+    }
+
+    if(otp!==generatedPaymentOtp)
+    {
+        showPaymentMessage("Invalid OTP. Please enter the latest 6 digit OTP.","error");
+        return false;
+    }
+
+    clearPaymentMessage();
+    return true;
+}
+
+function handleOtpInput()
+{
+    this.value=this.value.replace(/\D/g,"").slice(0,6);
+
+    if(this.value.length===6 && pendingOtpMethod && !paymentInProgress)
+    {
+        if(validateOtp(pendingOtpMethod))
+        {
+            completePayment();
+        }
+    }
+}
+
+function validateSelectedPayment()
+{
+    const method=currentPaymentMethod();
+
+    return validateBaseForMethod(method);
+}
+
+function buildPaymentDetailsPayload(paymentMethod)
+{
+    if(paymentMethod==="UPI")
+    {
+        return {
+            upiName:(document.getElementById("upiName")?.value || "").trim(),
+            upiId:(document.getElementById("upiId")?.value || "").trim(),
+            otpVerified:true
+        };
+    }
+
+    if(paymentMethod==="CARD")
+    {
+        return {
+            cardNumber:(document.getElementById("cardNumber")?.value || "").replace(/\D/g,""),
+            cardExpiry:document.getElementById("cardExpiry")?.value || "",
+            otpVerified:true
+        };
+    }
+
+    if(paymentMethod==="NETBANKING")
+    {
+        return {
+            netBank:document.getElementById("netBank")?.value || "",
+            netBankUserId:(document.getElementById("netUser")?.value || "").trim(),
+            otpVerified:true
+        };
+    }
+
+    return {};
+}
 
 
 async function toggleQR()
 {
-    console.log("toggle fired");
+    clearPaymentMessage();
+    resetPaymentStatus();
+    generatedPaymentOtp="";
+    pendingOtpMethod="";
+    paymentInProgress=false;
 
-    let paymentMethod=
-    document.querySelector(
-    'input[name="pay"]:checked'
-    ).value;
+    let paymentMethod=currentPaymentMethod();
+
+    document.querySelectorAll("[data-method-panel]").forEach(panel=>{
+        panel.classList.toggle("active",panel.dataset.methodPanel===paymentMethod);
+    });
+
+    document.getElementById("cardOtpRow")?.classList.remove("active");
+    document.getElementById("netOtpRow")?.classList.remove("active");
+    document.getElementById("upiOtpRow")?.classList.remove("active");
 
 
     if(paymentMethod==="QR")
@@ -847,9 +1837,10 @@ catch(error)
     error
     );
 
-    alert(
+    showPaymentMessage(
     "QR ERROR: " +
-    error.message
+    error.message,
+    "error"
     );
 }
 
@@ -889,25 +1880,54 @@ catch(error)
 
 async function pay()
 {
+    const paymentMethod=currentPaymentMethod();
+
+    if(paymentMethod==="QR")
+    {
+        return;
+    }
+
+    if(!generatedPaymentOtp || pendingOtpMethod!==paymentMethod)
+    {
+        generatePaymentOtp(paymentMethod);
+        return;
+    }
+
+    if(!validateOtp(paymentMethod))
+    {
+        return;
+    }
+
+    await completePayment();
+}
+
+async function completePayment()
+{
     const payButton =
     document.getElementById(
     "payButton");
 
+    if(paymentInProgress)
+    {
+        return;
+    }
+
+    paymentInProgress=true;
+    setPaymentStatus("OTP verified. Contacting payment provider...",35);
     payButton.disabled =
     true;
 
     payButton.innerText =
     "Processing...";
 
-    let paymentMethod=
-
-    document.querySelector(
-    'input[name="pay"]:checked'
-    ).value;
-
+    let paymentMethod=currentPaymentMethod();
+    const methodDetails=buildPaymentDetailsPayload(paymentMethod);
 
     try
     {
+        await wait(900);
+        setPaymentStatus("Authorizing payment securely...",62);
+
         let response=
 
         await fetch(
@@ -925,7 +1945,8 @@ async function pay()
             JSON.stringify(
             {
                 bookingId:@Model.Id,
-                paymentMethod:paymentMethod
+                paymentMethod:paymentMethod,
+                ...methodDetails
             })
         });
 
@@ -935,31 +1956,45 @@ async function pay()
 
         if(result.success)
         {
+            setPaymentStatus("Payment confirmed. Preparing ticket...",100);
+            stopPaymentTimer();
+            await wait(1200);
+
             window.location=
             "/Booking/Confirmation?bookingId=@Model.Id";
         }
         else
         {
-            alert(
-            result.message || "Transaction Failed");
+            resetPaymentStatus();
+            showPaymentMessage(
+            result.message || "Transaction Failed",
+            "error"
+            );
 
             payButton.disabled =
             false;
 
             payButton.innerText =
-            "Pay Now";
+            "Proceed Payment →";
+
+            paymentInProgress=false;
         }
     }
     catch(error)
     {
-        alert(
-        "Payment could not be completed. Please try again.");
+        resetPaymentStatus();
+        showPaymentMessage(
+        "Payment could not be completed. Please try again.",
+        "error"
+        );
 
         payButton.disabled =
         false;
 
         payButton.innerText =
-        "Pay Now";
+        "Proceed Payment →";
+
+        paymentInProgress=false;
     }
 }
 
@@ -982,6 +2017,8 @@ async function checkQRStatus()
         clearInterval(
         statusChecker);
 
+        stopPaymentTimer();
+
         window.location=
         "/Booking/Confirmation?bookingId=@Model.Id";
     }
@@ -991,8 +2028,10 @@ async function checkQRStatus()
         clearInterval(
         statusChecker);
 
-        alert(
-        "QR payment was rejected or failed. Please try again.");
+        showPaymentMessage(
+        "QR payment was rejected or failed. Please try again.",
+        "error"
+        );
 
         window.location=
         "/Booking/Payment?bookingId=@Model.Id";
