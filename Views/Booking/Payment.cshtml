@@ -372,17 +372,91 @@ color:var(--text);
 }
 
 .deadline-clock{
-min-width:104px;
-padding:9px 12px;
-border-radius:14px;
-background:linear-gradient(135deg,#16a34a,#0f766e);
-color:#fff;
-font-size:1.35rem;
+--timer-color:#16a34a;
+--timer-glow:rgba(22,163,74,.24);
+--timer-progress:360deg;
+--timer-angle:0deg;
+width:96px;
+height:96px;
+min-width:96px;
+position:relative;
+display:grid;
+place-items:center;
+border-radius:50%;
+background:
+conic-gradient(var(--timer-color) 0 var(--timer-progress),rgba(15,23,42,.08) var(--timer-progress) 360deg);
+color:var(--timer-color);
+box-shadow:
+0 14px 30px var(--timer-glow),
+inset 0 0 0 1px rgba(255,255,255,.7);
+transition:.25s ease;
+}
+
+.deadline-clock::before{
+content:"";
+position:absolute;
+inset:7px;
+border-radius:50%;
+background:
+repeating-conic-gradient(from -1deg,rgba(17,24,39,.32) 0deg 2deg,transparent 2deg 30deg),
+radial-gradient(circle at 32% 24%,#fff,rgba(255,255,255,.88) 48%,#f8fafc 100%);
+box-shadow:
+inset 0 3px 12px rgba(15,23,42,.08),
+0 0 0 1px rgba(15,23,42,.06);
+}
+
+.deadline-clock::after{
+content:"";
+position:absolute;
+inset:17px;
+border-radius:50%;
+background:rgba(255,255,255,.82);
+}
+
+.clock-hand{
+position:absolute;
+left:50%;
+bottom:50%;
+width:4px;
+height:28px;
+border-radius:999px;
+background:linear-gradient(180deg,var(--timer-color),rgba(15,23,42,.74));
+transform:translateX(-50%) rotate(var(--timer-angle));
+transform-origin:50% 100%;
+z-index:3;
+box-shadow:0 5px 12px var(--timer-glow);
+transition:transform .4s ease, background .25s ease;
+}
+
+.clock-pin{
+position:absolute;
+width:13px;
+height:13px;
+border-radius:50%;
+background:var(--timer-color);
+z-index:4;
+box-shadow:
+0 0 0 4px rgba(255,255,255,.85),
+0 5px 12px var(--timer-glow);
+transition:.25s ease;
+}
+
+.clock-time{
+position:absolute;
+bottom:16px;
+left:50%;
+transform:translateX(-50%);
+z-index:5;
+min-width:54px;
+padding:2px 6px;
+border-radius:999px;
+background:rgba(255,255,255,.86);
+font-size:.74rem;
 font-weight:950;
+line-height:1.3;
 text-align:center;
 font-variant-numeric:tabular-nums;
-box-shadow:0 12px 24px rgba(22,163,74,.22);
-transition:.25s ease;
+box-shadow:0 4px 10px rgba(15,23,42,.08);
 }
 
 .payment-deadline.low-time{
@@ -394,8 +468,8 @@ box-shadow:0 10px 26px rgba(245,158,11,.12);
 }
 
 .payment-deadline.low-time .deadline-clock{
-background:linear-gradient(135deg,#f59e0b,#d97706);
-box-shadow:0 12px 24px rgba(245,158,11,.24);
+--timer-color:#f59e0b;
+--timer-glow:rgba(245,158,11,.26);
 }
 
 .payment-deadline.danger-time{
@@ -407,8 +481,8 @@ box-shadow:0 10px 26px rgba(220,38,38,.14);
 }
 
 .payment-deadline.danger-time .deadline-clock{
-background:linear-gradient(135deg,#ef4444,#b91c1c);
-box-shadow:0 12px 24px rgba(220,38,38,.28);
+--timer-color:#ef4444;
+--timer-glow:rgba(220,38,38,.3);
 }
 
 .payment-deadline.danger-time .deadline-clock{
@@ -958,7 +1032,11 @@ Booking #@Model.Id
         <span>Payment window</span>
         <strong>Complete payment before the timer ends</strong>
     </div>
-    <div id="paymentCountdown" class="deadline-clock">04:30</div>
+    <div id="paymentCountdown" class="deadline-clock" aria-label="Payment timer">
+        <div id="paymentClockHand" class="clock-hand"></div>
+        <div class="clock-pin"></div>
+        <div id="paymentClockTime" class="clock-time">04:30</div>
+    </div>
 </div>
 
 <div class="amount-box">
@@ -1245,6 +1323,7 @@ let paymentCompleted=false;
 let paymentTimerId=null;
 let paymentExpiryRedirectId=null;
 let paymentSecondsRemaining=270;
+const paymentTimerTotalSeconds=270;
 const savedPaymentDetails={
     upi:{
         name:@Html.Raw(JsonSerializer.Serialize(savedUpi?.UpiName ?? "")),
@@ -1371,11 +1450,27 @@ function formatPaymentSeconds(totalSeconds)
     return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
 }
 
-function updatePaymentTimerState(deadline,totalSeconds)
+function updatePaymentTimerDisplay(clock,deadline,totalSeconds)
 {
     if(!deadline)
     {
         return;
+    }
+
+    const safeSeconds=Math.max(0,totalSeconds);
+    const progress=(safeSeconds/paymentTimerTotalSeconds)*360;
+    const elapsedAngle=((paymentTimerTotalSeconds-safeSeconds)/paymentTimerTotalSeconds)*360;
+    const timeText=document.getElementById("paymentClockTime");
+
+    if(timeText)
+    {
+        timeText.textContent=formatPaymentSeconds(safeSeconds);
+    }
+
+    if(clock)
+    {
+        clock.style.setProperty("--timer-progress",`${progress}deg`);
+        clock.style.setProperty("--timer-angle",`${elapsedAngle}deg`);
     }
 
     deadline.classList.toggle("low-time",totalSeconds<=60 && totalSeconds>30);
@@ -1391,8 +1486,7 @@ function startPaymentTimer()
         return;
     }
 
-    clock.textContent=formatPaymentSeconds(paymentSecondsRemaining);
-    updatePaymentTimerState(deadline,paymentSecondsRemaining);
+    updatePaymentTimerDisplay(clock,deadline,paymentSecondsRemaining);
 
     paymentTimerId=setInterval(()=>{
         if(paymentCompleted)
@@ -1402,8 +1496,7 @@ function startPaymentTimer()
         }
 
         paymentSecondsRemaining-=1;
-        clock.textContent=formatPaymentSeconds(Math.max(0,paymentSecondsRemaining));
-        updatePaymentTimerState(deadline,paymentSecondsRemaining);
+        updatePaymentTimerDisplay(clock,deadline,paymentSecondsRemaining);
 
         if(paymentSecondsRemaining<=0)
         {
