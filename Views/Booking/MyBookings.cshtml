@@ -8,16 +8,34 @@
     ViewData["Title"] = "My Bookings";
     var totalSpend = Model.Sum(x => x.PayableAmount ?? x.TotalAmount);
     var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" && x.CancelledAt == null);
-    var now = DateTime.UtcNow;
+    var appTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+    var nowInstant = DateTimeOffset.UtcNow;
     var publicBaseUrl = ViewBag.PublicBaseUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
     var bookingVenues = ViewBag.BookingVenues as Dictionary<long,string> ?? new Dictionary<long,string>();
     var bookingScreens = ViewBag.BookingScreens as Dictionary<long,string> ?? new Dictionary<long,string>();
     var refundLookup = ViewBag.RefundLookup as Dictionary<long,Refund> ?? new Dictionary<long,Refund>();
     var bookingWalletAmounts = ViewBag.BookingWalletAmounts as Dictionary<long,decimal> ?? new Dictionary<long,decimal>();
     var checkedOutBookingIds = ViewBag.CheckedOutBookingIds as HashSet<long> ?? new HashSet<long>();
+    var expiredBookingIds = ViewBag.ExpiredBookingIds as HashSet<long> ?? new HashSet<long>();
+    var bookingCategoryLookup = ViewBag.BookingCategoryLookup as Dictionary<long,string> ?? new Dictionary<long,string>();
     var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+    DateTimeOffset ToBookingInstant(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => new DateTimeOffset(value, TimeSpan.Zero),
+            DateTimeKind.Local => new DateTimeOffset(value.ToUniversalTime(), TimeSpan.Zero),
+            _ => new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(value, appTimeZone), TimeSpan.Zero)
+        };
+    }
+
+    DateTime ToBookingLocal(DateTime value)
+    {
+        return TimeZoneInfo.ConvertTime(ToBookingInstant(value), appTimeZone).DateTime;
+    }
+
     var sortedBookings = Model
-        .OrderBy(x => x.StartTime)
+        .OrderBy(x => ToBookingInstant(x.StartTime))
         .ThenByDescending(x => x.BookedAt)
         .ToList();
     var bookingSections = new[]
@@ -29,15 +47,9 @@
     var bookingCategoryCounts = sortedBookings
         .GroupBy(item =>
         {
-            var itemCancelled = item.BookingStatus == "CANCELLED" || item.CancelledAt != null;
-            var itemCheckedOut = checkedOutBookingIds.Contains(item.BookingId);
-            var itemExpired = item.StartTime < now;
-
-            return itemCancelled
-                ? "cancelled"
-                : itemExpired || itemCheckedOut
-                    ? "expired"
-                    : "booked";
+            return bookingCategoryLookup.TryGetValue(item.BookingId, out var foundCategory)
+                ? foundCategory
+                : "booked";
         })
         .ToDictionary(group => group.Key, group => group.Count());
 }
@@ -105,16 +117,11 @@
             var sectionBookings = sortedBookings
                 .Where(item =>
                 {
-                    var itemCancelled = item.BookingStatus == "CANCELLED" || item.CancelledAt != null;
-                    var itemCheckedOut = checkedOutBookingIds.Contains(item.BookingId);
-                    var itemExpired = item.StartTime < now;
-                    var itemSection = itemCancelled
-                        ? "cancelled"
-                        : itemExpired || itemCheckedOut
-                            ? "expired"
-                            : "booked";
+                    var itemSection = bookingCategoryLookup.TryGetValue(item.BookingId, out var foundCategory)
+                        ? foundCategory
+                        : "booked";
 
-                    return itemSection == category.Key;
+                    return itemSection==category.Key;
                 })
                 .ToList();
 
@@ -139,10 +146,12 @@
                 <div class="booking-grid">
             @foreach (var booking in sectionBookings)
             {
-                var isExpired = booking.StartTime < now;
+                var bookingStartInstant = ToBookingInstant(booking.StartTime);
+                var bookingStartLocal = ToBookingLocal(booking.StartTime);
+                var isExpired = expiredBookingIds.Contains(booking.BookingId);
                 var isCancelled = booking.BookingStatus == "CANCELLED" || booking.CancelledAt != null;
                 var isCheckedOut = checkedOutBookingIds.Contains(booking.BookingId);
-                var minutesUntilShow = (booking.StartTime - now).TotalMinutes;
+                var minutesUntilShow = (bookingStartInstant - nowInstant).TotalMinutes;
                 var cancellationClosed = minutesUntilShow < 45;
                 var refundRate = cancellationClosed ? 0m : minutesUntilShow >= 120 ? 1m : 0.5m;
                 var refundRuleLabel = cancellationClosed
@@ -199,7 +208,7 @@
                          data-filter-search="@($"{booking.BookingRef} {booking.ShowTitle} {booking.ShowType} {booking.LocationName} {venueDetails} {screenName} {statusText} {booking.PaymentStatus} {booking.PaymentMethod} {refundStatus} {refundLabel}")"
                          data-filter-status="@($"{statusText}|{booking.PaymentStatus}|{refundStatus}|{refundLabel}")"
                          data-filter-method="@($"{booking.PaymentMethod}|{refund?.refund_method}")"
-                         data-sort-showtime="@booking.StartTime.ToString("yyyyMMddHHmmss")"
+                         data-sort-showtime="@bookingStartInstant.ToUnixTimeSeconds()"
                          data-sort-booked="@booking.BookedAt.ToString("yyyyMMddHHmmss")"
                          data-sort-amount="@((booking.PayableAmount ?? booking.TotalAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
                          data-sort-status="@statusText">
@@ -221,10 +230,10 @@
                     <div class="booking-meta booking-ticket-surface">
                         <div>
                             <span>Show Time</span>
-                            <strong>@booking.StartTime.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                            <strong>@bookingStartLocal.ToString("dd MMM yyyy, hh:mm tt")</strong>
                         </div>
                         <div>
-                            <span>Booked At</span>
+                            <span>Booked / Confirmed</span>
                             <strong>@booking.BookedAt.ToString("dd MMM yyyy, hh:mm tt")</strong>
                         </div>
                         <div>
@@ -262,10 +271,6 @@
                         <div>
                             <span>Transaction</span>
                             <strong>@(string.IsNullOrWhiteSpace(booking.TransactionRef) ? "NA" : booking.TransactionRef)</strong>
-                        </div>
-                        <div>
-                            <span>Confirmed</span>
-                            <strong>@(booking.ConfirmedAt?.ToString("dd MMM yyyy, hh:mm tt") ?? "Pending")</strong>
                         </div>
                     </div>
 

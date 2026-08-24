@@ -204,6 +204,17 @@ html[data-theme="cinema"] body {
         transition: width 0.14s ease, height 0.14s ease, opacity 0.18s ease, background 0.14s ease;
     }
 
+    .liquid-cursor::before,
+    .liquid-cursor::after,
+    .liquid-cursor-trail::before,
+    .liquid-cursor-trail::after {
+        content: "";
+        position: absolute;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.14s ease;
+    }
+
     .liquid-cursor-trail {
         width: 34px;
         height: 34px;
@@ -230,38 +241,114 @@ html[data-theme="cinema"] body {
         opacity: 0.84;
     }
 
+    html.app-liquid-cursor .liquid-cursor {
+        width: 14px;
+        height: 14px;
+        border-radius: 60% 42% 58% 46%;
+        animation: cursorLiquidPulse 1.7s ease-in-out infinite;
+    }
+
+    html.app-liquid-cursor .liquid-cursor-trail {
+        width: 38px;
+        height: 38px;
+        border-style: solid;
+        border-radius: 42% 58% 46% 62%;
+        background: radial-gradient(circle, color-mix(in srgb, var(--app-cursor-color, var(--app-accent-strong)) 16%, transparent), transparent 68%);
+    }
+
     html.app-liquid-cursor.cursor-hidden .liquid-cursor,
     html.app-liquid-cursor.cursor-hidden .liquid-cursor-trail {
         opacity: 0;
     }
 
     html.app-precision-cursor .liquid-cursor {
-        width: 6px;
-        height: 6px;
-        background: var(--app-cursor-color, var(--app-danger));
-        border-color: #fff;
-        box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-cursor-color, var(--app-danger)) 18%, transparent);
+        width: 22px;
+        height: 22px;
+        border-radius: 2px;
+        border: 0;
+        background:
+            linear-gradient(var(--app-cursor-color, var(--app-danger)), var(--app-cursor-color, var(--app-danger))) center / 2px 22px no-repeat,
+            linear-gradient(90deg, var(--app-cursor-color, var(--app-danger)), var(--app-cursor-color, var(--app-danger))) center / 22px 2px no-repeat;
+        box-shadow: none;
+        backdrop-filter: none;
     }
 
     html.app-precision-cursor .liquid-cursor-trail {
-        width: 28px;
-        height: 28px;
-        border-style: dashed;
+        width: 34px;
+        height: 34px;
+        border: 2px dashed var(--app-cursor-color, var(--app-danger));
+        border-radius: 50%;
         background: transparent;
+        box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--app-cursor-color, var(--app-danger)) 8%, transparent);
+        opacity: 0.88;
+        backdrop-filter: none;
+    }
+
+    html.app-precision-cursor .liquid-cursor::before,
+    html.app-precision-cursor .liquid-cursor::after {
+        opacity: 1;
+        background: var(--app-cursor-color, var(--app-danger));
+        border-radius: 999px;
+    }
+
+    html.app-precision-cursor .liquid-cursor::before {
+        left: 50%;
+        top: -9px;
+        bottom: -9px;
+        width: 2px;
+        transform: translateX(-50%);
+    }
+
+    html.app-precision-cursor .liquid-cursor::after {
+        top: 50%;
+        left: -9px;
+        right: -9px;
+        height: 2px;
+        transform: translateY(-50%);
+    }
+
+    html.app-precision-cursor.cursor-action .liquid-cursor-trail {
+        width: 42px;
+        height: 42px;
+        border-style: solid;
     }
 
     html.app-spotlight-cursor .liquid-cursor {
-        width: 12px;
-        height: 12px;
-        background: #fff;
-        border-color: var(--app-cursor-color, var(--app-accent));
+        width: 5px;
+        height: 5px;
+        border: 0;
+        background: var(--app-cursor-color, var(--app-accent));
+        box-shadow: 0 0 12px color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 52%, transparent);
+        backdrop-filter: none;
     }
 
     html.app-spotlight-cursor .liquid-cursor-trail {
-        width: 52px;
-        height: 52px;
-        background: color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 20%, transparent);
-        border-color: color-mix(in srgb, var(--app-primary) 44%, transparent);
+        width: 84px;
+        height: 84px;
+        border: 2px solid color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 58%, transparent);
+        background:
+            radial-gradient(circle, transparent 0 30%, color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 14%, transparent) 32% 100%);
+        box-shadow:
+            0 0 0 9999px color-mix(in srgb, var(--app-bg) 4%, transparent),
+            inset 0 0 22px color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 28%, transparent),
+            0 0 34px color-mix(in srgb, var(--app-cursor-color, var(--app-accent)) 22%, transparent);
+        opacity: 0.72;
+        backdrop-filter: blur(1px);
+    }
+
+    html.app-spotlight-cursor.cursor-action .liquid-cursor-trail {
+        width: 104px;
+        height: 104px;
+        opacity: 0.82;
+    }
+
+    @@keyframes cursorLiquidPulse {
+        0%, 100% {
+            border-radius: 60% 42% 58% 46%;
+        }
+        50% {
+            border-radius: 42% 62% 44% 58%;
+        }
     }
 }
 
@@ -1700,7 +1787,9 @@ z-index:9999;">
         && !(currentController == "Developer" && currentAction == "Index")
         && !(currentController == "Home" && currentAction == "Index")
         && !(currentController == "Booking" && currentAction == "MyBookings")
-        && !(currentController == "Booking" && currentAction == "Confirmation");
+        && !(currentController == "Booking" && currentAction == "Confirmation")
+        && !(currentController == "Transaction" && currentAction == "History")
+        && !(currentController == "Wallet" && currentAction == "Index");
     var currentVersion = "1.0.0";
 
     try

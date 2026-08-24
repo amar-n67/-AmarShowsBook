@@ -735,7 +735,6 @@ public async Task<IActionResult> MyBookings()
         return RedirectToAction("Login","Auth");
     }
 
-    var now = DateTime.UtcNow;
     var bookings=
 
     await _context
@@ -770,7 +769,7 @@ public async Task<IActionResult> MyBookings()
             .Select(x=>new { x.Id, WalletAmount = x.WalletAmountUsed ?? 0 })
             .ToDictionaryAsync(x=>x.Id,x=>x.WalletAmount);
 
-    ViewBag.CheckedOutBookingIds =
+    var checkedOutBookingIds =
         (await _context.Tickets
             .AsNoTracking()
             .Where(x=>bookingIds.Contains(x.BookingId)
@@ -780,6 +779,43 @@ public async Task<IActionResult> MyBookings()
             .Distinct()
             .ToListAsync())
         .ToHashSet();
+
+    var expiredBookingIds =
+        (await _context.VwBookingCompleteDetails
+            .AsNoTracking()
+            .Where(x=>bookingIds.Contains(x.BookingId)
+                && x.StartTime<DateTime.UtcNow)
+            .Select(x=>x.BookingId)
+            .ToListAsync())
+        .ToHashSet();
+
+    var bookingCategoryLookup =
+        bookings.ToDictionary(
+            x=>x.BookingId,
+            x=>
+            {
+                var isCancelled =
+                    x.BookingStatus=="CANCELLED" || x.CancelledAt!=null;
+
+                if(isCancelled)
+                {
+                    return "cancelled";
+                }
+
+                return expiredBookingIds.Contains(x.BookingId)
+                    || checkedOutBookingIds.Contains(x.BookingId)
+                    ? "expired"
+                    : "booked";
+            });
+
+    ViewBag.CheckedOutBookingIds=
+        checkedOutBookingIds;
+
+    ViewBag.ExpiredBookingIds=
+        expiredBookingIds;
+
+    ViewBag.BookingCategoryLookup=
+        bookingCategoryLookup;
 
     var bookingVenueRows =
     (
