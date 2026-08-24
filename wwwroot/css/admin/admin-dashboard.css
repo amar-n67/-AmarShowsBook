@@ -619,13 +619,16 @@ html[data-theme="cinema"] .admin-topbar {
 }
 
 .admin-table th {
-    background: var(--admin-night);
-    color: white;
-    border-bottom: 0;
+    background:
+        linear-gradient(180deg, var(--admin-panel-strong, #ffffff), rgba(248, 250, 252, 0.96));
+    color: var(--admin-ink, #111827);
+    border-bottom: 3px solid var(--admin-gold, #d9a441);
+    box-shadow: inset 0 -1px 0 var(--admin-line, rgba(17, 24, 39, 0.16));
     font-size: 0.72rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     white-space: nowrap;
+    text-shadow: none;
 }
 
 .admin-table th,

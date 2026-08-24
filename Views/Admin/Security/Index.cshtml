@@ -335,6 +335,7 @@
     }
 
     .security-work-panel {
+        min-width: 0;
         padding: 18px;
     }
 
@@ -351,8 +352,17 @@
         gap: 10px;
     }
 
+    .security-form-grid .form-control,
+    .security-form-grid .form-select {
+        min-width: 0;
+        width: 100%;
+    }
+
     .security-form-grid button {
         grid-column: 1 / -1;
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
     }
 
     .security-device-panel {
@@ -424,6 +434,11 @@
         scrollbar-width: thin;
     }
 
+    .security-table {
+        min-width: 1460px;
+        table-layout: fixed;
+    }
+
     .security-table thead th {
         position: sticky;
         top: 0;
@@ -432,16 +447,37 @@
         border-bottom: 3px solid var(--admin-gold);
     }
 
+    .security-table th,
+    .security-table td {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    .security-table th {
+        white-space: nowrap;
+    }
+
     .security-ticket-number,
     .security-user-name {
         color: var(--admin-ink);
         font-weight: 900;
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
 
     .security-row-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .security-row-actions form {
+        flex: 1 1 76px;
+        min-width: 76px;
     }
 
     .security-action {
@@ -449,9 +485,16 @@
         border-radius: 999px;
         color: white;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         font-size: 0.78rem;
         font-weight: 900;
+        line-height: 1.15;
+        min-height: 34px;
         padding: 7px 12px;
+        width: 100%;
+        white-space: nowrap;
     }
 
     .security-action.clear {
@@ -470,6 +513,10 @@
         padding: 6px 10px;
         font-size: 0.75rem;
         font-weight: 900;
+        line-height: 1.15;
+        max-width: 100%;
+        text-align: center;
+        white-space: normal;
     }
 
     .badge.success {
@@ -492,6 +539,39 @@
         color: #374151;
     }
 
+    #adminContextFilter .row {
+        display: grid;
+        grid-template-columns:
+            minmax(210px, 1.4fr)
+            minmax(150px, 0.9fr)
+            minmax(180px, 1fr)
+            minmax(180px, 1fr)
+            minmax(170px, 0.9fr)
+            minmax(96px, auto);
+        gap: 12px;
+        margin: 0;
+    }
+
+    #adminContextFilter .row > [class*="col-"] {
+        max-width: none;
+        min-width: 0;
+        padding: 0;
+        width: auto;
+    }
+
+    #adminContextFilter .form-control,
+    #adminContextFilter .form-select,
+    #adminContextFilter .btn {
+        min-height: 40px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    #adminContextFilter .form-select {
+        padding-right: 2.25rem;
+        text-overflow: ellipsis;
+    }
+
     @@media(max-width: 760px) {
         .security-admin-grid,
         .security-form-grid {
@@ -501,6 +581,21 @@
         .security-page .security-review-panel {
             align-items: stretch;
             flex-direction: column;
+        }
+
+        .security-page .security-review-panel form,
+        .security-page .security-review-panel button {
+            width: 100%;
+        }
+
+        #adminContextFilter .row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media(min-width: 761px) and (max-width: 1180px) {
+        #adminContextFilter .row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 </style>
