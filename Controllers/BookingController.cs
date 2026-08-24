@@ -330,6 +330,8 @@ public async Task<IActionResult> Seats(int? id)
         schedule.Type);
     }
 
+    await NormalizeSeatRowsForScreen(schedule.Id);
+
 
 
     var seats =
@@ -1508,7 +1510,7 @@ string type)
             decimal price;
 
 
-            if(row=="A" || row=="B")
+            if(row=="F" || row=="G")
             {
                 category="Premium";
                 price=350;
@@ -1563,6 +1565,86 @@ string type)
 
     await _context
     .SaveChangesAsync();
+}
+
+private async Task NormalizeSeatRowsForScreen(int scheduleId)
+{
+    var seats =
+        await _context.ScreenSeats
+            .Where(x=>x.ScheduleId==scheduleId)
+            .ToListAsync();
+
+    if(!seats.Any())
+    {
+        return;
+    }
+
+    var rows =
+        seats
+            .Select(x=>x.SeatRow)
+            .Where(x=>!string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .OrderBy(x=>x)
+            .ToList();
+
+    if(rows.Count==0)
+    {
+        return;
+    }
+
+    var silverPrice =
+        seats.Where(x=>(x.SeatCategory ?? "").Equals("Silver",StringComparison.OrdinalIgnoreCase))
+            .Select(x=>x.SeatPrice)
+            .DefaultIfEmpty(150)
+            .Min();
+    var goldPrice =
+        seats.Where(x=>(x.SeatCategory ?? "").Equals("Gold",StringComparison.OrdinalIgnoreCase))
+            .Select(x=>x.SeatPrice)
+            .DefaultIfEmpty(250)
+            .Min();
+    var premiumPrice =
+        seats.Where(x=>(x.SeatCategory ?? "").Equals("Premium",StringComparison.OrdinalIgnoreCase))
+            .Select(x=>x.SeatPrice)
+            .DefaultIfEmpty(350)
+            .Max();
+
+    var premiumStart = Math.Max(0, rows.Count - 2);
+    var goldStart = Math.Max(0, premiumStart - 2);
+    var changed = false;
+
+    foreach(var seat in seats)
+    {
+        var rowIndex = rows.IndexOf(seat.SeatRow);
+        if(rowIndex<0)
+        {
+            continue;
+        }
+
+        var category =
+            rowIndex>=premiumStart
+                ? "Premium"
+                : rowIndex>=goldStart
+                    ? "Gold"
+                    : "Silver";
+        var price =
+            category=="Premium"
+                ? premiumPrice
+                : category=="Gold"
+                    ? goldPrice
+                    : silverPrice;
+
+        if(seat.SeatCategory!=category || seat.SeatPrice!=price)
+        {
+            seat.SeatCategory=category;
+            seat.SeatPrice=price;
+            changed=true;
+        }
+    }
+
+    if(changed)
+    {
+        await _context.SaveChangesAsync();
+    }
 }
 
 private async Task<Booking> FinalizeBookingPayment(

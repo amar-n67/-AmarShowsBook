@@ -150,7 +150,11 @@ allowfullscreen>
 
 
 
-<div class="seat-board">
+<div class="seat-board" aria-label="Seat layout. Screen is at the top and premium seats are at the back.">
+<div class="seat-orientation">
+    <span>Front / Screen</span>
+    <strong>Premium rows are at the back</strong>
+</div>
 
 @if(seats!=null && seats.Any())
 {
@@ -161,7 +165,14 @@ allowfullscreen>
 
     foreach(var rowGroup in groupedSeats)
     {
-        <div class="seat-row">
+        var rowCategory =
+            rowGroup
+            .GroupBy(x=>x.Category ?? "")
+            .OrderByDescending(x=>x.Count())
+            .Select(x=>x.Key)
+            .FirstOrDefault() ?? "";
+
+        <div class="seat-row @((rowCategory ?? "").ToLowerInvariant())-row">
 
             <div class="row-label">
 
@@ -185,9 +196,9 @@ allowfullscreen>
                 {
                     cssClass="locked";
                 }
-                else if(seat.Price>300)
+                else
                 {
-                    cssClass="gold";
+                    cssClass=(seat.Category ?? "Silver").ToLowerInvariant();
                 }
 
                 count++;
@@ -198,8 +209,15 @@ allowfullscreen>
                 data-id="@seat.SeatId"
                 data-name="@seat.Row@seat.Number"
                 data-price="@seat.Price"
+                data-category="@seat.Category"
                 onclick="toggleSeat(this)"
                 @(seat.IsBooked||seat.IsLocked?"disabled":"")>
+
+                    <span class="chair-back" aria-hidden="true"></span>
+                    <span class="chair-arm chair-arm-left" aria-hidden="true"></span>
+                    <span class="chair-arm chair-arm-right" aria-hidden="true"></span>
+                    <span class="chair-cushion" aria-hidden="true"></span>
+                    <span class="chair-base" aria-hidden="true"></span>
 
                     <div class="seat-name">
 
@@ -252,7 +270,17 @@ Booked
 </div>
 
 <div class="legend-item">
+<div class="legend-box silver"></div>
+Silver
+</div>
+
+<div class="legend-item">
 <div class="legend-box gold"></div>
+Gold
+</div>
+
+<div class="legend-item">
+<div class="legend-box premium"></div>
 Premium
 </div>
 
@@ -325,11 +353,11 @@ Premium
                 🍿
             </div>
 
-            <div class="rat-track">
+            <div class="reel-track">
 
-                <div class="rat">
+                <div class="reel-dot">
 
-                    🐀
+                    ●
 
                 </div>
 
@@ -582,21 +610,72 @@ z-index:1;
 /* SEATS */
 
 .seat-board{
+padding:26px 18px 30px;
+max-width:1200px;
+margin:0 auto;
+overflow-x:auto;
+scrollbar-color:#ff2d55 #111827;
+scrollbar-width:thin;
+}
 
-padding:30px;
+.seat-orientation{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:14px;
+width:min(860px,100%);
+margin:0 auto 18px;
+padding:10px 16px;
+border:1px solid rgba(255,255,255,.12);
+border-radius:14px;
+background:linear-gradient(90deg,rgba(255,45,85,.18),rgba(255,255,255,.04));
+color:#f8fafc;
+font-size:13px;
+font-weight:800;
+}
+
+.seat-orientation span,
+.seat-orientation strong{
+display:block;
+white-space:nowrap;
+}
+
+.seat-orientation span{
+color:#ffb3c3;
+text-transform:uppercase;
+letter-spacing:.08em;
+font-size:11px;
 }
 
 .seat-row{
 
-display:flex;
+display:grid;
+grid-template-columns:34px repeat(5,58px) 48px repeat(5,58px);
 
 justify-content:center;
 
 align-items:center;
 
-gap:12px;
+gap:9px;
 
-margin-bottom:12px;
+margin-bottom:11px;
+min-width:760px;
+padding:6px 10px;
+border-radius:14px;
+transition:background .2s ease, box-shadow .2s ease;
+}
+
+.seat-row.premium-row{
+background:linear-gradient(90deg,rgba(255,217,92,.12),rgba(255,217,92,.04));
+box-shadow:inset 0 0 0 1px rgba(255,217,92,.12);
+}
+
+.seat-row.gold-row{
+background:linear-gradient(90deg,rgba(244,163,58,.08),transparent);
+}
+
+.seat-row.silver-row{
+background:linear-gradient(90deg,rgba(255,255,255,.04),transparent);
 }
 
 .row-label{
@@ -605,31 +684,32 @@ width:30px;
 
 color:#ff3d3d;
 
-font-size:24px;
+font-size:20px;
 
 font-weight:bold;
+text-align:center;
 }
 
 .seat-gap{
 
-width:70px;
+width:48px;
+height:1px;
 }
 
 /* REALISTIC 3D CINEMA CHAIR */
 
 .seat-btn{
 
-width:62px;
-height:72px;
+width:58px;
+height:70px;
 
 position:relative;
 
-border:none;
+border:0;
 
 cursor:pointer;
 
-border-radius:
-18px 18px 10px 10px;
+border-radius:18px 18px 12px 12px;
 
 display:flex;
 
@@ -639,53 +719,24 @@ justify-content:center;
 
 align-items:center;
 
-transition:all .4s ease;
+isolation:isolate;
+
+overflow:visible;
+
+background:transparent!important;
+
+perspective:460px;
+
+transition:transform .28s ease, filter .28s ease;
 
 transform-style:preserve-3d;
 
 font-weight:700;
 
-box-shadow:
-
-0 8px 12px rgba(0,0,0,.5),
-0 15px 25px rgba(0,0,0,.35);
+box-shadow:none;
 
 }
 
-
-/* chair backrest */
-
-.seat-btn::before{
-
-content:"";
-
-position:absolute;
-
-top:-12px;
-
-width:52px;
-
-height:28px;
-
-border-radius:
-
-18px 18px 6px 6px;
-
-background:inherit;
-
-transform:
-
-translateZ(-4px);
-
-box-shadow:
-
-inset 0 5px 8px rgba(255,255,255,.3),
-0 6px 10px rgba(0,0,0,.4);
-
-}
-
-
-/* chair bottom */
 
 .seat-btn::after{
 
@@ -693,19 +744,103 @@ content:"";
 
 position:absolute;
 
-bottom:-8px;
+left:8px;
+right:8px;
+bottom:-7px;
 
-width:46px;
-
-height:8px;
+height:12px;
 
 background:rgba(0,0,0,.35);
 
-border-radius:50%;
+border-radius:999px;
 
-filter:blur(4px);
+filter:blur(5px);
 
 z-index:-1;
+}
+
+.chair-back,
+.chair-cushion,
+.chair-arm,
+.chair-base{
+position:absolute;
+display:block;
+pointer-events:none;
+}
+
+.chair-back{
+left:7px;
+right:7px;
+top:3px;
+height:40px;
+border-radius:16px 16px 9px 9px;
+background:var(--seat-back);
+box-shadow:
+inset 0 5px 8px rgba(255,255,255,.34),
+inset 0 -11px 14px rgba(0,0,0,.22),
+0 8px 12px rgba(0,0,0,.38);
+transform:rotateX(8deg) translateZ(6px);
+z-index:1;
+}
+
+.chair-back::before{
+content:"";
+position:absolute;
+left:8px;
+right:8px;
+top:8px;
+height:10px;
+border-radius:999px;
+background:rgba(255,255,255,.22);
+}
+
+.chair-cushion{
+left:9px;
+right:9px;
+bottom:13px;
+height:26px;
+border-radius:10px 10px 14px 14px;
+background:var(--seat-cushion);
+box-shadow:
+inset 0 4px 7px rgba(255,255,255,.28),
+inset 0 -8px 12px rgba(0,0,0,.24),
+0 8px 12px rgba(0,0,0,.35);
+transform:rotateX(58deg) translateY(7px);
+transform-origin:top center;
+z-index:3;
+}
+
+.chair-arm{
+top:30px;
+width:9px;
+height:31px;
+border-radius:8px 8px 11px 11px;
+background:var(--seat-side);
+box-shadow:
+inset 0 3px 4px rgba(255,255,255,.22),
+0 6px 9px rgba(0,0,0,.38);
+z-index:4;
+}
+
+.chair-arm-left{
+left:3px;
+transform:skewY(-8deg);
+}
+
+.chair-arm-right{
+right:3px;
+transform:skewY(8deg);
+}
+
+.chair-base{
+left:17px;
+right:17px;
+bottom:2px;
+height:11px;
+border-radius:3px 3px 8px 8px;
+background:linear-gradient(180deg,rgba(20,20,24,.8),rgba(0,0,0,.92));
+box-shadow:0 5px 10px rgba(0,0,0,.42);
+z-index:2;
 }
 
 
@@ -715,108 +850,90 @@ z-index:-1;
 
 transform:
 
-translateY(-8px)
-rotateX(12deg)
-scale(1.08);
+translateY(-7px)
+rotateX(7deg)
+scale(1.07);
 
-box-shadow:
-
-0 12px 25px rgba(0,0,0,.5),
-0 20px 35px rgba(0,0,0,.4);
+filter:brightness(1.08) saturate(1.08);
 }
 
 
 
 /* AVAILABLE */
 
-.available{
-
-background:
-
-linear-gradient(
-180deg,
-#ffffff,
-#d5d5d5
-);
-
+.available,
+.silver{
+--seat-back:linear-gradient(180deg,#ffffff,#d8dde7 58%,#aab3c2);
+--seat-cushion:linear-gradient(180deg,#f8fafc,#cbd5e1);
+--seat-side:linear-gradient(180deg,#e5e7eb,#94a3b8);
 color:black;
+}
+
+.silver{
+--seat-back:linear-gradient(180deg,#ffffff,#d8dde7 58%,#aab3c2);
+--seat-cushion:linear-gradient(180deg,#f8fafc,#cbd5e1);
+--seat-side:linear-gradient(180deg,#e5e7eb,#94a3b8);
 }
 
 
 /* SELECTED */
 
 .selected{
-
-background:
-
-linear-gradient(
-180deg,
-#33ff77,
-#11bb44
-)!important;
-
+--seat-back:linear-gradient(180deg,#7cff9f,#20d655 58%,#0f8d36);
+--seat-cushion:linear-gradient(180deg,#55ff88,#10b943);
+--seat-side:linear-gradient(180deg,#33ff77,#078b31);
 color:black!important;
-
-box-shadow:
-
-0 0 18px #33ff77,
-0 15px 25px rgba(0,0,0,.4);
+filter:drop-shadow(0 0 12px rgba(51,255,119,.62));
 }
 
 
 /* BOOKED */
 
 .booked{
-
-background:
-
-linear-gradient(
-180deg,
-#ff5a5a,
-#c30000
-);
-
+--seat-back:linear-gradient(180deg,#ff8a8a,#e11d48 58%,#8f0a20);
+--seat-cushion:linear-gradient(180deg,#ff5a5a,#b80023);
+--seat-side:linear-gradient(180deg,#ef4444,#7f1d1d);
 cursor:not-allowed;
-
-box-shadow:
-
-0 0 15px rgba(255,0,0,.35);
+filter:saturate(.72) brightness(.82);
 }
 
 
 /* LOCKED */
 
 .locked{
-
-background:
-
-linear-gradient(
-180deg,
-#9f7aea,
-#6d28d9
-);
-
+--seat-back:linear-gradient(180deg,#c4b5fd,#8b5cf6 58%,#5b21b6);
+--seat-cushion:linear-gradient(180deg,#a78bfa,#6d28d9);
+--seat-side:linear-gradient(180deg,#8b5cf6,#4c1d95);
 cursor:not-allowed;
 }
 
 
-/* PREMIUM */
+/* GOLD */
 
 .gold{
-
-background:
-
-linear-gradient(
-180deg,
-#ffd95c,
-#d49b2a
-);
-
+--seat-back:linear-gradient(180deg,#ffd08a,#f59e0b 58%,#b45309);
+--seat-cushion:linear-gradient(180deg,#fbbf24,#c66a14);
+--seat-side:linear-gradient(180deg,#f59e0b,#92400e);
 color:black;
+filter:drop-shadow(0 0 8px rgba(246,173,85,.24));
+}
 
-box-shadow:
+/* PREMIUM */
 
-0 0 15px rgba(255,215,0,.4);
+.premium{
+--seat-back:linear-gradient(180deg,#fff3a8,#facc15 52%,#b7791f);
+--seat-cushion:linear-gradient(180deg,#ffe88a,#d49b2a 62%,#9c650d);
+--seat-side:linear-gradient(180deg,#facc15,#a16207);
+color:#14120a;
+filter:drop-shadow(0 0 12px rgba(255,215,0,.42));
+}
+
+.seat-btn.selected{
+--seat-back:linear-gradient(180deg,#7cff9f,#20d655 58%,#0f8d36);
+--seat-cushion:linear-gradient(180deg,#55ff88,#10b943);
+--seat-side:linear-gradient(180deg,#33ff77,#078b31);
+color:black!important;
+filter:drop-shadow(0 0 14px rgba(51,255,119,.7)) saturate(1.08);
 }
 
 
@@ -829,18 +946,30 @@ font-size:12px;
 
 font-weight:800;
 
-z-index:5;
+z-index:6;
+position:relative;
+margin-top:2px;
+padding:1px 4px;
+border-radius:999px;
+background:rgba(255,255,255,.72);
+color:#111827;
+box-shadow:0 1px 3px rgba(0,0,0,.18);
 }
 
 .seat-price{
 
-font-size:10px;
+font-size:9px;
 
-margin-top:4px;
+margin-top:2px;
 
-opacity:.85;
+opacity:.92;
 
-z-index:5;
+z-index:6;
+position:relative;
+padding:1px 4px;
+border-radius:999px;
+background:rgba(0,0,0,.42);
+color:#fff;
 }
 
 
@@ -865,17 +994,30 @@ gap:20px;
 }
 
 .seat-btn{
-width:50px;
-height:58px;
+width:52px;
+height:60px;
 }
 
-.seat-btn::before{
-width:42px;
-height:20px;
+.chair-back{
+left:6px;
+right:6px;
+height:34px;
+}
+
+.chair-cushion{
+left:8px;
+right:8px;
+height:22px;
+}
+
+.chair-arm{
+height:27px;
+top:27px;
+width:8px;
 }
 
 .seat-gap{
-width:20px;
+width:34px;
 }
 
 .booking-hero h1{
@@ -928,6 +1070,37 @@ width:25px;
 height:25px;
 
 border-radius:8px;
+box-shadow:
+inset 0 2px 4px rgba(255,255,255,.28),
+0 6px 12px rgba(0,0,0,.32);
+}
+
+.legend-box.available{
+background:linear-gradient(180deg,#ffffff,#d5d5d5);
+}
+
+.legend-box.selected{
+background:linear-gradient(180deg,#33ff77,#11bb44);
+}
+
+.legend-box.locked{
+background:linear-gradient(180deg,#9f7aea,#6d28d9);
+}
+
+.legend-box.booked{
+background:linear-gradient(180deg,#ff5a5a,#c30000);
+}
+
+.legend-box.silver{
+background:linear-gradient(180deg,#ffffff,#d8dde7 58%,#aab3c2);
+}
+
+.legend-box.gold{
+background:linear-gradient(180deg,#f6ad55,#c66a14);
+}
+
+.legend-box.premium{
+background:linear-gradient(180deg,#fff3a8,#facc15 52%,#b7791f);
 }
 
 /* right side */
@@ -990,9 +1163,9 @@ color:#ff2d55;
 }
 
 
-/* rat running area */
+/* cinema motion strip */
 
-.rat-track{
+.reel-track{
 
 width:100%;
 
@@ -1006,17 +1179,23 @@ margin-top:15px;
 }
 
 
-.rat{
+.reel-dot{
 
 position:absolute;
 
 font-size:30px;
+line-height:1;
+color:#ff2d55;
+text-shadow:
+0 0 14px rgba(255,45,85,.75),
+28px 0 0 #facc15,
+56px 0 0 #38bdf8;
 
 animation:
-runRat 5s linear infinite;
+runReel 5s linear infinite;
 }
 
-@@keyframes runRat{
+@@keyframes runReel{
 
 0%{
 left:-50px;

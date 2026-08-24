@@ -4995,10 +4995,12 @@ private async Task GenerateManagedSeats(
     {
         var rowName = ((char)('A' + rowIndex)).ToString();
         var seatsInRow = Math.Min(seatsPerRow, totalSeats - (rowIndex * seatsPerRow));
+        var premiumStartRow = Math.Max(0, rows - 2);
+        var goldStartRow = Math.Max(0, premiumStartRow - 3);
 
         for (var seatNumber = 1; seatNumber <= seatsInRow; seatNumber++)
         {
-            var category = rowIndex < 2 ? "Premium" : rowIndex < 5 ? "Gold" : "Silver";
+            var category = rowIndex >= premiumStartRow ? "Premium" : rowIndex >= goldStartRow ? "Gold" : "Silver";
             var price = category == "Premium" ? premiumPrice : category == "Gold" ? goldPrice : silverPrice;
 
             seats.Add(new ScreenSeat
