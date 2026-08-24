@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggle = document.getElementById("adminNavToggle");
     const search = document.getElementById("adminPageSearch");
     const clear = document.getElementById("adminSearchClear");
+    const exportButton = document.querySelector("[data-admin-export]");
 
     if (shell && toggle) {
         const refreshToggleLabel = () => {
@@ -60,6 +61,132 @@ document.addEventListener("DOMContentLoaded", () => {
         search.value = "";
         filterPage();
         search.focus();
+    });
+
+    const normalizeExportText = (value) => String(value || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const csvCell = (value) => {
+        const text = normalizeExportText(value);
+        return /[",\n]/.test(text)
+            ? `"${text.replace(/"/g, '""')}"`
+            : text;
+    };
+
+    const isVisibleExportElement = (element) => {
+        if (!element || element.hidden) {
+            return false;
+        }
+
+        const style = window.getComputedStyle(element);
+        return style.display !== "none" && style.visibility !== "hidden";
+    };
+
+    const getAdminPageName = () => {
+        const title = document.querySelector(".admin-page-header h1, .admin-header h1, h1, h2");
+        return normalizeExportText(title?.textContent || document.title || "admin-data")
+            .replace(/\s+-\s+Admin Panel$/i, "")
+            .replace(/[^a-z0-9]+/gi, "-")
+            .replace(/^-+|-+$/g, "")
+            .toLowerCase() || "admin-data";
+    };
+
+    const downloadCsv = (rows) => {
+        const timestamp = new Date()
+            .toISOString()
+            .slice(0, 19)
+            .replace(/[-:T]/g, "");
+        const filename = `${getAdminPageName()}-${timestamp}.csv`;
+        const csv = rows
+            .map((row) => row.map(csvCell).join(","))
+            .join("\n");
+        const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    };
+
+    const getTableExportRows = () => {
+        const tables = [...document.querySelectorAll("table")]
+            .filter((table) => isVisibleExportElement(table))
+            .filter((table) => table.querySelector("tbody tr"));
+        const rows = [];
+
+        tables.forEach((table, tableIndex) => {
+            const headers = [...table.querySelectorAll("thead th")]
+                .map((cell, index) => ({
+                    index,
+                    text: normalizeExportText(cell.textContent)
+                }))
+                .filter((header) => header.text && !/^actions?$/i.test(header.text));
+            const headerIndexes = headers.map((header) => header.index);
+            const tableRows = [...table.querySelectorAll("tbody tr")]
+                .filter((row) => isVisibleExportElement(row));
+
+            if (!headers.length || !tableRows.length) {
+                return;
+            }
+
+            if (tableIndex > 0 && rows.length) {
+                rows.push([]);
+            }
+
+            rows.push(headers.map((header) => header.text));
+            tableRows.forEach((row) => {
+                const cells = [...row.children];
+                rows.push(headerIndexes.map((index) => normalizeExportText(cells[index]?.textContent)));
+            });
+        });
+
+        return rows;
+    };
+
+    const getCardExportRows = () => {
+        const cards = [
+            ...document.querySelectorAll(".access-card"),
+            ...document.querySelectorAll("[data-admin-searchable]")
+        ].filter((item, index, items) => items.indexOf(item) === index)
+            .filter((item) => !item.closest("table"))
+            .filter((item) => isVisibleExportElement(item));
+
+        if (!cards.length) {
+            return [];
+        }
+
+        return [
+            ["Record", "Details"],
+            ...cards.map((card, index) => [
+                String(index + 1),
+                normalizeExportText(card.textContent)
+            ])
+        ];
+    };
+
+    exportButton?.addEventListener("click", () => {
+        const previousLabel = exportButton.textContent;
+        const rows = getTableExportRows();
+        const exportRows = rows.length ? rows : getCardExportRows();
+
+        if (!exportRows.length) {
+            exportButton.textContent = "No Data";
+            window.setTimeout(() => {
+                exportButton.textContent = previousLabel;
+            }, 1400);
+            return;
+        }
+
+        downloadCsv(exportRows);
+        exportButton.textContent = "Exported";
+        window.setTimeout(() => {
+            exportButton.textContent = previousLabel;
+        }, 1400);
     });
 
     document.querySelectorAll("[data-page-filter]").forEach((panel) => {
