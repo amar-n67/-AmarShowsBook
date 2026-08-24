@@ -1004,6 +1004,7 @@ namespace AmarShowsBook.Controllers
             schedule.ScreenId = resolvedScreenId;
             schedule.StartTime = startTime;
             schedule.EndTime = startTime.AddMinutes(duration);
+            schedule.ShowDay = GetScheduleDayName(startTime);
 
             if (schedule.Movie != null)
             {
@@ -3745,8 +3746,14 @@ private static ShowSchedule CreateSchedule(
         ScreenId = request.ScreenId,
         StartTime = utcStart,
         EndTime = utcStart.AddMinutes(duration),
+        ShowDay = GetScheduleDayName(startTime),
         Type = type
     };
+}
+
+private static string GetScheduleDayName(DateTime showDate)
+{
+    return showDate.ToString("dddd", CultureInfo.InvariantCulture);
 }
 
 private static List<DateTime> BuildManagedShowStartTimes(ManageShowCreateViewModel request)
@@ -4457,6 +4464,11 @@ ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Description"" text
 ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
 ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Images"" text;
 ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""ShowSchedules"" ADD COLUMN IF NOT EXISTS ""ShowDay"" varchar(20);
+
+UPDATE public.""ShowSchedules""
+SET ""ShowDay"" = trim(to_char(""StartTime"", 'Day'))
+WHERE ""ShowDay"" IS NULL OR trim(""ShowDay"") = '';
 
 CREATE TABLE IF NOT EXISTS public.application_versions
 (

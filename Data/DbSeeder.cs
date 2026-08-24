@@ -1,10 +1,16 @@
 using AmarShowsBook.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace AmarShowsBook.Data
 {
     public static class DbSeeder
     {
+        private static string DayName(DateTime date)
+        {
+            return date.ToString("dddd", CultureInfo.InvariantCulture);
+        }
+
         public static void Seed(ApplicationDbContext context)
         {
             if (!context.Movies.Any())
@@ -80,7 +86,8 @@ if (!context.ShowSchedules.Any())
                 MovieId = movie.Id,
                 LocationId = location.Id,
                 StartTime = baseTime,
-                EndTime = baseTime.AddMinutes(movie.Duration)
+                EndTime = baseTime.AddMinutes(movie.Duration),
+                ShowDay = DayName(baseTime)
             });
 
             baseTime = baseTime.AddMinutes(movie.Duration + 15);
@@ -96,7 +103,8 @@ if (!context.ShowSchedules.Any())
             StandupShowId = standup.Id,
             LocationId = location.Id,
             StartTime = baseTime,
-            EndTime = baseTime.AddMinutes(standup.Duration)
+            EndTime = baseTime.AddMinutes(standup.Duration),
+            ShowDay = DayName(baseTime)
         });
 
         baseTime = baseTime.AddMinutes(standup.Duration + 30);
@@ -107,13 +115,16 @@ if (!context.ShowSchedules.Any())
     {
         var live = lives[i % lives.Count];
 
+        var liveStart = DateTime.UtcNow.AddMinutes(i * 10);
+
         context.ShowSchedules.Add(new ShowSchedule
         {
             Type = "Live",
             LiveStreamId = live.Id,
             LocationId = location.Id,
-            StartTime = DateTime.UtcNow.AddMinutes(i * 10),
-            EndTime = DateTime.UtcNow.AddMinutes(i * 10 + live.Duration)
+            StartTime = liveStart,
+            EndTime = liveStart.AddMinutes(live.Duration),
+            ShowDay = DayName(liveStart)
         });
 
         totalShows++;

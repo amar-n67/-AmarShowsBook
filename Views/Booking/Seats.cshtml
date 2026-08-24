@@ -45,6 +45,11 @@ var theaterDetails =
 venueInfo!=null
 ? $"{venueInfo.VenueName} / {screen?.ScreenName ?? "Screen TBA"} / {venueInfo.Address}, {venueInfo.City}"
 : location;
+
+var selectedShowDay =
+string.IsNullOrWhiteSpace(Model.ShowDay)
+? Model.StartTime.ToString("dddd")
+: Model.ShowDay;
 }
 
 <section class="booking-page">
@@ -68,6 +73,7 @@ Seat Shot
 <p>
 
 @Model.Type /
+@selectedShowDay /
 @Model.StartTime.ToString("dd MMM yyyy, hh:mm tt")
 /
 @theaterDetails
@@ -95,9 +101,6 @@ Seat Shot
 @{
     var currentDate =
     Model.StartTime.Date;
-
-    var dateListUntil =
-    DateTime.UtcNow.Date.AddDays(7).AddDays(1);
 }
 
 @if(availableDates != null && availableDates.Any())
@@ -106,8 +109,6 @@ Seat Shot
 
 @foreach(var show in
 availableDates
-.Where(x=>x.StartTime >= DateTime.UtcNow)
-.Where(x=>x.StartTime < dateListUntil)
 .GroupBy(x=>x.StartTime.Date)
 .Select(x=>x.First())
 .OrderBy(x=>x.StartTime))
@@ -115,11 +116,19 @@ availableDates
     bool activeDate =
     show.StartTime.Date == currentDate;
 
+    var showDay =
+    string.IsNullOrWhiteSpace(show.ShowDay)
+    ? show.StartTime.ToString("ddd")
+    : show.ShowDay;
+
+    showDay = showDay.Length > 3 ? showDay.Substring(0, 3) : showDay;
+
     <a
     class="date-chip @(activeDate ? "active":"")"
     href="/Booking/Seats/@show.Id">
 
-        @show.StartTime.ToString("dd MMM")
+        <span>@showDay</span>
+        <strong>@show.StartTime.ToString("dd MMM")</strong>
 
     </a>
 }
@@ -489,26 +498,49 @@ display:flex;
 
 justify-content:center;
 
-gap:15px;
+gap:8px;
 
-margin:35px 0;
+margin:18px 0 24px;
+
+flex-wrap:wrap;
 }
 
 .date-chip{
+
+display:grid;
+
+gap:4px;
+
+min-width:64px;
 
 background:#111827;
 
 border:1px solid #333;
 
-border-radius:15px;
+border-radius:10px;
 
-padding:15px 25px;
+padding:7px 10px;
 
 text-decoration:none;
 
 color:white;
 
+text-align:center;
+
 transition:.4s;
+}
+
+.date-chip span{
+font-size:.66rem;
+font-weight:800;
+opacity:.78;
+line-height:1;
+}
+
+.date-chip strong{
+font-size:.82rem;
+font-weight:950;
+line-height:1.05;
 }
 
 .date-chip:hover{

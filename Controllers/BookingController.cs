@@ -233,7 +233,10 @@ private async Task EnsureTicketsForConfirmedBooking(
 public async Task<IActionResult> Seats(int? id)
 {
     // Seat selection always works from one schedule; missing ids fall back to the nearest available show.
+    await EnsureScheduleDayCompatibility();
+
     ShowSchedule? schedule;
+    var now = DateTime.UtcNow;
 
     if(!id.HasValue)
     {
@@ -243,7 +246,7 @@ public async Task<IActionResult> Seats(int? id)
         .Include(x=>x.StandupShow)
         .Include(x=>x.LiveStream)
         .Include(x=>x.Location)
-        .Where(x=>x.StartTime >= DateTime.UtcNow)
+        .Where(x=>x.StartTime >= now)
         .OrderBy(x=>x.StartTime)
         .FirstOrDefaultAsync();
 
@@ -266,19 +269,31 @@ public async Task<IActionResult> Seats(int? id)
     if(schedule==null)
         return NotFound();
 
+    if(schedule.StartTime < now)
+    {
+        var nearestFutureSchedule =
+        await FindFutureScheduleForSameShow(schedule, now);
 
+        if(nearestFutureSchedule == null)
+            return NotFound();
 
-    var availableUntil =
-    DateTime.UtcNow.Date.AddDays(7).AddDays(1);
+        return Redirect($"/Booking/Seats/{nearestFutureSchedule.Id}");
+    }
+
+    var selectedWeekStart = GetWeekStart(schedule.StartTime);
+    var selectedWeekEnd = selectedWeekStart.AddDays(7);
 
     var availableDates =
     await _context.ShowSchedules
     .Where(x=>
 
-        x.StartTime >= DateTime.UtcNow
+        x.StartTime >= now
         &&
 
-        x.StartTime < availableUntil
+        x.StartTime >= selectedWeekStart
+        &&
+
+        x.StartTime < selectedWeekEnd
 
         &&
 
@@ -316,6 +331,8 @@ public async Task<IActionResult> Seats(int? id)
 
     ViewBag.AvailableDates =
     availableDates;
+    ViewBag.CurrentWeekStart = selectedWeekStart;
+    ViewBag.CurrentWeekEnd = selectedWeekEnd.AddTicks(-1);
     await SetTheaterViewBag(schedule);
 
 
@@ -333,10 +350,6 @@ public async Task<IActionResult> Seats(int? id)
 
     await NormalizeSeatRowsForScreen(schedule.Id);
     await ReleaseExpiredSeatLocks(schedule.Id);
-
-
-    var now =
-    DateTime.UtcNow;
 
     var seats =
     await
@@ -2982,6 +2995,46 @@ private async Task SetTheaterViewBag(ShowSchedule? schedule)
 
     ViewBag.Screen=screen;
     ViewBag.Venue=venue;
+}
+
+private static DateTime GetWeekStart(DateTime date)
+{
+    var daysSinceMonday =
+    ((int)date.DayOfWeek + 6) % 7;
+
+    return date.Date.AddDays(-daysSinceMonday);
+}
+
+private async Task EnsureScheduleDayCompatibility()
+{
+    await _context.Database.ExecuteSqlRawAsync(@"
+ALTER TABLE public.""ShowSchedules"" ADD COLUMN IF NOT EXISTS ""ShowDay"" varchar(20);
+
+UPDATE public.""ShowSchedules""
+SET ""ShowDay"" = trim(to_char(""StartTime"", 'Day'))
+WHERE ""ShowDay"" IS NULL OR trim(""ShowDay"") = '';
+");
+}
+
+private async Task<ShowSchedule?> FindFutureScheduleForSameShow(
+ShowSchedule schedule,
+DateTime now)
+{
+    return await _context.ShowSchedules
+    .Where(x=>
+        x.StartTime >= now
+        &&
+        x.Type == schedule.Type
+        &&
+        (
+            (schedule.Type=="Movie" && x.MovieId==schedule.MovieId)
+            ||
+            (schedule.Type=="Standup" && x.StandupShowId==schedule.StandupShowId)
+            ||
+            (schedule.Type=="Live" && x.LiveStreamId==schedule.LiveStreamId)
+        ))
+    .OrderBy(x=>x.StartTime)
+    .FirstOrDefaultAsync();
 }
 
 private string ResolveRefundMethod(string? paymentMethod, decimal walletAmount, decimal sourceAmount)

@@ -194,6 +194,11 @@ ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Description"" text
 ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
 ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Images"" text;
 ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""ShowSchedules"" ADD COLUMN IF NOT EXISTS ""ShowDay"" varchar(20);
+
+UPDATE public.""ShowSchedules""
+SET ""ShowDay"" = trim(to_char(""StartTime"", 'Day'))
+WHERE ""ShowDay"" IS NULL OR trim(""ShowDay"") = '';
 
 CREATE OR REPLACE VIEW public.vw_home_show_listing AS
 SELECT

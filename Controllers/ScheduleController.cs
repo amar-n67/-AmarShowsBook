@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
+using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
@@ -71,7 +72,8 @@ namespace AmarShowsBook.Controllers
                 Type = type,
                 LocationId = locationId,
                 StartTime = startTime,
-                EndTime = endTime
+                EndTime = endTime,
+                ShowDay = startTime.ToString("dddd", CultureInfo.InvariantCulture)
             };
 
             if (type == "Movie") schedule.MovieId = itemId;

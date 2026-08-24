@@ -590,12 +590,12 @@
 
         if (value === "support-options") {
             renderOptions([
-                { label: "Call Support", url: "tel:+918920993434" },
-                { label: "Email Support", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "Call", url: "tel:+918920993434" },
+                { label: "Email", url: "mailto:arcanaamar67@gmail.com" },
                 { label: "Admin Dashboard", url: "/Admin/Dashboard" },
                 { label: "My Bookings", url: "/Booking/MyBookings" }
             ]);
-            addMessage("Support is available at +91 8920993434 and arcanaamar67@gmail.com. Share the booking, transaction, or refund reference when possible.", "bot");
+            addMessage("Choose Call or Email for support. Share the booking, transaction, or refund reference when possible.", "bot");
             return true;
         }
 

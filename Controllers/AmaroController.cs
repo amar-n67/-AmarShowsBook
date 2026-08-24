@@ -67,7 +67,7 @@ public class AmaroController : Controller
         if (string.IsNullOrWhiteSpace(message))
         {
             return Json(new AmaroAskResponse(
-                $"Ask me about bookings, tickets, wallet, transactions, profile, admin access, support, or available menus. Support: {SupportPhone}, {SupportEmail}.",
+                "Ask me about bookings, tickets, wallet, transactions, profile, admin access, support, or available menus.",
                 BuildSupportOptions()));
         }
 
@@ -116,7 +116,7 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                $"I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, check wallet/profile/transactions, switch theme or cursor, and connect you to support. Support: {SupportPhone}, {SupportEmail}.",
+                "I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, check wallet/profile/transactions, switch theme or cursor, and connect you to support.",
                 BuildAssistantOptions(menuItems, userId).Take(6).ToArray());
         }
 
@@ -409,7 +409,7 @@ public class AmaroController : Controller
         return new AmaroAskResponse(
             matchedMenus.Any()
                 ? $"I found related app areas: {FormatList(matchedMenus.Select(x => x.Label))}."
-                : $"I can help with your allowed menus, bookings, tickets, wallet, transactions, shows, profile, support, and admin summaries when your role permits it. Support: {SupportPhone}, {SupportEmail}.",
+                : "I can help with your allowed menus, bookings, tickets, wallet, transactions, shows, profile, support, and admin summaries when your role permits it.",
             matchedMenus.Any() ? matchedMenus : quickLinks);
     }
 
@@ -433,7 +433,7 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                $"I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, and connect you to support. Support: {SupportPhone}, {SupportEmail}. Login is required when you choose seats or view account details.",
+                "I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, and connect you to support. Login is required when you choose seats or view account details.",
                 new[]
                 {
                     new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
@@ -1154,7 +1154,7 @@ public class AmaroController : Controller
         }
 
         return new AmaroAskResponse(
-            $"Smart next steps: browse shows, check seats and prices, review your bookings, contact support, or open a role-allowed page. Support: {SupportPhone}, {SupportEmail}. I will keep actions inside your access.",
+            "Smart next steps: browse shows, check seats and prices, review your bookings, contact support, or open a role-allowed page. I will keep actions inside your access.",
             BuildAssistantOptions(menuItems, userId).Take(6).ToArray());
     }
 
@@ -1228,7 +1228,7 @@ public class AmaroController : Controller
     private static AmaroAskResponse BuildSupportReply()
     {
         return new AmaroAskResponse(
-            $"Contact support anytime: mobile {SupportPhone}, email {SupportEmail}. For booking/payment/refund problems, include your booking reference or transaction reference if you have it.",
+            "Choose Call or Email for support. For booking/payment/refund problems, include your booking reference or transaction reference if you have it.",
             BuildSupportOptions());
     }
 
@@ -1237,7 +1237,7 @@ public class AmaroController : Controller
         return new[]
         {
             new AmaroQuickOption("Call", $"tel:{SupportPhone.Replace(" ", "")}"),
-            new AmaroQuickOption("Write to us", $"mailto:{SupportEmail}"),
+            new AmaroQuickOption("Email", $"mailto:{SupportEmail}"),
             new AmaroQuickOption("My Bookings", "/Booking/MyBookings"),
             new AmaroQuickOption("Transactions", "/Transaction/History")
         };

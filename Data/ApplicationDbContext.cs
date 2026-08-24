@@ -402,6 +402,11 @@ modelBuilder.Entity<Booking>(entity =>
         .HasColumnName("screen_id");
 
     modelBuilder.Entity<ShowSchedule>()
+        .Property(x=>x.ShowDay)
+        .HasColumnName("ShowDay")
+        .HasMaxLength(20);
+
+    modelBuilder.Entity<ShowSchedule>()
         .HasOne(x=>x.Movie)
         .WithMany()
         .HasForeignKey(x=>x.MovieId)

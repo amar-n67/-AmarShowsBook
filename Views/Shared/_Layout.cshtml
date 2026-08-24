@@ -167,8 +167,6 @@ html[data-theme="cinema"] {
 }
 
 body {
-    --film-navbar-space: 88px;
-    padding-top: var(--film-navbar-space);
     background: var(--app-bg);
     color: var(--app-text);
     font-family: 'Segoe UI', sans-serif;
@@ -786,12 +784,8 @@ html[data-theme="dark"] [style*="color: black"] {
 }
 
 .film-navbar {
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    right: 14px;
-    z-index: 1040;
-    margin: 0;
+    position: relative;
+    margin: 14px;
     border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
     border-radius: 8px;
     background: var(--app-nav);
@@ -1487,9 +1481,7 @@ html[data-theme="system"] .film-nav-icon {
 
 @@media (max-width: 1180px) {
     .film-navbar {
-        top: 8px;
-        left: 8px;
-        right: 8px;
+        margin: 8px;
     }
 
     .film-navbar .container-fluid {
@@ -1969,7 +1961,6 @@ footer {
 
     html,
     body {
-        padding-top: 0 !important;
         background: #fff !important;
         color: #111 !important;
     }
@@ -2433,19 +2424,10 @@ function filterCurrentPage(term) {
 
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("appPageSearch");
-    const filmNavbar = document.querySelector(".film-navbar");
     const filmMenu = document.getElementById("filmMenu");
     const filmMenuButton = document.querySelector("[data-film-menu-button]");
     const supportMenus = document.querySelectorAll(".film-support-menu");
     let filmMenuCloseTimer = 0;
-
-    function syncFilmNavbarSpace() {
-        if (!filmNavbar) return;
-
-        const rect = filmNavbar.getBoundingClientRect();
-        const top = Number.parseFloat(window.getComputedStyle(filmNavbar).top) || 0;
-        document.body.style.setProperty("--film-navbar-space", `${Math.ceil(rect.height + top + 14)}px`);
-    }
 
     function isFilmMenuCollapsed() {
         return Boolean(filmMenuButton) && window.getComputedStyle(filmMenuButton).display !== "none";
@@ -2475,8 +2457,6 @@ document.addEventListener("DOMContentLoaded", function () {
     filmMenuButton?.addEventListener("mouseleave", closeFilmMenuByHover);
     filmMenu?.addEventListener("mouseenter", openFilmMenuByHover);
     filmMenu?.addEventListener("mouseleave", closeFilmMenuByHover);
-    syncFilmNavbarSpace();
-    window.addEventListener("load", syncFilmNavbarSpace);
 
     supportMenus.forEach(function (menu) {
         const trigger = menu.querySelector(".film-support-trigger");
@@ -2533,8 +2513,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     window.addEventListener("resize", function () {
-        syncFilmNavbarSpace();
-
         if (!filmMenu || !filmMenuButton || isFilmMenuCollapsed()) return;
         filmMenu.classList.remove("open", "hover-open");
         filmMenu.dataset.pinnedOpen = "false";
