@@ -48,7 +48,7 @@
             </div>
             <div class="location-field">
                 <label>Region</label>
-                <select id="district" class="form-control">
+                <select id="district" class="form-control" onchange="applyLocationFilter()">
                     <option value="">All Regions</option>
                 </select>
             </div>
@@ -80,7 +80,7 @@
             <a href="/Home/Index?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
                 <span class="tab-icon" aria-hidden="true">📡</span>
                 <span>
-                    <strong>Live Stream</strong>
+                    <strong>Live</strong>
                     <small>Online events</small>
                 </span>
             </a>
@@ -1388,122 +1388,228 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 .location-panel-heading,
 .show-type-heading {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    margin: 0;
+    white-space: nowrap;
 }
 
 .location-panel-heading span,
 .show-type-heading span {
     color: var(--app-muted);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 900;
     text-transform: uppercase;
 }
 
 .location-panel-heading strong {
     color: var(--app-card-text);
-    font-size: 1rem;
+    font-size: 0.72rem;
     font-weight: 900;
 }
 
 .showtime-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
     gap: 10px;
     align-items: stretch;
-    padding: 12px;
-    border: 1px solid var(--app-input-border);
+    margin: 16px 0 20px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 18%, var(--app-input-border));
     border-radius: 8px;
-    background: var(--app-card);
-    box-shadow: 0 14px 34px rgba(15,23,42,.1);
+    background:
+        radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--app-accent) 10%, transparent), transparent 34%),
+        linear-gradient(135deg, color-mix(in srgb, var(--app-card) 92%, var(--app-input)), var(--app-card));
+    box-shadow: 0 16px 36px rgba(15,23,42,.12);
 }
 
 .location-panel,
 .show-type-panel {
     min-width: 0;
     border-radius: 8px;
-    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 78%, transparent);
+    background: color-mix(in srgb, var(--app-input) 46%, transparent);
 }
 
 .location-panel {
-    padding: 0;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px;
+}
+
+.show-type-panel {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px;
 }
 
 .location-strip {
     display: grid;
-    grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(120px, 1fr)) minmax(142px, auto);
+    gap: 6px;
+    align-items: end;
 }
 
 .location-field {
     min-width: 0;
     max-width: none;
+    position: relative;
+    display: grid;
+    gap: 3px;
+    padding: 6px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 13%, var(--app-input-border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 64%, var(--app-input));
+}
+
+.location-field label {
+    margin: 0;
+    color: var(--app-muted);
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .location-field select,
 .location-search-btn,
 .location-reset-btn {
-    min-height: 42px;
+    min-height: 36px;
+    height: 36px;
     border-radius: 8px;
 }
 
 .location-field select {
+    width: 100%;
+    appearance: none;
+    padding: 0 26px 0 9px;
+    font-size: 0.78rem;
     background: var(--app-input);
     color: var(--app-input-text);
     font-weight: 750;
     border: 1px solid var(--app-input-border);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+}
+
+.location-field:not(.location-actions)::after {
+    content: "⌄";
+    position: absolute;
+    right: 15px;
+    bottom: 13px;
+    color: var(--app-primary);
+    font-size: 1rem;
+    font-weight: 950;
+    pointer-events: none;
+}
+
+.location-field select:focus {
+    border-color: var(--app-primary);
+    outline: 0;
+    box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--app-primary) 18%, transparent);
 }
 
 .location-actions {
+    grid-column: auto;
     align-self: end;
     display: grid;
     grid-template-columns: auto auto;
-    gap: 8px;
+    justify-content: start;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.location-search-btn,
+.location-reset-btn {
+    border: 1px solid var(--app-input-border);
+    min-width: 70px;
+    padding: 0 10px;
+    font-size: 0.76rem;
+    font-weight: 900;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.location-search-btn {
+    background: linear-gradient(135deg, var(--app-primary), color-mix(in srgb, var(--app-primary) 78%, var(--app-accent-strong)));
+    color: #fff;
+    box-shadow: 0 10px 20px color-mix(in srgb, var(--app-primary) 18%, transparent);
+}
+
+.location-reset-btn {
+    background: color-mix(in srgb, var(--app-input) 78%, transparent);
+    color: var(--app-input-text);
+}
+
+.location-search-btn:hover,
+.location-reset-btn:hover {
+    transform: translateY(-1px);
+    border-color: var(--app-primary);
 }
 
 .showtime-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    padding: 8px;
+    gap: 6px;
+    padding: 0;
     align-self: stretch;
+    align-items: stretch;
     width: 100%;
-    border: 1px solid var(--app-input-border);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--app-input) 82%, var(--app-card));
+    border: 0;
+    background: transparent;
 }
 
 .showtime-tabs a {
+    --type-color: var(--app-primary);
+    --type-soft: color-mix(in srgb, var(--type-color) 16%, var(--app-input));
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 6px;
     min-width: 0;
-    min-height: 58px;
-    padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, var(--app-input-border) 76%, transparent);
+    min-height: 42px;
+    padding: 6px;
+    border: 1px solid color-mix(in srgb, var(--type-color) 34%, var(--app-input-border));
     border-radius: 8px;
-    background: var(--app-input);
+    background:
+        radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--type-color) 15%, transparent), transparent 34%),
+        linear-gradient(135deg, var(--type-soft), var(--app-input));
     color: var(--app-input-text);
     text-align: left;
     text-decoration: none;
-    box-shadow: none;
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--type-color) 8%, transparent);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.showtime-tabs a[href*="Movie"] {
+    --type-color: #2563eb;
+}
+
+.showtime-tabs a[href*="Standup"] {
+    --type-color: #dc4b3e;
+}
+
+.showtime-tabs a[href*="Live"] {
+    --type-color: #0f9f8f;
 }
 
 .showtime-tabs .tab-icon {
     display: grid;
     place-items: center;
-    flex: 0 0 38px;
-    width: 38px;
-    height: 38px;
+    flex: 0 0 26px;
+    width: 26px;
+    height: 28px;
     border-radius: 8px;
     background:
         radial-gradient(circle at 32% 24%, rgba(255,255,255,.9), transparent 28%),
-        linear-gradient(145deg, color-mix(in srgb, var(--app-primary) 24%, #fff), color-mix(in srgb, var(--app-accent-strong) 18%, var(--app-input)));
-    color: var(--app-primary);
-    font-size: 1.16rem;
+        linear-gradient(145deg, color-mix(in srgb, var(--type-color) 28%, #fff), color-mix(in srgb, var(--type-color) 18%, var(--app-input)));
+    color: var(--type-color);
+    font-size: 0.9rem;
     font-weight: 950;
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,.75),
@@ -1513,25 +1619,33 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 .showtime-tabs strong {
     display: block;
-    font-size: 0.92rem;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.7rem;
     line-height: 1.1;
     white-space: nowrap;
+    text-overflow: ellipsis;
     font-weight: 900;
 }
 
 .showtime-tabs small {
-    display: block;
+    display: none;
     margin-top: 3px;
     color: var(--app-muted);
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: 800;
     line-height: 1.1;
 }
 
 .showtime-tabs a.active {
-    background: var(--app-primary);
-    border-color: var(--app-primary);
+    background:
+        radial-gradient(circle at 12% 12%, rgba(255,255,255,.24), transparent 34%),
+        linear-gradient(135deg, var(--type-color), color-mix(in srgb, var(--type-color) 78%, #111827));
+    border-color: var(--type-color);
     color: #fff;
+    box-shadow:
+        0 0 0 0.16rem color-mix(in srgb, var(--type-color) 22%, transparent),
+        0 14px 28px color-mix(in srgb, var(--type-color) 18%, transparent);
 }
 
 .showtime-tabs a.active .tab-icon {
@@ -1545,7 +1659,8 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 .showtime-tabs a:hover {
     transform: translateY(-1px);
-    border-color: var(--app-primary);
+    border-color: var(--type-color);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--type-color) 13%, transparent);
 }
 
 .show-card {
@@ -1591,9 +1706,22 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 }
 
 @@media (max-width: 980px) {
-    .showtime-controls,
-    .location-strip {
+    .showtime-controls {
         grid-template-columns: 1fr;
+    }
+
+    .location-panel,
+    .show-type-panel {
+        grid-template-rows: auto auto;
+    }
+
+    .location-panel-heading,
+    .show-type-heading {
+        margin-bottom: 6px;
+    }
+
+    .location-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .showtime-tabs {
@@ -1602,19 +1730,21 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
     .location-actions {
         display: grid;
+        grid-column: 1 / -1;
         grid-template-columns: 1fr 1fr;
+        justify-content: stretch;
     }
 }
 
 @@media (max-width: 560px) {
     .showtime-controls {
-        padding: 10px;
+        padding: 8px;
     }
 
+    .location-strip,
     .showtime-tabs {
         grid-template-columns: 1fr;
         gap: 8px;
-        padding: 8px;
     }
 
     .showtime-tabs a {
