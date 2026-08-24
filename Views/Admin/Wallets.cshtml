@@ -135,6 +135,10 @@
                         Action
                     </th>
 
+                    <th style="min-width:280px;">
+                        History
+                    </th>
+
                 </tr>
 
             </thead>
@@ -145,7 +149,7 @@
                 {
                     <tr>
 
-                        <td colspan="9"
+                        <td colspan="10"
                             class="empty-state">
                             No wallet records found
                         </td>
@@ -247,45 +251,6 @@
                                             ? foundHistory
                                             : new List<AmarShowsBook.Models.Admin.WalletStatusHistory>();
                                 }
-
-                                <details class="wallet-history-panel">
-                                    <summary>
-                                        History (@historyRows.Count)
-                                    </summary>
-
-                                    @if(!historyRows.Any())
-                                    {
-                                        <div class="wallet-history-empty">
-                                            No wallet action history yet.
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="wallet-history-list">
-                                            @foreach(var history in historyRows)
-                                            {
-                                                <div class="wallet-history-item">
-                                                    <div class="wallet-history-top">
-                                                        <span class="history-action @history.ActionType.ToLowerInvariant()">
-                                                            @history.ActionType
-                                                        </span>
-                                                        <strong>
-                                                            @(history.PreviousStatus ?? "NA") → @history.NewStatus
-                                                        </strong>
-                                                    </div>
-                                                    <p>
-                                                        @history.ActionReason
-                                                    </p>
-                                                    <small>
-                                                        @history.CreatedAt.ToString("dd MMM yyyy hh:mm tt")
-                                                        · By @(string.IsNullOrWhiteSpace(history.ActionBy) ? "Admin" : history.ActionBy)
-                                                        · Balance @CurrencyFormatter.FormatRupees(history.WalletBalance)
-                                                    </small>
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                </details>
 
                             </td>
 
@@ -418,6 +383,51 @@
 
                             </td>
 
+                            <!-- HISTORY -->
+
+                            <td>
+
+                                <details class="wallet-history-panel">
+                                    <summary>
+                                        History (@historyRows.Count)
+                                    </summary>
+
+                                    @if(!historyRows.Any())
+                                    {
+                                        <div class="wallet-history-empty">
+                                            No wallet action history yet.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="wallet-history-list">
+                                            @foreach(var history in historyRows)
+                                            {
+                                                <div class="wallet-history-item">
+                                                    <div class="wallet-history-top">
+                                                        <span class="history-action @history.ActionType.ToLowerInvariant()">
+                                                            @history.ActionType
+                                                        </span>
+                                                        <strong>
+                                                            @(history.PreviousStatus ?? "NA") → @history.NewStatus
+                                                        </strong>
+                                                    </div>
+                                                    <p>
+                                                        @history.ActionReason
+                                                    </p>
+                                                    <small>
+                                                        @history.CreatedAt.ToString("dd MMM yyyy hh:mm tt")
+                                                        · By @(string.IsNullOrWhiteSpace(history.ActionBy) ? "Admin" : history.ActionBy)
+                                                        · Balance @CurrencyFormatter.FormatRupees(history.WalletBalance)
+                                                    </small>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </details>
+
+                            </td>
+
                         </tr>
                     }
                 }
@@ -458,13 +468,15 @@
     }
 
     .wallet-table th {
-        background: #111827;
-        color: white;
+        background: linear-gradient(180deg,#f8fafc,#e8eef7);
+        color: #111827;
         padding: 14px;
         font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         white-space: nowrap;
+        border-bottom: 1px solid #cbd5e1;
+        box-shadow: inset 0 -1px 0 rgba(15,23,42,.05);
     }
 
     .wallet-table td {
