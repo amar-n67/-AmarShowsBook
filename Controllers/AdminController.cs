@@ -66,7 +66,7 @@ namespace AmarShowsBook.Controllers
                 {
                     TempData["Error"] = "You do not have permission to access this admin feature.";
                     context.Result = actionName == nameof(Dashboard)
-                        ? RedirectToAction("Index", "Home")
+                        ? RedirectToAction("ShowTime", "Home")
                         : RedirectToAction(nameof(Dashboard));
                     return;
                 }
@@ -97,7 +97,7 @@ namespace AmarShowsBook.Controllers
                 "ADMIN",
                 "VIEW"))
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("ShowTime", "Home");
             }
 
             // =====================================================
@@ -4216,7 +4216,7 @@ private void EnsurePermissionSeedData()
         ("ANALYTICS", "Analytics", "/Admin/Dashboard", 120),
         ("SUPPORT", "Support", "/Admin/UserAccess", 130),
         ("SCANNER", "Ticket Scanner", "/Admin/Security", 140),
-        ("DEVELOPER", "Developer Editor", "/Developer/Index", 150)
+        ("DEVELOPER", "Developer Editor", "/Developer/Profile", 150)
     };
 
     foreach (var module in modules)

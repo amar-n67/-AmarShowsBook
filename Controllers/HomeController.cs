@@ -64,7 +64,12 @@ namespace AmarShowsBook.Controllers
         //     return View(vm);
         // }
         // ====================== Updated Index action to log activity ======================
-public async Task<IActionResult> Index(string type = "Movie")
+public IActionResult Index(string type = "Movie")
+{
+    return RedirectToAction(nameof(ShowTime), new { type });
+}
+
+public async Task<IActionResult> ShowTime(string type = "Movie")
 {
     try
     {
@@ -226,7 +231,7 @@ foreach (var show in schedules)
             }
         );
 
-        return View(vm);
+        return View("Index", vm);
     }
     catch (PostgresException ex)
     {

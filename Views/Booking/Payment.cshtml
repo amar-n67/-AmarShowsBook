@@ -1838,7 +1838,7 @@ function expirePaymentWindow()
     }
 
     const seatsUrl="/Booking/Seats/@Model.ScheduleId";
-    const homeUrl="/Home/Index";
+    const homeUrl="/Home/ShowTime";
     const message="Payment time expired. You can return to the same seat page or go to Home.";
 
     if(typeof showCinemaPopup==="function")
@@ -2499,7 +2499,7 @@ function cancelBooking()
     );
 
     window.location.href=
-    "/Home/Index";
+    "/Home/ShowTime";
 }
 
 

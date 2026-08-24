@@ -71,7 +71,7 @@ public class AmaroController : Controller
                 {
                     new AmaroQuickOption("Login", "/Auth/Login"),
                     new AmaroQuickOption("Signup", "/Auth/Signup"),
-                    new AmaroQuickOption("Browse Shows", "/Home/Index")
+                    new AmaroQuickOption("Browse Shows", "/Home/ShowTime")
                 }));
         }
 
@@ -317,7 +317,7 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 summary,
-                new[] { new AmaroQuickOption("Wallet", "/Wallet/Index") });
+                new[] { new AmaroQuickOption("Wallet", "/Wallet/MyWallet") });
         }
 
         if (normalized.Contains("profile") || normalized.Contains("account") || normalized.Contains("email") || normalized.Contains("phone"))
@@ -398,7 +398,7 @@ public class AmaroController : Controller
                 "I can find today's shows, filter movies/standup/live streams, show times and venues, and help start booking. Login is required when you choose seats or view account details.",
                 new[]
                 {
-                    new AmaroQuickOption("Today's Shows", "/Home/Index"),
+                    new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
                     new AmaroQuickOption("Login", "/Auth/Login")
                 });
         }
@@ -503,7 +503,7 @@ public class AmaroController : Controller
         {
             return new AmaroAskResponse(
                 "I could not find matching upcoming shows. Try asking for movies, standup, live streams, today, tomorrow, or a show name.",
-                new[] { new AmaroQuickOption("Browse Shows", "/Home/Index") });
+                new[] { new AmaroQuickOption("Browse Shows", "/Home/ShowTime") });
         }
 
         var summary = string.Join(" | ", shows.Select(x =>
@@ -521,8 +521,8 @@ public class AmaroController : Controller
             .Select(x => new AmaroQuickOption(
                 wantsBooking ? $"Book {x.StartTime:hh:mm tt}" : $"{x.Title} {x.StartTime:hh:mm tt}",
                 $"/Booking/Seats/{x.ScheduleId}"))
-            .Prepend(new AmaroQuickOption("Upcoming Shows", "/Home/Index"))
-            .Prepend(new AmaroQuickOption("Browse Shows", string.IsNullOrWhiteSpace(type) ? "/Home/Index" : $"/Home/Index?type={type}"))
+            .Prepend(new AmaroQuickOption("Upcoming Shows", "/Home/ShowTime"))
+            .Prepend(new AmaroQuickOption("Browse Shows", string.IsNullOrWhiteSpace(type) ? "/Home/ShowTime" : $"/Home/ShowTime?type={type}"))
             .Prepend(new AmaroQuickOption("Filter Movies", "", "filter-type:Movie"))
             .Prepend(new AmaroQuickOption("Filter Standup", "", "filter-type:Standup"))
             .Prepend(new AmaroQuickOption("Filter Live", "", "filter-type:Live"))
@@ -596,7 +596,7 @@ public class AmaroController : Controller
             new[]
             {
                 new AmaroQuickOption("Open Seat Map", $"/Booking/Seats/{show.ScheduleId}"),
-                new AmaroQuickOption("Browse Shows", "/Home/Index")
+                new AmaroQuickOption("Browse Shows", "/Home/ShowTime")
             });
     }
 
@@ -682,15 +682,15 @@ VALUES
 
     private IEnumerable<AmaroQuickOption> BuildAssistantOptions(List<AmaroMenuItem> menuItems, int userId)
     {
-        yield return new AmaroQuickOption("Book Shows", "/Home/Index");
+        yield return new AmaroQuickOption("Book Shows", "/Home/ShowTime");
         yield return new AmaroQuickOption("Available Seats", "", "show-suggestions");
-        yield return new AmaroQuickOption("Upcoming Shows", "/Home/Index");
+        yield return new AmaroQuickOption("Upcoming Shows", "/Home/ShowTime");
         yield return new AmaroQuickOption("Movies", "", "filter-type:Movie");
         yield return new AmaroQuickOption("Standup", "", "filter-type:Standup");
         yield return new AmaroQuickOption("Live Streams", "", "filter-type:Live");
         yield return new AmaroQuickOption("My Bookings", "/Booking/MyBookings");
         yield return new AmaroQuickOption("Transactions", "/Transaction/History");
-        yield return new AmaroQuickOption("Wallet", "/Wallet/Index");
+        yield return new AmaroQuickOption("Wallet", "/Wallet/MyWallet");
         yield return new AmaroQuickOption("Profile", "/Profile/MyProfile");
         yield return new AmaroQuickOption("Theme", "", "theme-options");
         yield return new AmaroQuickOption("Cursor", "", "cursor-options");
@@ -705,11 +705,11 @@ VALUES
     {
         var pageOptions = new List<AmaroQuickOption>
         {
-            new("Home", "/Home/Index"),
-            new("Booking Page", "/Home/Index"),
+            new("Home", "/Home/ShowTime"),
+            new("Booking Page", "/Home/ShowTime"),
             new("My Bookings", "/Booking/MyBookings"),
             new("Transactions", "/Transaction/History"),
-            new("Wallet", "/Wallet/Index"),
+            new("Wallet", "/Wallet/MyWallet"),
             new("Profile", "/Profile/MyProfile")
         };
 
@@ -722,7 +722,7 @@ VALUES
         if (_rbacService.HasPermission(userId, "DEVELOPER", "EDIT") ||
             _rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER", "DEVELOPER"))
         {
-            pageOptions.Add(new AmaroQuickOption("Developer Page", "/Developer/Index"));
+            pageOptions.Add(new AmaroQuickOption("Developer Page", "/Developer/Profile"));
         }
 
         pageOptions.AddRange(menuItems

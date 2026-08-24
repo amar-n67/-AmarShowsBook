@@ -103,7 +103,7 @@ namespace AmarShowsBook.Controllers
 
 //     //     HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
 
-//     //     return RedirectToAction("Index", "Home");
+//     //     return RedirectToAction("ShowTime", "Home");
 //     // }
 //     if (isValid)
 // {
@@ -131,7 +131,7 @@ namespace AmarShowsBook.Controllers
 //     description: "User logged in successfully"
 // );
 
-//     return RedirectToAction("Index", "Home");
+//     return RedirectToAction("ShowTime", "Home");
 // }
 //     else
 //     {
@@ -226,7 +226,7 @@ HttpContext.Session.SetString(
                 isError: 0
             );
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("ShowTime", "Home");
         }
         else
         {

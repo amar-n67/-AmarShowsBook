@@ -84,7 +84,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
                 }
 
                 context.Result = new RedirectToActionResult(
-                    "Index",
+                    "ShowTime",
                     "Home",
                     new { accessDenied = true });
                 return;
@@ -152,6 +152,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         if (controller.Equals("Home", StringComparison.OrdinalIgnoreCase))
         {
             return action.Equals("Index", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("ShowTime", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("Error", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("GetCountries", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("GetStates", StringComparison.OrdinalIgnoreCase) ||

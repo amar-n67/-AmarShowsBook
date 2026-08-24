@@ -63,21 +63,21 @@
             <span>Show Type</span>
         </div>
         <nav class="showtime-tabs" aria-label="Show category">
-            <a href="/Home/Index?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
+            <a href="/Home/ShowTime?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
                 <span class="tab-icon" aria-hidden="true">🎬</span>
                 <span>
                     <strong>Movies</strong>
                     <small>Theater releases</small>
                 </span>
             </a>
-            <a href="/Home/Index?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
+            <a href="/Home/ShowTime?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
                 <span class="tab-icon" aria-hidden="true">🎙</span>
                 <span>
                     <strong>Standup</strong>
                     <small>Live comedy</small>
                 </span>
             </a>
-            <a href="/Home/Index?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
+            <a href="/Home/ShowTime?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
                 <span class="tab-icon" aria-hidden="true">📡</span>
                 <span>
                     <strong>Live</strong>

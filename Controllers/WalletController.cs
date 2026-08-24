@@ -26,7 +26,12 @@ namespace AmarShowsBook.Controllers
         // WALLET DASHBOARD
         // =====================================================
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
+        {
+            return RedirectToAction(nameof(MyWallet));
+        }
+
+        public async Task<IActionResult> MyWallet()
         {
             // Get logged in user email
             var userEmail =
@@ -54,7 +59,7 @@ namespace AmarShowsBook.Controllers
                     "Wallet information not found.";
 
                 return RedirectToAction(
-                    "Index",
+                    "ShowTime",
                     "Home"
                 );
             }
@@ -73,7 +78,7 @@ namespace AmarShowsBook.Controllers
             );
 
             // Return wallet page
-            return View(wallet);
+            return View("Index", wallet);
         }
     }
 }

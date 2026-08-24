@@ -1785,8 +1785,8 @@ z-index:9999;">
         || (currentController == "Transaction" && currentAction == "History");
     var showAppSearch =
         isLoggedIn
-        && !(currentController == "Developer" && currentAction == "Index")
-        && !(currentController == "Home" && currentAction == "Index")
+        && !(currentController == "Developer" && currentAction == "Profile")
+        && !(currentController == "Home" && currentAction == "ShowTime")
         && !(currentController == "Booking" && currentAction == "MyBookings")
         && !(currentController == "Booking" && currentAction == "Seats")
         && !(currentController == "Booking" && currentAction == "Details")
@@ -1794,7 +1794,7 @@ z-index:9999;">
         && !(currentController == "Booking" && currentAction == "Confirmation")
         && !(currentController == "Transaction" && currentAction == "History")
         && !(currentController == "Profile" && currentAction == "MyProfile")
-        && !(currentController == "Wallet" && currentAction == "Index");
+        && !(currentController == "Wallet" && currentAction == "MyWallet");
     var currentVersion = "1.0.0";
 
     try
@@ -1813,7 +1813,7 @@ z-index:9999;">
     }
 }
 
-    <a class="navbar-brand film-brand" asp-controller="Home" asp-action="Index">
+    <a class="navbar-brand film-brand" asp-controller="Home" asp-action="ShowTime">
         <span class="film-brand-badge">🎬</span>
         <span>showTime</span>
         <small class="app-version-badge">v@(currentVersion)</small>
@@ -1859,10 +1859,10 @@ z-index:9999;">
         {
             <div class="film-actions">
                 <div class="film-navigation-links" aria-label="Main navigation">
-                    <a class="film-nav-btn" href="/Home/Index" title="Home" aria-label="Home"><span class="film-nav-icon">🏠</span><span class="film-nav-label">Home</span></a>
+                    <a class="film-nav-btn" href="/Home/ShowTime" title="Home" aria-label="Home"><span class="film-nav-icon">🏠</span><span class="film-nav-label">Home</span></a>
                     <a class="film-nav-btn" href="/Booking/MyBookings" title="My Bookings" aria-label="My Bookings"><span class="film-nav-icon">🎟</span><span class="film-nav-label">My Bookings</span></a>
                     <a class="film-nav-btn" href="/Transaction/History" title="My Transactions" aria-label="My Transactions"><span class="film-nav-icon">💳</span><span class="film-nav-label">My Transactions</span></a>
-                    <a class="film-nav-btn" href="/Wallet/Index" title="Wallet" aria-label="Wallet"><span class="film-nav-icon">💰</span><span class="film-nav-label">Wallet</span></a>
+                    <a class="film-nav-btn" href="/Wallet/MyWallet" title="Wallet" aria-label="Wallet"><span class="film-nav-icon">💰</span><span class="film-nav-label">Wallet</span></a>
                     @if (canOpenAdmin)
                     {
                         <a class="film-nav-btn" href="/Admin/Dashboard" title="Admin Dashboard" aria-label="Admin Dashboard"><span class="film-nav-icon">📊</span><span class="film-nav-label">Admin Dashboard</span></a>
@@ -1870,7 +1870,7 @@ z-index:9999;">
                     <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile" title="My Profile" aria-label="My Profile"><span class="film-nav-icon">👤</span><span class="film-nav-label">My Profile</span></a>
                     @if (canOpenDeveloper)
                     {
-                        <a class="film-nav-btn film-profile-btn" href="/Developer/Index" title="Developer Profile" aria-label="Developer Profile"><span class="film-nav-icon">🧩</span><span class="film-nav-label">Developer Profile</span></a>
+                        <a class="film-nav-btn film-profile-btn" href="/Developer/Profile" title="Developer Profile" aria-label="Developer Profile"><span class="film-nav-icon">🧩</span><span class="film-nav-label">Developer Profile</span></a>
                     }
                     <a class="film-nav-btn film-logout-btn"
                        href="/Auth/Logout"
@@ -2067,7 +2067,7 @@ function appBack() {
         return;
     }
 
-    window.location.href = "/Home/Index";
+    window.location.href = "/Home/ShowTime";
 }
 
 function toggleFilmMenu(button) {
@@ -3018,7 +3018,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (value === "show-suggestions") {
             renderOptions([
-                { label: "Upcoming Shows", url: "/Home/Index" },
+                { label: "Upcoming Shows", url: "/Home/ShowTime" },
                 { label: "Movies", command: "filter-type:Movie" },
                 { label: "Standup", command: "filter-type:Standup" },
                 { label: "Live Streams", command: "filter-type:Live" },
@@ -3049,7 +3049,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (value.startsWith("filter-type:")) {
             const showType = value.split(":")[1] || "Movie";
-            window.location.href = "/Home/Index?type=" + encodeURIComponent(showType);
+            window.location.href = "/Home/ShowTime?type=" + encodeURIComponent(showType);
             return true;
         }
 

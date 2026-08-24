@@ -24,6 +24,11 @@ namespace AmarShowsBook.Controllers
 
         public IActionResult Index()
         {
+            return RedirectToAction(nameof(Profile));
+        }
+
+        public IActionResult Profile()
+        {
             EnsureDeveloperProfileStore();
 
             var developer =
@@ -32,7 +37,7 @@ namespace AmarShowsBook.Controllers
 
             ViewBag.CanEditDeveloperProfile = CanEditDeveloperProfile();
 
-            return View(
+            return View("Index",
                 developer ??
                 new DeveloperVM
                 {
@@ -50,7 +55,7 @@ namespace AmarShowsBook.Controllers
             if (!CanEditDeveloperProfile())
             {
                 TempData["Error"] = "Only developer mode role can edit this profile.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Profile));
             }
 
             EnsureDeveloperProfileStore();
@@ -61,7 +66,7 @@ namespace AmarShowsBook.Controllers
                 if (string.IsNullOrWhiteSpace(imagePath))
                 {
                     TempData["Error"] = "Scene cut: upload a valid JPG, PNG, WEBP, or GIF profile photo.";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToAction(nameof(Profile));
                 }
 
                 model.ProfileImage = imagePath;
@@ -144,7 +149,7 @@ DO UPDATE SET
 ");
 
             TempData["Success"] = "Profile reel updated. The new developer scene is live.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Profile));
         }
 
         private bool CanEditDeveloperProfile()

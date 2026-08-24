@@ -215,6 +215,6 @@ public class BookingStepValidationFilter : IAsyncActionFilter
 
     private static IActionResult InvalidStep()
     {
-        return new RedirectToActionResult("Index", "Home", null);
+        return new RedirectToActionResult("ShowTime", "Home", null);
     }
 }
