@@ -1342,9 +1342,10 @@ html[data-theme="system"] .film-nav-icon {
     }
 
     const storedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
+    const storedCursor = localStorage.getItem("amarShowsCursor") || "liquid";
     document.documentElement.dataset.theme = storedTheme;
     document.documentElement.dataset.themeChoice = storedTheme;
-    document.documentElement.dataset.cursorChoice = localStorage.getItem("amarShowsCursor") || "native";
+    document.documentElement.dataset.cursorChoice = storedCursor;
     const storedCursorColor = localStorage.getItem("amarShowsCursorColor");
     if (storedCursorColor) {
         document.documentElement.style.setProperty("--app-cursor-color", storedCursorColor);
@@ -1789,6 +1790,7 @@ z-index:9999;">
         && !(currentController == "Booking" && currentAction == "MyBookings")
         && !(currentController == "Booking" && currentAction == "Confirmation")
         && !(currentController == "Transaction" && currentAction == "History")
+        && !(currentController == "Profile" && currentAction == "MyProfile")
         && !(currentController == "Wallet" && currentAction == "Index");
     var currentVersion = "1.0.0";
 
@@ -2604,7 +2606,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function applyCursorStyle(choice) {
-        const cursorChoice = choice || localStorage.getItem("amarShowsCursor") || "native";
+        const cursorChoice = choice || localStorage.getItem("amarShowsCursor") || "liquid";
         root.dataset.cursorChoice = cursorChoice;
         const savedColor = localStorage.getItem("amarShowsCursorColor");
         if (savedColor) {
@@ -2664,7 +2666,7 @@ document.addEventListener("DOMContentLoaded", function () {
             button.classList.toggle("active", button.dataset.cursorColor === cursorColor);
         });
 
-        if ((localStorage.getItem("amarShowsCursor") || "native") === "native" && cursorColor) {
+        if (!localStorage.getItem("amarShowsCursor") && cursorColor) {
             window.setAppCursorStyle("liquid");
         }
     };
@@ -2680,7 +2682,7 @@ document.addEventListener("DOMContentLoaded", function () {
         root.classList.add("cursor-hidden");
         isReady = true;
         window.setAppCursorColor(localStorage.getItem("amarShowsCursorColor") || "");
-        applyCursorStyle(localStorage.getItem("amarShowsCursor") || "native");
+        applyCursorStyle(localStorage.getItem("amarShowsCursor") || "liquid");
     });
 
     document.addEventListener("mousemove", moveCursor, { passive: true });
