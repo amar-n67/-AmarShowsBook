@@ -167,6 +167,8 @@ html[data-theme="cinema"] {
 }
 
 body {
+    --film-navbar-space: 88px;
+    padding-top: var(--film-navbar-space);
     background: var(--app-bg);
     color: var(--app-text);
     font-family: 'Segoe UI', sans-serif;
@@ -784,8 +786,12 @@ html[data-theme="dark"] [style*="color: black"] {
 }
 
 .film-navbar {
-    position: relative;
-    margin: 14px;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 1040;
+    margin: 0;
     border: 1px solid color-mix(in srgb, var(--app-nav-text) 18%, transparent);
     border-radius: 8px;
     background: var(--app-nav);
@@ -939,6 +945,60 @@ html[data-theme="dark"] [style*="color: black"] {
     box-shadow: 0 8px 18px rgba(0,0,0,0.3);
 }
 
+.film-avatar-wrap {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    outline: none;
+}
+
+.film-avatar-preview {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    width: 164px;
+    height: 164px;
+    padding: 5px;
+    border: 2px solid var(--app-accent);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 22px 54px rgba(15, 23, 42, 0.34);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px) scale(0.96);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.film-avatar-preview img,
+.film-avatar-preview-initial {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.film-avatar-preview-initial {
+    display: grid;
+    place-items: center;
+    background: var(--app-accent);
+    color: #111827;
+    font-size: 4rem;
+    font-weight: 950;
+}
+
+.film-avatar-wrap:hover .film-avatar-preview,
+.film-avatar-wrap:focus-within .film-avatar-preview,
+.film-avatar-wrap:focus .film-avatar-preview {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
 .film-avatar-initial {
     background: var(--app-accent);
     color: #111827;
@@ -1023,15 +1083,25 @@ html[data-theme="dark"] [style*="color: black"] {
 .film-support-menu {
     position: relative;
     display: inline-flex;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.film-navigation-links > .film-support-menu {
+    align-self: stretch;
 }
 
 .film-support-trigger {
     appearance: none;
+    width: 100%;
+    height: 100%;
+    font-family: inherit;
+    line-height: 1.05;
 }
 
 .film-support-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: 100%;
     left: 50%;
     z-index: 50;
     display: grid;
@@ -1045,6 +1115,15 @@ html[data-theme="dark"] [style*="color: black"] {
     pointer-events: none;
     transform: translate(-50%, -4px);
     transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.film-support-dropdown::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -10px;
+    height: 10px;
 }
 
 .film-support-dropdown a {
@@ -1068,14 +1147,16 @@ html[data-theme="dark"] [style*="color: black"] {
 }
 
 .film-support-menu:hover .film-support-dropdown,
-.film-support-menu:focus-within .film-support-dropdown {
+.film-support-menu:focus-within .film-support-dropdown,
+.film-support-menu.support-open .film-support-dropdown {
     opacity: 1;
     pointer-events: auto;
     transform: translate(-50%, 0);
 }
 
 .film-support-menu:hover .film-support-trigger,
-.film-support-menu:focus-within .film-support-trigger {
+.film-support-menu:focus-within .film-support-trigger,
+.film-support-menu.support-open .film-support-trigger {
     background: var(--app-accent);
     border-color: var(--app-accent);
     color: #231f20 !important;
@@ -1207,6 +1288,15 @@ html[data-theme="dark"] [style*="color: black"] {
     text-align: center;
 }
 
+.film-navbar-home .film-support-menu {
+    width: 100%;
+    min-width: 0;
+}
+
+.film-navbar-home .film-support-trigger {
+    min-height: 44px;
+}
+
 .film-navbar-home .film-nav-btn:hover,
 .film-navbar-home .film-nav-btn:focus-visible {
     background: color-mix(in srgb, var(--app-primary) 13%, var(--app-input));
@@ -1230,6 +1320,18 @@ html[data-theme="dark"] [style*="color: black"] {
     justify-content: space-between;
     border-radius: 8px;
     box-shadow: none;
+}
+
+.film-navbar-home .film-avatar-preview {
+    top: auto;
+    bottom: calc(100% + 10px);
+    transform: translateY(6px) scale(0.96);
+}
+
+.film-navbar-home .film-avatar-wrap:hover .film-avatar-preview,
+.film-navbar-home .film-avatar-wrap:focus-within .film-avatar-preview,
+.film-navbar-home .film-avatar-wrap:focus .film-avatar-preview {
+    transform: translateY(0) scale(1);
 }
 
 .film-navbar-home .film-user-meta,
@@ -1385,7 +1487,9 @@ html[data-theme="system"] .film-nav-icon {
 
 @@media (max-width: 1180px) {
     .film-navbar {
-        margin: 8px;
+        top: 8px;
+        left: 8px;
+        right: 8px;
     }
 
     .film-navbar .container-fluid {
@@ -1464,13 +1568,14 @@ html[data-theme="system"] .film-nav-icon {
     .film-support-dropdown {
         left: 0;
         right: 0;
-        top: calc(100% + 6px);
+        top: 100%;
         min-width: 0;
         transform: translateY(-4px);
     }
 
     .film-support-menu:hover .film-support-dropdown,
-    .film-support-menu:focus-within .film-support-dropdown {
+    .film-support-menu:focus-within .film-support-dropdown,
+    .film-support-menu.support-open .film-support-dropdown {
         transform: translateY(0);
     }
 
@@ -1864,6 +1969,7 @@ footer {
 
     html,
     body {
+        padding-top: 0 !important;
         background: #fff !important;
         color: #111 !important;
     }
@@ -2073,8 +2179,8 @@ z-index:9999;">
                             <span class="film-nav-label">Support</span>
                         </button>
                         <div class="film-support-dropdown" role="menu" aria-label="Support options">
-                            <a href="mailto:arcanaamar67@gmail.com" role="menuitem">Write to us</a>
                             <a href="tel:+918920993434" role="menuitem">Call</a>
+                            <a href="mailto:arcanaamar67@gmail.com" role="menuitem">Email</a>
                         </div>
                     </div>
                     @if (canOpenAdmin)
@@ -2106,13 +2212,23 @@ z-index:9999;">
 
                     @if (!string.IsNullOrEmpty(sessionProfileImage))
                     {
-                        <img src="@sessionProfileImage"
-                             class="film-avatar"
-                             alt="Profile image" />
+                        <span class="film-avatar-wrap" tabindex="0" aria-label="Profile image preview">
+                            <img src="@sessionProfileImage"
+                                 class="film-avatar"
+                                 alt="Profile image" />
+                            <span class="film-avatar-preview" aria-hidden="true">
+                                <img src="@sessionProfileImage" alt="" />
+                            </span>
+                        </span>
                     }
                     else
                     {
-                        <div class="film-avatar film-avatar-initial">@sessionInitial</div>
+                        <span class="film-avatar-wrap" tabindex="0" aria-label="Profile initial preview">
+                            <span class="film-avatar film-avatar-initial">@sessionInitial</span>
+                            <span class="film-avatar-preview" aria-hidden="true">
+                                <span class="film-avatar-preview-initial">@sessionInitial</span>
+                            </span>
+                        </span>
                     }
                 </div>
 
@@ -2227,7 +2343,7 @@ z-index:9999;">
 
 <footer class="border-top footer text-muted">
 <div class="container">
-    &copy; 2026 - showTime · Support: <a href="tel:+918920993434">+91 8920993434</a> · <a href="mailto:arcanaamar67@gmail.com">arcanaamar67@gmail.com</a>
+    &copy; 2026 - showTime · Support: <a href="tel:+918920993434">Call</a> · <a href="mailto:arcanaamar67@gmail.com">Email</a>
 </div>
 </footer>
 
@@ -2317,10 +2433,19 @@ function filterCurrentPage(term) {
 
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("appPageSearch");
+    const filmNavbar = document.querySelector(".film-navbar");
     const filmMenu = document.getElementById("filmMenu");
     const filmMenuButton = document.querySelector("[data-film-menu-button]");
     const supportMenus = document.querySelectorAll(".film-support-menu");
     let filmMenuCloseTimer = 0;
+
+    function syncFilmNavbarSpace() {
+        if (!filmNavbar) return;
+
+        const rect = filmNavbar.getBoundingClientRect();
+        const top = Number.parseFloat(window.getComputedStyle(filmNavbar).top) || 0;
+        document.body.style.setProperty("--film-navbar-space", `${Math.ceil(rect.height + top + 14)}px`);
+    }
 
     function isFilmMenuCollapsed() {
         return Boolean(filmMenuButton) && window.getComputedStyle(filmMenuButton).display !== "none";
@@ -2350,21 +2475,41 @@ document.addEventListener("DOMContentLoaded", function () {
     filmMenuButton?.addEventListener("mouseleave", closeFilmMenuByHover);
     filmMenu?.addEventListener("mouseenter", openFilmMenuByHover);
     filmMenu?.addEventListener("mouseleave", closeFilmMenuByHover);
+    syncFilmNavbarSpace();
+    window.addEventListener("load", syncFilmNavbarSpace);
 
     supportMenus.forEach(function (menu) {
         const trigger = menu.querySelector(".film-support-trigger");
+
+        trigger?.addEventListener("click", function (event) {
+            event.preventDefault();
+            const isOpen = menu.classList.toggle("support-open");
+            trigger.setAttribute("aria-expanded", String(isOpen));
+
+            supportMenus.forEach(function (otherMenu) {
+                if (otherMenu !== menu) {
+                    otherMenu.classList.remove("support-open");
+                    otherMenu.querySelector(".film-support-trigger")?.setAttribute("aria-expanded", "false");
+                }
+            });
+        });
+
         menu.addEventListener("mouseenter", function () {
+            menu.classList.add("support-open");
             trigger?.setAttribute("aria-expanded", "true");
         });
         menu.addEventListener("mouseleave", function () {
+            menu.classList.remove("support-open");
             trigger?.setAttribute("aria-expanded", "false");
         });
         menu.addEventListener("focusin", function () {
+            menu.classList.add("support-open");
             trigger?.setAttribute("aria-expanded", "true");
         });
         menu.addEventListener("focusout", function () {
             window.setTimeout(function () {
                 if (!menu.contains(document.activeElement)) {
+                    menu.classList.remove("support-open");
                     trigger?.setAttribute("aria-expanded", "false");
                 }
             }, 0);
@@ -2372,6 +2517,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.addEventListener("click", function (event) {
+        supportMenus.forEach(function (menu) {
+            if (!menu.contains(event.target)) {
+                menu.classList.remove("support-open");
+                menu.querySelector(".film-support-trigger")?.setAttribute("aria-expanded", "false");
+            }
+        });
+
         if (!filmMenu || !filmMenuButton || !isFilmMenuCollapsed()) return;
         if (filmMenu.contains(event.target) || filmMenuButton.contains(event.target)) return;
 
@@ -2381,6 +2533,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     window.addEventListener("resize", function () {
+        syncFilmNavbarSpace();
+
         if (!filmMenu || !filmMenuButton || isFilmMenuCollapsed()) return;
         filmMenu.classList.remove("open", "hover-open");
         filmMenu.dataset.pinnedOpen = "false";
@@ -3257,11 +3411,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (value === "support-options") {
             renderOptions([
                 { label: "Call", url: "tel:+918920993434" },
-                { label: "Write to us", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "Email", url: "mailto:arcanaamar67@gmail.com" },
                 { label: "My Bookings", url: "/Booking/MyBookings" },
                 { label: "Transactions", url: "/Transaction/History" }
             ]);
-            addMessage("Support is available at +91 8920993434 and arcanaamar67@gmail.com. For booking or payment issues, include your booking or transaction reference.", "bot");
+            addMessage("Choose Call or Email for support. For booking or payment issues, include your booking or transaction reference.", "bot");
             return true;
         }
 
