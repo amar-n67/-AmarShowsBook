@@ -277,6 +277,8 @@ justify-content:space-between;
 
 align-items:center;
 
+gap:18px;
+
 margin-top:25px;
 }
 
@@ -300,11 +302,12 @@ display:inline-flex;
 align-items:center;
 justify-content:center;
 
-padding:14px 25px;
+min-height:44px;
+padding:12px 16px;
 
 border-radius:14px;
 
-font-size:16px;
+font-size:14px;
 
 font-weight:800;
 
@@ -325,8 +328,12 @@ transition:.4s;
 
 .ticket-action-row{
 display:flex;
-gap:12px;
-flex-wrap:wrap;
+justify-content:flex-end;
+align-items:center;
+gap:10px;
+flex:1 1 auto;
+flex-wrap:nowrap;
+min-width:0;
 }
 
 .my-bookings-btn{
@@ -334,9 +341,10 @@ display:inline-flex;
 align-items:center;
 justify-content:center;
 border:1px solid #d7dbe4;
-padding:14px 25px;
+min-height:44px;
+padding:12px 16px;
 border-radius:14px;
-font-size:16px;
+font-size:14px;
 font-weight:800;
 text-decoration:none;
 color:#20212a;
@@ -344,10 +352,34 @@ background:#fff;
 transition:.4s;
 }
 
+.home-btn{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+border:0;
+min-height:44px;
+padding:12px 16px;
+border-radius:14px;
+font-size:14px;
+font-weight:800;
+text-decoration:none;
+color:white;
+background:linear-gradient(135deg,#2563eb,#06b6d4);
+box-shadow:0 10px 24px rgba(37,99,235,.18);
+transition:.4s;
+}
+
 .my-bookings-btn:hover{
 transform:translateY(-4px);
 box-shadow:0 10px 25px rgba(0,0,0,.12);
 text-decoration:none;
+}
+
+.home-btn:hover{
+transform:translateY(-4px);
+box-shadow:0 10px 25px rgba(37,99,235,.24);
+text-decoration:none;
+color:white;
 }
 
 .download-btn:hover{
@@ -579,6 +611,10 @@ display:none;
 display:none;
 }
 
+.home-btn{
+display:none;
+}
+
 }
 
 
@@ -615,6 +651,12 @@ text-align:center;
 flex-direction:column;
 
 gap:20px;
+}
+
+.ticket-action-row{
+justify-content:center;
+flex-wrap:wrap;
+width:100%;
 }
 
 }
@@ -767,6 +809,14 @@ class="my-bookings-btn"
 href="/Booking/MyBookings">
 
 My Bookings
+
+</a>
+
+<a
+class="home-btn"
+href="/Home/Index">
+
+Home
 
 </a>
 
