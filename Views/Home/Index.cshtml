@@ -6,8 +6,9 @@
     var selectedType = Context.Request.Query["type"].ToString();
     if (string.IsNullOrWhiteSpace(selectedType))
     {
-        selectedType = "Movie";
+        selectedType = "All";
     }
+    var selectedTypeLabel = string.Equals(selectedType, "All", StringComparison.OrdinalIgnoreCase) ? "All" : selectedType;
     var userName = Context.Session.GetString("UserName") ?? "Artist";
     var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
     var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
@@ -17,84 +18,84 @@
 <section class="showtime-page">
     <div class="showtime-hero">
         <div>
-            <span class="showtime-kicker">Now Rolling</span>
             <h1>showTime</h1>
-            <p>@userName, your @userLanguage track and @userGenre mood are on the board.</p>
-        </div>
-        <div class="showtime-ticket">
-            <span>@userLanguage</span>
-            <strong>@userGenre</strong>
+            <p>@userName, find a show near you.</p>
         </div>
     </div>
 
 <div class="showtime-controls">
-    <div class="location-panel">
-        <div class="location-panel-heading">
-            <span>Location</span>
-            <strong>Country, state and region</strong>
-        </div>
+    <div class="location-field">
+        <label for="showTypeFilter">Show type</label>
+        <select id="showTypeFilter" class="form-control" onchange="changeShowType(this.value)">
+            <option value="All" selected="@(selectedTypeLabel == "All" ? "selected" : null)">All</option>
+            <option value="Movie" selected="@(selectedType == "Movie" ? "selected" : null)">Movie</option>
+            <option value="Live" selected="@(selectedType == "Live" ? "selected" : null)">Live</option>
+            <option value="Standup" selected="@(selectedType == "Standup" ? "selected" : null)">Standup</option>
+            <option value="News" selected="@(selectedType == "News" ? "selected" : null)">News</option>
+        </select>
+    </div>
+    <div class="location-picker">
+        <label>Location</label>
+        <button type="button" class="location-choice-btn" id="locationSummaryButton" onclick="toggleLocationChooser()">All locations</button>
+    </div>
+    <div class="location-field compact-filter-field">
+        <label for="ratingFilter">Rating</label>
+        <select id="ratingFilter" class="form-control" onchange="applyLocationFilter()">
+            <option value="">Any</option>
+        </select>
+    </div>
+    <div class="location-field compact-filter-field">
+        <label for="dateFilter">Date</label>
+        <input id="dateFilter" class="form-control" type="date" onchange="applyLocationFilter()" />
+    </div>
+    <div class="location-field compact-filter-field">
+        <label for="sortShows">Sort</label>
+        <select id="sortShows" class="form-control" onchange="applyLocationFilter()">
+            <option value="upcoming">Upcoming first</option>
+            <option value="today">Today first</option>
+            <option value="rating">Highest rating</option>
+            <option value="time">Earliest time</option>
+            <option value="title">Name A-Z</option>
+            <option value="location">Location A-Z</option>
+            <option value="type">Show type</option>
+        </select>
+    </div>
+    <div class="location-panel" id="locationPanel" hidden>
         <div class="location-strip">
             <div class="location-field">
-                <label>Country</label>
-                <select id="country" class="form-control" onchange="loadStates()">
+                <label for="country">Country</label>
+                <select id="country" class="form-control" onchange="clearCurrentLocationFilter(); loadStates().then(applyLocationFilter)">
                     <option value="">All Countries</option>
                 </select>
             </div>
             <div class="location-field">
-                <label>State</label>
-                <select id="state" class="form-control" onchange="loadDistricts()">
+                <label for="state">State</label>
+                <select id="state" class="form-control" onchange="clearCurrentLocationFilter(); loadDistricts().then(applyLocationFilter)">
                     <option value="">All States</option>
                 </select>
             </div>
             <div class="location-field">
-                <label>Region</label>
-                <select id="district" class="form-control" onchange="applyLocationFilter()">
+                <label for="district">Region</label>
+                <select id="district" class="form-control" onchange="clearCurrentLocationFilter(); applyLocationFilter()">
                     <option value="">All Regions</option>
                 </select>
             </div>
-            <div class="location-field location-actions">
-                <button type="button" class="location-search-btn" onclick="applyLocationFilter()">Apply</button>
+            <div class="location-actions">
+                <button type="button" class="location-current-btn" onclick="detectCurrentLocation()">Current</button>
                 <button type="button" class="location-reset-btn" onclick="resetLocationFilter()">Reset</button>
             </div>
         </div>
     </div>
-    <div class="show-type-panel">
-        <div class="show-type-heading">
-            <span>Show Type</span>
-        </div>
-        <nav class="showtime-tabs" aria-label="Show category">
-            <a href="/Home/ShowTime?type=Movie" class="showtime-tab @(selectedType == "Movie" ? "active" : "")">
-                <span class="tab-icon" aria-hidden="true">🎬</span>
-                <span>
-                    <strong>Movies</strong>
-                    <small>Theater releases</small>
-                </span>
-            </a>
-            <a href="/Home/ShowTime?type=Standup" class="showtime-tab @(selectedType == "Standup" ? "active" : "")">
-                <span class="tab-icon" aria-hidden="true">🎙</span>
-                <span>
-                    <strong>Standup</strong>
-                    <small>Live comedy</small>
-                </span>
-            </a>
-            <a href="/Home/ShowTime?type=Live" class="showtime-tab @(selectedType == "Live" ? "active" : "")">
-                <span class="tab-icon" aria-hidden="true">📡</span>
-                <span>
-                    <strong>Live</strong>
-                    <small>Online events</small>
-                </span>
-            </a>
-        </nav>
-    </div>
+    <p class="location-status" id="locationStatus" aria-live="polite"></p>
 </div>
 
     <div class="schedule-board">
         @if (!Model.HomeShows.Any())
         {
             <div class="empty-slate">
-                <span>No Shot Scheduled</span>
-                <h2>The reel is quiet for this category.</h2>
-                <p>Try another tab or schedule a new show when the next scene is ready.</p>
+                <span>No shows</span>
+                <h2>No shows found.</h2>
+                <p>Try another type or location.</p>
             </div>
         }
         else
@@ -116,7 +117,15 @@
 data-location="@showLocation"
 data-country="@item.Country"
 data-state="@item.State"
-data-region="@item.Location">
+data-region="@item.Location"
+data-show-type="@item.ShowType"
+data-title="@item.Title"
+data-director="@item.Director"
+data-rating="@(item.ImdbRating?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+data-date="@item.StartTime.ToString("yyyy-MM-dd")"
+data-date-label="@item.StartTime.ToString("dd MMM yyyy")"
+data-start="@item.StartTime.ToString("O")"
+data-time="@item.StartTime.TimeOfDay.TotalMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture)">
   <div class="card-body">
 
         <h2 class="movie-title">
@@ -202,7 +211,7 @@ title="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")"
 aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 <span class="action-icon" aria-hidden="true">🎟</span>
-<span>@(isLoggedIn ? "Book Ticket" : "Login to Book")</span>
+<span>@(isLoggedIn ? "Book" : "Login")</span>
 </a>
 
 </div>
@@ -213,6 +222,12 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 }
         }
+    </div>
+    <div class="empty-slate filter-empty-state" id="filterEmptyState" hidden>
+        <span>No shows</span>
+        <h2 id="filterEmptyTitle">No shows available.</h2>
+        <p id="filterEmptyMessage">Try another location or filter.</p>
+        <button type="button" class="empty-state-link" id="showNearbyLink" onclick="showNearbyShows()" hidden>Show nearby</button>
     </div>
     <div id="trailerModal" class="trailer-modal">
 
@@ -297,15 +312,13 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         display: flex;
         justify-content: space-between;
         gap: 20px;
-        align-items: flex-end;
-        min-height: 260px;
-        padding: 34px;
+        align-items: center;
+        min-height: 130px;
+        padding: 24px;
         border-radius: 8px;
-        background:
-            var(--app-nav),
-            repeating-linear-gradient(90deg, rgba(244, 200, 106, 0.08) 0 10px, transparent 10px 24px);
+        background: var(--app-nav);
         color: var(--app-nav-text);
-        box-shadow: 0 22px 64px rgba(35, 31, 32, 0.22);
+        box-shadow: 0 14px 34px rgba(35, 31, 32, 0.16);
     }
     
     .showtime-kicker,
@@ -319,9 +332,9 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     }
     
     .showtime-hero h1 {
-        margin: 8px 0;
+        margin: 0 0 6px;
         color: inherit;
-        font-size: clamp(3rem, 8vw, 6.5rem);
+        font-size: clamp(2rem, 5vw, 3.8rem);
         font-weight: 900;
     }
     
@@ -329,7 +342,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         margin: 0;
         max-width: 620px;
         color: color-mix(in srgb, var(--app-nav-text) 82%, transparent);
-        font-size: 1.08rem;
+        font-size: 1rem;
     }
     
     .showtime-ticket {
@@ -408,7 +421,6 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         max-width: none;
     }
     
-    .location-search-btn,
     .location-reset-btn {
         min-height: 36px;
         padding: 0 14px;
@@ -417,11 +429,6 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         font-weight: 800;
         white-space: nowrap;
         font-size: 0.85rem;
-    }
-    
-    .location-search-btn {
-        background: var(--app-primary);
-        color: #fff;
     }
     
     .location-reset-btn {
@@ -792,48 +799,41 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 .showtime-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
-    gap: 10px;
-    align-items: stretch;
-    margin: 16px 0 20px;
-    padding: 10px;
-    border: 1px solid color-mix(in srgb, var(--app-primary) 18%, var(--app-input-border));
+    grid-template-columns: minmax(96px, .7fr) minmax(150px, 1.25fr) minmax(96px, .75fr) minmax(108px, .85fr) minmax(118px, .9fr);
+    gap: 8px;
+    align-items: end;
+    margin: 10px 0 16px;
+    padding: 8px;
+    border: 1px solid var(--app-input-border);
     border-radius: 8px;
-    background:
-        radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--app-accent) 10%, transparent), transparent 34%),
-        linear-gradient(135deg, color-mix(in srgb, var(--app-card) 92%, var(--app-input)), var(--app-card));
-    box-shadow: 0 16px 36px rgba(15,23,42,.12);
+    background: var(--app-card);
+    box-shadow: 0 10px 24px rgba(15,23,42,.08);
 }
 
 .location-panel,
-.show-type-panel {
+.show-type-panel,
+.location-picker {
     min-width: 0;
-    border-radius: 8px;
-    border: 1px solid color-mix(in srgb, var(--app-input-border) 78%, transparent);
-    background: color-mix(in srgb, var(--app-input) 46%, transparent);
+    display: grid;
+    align-items: stretch;
+    border: 0;
+    background: transparent;
+}
+
+.location-panel[hidden] {
+    display: none;
 }
 
 .location-panel {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    align-items: stretch;
-    gap: 8px;
-    padding: 8px;
-}
-
-.show-type-panel {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    align-items: stretch;
-    gap: 8px;
-    padding: 8px;
+    grid-column: 1 / -1;
+    padding-top: 4px;
 }
 
 .location-strip {
     display: grid;
-    grid-template-columns: repeat(3, minmax(120px, 1fr)) minmax(142px, auto);
+    grid-template-columns: repeat(3, minmax(104px, 1fr)) minmax(140px, auto);
     gap: 6px;
-    align-items: end;
+    align-items: center;
 }
 
 .location-field {
@@ -842,39 +842,52 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     position: relative;
     display: grid;
     gap: 3px;
-    padding: 6px;
-    border: 1px solid color-mix(in srgb, var(--app-primary) 13%, var(--app-input-border));
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--app-card) 64%, var(--app-input));
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
-.location-field label {
+.location-field label,
+.location-picker label {
     margin: 0;
     color: var(--app-muted);
-    font-size: 0.62rem;
+    font-size: 0.58rem;
     font-weight: 900;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 
 .location-field select,
-.location-search-btn,
+.location-field input,
+.location-choice-btn,
+.location-current-btn,
 .location-reset-btn {
-    min-height: 36px;
-    height: 36px;
+    min-height: 34px;
+    height: 34px;
     border-radius: 8px;
 }
 
-.location-field select {
+.location-field select,
+.location-field input,
+.location-choice-btn {
     width: 100%;
     appearance: none;
     padding: 0 26px 0 9px;
     font-size: 0.78rem;
-    background: var(--app-input);
+    background: #fff;
     color: var(--app-input-text);
-    font-weight: 750;
+    font-weight: 700;
     border: 1px solid var(--app-input-border);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+    box-shadow: none;
+}
+
+.location-choice-btn {
+    display: block;
+    overflow: hidden;
+    padding-right: 9px;
+    text-align: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .location-field:not(.location-actions)::after {
@@ -895,31 +908,31 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 }
 
 .location-actions {
-    grid-column: auto;
     align-self: end;
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: 1fr 1fr;
     justify-content: start;
-    gap: 6px;
+    gap: 8px;
     padding: 0;
     border: 0;
     background: transparent;
 }
 
-.location-search-btn,
+.location-current-btn,
 .location-reset-btn {
     border: 1px solid var(--app-input-border);
-    min-width: 70px;
+    min-width: 0;
     padding: 0 10px;
     font-size: 0.76rem;
-    font-weight: 900;
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    font-weight: 800;
+    white-space: nowrap;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
 
-.location-search-btn {
-    background: linear-gradient(135deg, var(--app-primary), color-mix(in srgb, var(--app-primary) 78%, var(--app-accent-strong)));
-    color: #fff;
-    box-shadow: 0 10px 20px color-mix(in srgb, var(--app-primary) 18%, transparent);
+.location-current-btn {
+    background: #fff;
+    color: var(--app-primary);
+    border-color: color-mix(in srgb, var(--app-primary) 32%, var(--app-input-border));
 }
 
 .location-reset-btn {
@@ -927,15 +940,57 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     color: var(--app-input-text);
 }
 
-.location-search-btn:hover,
+.location-current-btn:hover,
+.location-current-btn:focus-visible,
 .location-reset-btn:hover {
     transform: translateY(-1px);
     border-color: var(--app-primary);
 }
 
+.location-current-btn:hover,
+.location-current-btn:focus-visible {
+    background: var(--app-primary);
+    color: #fff;
+    outline: none;
+}
+
+.location-status {
+    grid-column: 1 / -1;
+    min-height: 0;
+    margin: -2px 0 0;
+    color: var(--app-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.empty-state-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    margin-top: 6px;
+    padding: 0 14px;
+    border: 1px solid var(--app-primary);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--app-primary);
+    font-size: 0.82rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.empty-state-link:hover,
+.empty-state-link:focus-visible {
+    background: var(--app-primary);
+    color: #fff;
+    outline: none;
+    transform: translateY(-1px);
+}
+
 .showtime-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
     padding: 0;
     align-self: stretch;
@@ -947,62 +1002,27 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 .showtime-tabs a {
     --type-color: var(--app-primary);
-    --type-soft: color-mix(in srgb, var(--type-color) 16%, var(--app-input));
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
+    justify-content: center;
     min-width: 0;
-    min-height: 42px;
-    padding: 6px;
-    border: 1px solid color-mix(in srgb, var(--type-color) 34%, var(--app-input-border));
+    min-height: 34px;
+    padding: 7px 8px;
+    border: 1px solid var(--app-input-border);
     border-radius: 8px;
-    background:
-        radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--type-color) 15%, transparent), transparent 34%),
-        linear-gradient(135deg, var(--type-soft), var(--app-input));
+    background: #fff;
     color: var(--app-input-text);
-    text-align: left;
+    text-align: center;
     text-decoration: none;
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--type-color) 8%, transparent);
-    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-}
-
-.showtime-tabs a[href*="Movie"] {
-    --type-color: #2563eb;
-}
-
-.showtime-tabs a[href*="Standup"] {
-    --type-color: #dc4b3e;
-}
-
-.showtime-tabs a[href*="Live"] {
-    --type-color: #0f9f8f;
-}
-
-.showtime-tabs .tab-icon {
-    display: grid;
-    place-items: center;
-    flex: 0 0 26px;
-    width: 26px;
-    height: 28px;
-    border-radius: 8px;
-    background:
-        radial-gradient(circle at 32% 24%, rgba(255,255,255,.9), transparent 28%),
-        linear-gradient(145deg, color-mix(in srgb, var(--type-color) 28%, #fff), color-mix(in srgb, var(--type-color) 18%, var(--app-input)));
-    color: var(--type-color);
-    font-size: 0.9rem;
-    font-weight: 950;
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.75),
-        inset 0 -8px 14px rgba(15,23,42,.08),
-        0 8px 16px rgba(15,23,42,.16);
+    box-shadow: none;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
 }
 
 .showtime-tabs strong {
     display: block;
     max-width: 100%;
     overflow: hidden;
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     line-height: 1.1;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -1019,29 +1039,15 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 }
 
 .showtime-tabs a.active {
-    background:
-        radial-gradient(circle at 12% 12%, rgba(255,255,255,.24), transparent 34%),
-        linear-gradient(135deg, var(--type-color), color-mix(in srgb, var(--type-color) 78%, #111827));
-    border-color: var(--type-color);
+    background: var(--app-primary);
+    border-color: var(--app-primary);
     color: #fff;
-    box-shadow:
-        0 0 0 0.16rem color-mix(in srgb, var(--type-color) 22%, transparent),
-        0 14px 28px color-mix(in srgb, var(--type-color) 18%, transparent);
-}
-
-.showtime-tabs a.active .tab-icon {
-    background: rgba(255,255,255,.2);
-    color: #fff;
-}
-
-.showtime-tabs a.active small {
-    color: rgba(255,255,255,.82);
+    box-shadow: none;
 }
 
 .showtime-tabs a:hover {
     transform: translateY(-1px);
-    border-color: var(--type-color);
-    box-shadow: 0 14px 28px color-mix(in srgb, var(--type-color) 13%, transparent);
+    border-color: var(--app-primary);
 }
 
 .show-card {
@@ -1091,7 +1097,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 @@media (max-width: 980px) {
     .showtime-controls {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .location-panel,
@@ -1148,10 +1154,15 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         padding: 8px;
     }
 
+    .showtime-controls,
     .location-strip,
     .showtime-tabs {
         grid-template-columns: 1fr;
         gap: 8px;
+    }
+
+    .location-actions {
+        grid-template-columns: 1fr;
     }
 
     .showtime-tabs a {
@@ -1210,6 +1221,10 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 </style>
 
 <script>
+const showtimeFilterStorageKey="showtimeFilters";
+let locationDisplayOverride="";
+let currentLocationFilter=null;
+let isRestoringShowtimeFilters=false;
 
 function closeTrailer()
 {
@@ -1234,6 +1249,142 @@ function showLocationError(message)
     }
 
     alert(message);
+}
+
+function setLocationStatus(message)
+{
+    const status=document.getElementById("locationStatus");
+    if(status)
+    {
+        status.textContent=message || "";
+    }
+}
+
+function clearCurrentLocationFilter()
+{
+    locationDisplayOverride="";
+    currentLocationFilter=null;
+}
+
+function changeShowType(type)
+{
+    const selectedType=type || "All";
+    saveShowtimeFilters();
+    window.location.href="/Home/ShowTime?type=" + encodeURIComponent(selectedType);
+}
+
+function toggleLocationChooser()
+{
+    const panel=document.getElementById("locationPanel");
+    if(panel)
+    {
+        panel.hidden=!panel.hidden;
+    }
+}
+
+function getSelectedLocationName()
+{
+    if(locationDisplayOverride)
+    {
+        return locationDisplayOverride;
+    }
+
+    const district=document.getElementById("district")?.value || "";
+    const state=document.getElementById("state")?.value || "";
+    const country=document.getElementById("country")?.value || "";
+    return [district,state,country].filter(Boolean).join(", ") || "All locations";
+}
+
+function updateLocationSummary()
+{
+    const locationName=getSelectedLocationName();
+    const button=document.getElementById("locationSummaryButton");
+    if(button)
+    {
+        button.textContent=locationName;
+        button.title=locationName;
+    }
+
+    const prefix=locationDisplayOverride ? "Using current location" : "Using";
+    setLocationStatus(locationName==="All locations" ? "Using all locations" : `${prefix} ${locationName}`);
+}
+
+function hasVisibleShows()
+{
+    return Array.from(document.querySelectorAll(".show-card")).some(card=>!card.hidden);
+}
+
+function getShowtimeFilterState()
+{
+    return {
+        country:document.getElementById("country")?.value || "",
+        state:document.getElementById("state")?.value || "",
+        district:document.getElementById("district")?.value || "",
+        rating:document.getElementById("ratingFilter")?.value || "",
+        date:document.getElementById("dateFilter")?.value || "",
+        sort:document.getElementById("sortShows")?.value || "upcoming",
+        locationDisplayOverride,
+        currentLocationFilter
+    };
+}
+
+function saveShowtimeFilters()
+{
+    if(isRestoringShowtimeFilters)
+    {
+        return;
+    }
+
+    try
+    {
+        const state=getShowtimeFilterState();
+        const hasMeaningfulFilter=Boolean(
+            state.country ||
+            state.state ||
+            state.district ||
+            state.rating ||
+            state.date ||
+            (state.sort && state.sort!=="upcoming") ||
+            state.locationDisplayOverride ||
+            state.currentLocationFilter
+        );
+
+        if(hasMeaningfulFilter)
+        {
+            localStorage.setItem(showtimeFilterStorageKey,JSON.stringify(state));
+        }
+        else
+        {
+            localStorage.removeItem(showtimeFilterStorageKey);
+        }
+    }
+    catch
+    {
+    }
+}
+
+function getSavedShowtimeFilters()
+{
+    try
+    {
+        const saved=JSON.parse(localStorage.getItem(showtimeFilterStorageKey) || "{}");
+        return saved && typeof saved==="object" ? saved : {};
+    }
+    catch
+    {
+        return {};
+    }
+}
+
+function clearSavedShowtimeFilters()
+{
+    try
+    {
+        localStorage.removeItem(showtimeFilterStorageKey);
+    }
+    catch
+    {
+    }
 }
 
 function showTrailerSoon()
@@ -1354,8 +1505,167 @@ selectedName
     });
 }
 
+function setSimpleOptions(selectId,items,placeholder)
+{
+    const select=document.getElementById(selectId);
+    if(!select)
+    {
+        return;
+    }
 
-async function loadCountries()
+    const currentValue=select.value;
+    select.innerHTML=`<option value="">${placeholder}</option>`;
+
+    items.forEach(item=>{
+        const option=document.createElement("option");
+        option.value=item.value;
+        option.textContent=item.label;
+        select.appendChild(option);
+    });
+
+    if(Array.from(select.options).some(option=>option.value===currentValue))
+    {
+        select.value=currentValue;
+    }
+}
+
+function populateDynamicFilters()
+{
+    const cards=Array.from(document.querySelectorAll(".show-card"));
+
+    const ratings=[...new Set(cards
+    .map(card=>card.dataset.rating)
+    .filter(Boolean))]
+    .sort((a,b)=>Number(b)-Number(a))
+    .map(value=>({value,label:value}));
+
+    setSimpleOptions("ratingFilter",ratings,"Any");
+
+    const dateInput=document.getElementById("dateFilter");
+    const dates=cards
+    .map(card=>card.dataset.date)
+    .filter(Boolean)
+    .sort();
+
+    if(dateInput && dates.length)
+    {
+        dateInput.min=dates[0];
+        dateInput.max=dates[dates.length-1];
+    }
+}
+
+function setControlValue(controlId,value)
+{
+    const control=document.getElementById(controlId);
+    if(control && value !== undefined && value !== null)
+    {
+        control.value=value;
+    }
+}
+
+async function restoreSavedShowtimeFilters()
+{
+    const saved=getSavedShowtimeFilters();
+    const hasSavedFilter=Boolean(
+        saved.country ||
+        saved.state ||
+        saved.district ||
+        saved.rating ||
+        saved.date ||
+        (saved.sort && saved.sort!=="upcoming") ||
+        saved.locationDisplayOverride ||
+        saved.currentLocationFilter
+    );
+
+    if(!hasSavedFilter)
+    {
+        return false;
+    }
+
+    isRestoringShowtimeFilters=true;
+    try
+    {
+        await loadCountries(saved.country || "");
+        if(saved.country)
+        {
+            selectBestLocationOption("country",[saved.country]);
+            await loadStates(saved.state || "");
+        }
+
+        if(saved.state)
+        {
+            selectBestLocationOption("state",[saved.state]);
+            await loadDistricts(saved.district || "");
+        }
+
+        if(saved.district)
+        {
+            selectBestLocationOption("district",[saved.district]);
+        }
+
+        setControlValue("ratingFilter",saved.rating || "");
+        setControlValue("dateFilter",saved.date || "");
+        setControlValue("sortShows",saved.sort || "upcoming");
+        locationDisplayOverride=saved.locationDisplayOverride || "";
+        currentLocationFilter=saved.currentLocationFilter || null;
+    }
+    finally
+    {
+        isRestoringShowtimeFilters=false;
+    }
+
+    applyLocationFilter();
+    return true;
+}
+
+
+function normalizeLocationText(value)
+{
+    return (value || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function selectBestLocationOption(selectId,candidates)
+{
+    const select=document.getElementById(selectId);
+    if(!select)
+    {
+        return "";
+    }
+
+    const normalizedCandidates=(Array.isArray(candidates) ? candidates : [candidates])
+    .map(normalizeLocationText)
+    .filter(Boolean);
+
+    if(!normalizedCandidates.length)
+    {
+        return "";
+    }
+
+    const options=Array.from(select.options);
+    const match=options.find(option=>{
+        const optionText=normalizeLocationText(option.dataset.name || option.value || option.textContent);
+        return optionText && normalizedCandidates.some(candidate=>
+            optionText===candidate ||
+            optionText.includes(candidate) ||
+            candidate.includes(optionText)
+        );
+    });
+
+    if(match)
+    {
+        select.value=match.value;
+        return match.value;
+    }
+
+    return "";
+}
+
+async function loadCountries(selectedName)
 {
     try
     {
@@ -1374,9 +1684,8 @@ async function loadCountries()
         const countries=
         await response.json();
 
-        const india=countries.find(x=>x.name && x.name.toLowerCase()==="india");
-
-        const selectedCountryName=india ? india.name : "";
+        const currentCountry=document.getElementById("country")?.value || "";
+        const selectedCountryName=selectedName || currentCountry || "";
 
         setSelectOptions(
         "country",
@@ -1385,9 +1694,23 @@ async function loadCountries()
         selectedCountryName
         );
 
-        if(india)
+        if(selectedCountryName)
         {
             await loadStates();
+        }
+        else
+        {
+            setSelectOptions(
+            "state",
+            [],
+            "All States"
+            );
+
+            setSelectOptions(
+            "district",
+            [],
+            "All Regions"
+            );
         }
 
     }
@@ -1419,7 +1742,7 @@ async function loadCountries()
 
 
 
-async function loadStates()
+async function loadStates(selectedName)
 {
     const countrySelect=
     document.getElementById(
@@ -1470,8 +1793,10 @@ async function loadStates()
         setSelectOptions(
         "state",
         states,
-        "All States"
+        "All States",
+        selectedName
         );
+        updateLocationSummary();
     }
     catch
     {
@@ -1483,7 +1808,7 @@ async function loadStates()
 
 
 
-async function loadDistricts()
+async function loadDistricts(selectedName)
 {
     const stateSelect=
     document.getElementById(
@@ -1529,14 +1854,103 @@ async function loadDistricts()
         setSelectOptions(
         "district",
         districts,
-        "All Regions"
+        "All Regions",
+        selectedName
         );
+        updateLocationSummary();
     }
     catch
     {
         showLocationError(
         "Could not load regions."
         );
+    }
+}
+
+async function detectCurrentLocation(isAuto)
+{
+    if(!navigator.geolocation)
+    {
+        if(!isAuto)
+        {
+            showLocationError("Current location is not supported in this browser.");
+        }
+        return;
+    }
+
+    try
+    {
+        setLocationStatus("Detecting your current location...");
+
+        const position=await new Promise((resolve,reject)=>{
+            navigator.geolocation.getCurrentPosition(resolve,reject,{
+                enableHighAccuracy:false,
+                timeout:9000,
+                maximumAge:300000
+            });
+        });
+
+        const latitude=position.coords.latitude;
+        const longitude=position.coords.longitude;
+
+        const response=await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&zoom=12&addressdetails=1`
+        );
+
+        if(!response.ok)
+        {
+            throw new Error("Location lookup failed");
+        }
+
+        const result=await response.json();
+        const address=result.address || {};
+        const country=address.country || "";
+        const state=address.state || address.province || address.region || "";
+        const regionCandidates=[
+            address.neighbourhood,
+            address.suburb,
+            address.city_district,
+            address.quarter,
+            address.county,
+            address.city,
+            address.town,
+            address.village,
+            address.municipality,
+            address.state_district
+        ].filter(Boolean);
+        const region=regionCandidates[0] || "";
+
+        if(!country && !state && !region)
+        {
+            throw new Error("Location details unavailable");
+        }
+
+        await loadCountries(country);
+        selectBestLocationOption("country",[country]);
+        await loadStates(state);
+        selectBestLocationOption("state",[state]);
+        await loadDistricts(region);
+        const matchedRegion=selectBestLocationOption("district",regionCandidates);
+
+        const detected=[region,state,country].filter(Boolean).join(", ");
+        locationDisplayOverride=detected;
+        currentLocationFilter={
+            country,
+            state,
+            region,
+            regionCandidates,
+            hasMatchedRegion: Boolean(matchedRegion)
+        };
+        applyLocationFilter();
+        updateLocationSummary();
+    }
+    catch
+    {
+        setLocationStatus("");
+        if(!isAuto)
+        {
+            showLocationError("Could not detect your current location. Please choose it manually.");
+        }
     }
 }
 
@@ -1551,20 +1965,215 @@ function applyLocationFilter()
     const district=
     document.getElementById("district")?.value.toLowerCase() || "";
 
+    const ratingValue=
+    document.getElementById("ratingFilter")?.value || "";
+
+    const dateValue=
+    document.getElementById("dateFilter")?.value || "";
+
     document.querySelectorAll(".show-card").forEach(card=>{
         const cardCountry=(card.dataset.country || "").toLowerCase();
         const cardState=(card.dataset.state || "").toLowerCase();
         const cardRegion=(card.dataset.region || "").toLowerCase();
         const cardLocation=(card.dataset.location || card.innerText || "").toLowerCase();
-        const matchesCountry=!country || cardCountry===country || cardLocation.includes(country);
-        const matchesState=!state || cardState===state || cardLocation.includes(state);
-        const matchesDistrict=!district || cardRegion===district || cardLocation.includes(district);
-        card.hidden=!(matchesCountry && matchesState && matchesDistrict);
+        const cardRating=card.dataset.rating || "";
+        const cardDate=card.dataset.date || "";
+        let matchesCountry=!country || cardCountry===country || cardLocation.includes(country);
+        let matchesState=!state || cardState===state || cardLocation.includes(state);
+        let matchesDistrict=!district || cardRegion===district || cardLocation.includes(district);
+
+        if(currentLocationFilter && currentLocationFilter.region)
+        {
+            const currentRegion=normalizeLocationText(currentLocationFilter.region);
+            const currentCandidates=(currentLocationFilter.regionCandidates || [])
+                .map(normalizeLocationText)
+                .filter(Boolean);
+            const normalizedCardRegion=normalizeLocationText(card.dataset.region || "");
+            const normalizedCardLocation=normalizeLocationText(card.dataset.location || card.innerText || "");
+            const matchesCurrentRegion=currentCandidates.some(candidate=>
+                normalizedCardRegion===candidate ||
+                normalizedCardLocation.includes(candidate)
+            ) || normalizedCardRegion===currentRegion || normalizedCardLocation.includes(currentRegion);
+
+            matchesCountry=!currentLocationFilter.country || cardCountry===currentLocationFilter.country.toLowerCase() || cardLocation.includes(currentLocationFilter.country.toLowerCase());
+            matchesState=!currentLocationFilter.state || cardState===currentLocationFilter.state.toLowerCase() || cardLocation.includes(currentLocationFilter.state.toLowerCase());
+            matchesDistrict=matchesCurrentRegion;
+        }
+
+        const matchesRating=!ratingValue || cardRating===ratingValue;
+        const matchesDate=!dateValue || cardDate===dateValue;
+        card.hidden=!(matchesCountry && matchesState && matchesDistrict && matchesRating && matchesDate);
     });
+
+    updateLocationSummary();
+    updateFilterEmptyState();
+    sortShows();
+    saveShowtimeFilters();
+}
+
+function updateFilterEmptyState()
+{
+    const cards=Array.from(document.querySelectorAll(".show-card"));
+    const emptyState=document.getElementById("filterEmptyState");
+    const emptyTitle=document.getElementById("filterEmptyTitle");
+    const emptyMessage=document.getElementById("filterEmptyMessage");
+    const nearbyLink=document.getElementById("showNearbyLink");
+    if(!emptyState)
+    {
+        return;
+    }
+
+    const hasVisibleCard=cards.some(card=>!card.hidden);
+    emptyState.hidden=hasVisibleCard || !cards.length;
+    const hasLocation=getSelectedLocationName() !== "All locations";
+
+    if(nearbyLink)
+    {
+        nearbyLink.hidden=!hasLocation || hasVisibleCard || !cards.length;
+    }
+
+    if(emptyTitle)
+    {
+        emptyTitle.textContent=hasLocation ? "No shows available at your location." : "No shows available.";
+    }
+
+    if(emptyMessage)
+    {
+        const locationName=getSelectedLocationName();
+        const rating=document.getElementById("ratingFilter")?.value || "";
+        const date=document.getElementById("dateFilter")?.value || "";
+        const filterText=[
+            rating ? `rating ${rating}` : "",
+            date ? date : ""
+        ].filter(Boolean).join(", ");
+        const locationText=locationName !== "All locations" ? ` at ${locationName}` : "";
+        const selectedFilterText=filterText ? ` for ${filterText}` : "";
+
+        emptyMessage.textContent=`No shows available${locationText}${selectedFilterText}.`;
+    }
+}
+
+function showNearbyShows()
+{
+    const districtSelect=document.getElementById("district");
+    const stateSelect=document.getElementById("state");
+    const countrySelect=document.getElementById("country");
+
+    const hadCurrentLocation=Boolean(currentLocationFilter);
+    clearCurrentLocationFilter();
+
+    if(hadCurrentLocation)
+    {
+        applyLocationFilter();
+        if(hasVisibleShows())
+        {
+            setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
+            return;
+        }
+    }
+
+    if(districtSelect?.value)
+    {
+        districtSelect.selectedIndex=0;
+        applyLocationFilter();
+        if(hasVisibleShows())
+        {
+            setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
+            return;
+        }
+    }
+
+    if(stateSelect?.value)
+    {
+        stateSelect.selectedIndex=0;
+        setSelectOptions("district",[],"All Regions");
+        applyLocationFilter();
+        if(hasVisibleShows())
+        {
+            setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
+            return;
+        }
+    }
+
+    if(countrySelect?.value)
+    {
+        countrySelect.selectedIndex=0;
+        setSelectOptions("state",[],"All States");
+        setSelectOptions("district",[],"All Regions");
+    }
+
+    applyLocationFilter();
+
+    const relaxedLocation=getSelectedLocationName();
+    setLocationStatus(relaxedLocation==="All locations"
+        ? "Showing all available shows"
+        : `Showing nearby shows in ${relaxedLocation}`);
+}
+
+function sortShows()
+{
+    const board=document.querySelector(".schedule-board");
+    if(!board)
+    {
+        return;
+    }
+
+    const sortValue=document.getElementById("sortShows")?.value || "upcoming";
+    const cards=Array.from(board.querySelectorAll(".show-card"));
+
+    const readText=(card,key)=>(card.dataset[key] || "").toLowerCase();
+    const readDate=card=>{
+        const time=Date.parse(card.dataset.start || "");
+        return Number.isNaN(time) ? 0 : time;
+    };
+    const readNumber=(card,key)=>Number(card.dataset[key] || 0);
+
+    cards.sort((a,b)=>{
+        if(sortValue==="rating")
+        {
+            return readNumber(b,"rating") - readNumber(a,"rating") || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="today")
+        {
+            const today=new Date();
+            today.setHours(0,0,0,0);
+            const todayTime=today.getTime();
+            const aGap=Math.abs(new Date(readDate(a)).setHours(0,0,0,0) - todayTime);
+            const bGap=Math.abs(new Date(readDate(b)).setHours(0,0,0,0) - todayTime);
+            return aGap - bGap || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="time")
+        {
+            return readNumber(a,"time") - readNumber(b,"time") || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="title")
+        {
+            return readText(a,"title").localeCompare(readText(b,"title")) || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="location")
+        {
+            return readText(a,"location").localeCompare(readText(b,"location")) || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="type")
+        {
+            return readText(a,"showType").localeCompare(readText(b,"showType")) || readDate(a) - readDate(b);
+        }
+
+        return readDate(a) - readDate(b);
+    });
+
+    cards.forEach(card=>board.appendChild(card));
 }
 
 function resetLocationFilter()
 {
+    clearSavedShowtimeFilters();
+
     ["country","state","district"].forEach(id=>{
         const select=document.getElementById(id);
         if(select)
@@ -1573,20 +2182,50 @@ function resetLocationFilter()
         }
     });
 
+    clearCurrentLocationFilter();
+
+    ["ratingFilter","dateFilter","sortShows"].forEach(id=>{
+        const field=document.getElementById(id);
+        if(field)
+        {
+            field.value="";
+        }
+    });
+
+    const sortSelect=document.getElementById("sortShows");
+    if(sortSelect)
+    {
+        sortSelect.value="upcoming";
+    }
+
     document.querySelectorAll(".show-card").forEach(card=>{
         card.hidden=false;
     });
 
     loadCountries();
+    updateLocationSummary();
+    updateFilterEmptyState();
+    sortShows();
 }
 
 
 
 document.addEventListener(
 "DOMContentLoaded",
-()=>{
+async ()=>{
 
-loadCountries();
+await loadCountries();
+populateDynamicFilters();
+const restoredFilters=await restoreSavedShowtimeFilters();
+if(!restoredFilters)
+{
+await detectCurrentLocation(true);
+if(!currentLocationFilter)
+{
+updateLocationSummary();
+applyLocationFilter();
+}
+}
 
 
 

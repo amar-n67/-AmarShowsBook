@@ -11,6 +11,9 @@ namespace AmarShowsBook.Controllers
 {
     public class HomeController : Controller
     {
+        private static readonly SemaphoreSlim HomeShowListingViewLock = new(1, 1);
+        private static bool _homeShowListingViewReady;
+
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
@@ -25,13 +28,13 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        public IActionResult Index(string type = "Movie")
+        public IActionResult Index(string type = "All")
         {
             return RedirectToAction(nameof(ShowTime), new { type });
         }
 
         // The public landing page is the showTime feed: it reads the SQL view, enriches venue text, then logs the visit.
-        public async Task<IActionResult> ShowTime(string type = "Movie")
+        public async Task<IActionResult> ShowTime(string type = "All")
         {
             try
             {
@@ -43,45 +46,40 @@ namespace AmarShowsBook.Controllers
 
                 await EnsureHomeShowListingView();
 
-var schedules = await _context.HomeShows
-.Where(x => x.ShowType == type)
-.Where(x => x.StartTime >= DateTime.UtcNow)
-.OrderBy(x => x.StartTime)
-.Select(x => new HomeShowViewModel
-{
-    ScheduleId = x.ScheduleId,
+                var selectedType = string.Equals(type, "All", StringComparison.OrdinalIgnoreCase) ? "" : type;
 
-    ShowId = x.ShowId,
+                var homeShowsQuery = _context.HomeShows
+                    .Where(x => x.StartTime >= DateTime.UtcNow);
 
-    ShowType = x.ShowType,
+                if (!string.IsNullOrWhiteSpace(selectedType))
+                {
+                    homeShowsQuery = homeShowsQuery.Where(x => x.ShowType == selectedType);
+                }
 
-    Title = x.Title,
-
-    Description = x.Description,
-
-    PosterUrl = x.PosterUrl,
-
-    Images = x.Images,
-
-    TrailerUrl = x.TrailerUrl,
-
-    StartTime = x.StartTime,
-
-    EndTime = x.EndTime,
-
-    Location = x.Location,
-
-    State = x.State,
-
-    Country = x.Country
-    ,
-    Director = x.Director,
-    Cast = x.Cast,
-    ImdbRating = x.ImdbRating,
-    VenueName = x.VenueName,
-    ScreenName = x.ScreenName
-})
-.ToListAsync();
+                var schedules = await homeShowsQuery
+                    .OrderBy(x => x.StartTime)
+                    .Select(x => new HomeShowViewModel
+                    {
+                        ScheduleId = x.ScheduleId,
+                        ShowId = x.ShowId,
+                        ShowType = x.ShowType,
+                        Title = x.Title,
+                        Description = x.Description,
+                        PosterUrl = x.PosterUrl,
+                        Images = x.Images,
+                        TrailerUrl = x.TrailerUrl,
+                        StartTime = x.StartTime,
+                        EndTime = x.EndTime,
+                        Location = x.Location,
+                        State = x.State,
+                        Country = x.Country,
+                        Director = x.Director,
+                        Cast = x.Cast,
+                        ImdbRating = x.ImdbRating,
+                        VenueName = x.VenueName,
+                        ScreenName = x.ScreenName
+                    })
+                    .ToListAsync();
 
 var vm = new HomeViewModel
 {
@@ -179,6 +177,19 @@ foreach (var show in schedules)
 }
         private async Task EnsureHomeShowListingView()
         {
+            if (_homeShowListingViewReady)
+            {
+                return;
+            }
+
+            await HomeShowListingViewLock.WaitAsync();
+            try
+            {
+                if (_homeShowListingViewReady)
+                {
+                    return;
+                }
+
             // This keeps older local databases compatible before the home page queries the listing view.
             await _context.Database.ExecuteSqlRawAsync(@"
 ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Description"" text;
@@ -239,6 +250,12 @@ LEFT JOIN public.""Locations"" l ON s.""LocationId"" = l.""Id""
 LEFT JOIN public.screens sc ON s.screen_id = sc.id
 LEFT JOIN public.venues v ON sc.venue_id = v.id;
 ");
+                _homeShowListingViewReady = true;
+            }
+            finally
+            {
+                HomeShowListingViewLock.Release();
+            }
         }
 
 
