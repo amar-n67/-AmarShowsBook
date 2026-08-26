@@ -443,6 +443,127 @@
                 color: #f8fafc !important;
                 border-bottom-color: var(--admin-gold, #e3b75a) !important;
             }
+
+            .admin-pagination-panel {
+                margin-top: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 12px;
+                flex-wrap: wrap;
+                padding: 16px;
+                background: var(--admin-panel, #ffffff);
+                border: 1px solid var(--admin-line, #e5e7eb);
+                border-radius: 8px;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            }
+
+            .admin-page-status {
+                display: flex;
+                align-items: baseline;
+                gap: 6px;
+                color: var(--admin-muted, #4b5563);
+                font-size: 14px;
+                white-space: nowrap;
+                margin-right: auto;
+            }
+
+            .admin-page-status strong {
+                color: var(--admin-ink, #111827);
+                font-size: 22px;
+            }
+
+            .admin-pagination-controls {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .admin-page-nav-btn,
+            .admin-page-search-form button {
+                min-width: 92px;
+                height: 40px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+                background: var(--admin-ink, #111827);
+                color: #ffffff;
+                border: 1px solid var(--admin-ink, #111827);
+                font-size: 14px;
+                font-weight: 700;
+                transition: 0.2s;
+                cursor: pointer;
+            }
+
+            .admin-page-nav-btn:hover,
+            .admin-page-search-form button:hover {
+                background: #374151;
+                border-color: #374151;
+                color: #ffffff;
+            }
+
+            .admin-page-nav-btn.disabled {
+                background: #f3f4f6;
+                color: #9ca3af;
+                border-color: #e5e7eb;
+                cursor: not-allowed;
+            }
+
+            .admin-page-search-form {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                border: 0;
+            }
+
+            .admin-page-search-form input {
+                width: 118px;
+                height: 40px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                color: var(--admin-ink, #111827);
+                background: var(--admin-panel, #ffffff);
+                font-size: 15px;
+                font-weight: 700;
+                padding: 0 12px;
+            }
+
+            .admin-page-search-form input:focus {
+                outline: 2px solid #93c5fd;
+                outline-offset: 1px;
+            }
+
+            @@media(max-width: 768px) {
+                .admin-pagination-panel,
+                .admin-page-search-form {
+                    align-items: stretch;
+                    flex-direction: column;
+                    width: 100%;
+                }
+
+                .admin-page-status {
+                    margin-right: 0;
+                }
+
+                .admin-pagination-controls {
+                    align-items: stretch;
+                    flex-direction: column;
+                    width: 100%;
+                }
+
+                .admin-page-nav-btn,
+                .admin-page-search-form button,
+                .admin-page-search-form input {
+                    width: 100%;
+                }
+            }
         </style>
 
     </main>

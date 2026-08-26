@@ -106,12 +106,12 @@
         </table>
     </div>
 
-    <div class="pagination-area">
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a class="page-btn @(i == currentPage ? "active" : "")" href="/Admin/CouponUsage?page=@i">@i</a>
-        }
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/CouponUsage"
+    })
 </section>
 
 <script>

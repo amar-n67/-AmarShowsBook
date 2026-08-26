@@ -308,17 +308,12 @@
     </div>
 
 
-    <div class="pagination-area">
-
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a href="/Admin/Transactions?page=@i"
-               class="page-btn @(i == currentPage ? "active" : "")">
-                @i
-            </a>
-        }
-
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Transactions"
+    })
 
 </section>
 
@@ -468,38 +463,6 @@
 
     .view-btn:hover {
         background: #2563eb;
-    }
-
-    .pagination-area {
-        margin-top: 24px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .page-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        background: white;
-        color: #111827;
-        border: 1px solid #d1d5db;
-        transition: 0.2s;
-    }
-
-    .page-btn:hover {
-        background: #111827;
-        color: white;
-    }
-
-    .page-btn.active {
-        background: #111827;
-        color: white;
-        border-color: #111827;
     }
 
     .empty-state {

@@ -369,6 +369,8 @@ namespace AmarShowsBook.Controllers
                 .ThenByDescending(x => x.ValidationLogId);
 
             var totalCount = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
 
             var rows = await query
                 .Skip((page - 1) * pageSize)
@@ -376,7 +378,7 @@ namespace AmarShowsBook.Controllers
                 .ToListAsync();
 
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalCount;
             ViewBag.SecurityIssueCount = await _context.VwTicketValidationSummaries
                 .CountAsync(x => x.IsSecurityIssue == 1);
@@ -1091,6 +1093,8 @@ namespace AmarShowsBook.Controllers
                 .OrderByDescending(x => x.CreatedAt);
 
             var totalCount = query.Count();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
 
             var users = query
                 .Skip((page - 1) * pageSize)
@@ -1098,7 +1102,7 @@ namespace AmarShowsBook.Controllers
                 .ToList();
 
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalCount;
 
             return View(users);
@@ -1149,6 +1153,8 @@ namespace AmarShowsBook.Controllers
                     .OrderByDescending(x => x.BookedAt);
 
             var totalCount = query.Count();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
 
             var bookings = query
                 .Skip((page - 1) * pageSize)
@@ -1156,7 +1162,7 @@ namespace AmarShowsBook.Controllers
                 .ToList();
 
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalCount;
 
             return View(bookings);
@@ -1186,6 +1192,8 @@ namespace AmarShowsBook.Controllers
                 .FirstOrDefaultAsync();
 
             var totalCount = summary?.Total ?? 0;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
 
             var transactions = await query
                 .Skip((page - 1) * pageSize)
@@ -1193,7 +1201,7 @@ namespace AmarShowsBook.Controllers
                 .ToListAsync();
 
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalCount;
             ViewBag.SuccessCount = summary?.Success ?? 0;
             ViewBag.FailedCount = summary?.Failed ?? 0;
@@ -1230,6 +1238,8 @@ namespace AmarShowsBook.Controllers
                 .OrderByDescending(x => x.activity_time);
 
             var totalCount = query.Count();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
 
             var logs = query
                 .Skip((page - 1) * pageSize)
@@ -1237,7 +1247,7 @@ namespace AmarShowsBook.Controllers
                 .ToList();
 
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalCount;
 
             return View(logs);
@@ -1280,6 +1290,8 @@ namespace AmarShowsBook.Controllers
                     .OrderByDescending(x => x.RequestedAt ?? x.CreatedAt);
 
                 var totalCount = await query.CountAsync();
+                var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                page = Math.Min(page, totalPages);
 
                 var refunds = await query
                     .Skip((page - 1) * pageSize)
@@ -1287,7 +1299,7 @@ namespace AmarShowsBook.Controllers
                     .ToListAsync();
 
                 ViewBag.CurrentPage = page;
-                ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                ViewBag.TotalPages = totalPages;
                 ViewBag.TotalRecords = totalCount;
 
                 return View(refunds);
@@ -1318,6 +1330,8 @@ namespace AmarShowsBook.Controllers
                     .OrderByDescending(x => x.LastTransactionAt);
 
                 var totalCount = await query.CountAsync();
+                var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                page = Math.Min(page, totalPages);
 
                 var wallets = await query
                     .Skip((page - 1) * pageSize)
@@ -1340,7 +1354,7 @@ namespace AmarShowsBook.Controllers
                         .ToDictionary(x => x.Key, x => x.ToList());
 
                 ViewBag.CurrentPage = page;
-                ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                ViewBag.TotalPages = totalPages;
                 ViewBag.TotalRecords = totalCount;
 
                 return View(wallets);
@@ -1637,6 +1651,8 @@ GROUP BY uw.id, u.""Id"";
                     .OrderByDescending(x => x.CreatedAt);
 
                 var totalCount = await query.CountAsync();
+                var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                page = Math.Min(page, totalPages);
 
                 var notifications = await query
                     .Skip((page - 1) * pageSize)
@@ -1644,7 +1660,7 @@ GROUP BY uw.id, u.""Id"";
                     .ToListAsync();
 
                 ViewBag.CurrentPage = page;
-                ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                ViewBag.TotalPages = totalPages;
                 ViewBag.TotalRecords = totalCount;
 
                 return View(notifications);
@@ -2410,13 +2426,16 @@ public async Task<IActionResult> CouponUsage(int page = 1)
         .OrderByDescending(x => x.UsedAt);
 
     var totalCount = await query.CountAsync();
+    var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+    page = Math.Min(page, totalPages);
+
     var rows = await query
         .Skip((page - 1) * pageSize)
         .Take(pageSize)
         .ToListAsync();
 
     ViewBag.CurrentPage = page;
-    ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+    ViewBag.TotalPages = totalPages;
     ViewBag.TotalRecords = totalCount;
 
     return View(rows);
