@@ -134,11 +134,11 @@ alt="@Model.FullName profile image" />
 </div>
 
 <div class="developer-menu-links">
-<a href="#developerOverview">Overview</a>
-<a href="#developerSkills">Skills</a>
-<a href="#developerTech">Technologies</a>
-<a href="#developerApplication">Application</a>
-<a href="#developerSupport">Support</a>
+<a href="#developerOverview" data-developer-target="developerOverview">Overview</a>
+<a href="#developerSkills" data-developer-target="developerSkills">Skills</a>
+<a href="#developerTech" data-developer-target="developerTech">Technologies</a>
+<a href="#developerApplication" data-developer-target="developerApplication">Application</a>
+<a href="#developerSupport" class="developer-menu-support" data-developer-target="developerSupport">Support</a>
 </div>
 
 <div class="developer-menu-actions">
@@ -699,6 +699,7 @@ transition:transform .2s ease, box-shadow .2s ease, background .2s ease, color .
 
 .developer-menu-links a:hover,
 .developer-menu-links a:focus-visible,
+.developer-menu-links a.developer-menu-active,
 .developer-edit-toggle:hover,
 .developer-edit-toggle:focus-visible{
 transform:translateY(-2px);
@@ -709,11 +710,19 @@ box-shadow:0 14px 28px color-mix(in srgb, var(--app-primary) 28%, transparent);
 outline:none;
 }
 
-.developer-edit-toggle{
-border-color:transparent;
-background:var(--app-primary);
-color:#fff;
+.developer-edit-toggle,
+.developer-upload-btn,
+.resume-btn,
+.back-btn{
 cursor:pointer;
+}
+
+.developer-menu-links a.developer-menu-support.developer-menu-active:not(:hover):not(:focus-visible){
+transform:none;
+border-color:color-mix(in srgb, var(--app-primary) 22%, var(--app-input-border));
+background:color-mix(in srgb, var(--app-card) 84%, #ffffff);
+color:var(--app-card-text);
+box-shadow:0 8px 20px rgba(15,23,42,.08);
 }
 
 .developer-readonly-pill{
@@ -754,6 +763,33 @@ rgba(
 0.3
 );
 
+}
+
+.developer-section-highlight{
+outline:3px solid color-mix(in srgb, var(--app-primary) 72%, #fff);
+outline-offset:4px;
+box-shadow:0 0 0 8px color-mix(in srgb, var(--app-primary) 16%, transparent), 0 18px 34px rgba(15,23,42,.18);
+animation:developerSectionPulse 1.6s ease;
+}
+
+.developer-grid.developer-section-highlight,
+.developer-support-grid.developer-section-highlight{
+border-radius:10px;
+}
+
+@@keyframes developerSectionPulse{
+0%{
+outline-color:color-mix(in srgb, var(--app-primary) 92%, #fff);
+box-shadow:0 0 0 2px color-mix(in srgb, var(--app-primary) 22%, transparent), 0 12px 24px rgba(15,23,42,.12);
+}
+55%{
+outline-color:color-mix(in srgb, var(--app-primary) 72%, #fff);
+box-shadow:0 0 0 10px color-mix(in srgb, var(--app-primary) 18%, transparent), 0 18px 34px rgba(15,23,42,.18);
+}
+100%{
+outline-color:color-mix(in srgb, var(--app-primary) 48%, #fff);
+box-shadow:0 0 0 6px color-mix(in srgb, var(--app-primary) 10%, transparent), 0 12px 24px rgba(15,23,42,.12);
+}
 }
 
 
@@ -937,11 +973,14 @@ align-items:center;
 justify-content:center;
 min-height:38px;
 padding:8px 14px;
-border-radius:999px;
-background:var(--app-primary);
-color:#fff;
+border-radius:15px;
+border:1px solid var(--app-input-border);
+background:#fff;
+color:var(--app-card-text);
 font-weight:900;
-cursor:pointer;
+text-align:center;
+text-decoration:none;
+transition:.4s;
 }
 
 .developer-photo-editor p{
@@ -979,38 +1018,43 @@ gap:15px;
 
 .resume-btn,
 .back-btn{
-
+display:inline-flex;
+align-items:center;
+justify-content:center;
 padding:15px 30px;
-
 border-radius:15px;
-
+border:1px solid var(--app-input-border);
+background:color-mix(in srgb, var(--app-card) 78%, var(--app-primary));
+color:var(--app-card-text);
 text-decoration:none;
-
-font-weight:700;
-
-color:#fff;
-
+font-weight:800;
+text-align:center;
 transition:.4s;
 }
 
-
-.resume-btn{
-
-background:var(--app-accent-strong);
-}
-
-
 .back-btn{
-
-background:var(--app-primary);
+border-color:color-mix(in srgb, var(--app-muted) 45%, var(--app-input-border));
+background:color-mix(in srgb, var(--app-card) 88%, var(--app-muted));
+color:var(--app-muted);
 }
 
 
+.developer-upload-btn:hover,
+.developer-upload-btn:focus-visible,
 .resume-btn:hover,
-.back-btn:hover{
+.resume-btn:focus-visible,
+.back-btn:hover,
+.back-btn:focus-visible{
+transform:translateY(-5px);
+background:var(--app-primary);
+color:#fff;
+outline:none;
+}
 
-transform:
-translateY(-5px);
+.back-btn:hover,
+.back-btn:focus-visible{
+border-color:color-mix(in srgb, var(--app-muted) 72%, var(--app-input-border));
+background:var(--app-muted);
 }
 
 
@@ -1229,11 +1273,46 @@ function syncSupportWhatsAppNumber() {
     }
 }
 
+function highlightDeveloperSection(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    document.querySelectorAll(".developer-section-highlight").forEach(function (element) {
+        element.classList.remove("developer-section-highlight");
+    });
+
+    document.querySelectorAll(".developer-menu-links a[data-developer-target]").forEach(function (link) {
+        link.classList.toggle("developer-menu-active", link.dataset.developerTarget === targetId);
+    });
+
+    const highlightTarget = target.closest(".dev-card") || target;
+    highlightTarget.classList.add("developer-section-highlight");
+
+    window.setTimeout(function () {
+        highlightTarget.classList.remove("developer-section-highlight");
+    }, 1800);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     rememberDeveloperFormState();
     syncSupportWhatsAppNumber();
 
     document.getElementById("IsSupportWhatsAppSameAsPhone")?.addEventListener("change", syncSupportWhatsAppNumber);
     document.getElementById("SupportPhone")?.addEventListener("input", syncSupportWhatsAppNumber);
+
+    document.querySelectorAll(".developer-menu-links a[data-developer-target]").forEach(function (link) {
+        link.addEventListener("click", function () {
+            const targetId = link.dataset.developerTarget;
+            window.setTimeout(function () {
+                highlightDeveloperSection(targetId);
+            }, 120);
+        });
+    });
+
+    if (window.location.hash) {
+        window.setTimeout(function () {
+            highlightDeveloperSection(window.location.hash.substring(1));
+        }, 250);
+    }
 });
 </script>
