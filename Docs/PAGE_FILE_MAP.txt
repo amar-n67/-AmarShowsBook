@@ -38,11 +38,11 @@ Branding
 - Full application branding: arcanaamar showTime.
 
 Support contact
-- Mobile: +91 8920993434
+- Mobile: +91 9651698863
 - Email: arcanaamar67@gmail.com
 - Public menu Support hover actions:
   Write to us -> mailto:arcanaamar67@gmail.com
-  Call -> tel:+918920993434
+  Call -> tel:+919651698863
 - Amaro also knows this support contact.
 
 Themes

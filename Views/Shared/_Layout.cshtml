@@ -773,6 +773,40 @@ html[data-theme="dark"] [style*="color: black"] {
     color: var(--app-input-text);
 }
 
+.cinema-popup-support,
+.alert-support-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    text-decoration: none;
+    font-weight: 850;
+}
+
+.cinema-popup-support {
+    min-width: 110px;
+    padding: 8px 14px;
+    background: var(--app-primary);
+    color: #fff;
+}
+
+.cinema-popup-support.d-none {
+    display: none;
+}
+
+.alert-support-link {
+    margin-left: 10px;
+    padding: 4px 9px;
+    background: var(--app-primary);
+    color: #fff;
+}
+
+.alert-support-link:hover,
+.cinema-popup-support:hover {
+    color: #fff;
+    filter: brightness(1.04);
+}
+
 .cinema-popup-backdrop.error .cinema-popup-strip {
     background: linear-gradient(135deg, var(--app-danger), color-mix(in srgb, var(--app-danger) 45%, var(--app-accent)));
     color: #fff;
@@ -1993,6 +2027,15 @@ footer {
 
 </head>
 
+@{
+    var globalSupportDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
+    var normalizedGlobalSupportDisplayName = string.IsNullOrWhiteSpace(globalSupportDisplayName)
+        ? "User"
+        : globalSupportDisplayName.Trim();
+    var globalSupportWhatsAppText = $"Hi showTime Team, I'm {normalizedGlobalSupportDisplayName}. I need support. Please help me with my request.";
+    var globalSupportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(globalSupportWhatsAppText)}";
+}
+
 <body>
     <div id="cinemaPopup" class="cinema-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="cinemaPopupTitle">
         <div class="cinema-popup-card">
@@ -2006,6 +2049,7 @@ footer {
             </div>
             <div class="cinema-popup-actions">
                 <button type="button" id="cinemaPopupCancel" class="cinema-popup-btn cinema-popup-cancel d-none">Retake</button>
+                <a id="cinemaPopupSupport" class="cinema-popup-support d-none" href="@globalSupportWhatsAppUrl" target="_blank" rel="noopener">Support</a>
                 <button type="button" id="cinemaPopupOk" class="cinema-popup-btn cinema-popup-ok">Continue</button>
             </div>
         </div>
@@ -2072,6 +2116,8 @@ z-index:9999;">
     var normalizedDisplayName = string.IsNullOrWhiteSpace(sessionDisplayName)
         ? "User"
         : sessionDisplayName.Trim();
+    var supportWhatsAppText = $"Hi showTime Team, I'm {normalizedDisplayName}. I need support. Please help me with my request.";
+    var supportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(supportWhatsAppText)}";
     var sessionInitial = normalizedDisplayName[0].ToString().ToUpperInvariant();
     var sessionProfileImage = Context.Session.GetString("ProfileImage");
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
@@ -2170,8 +2216,9 @@ z-index:9999;">
                             <span class="film-nav-label">Support</span>
                         </button>
                         <div class="film-support-dropdown" role="menu" aria-label="Support options">
-                            <a href="tel:+918920993434" role="menuitem">Call</a>
-                            <a href="mailto:arcanaamar67@gmail.com" role="menuitem">Email</a>
+                            <a href="tel:+919651698863" role="menuitem">Call Us</a>
+                            <a href="mailto:arcanaamar67@gmail.com" role="menuitem">Write Us</a>
+                            <a href="@supportWhatsAppUrl" target="_blank" rel="noopener" role="menuitem">WhatsApp Us</a>
                         </div>
                     </div>
                     @if (canOpenAdmin)
@@ -2334,7 +2381,7 @@ z-index:9999;">
 
 <footer class="border-top footer text-muted">
 <div class="container">
-    &copy; 2026 - showTime · Support: <a href="tel:+918920993434">Call</a> · <a href="mailto:arcanaamar67@gmail.com">Email</a>
+    &copy; 2026 - showTime · Support: <a href="tel:+919651698863">Call Us</a> · <a href="mailto:arcanaamar67@gmail.com">Write Us</a> · <a href="@supportWhatsAppUrl" target="_blank" rel="noopener">WhatsApp Us</a>
 </div>
 </footer>
 
@@ -2871,8 +2918,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const body = document.getElementById("cinemaPopupMessage");
         const ok = document.getElementById("cinemaPopupOk");
         const cancel = document.getElementById("cinemaPopupCancel");
+        const support = document.getElementById("cinemaPopupSupport");
 
-        if (!popup || !title || !body || !ok || !cancel) {
+        if (!popup || !title || !body || !ok || !cancel || !support) {
             nativeAlert(message);
             return;
         }
@@ -2891,6 +2939,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ok.innerText = settings.okText || "Continue";
         cancel.innerText = settings.cancelText || "Cancel";
         cancel.classList.toggle("d-none", popupType !== "confirm");
+        support.classList.toggle("d-none", popupType !== "error");
         popup.style.display = "block";
 
         ok.onclick = function () {
@@ -2911,6 +2960,19 @@ document.addEventListener("DOMContentLoaded", function () {
     window.alert = function (message) {
         window.showCinemaPopup(message);
     };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".alert-danger").forEach(function (alert) {
+            if (alert.querySelector(".alert-support-link")) return;
+            const supportLink = document.createElement("a");
+            supportLink.className = "alert-support-link";
+            supportLink.href = "@globalSupportWhatsAppUrl";
+            supportLink.target = "_blank";
+            supportLink.rel = "noopener";
+            supportLink.textContent = "Support";
+            alert.appendChild(supportLink);
+        });
+    });
 })();
 </script>
 
@@ -3388,12 +3450,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (value === "support-options") {
             renderOptions([
-                { label: "Call", url: "tel:+918920993434" },
-                { label: "Email", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "Call Us", url: "tel:+919651698863" },
+                { label: "Write Us", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "WhatsApp Us", url: "@supportWhatsAppUrl" },
                 { label: "My Bookings", url: "/Booking/MyBookings" },
                 { label: "Transactions", url: "/Transaction/History" }
             ]);
-            addMessage("Choose Call or Email for support. For booking or payment issues, include your booking or transaction reference.", "bot");
+            addMessage("Choose Call Us, Write Us, or WhatsApp Us for support. For booking or payment issues, include your booking or transaction reference.", "bot");
             return true;
         }
 
@@ -3485,7 +3548,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:"))) {
+                if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:") || option.url.startsWith("https://wa.me/"))) {
                     window.location.href = option.url;
                     return;
                 }

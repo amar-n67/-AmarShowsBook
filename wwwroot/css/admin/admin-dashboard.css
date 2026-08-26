@@ -855,6 +855,25 @@ html[data-theme="cinema"] .admin-topbar {
     color: var(--admin-ink) !important;
 }
 
+.alert-support-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    padding: 4px 9px;
+    border-radius: 9px;
+    background: var(--admin-rose);
+    color: #fff !important;
+    text-decoration: none;
+    font-weight: 850;
+}
+
+.alert-support-link:hover,
+.alert-support-link:focus-visible {
+    color: #fff !important;
+    filter: brightness(1.04);
+}
+
 .btn-dark:hover,
 .view-btn:hover {
     background: var(--admin-rose) !important;

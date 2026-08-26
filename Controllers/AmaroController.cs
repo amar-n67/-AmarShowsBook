@@ -8,7 +8,7 @@ namespace AmarShowsBook.Controllers;
 // Amaro answers from app data first, then limits every admin shortcut to the user's current roles.
 public class AmaroController : Controller
 {
-    private const string SupportPhone = "+91 8920993434";
+    private const string SupportPhone = "+91 9651698863";
     private const string SupportEmail = "arcanaamar67@gmail.com";
 
     private readonly ApplicationDbContext _context;
@@ -1225,22 +1225,30 @@ public class AmaroController : Controller
                 .ToArray());
     }
 
-    private static AmaroAskResponse BuildSupportReply()
+    private AmaroAskResponse BuildSupportReply()
     {
         return new AmaroAskResponse(
-            "Choose Call or Email for support. For booking/payment/refund problems, include your booking reference or transaction reference if you have it.",
+            "Choose Call Us, Write Us, or WhatsApp Us for support. For booking/payment/refund problems, include your booking reference or transaction reference if you have it.",
             BuildSupportOptions());
     }
 
-    private static AmaroQuickOption[] BuildSupportOptions()
+    private AmaroQuickOption[] BuildSupportOptions()
     {
         return new[]
         {
-            new AmaroQuickOption("Call", $"tel:{SupportPhone.Replace(" ", "")}"),
-            new AmaroQuickOption("Email", $"mailto:{SupportEmail}"),
+            new AmaroQuickOption("Call Us", $"tel:{SupportPhone.Replace(" ", "")}"),
+            new AmaroQuickOption("Write Us", $"mailto:{SupportEmail}"),
+            new AmaroQuickOption("WhatsApp Us", BuildWhatsAppUrl()),
             new AmaroQuickOption("My Bookings", "/Booking/MyBookings"),
             new AmaroQuickOption("Transactions", "/Transaction/History")
         };
+    }
+
+    private string BuildWhatsAppUrl()
+    {
+        var phone = SupportPhone.Replace("+", "").Replace(" ", "");
+        var text = Uri.EscapeDataString($"Hi showTime Team, I'm {GetDisplayName()}. I need support. Please help me with my request.");
+        return $"https://wa.me/{phone}?text={text}";
     }
 
     private async Task SaveConversation(int? userId, string message, string reply)

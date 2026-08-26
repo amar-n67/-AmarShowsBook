@@ -43,5 +43,11 @@ namespace AmarShowsBook.Models.ViewModels
         public string? YoutubeUrl { get; set; }
 
         public string? WebsiteUrl { get; set; }
+
+        public string? SupportPhone { get; set; }
+
+        public string? SupportEmail { get; set; }
+
+        public string? SupportWhatsAppText { get; set; }
     }
 }

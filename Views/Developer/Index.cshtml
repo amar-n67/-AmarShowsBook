@@ -13,6 +13,17 @@
     var technologiesText = string.IsNullOrWhiteSpace(Model.Technologies) ? defaultTechnologies : Model.Technologies;
     var skillList = skillsText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     var technologyList = technologiesText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var supportPhone = string.IsNullOrWhiteSpace(Model.SupportPhone) ? "+91 9651698863" : Model.SupportPhone.Trim();
+    var supportEmail = string.IsNullOrWhiteSpace(Model.SupportEmail) ? "arcanaamar67@gmail.com" : Model.SupportEmail.Trim();
+    var supportDialPhone = supportPhone.Replace(" ", "").Replace("-", "");
+    var supportWhatsAppPhone = supportDialPhone.Replace("+", "");
+    var currentSupportUser = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
+    var topWhatsAppText = $"Hi Amar, I'm {currentSupportUser}. I visited your application (showTime) and would like to connect with you.";
+    var topWhatsAppUrl = $"https://wa.me/{supportWhatsAppPhone}?text={Uri.EscapeDataString(topWhatsAppText)}";
+    var supportWhatsAppText = string.IsNullOrWhiteSpace(Model.SupportWhatsAppText)
+        ? $"Hi showTime Team, I'm {currentSupportUser}. I need support. Please help me with my request."
+        : Model.SupportWhatsAppText.Trim();
+    var supportWhatsApp = $"https://wa.me/{supportWhatsAppPhone}?text={Uri.EscapeDataString(supportWhatsAppText)}";
     var applicationSections = new[]
     {
         new { Title = "Application Stack", Body = "ASP.NET Core MVC application using Razor views, EF Core, Npgsql, PostgreSQL tables/views, Bootstrap styling, JavaScript interactions, QR ticket generation, wallet, transactions, refunds, and admin dashboards." },
@@ -28,7 +39,15 @@
         new { Label = "Instagram", Url = Model.InstagramUrl },
         new { Label = "Facebook", Url = Model.FacebookUrl },
         new { Label = "YouTube", Url = Model.YoutubeUrl },
-        new { Label = "Website", Url = Model.WebsiteUrl }
+        new { Label = "Website", Url = Model.WebsiteUrl },
+        new { Label = "Email", Url = (string?)$"mailto:{supportEmail}" },
+        new { Label = "WhatsApp", Url = (string?)topWhatsAppUrl }
+    };
+    var supportContacts = new[]
+    {
+        new { Label = "Call Us", Url = $"tel:{supportDialPhone}", Tone = "phone" },
+        new { Label = "Write Us", Url = $"mailto:{supportEmail}", Tone = "mail" },
+        new { Label = "WhatsApp Us", Url = supportWhatsApp, Tone = "whatsapp" }
     };
 }
 
@@ -107,6 +126,7 @@ alt="@Model.FullName profile image" />
 <a href="#developerSkills">Skills</a>
 <a href="#developerTech">Technologies</a>
 <a href="#developerApplication">Application</a>
+<a href="#developerSupport">Support</a>
 </div>
 
 <div class="developer-menu-actions">
@@ -229,6 +249,18 @@ else
 }
 </div>
 
+<div class="developer-support-grid" id="developerSupport" aria-label="Developer and application support options">
+@foreach(var contact in supportContacts)
+{
+    <a class="developer-support-card @contact.Tone"
+       href="@contact.Url"
+       target="@(contact.Label == "WhatsApp Us" ? "_blank" : null)"
+       rel="@(contact.Label == "WhatsApp Us" ? "noopener" : null)">
+        @contact.Label
+    </a>
+}
+</div>
+
 
 @if(canEdit)
 {
@@ -331,6 +363,18 @@ else
 <label class="dev-form-wide">
 <span>Website URL</span>
 <input asp-for="WebsiteUrl" class="form-control" />
+</label>
+<label>
+<span>Support Phone</span>
+<input asp-for="SupportPhone" class="form-control" placeholder="+91 9651698863" />
+</label>
+<label>
+<span>Support Email</span>
+<input asp-for="SupportEmail" class="form-control" placeholder="support@example.com" />
+</label>
+<label class="dev-form-wide">
+<span>Support WhatsApp Draft</span>
+<textarea asp-for="SupportWhatsAppText" class="form-control" rows="2" placeholder="Hi showTime Team, I need support. Please help me with my request."></textarea>
 </label>
 </div>
 
@@ -692,6 +736,33 @@ font-weight:800;
 
 .developer-application-grid{
 margin-top:20px;
+}
+
+.developer-support-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:15px;
+margin-top:20px;
+}
+
+.developer-support-card{
+padding:15px;
+border-radius:15px;
+text-decoration:none;
+color:var(--app-card-text);
+background:color-mix(in srgb, var(--app-card) 78%, var(--app-primary));
+border:1px solid var(--app-input-border);
+text-align:center;
+font-weight:800;
+transition:.4s;
+}
+
+.developer-support-card:hover,
+.developer-support-card:focus-visible{
+transform:translateY(-5px);
+background:var(--app-primary);
+color:#fff;
+outline:none;
 }
 
 .dev-chip-list{

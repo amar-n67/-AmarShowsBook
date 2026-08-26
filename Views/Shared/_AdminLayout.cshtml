@@ -186,6 +186,12 @@
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var userIdText = Context.Session.GetString("UserId");
+    var adminDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
+    var normalizedAdminDisplayName = string.IsNullOrWhiteSpace(adminDisplayName)
+        ? "User"
+        : adminDisplayName.Trim();
+    var supportWhatsAppText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
+    var supportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(supportWhatsAppText)}";
     var hasUserId = int.TryParse(userIdText, out var currentUserId);
     Func<string, string, bool> canShowAdminNav = (module, action) =>
         hasUserId && RbacService.HasPermission(currentUserId, module, action);
@@ -648,6 +654,20 @@
 })();
 </script>
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".alert-danger").forEach(function (alert) {
+        if (alert.querySelector(".alert-support-link")) return;
+        const supportLink = document.createElement("a");
+        supportLink.className = "alert-support-link";
+        supportLink.href = "@supportWhatsAppUrl";
+        supportLink.target = "_blank";
+        supportLink.rel = "noopener";
+        supportLink.textContent = "Support";
+        alert.appendChild(supportLink);
+    });
+});
+</script>
+<script>
 (function () {
     // Admin Amaro can trigger local export only when the current role can see the export button.
     const widget = document.querySelector("[data-amaro-widget]");
@@ -711,12 +731,13 @@
 
         if (value === "support-options") {
             renderOptions([
-                { label: "Call", url: "tel:+918920993434" },
-                { label: "Email", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "Call Us", url: "tel:+919651698863" },
+                { label: "Write Us", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "WhatsApp Us", url: "@supportWhatsAppUrl" },
                 { label: "Admin Dashboard", url: "/Admin/Dashboard" },
                 { label: "My Bookings", url: "/Booking/MyBookings" }
             ]);
-            addMessage("Choose Call or Email for support. Share the booking, transaction, or refund reference when possible.", "bot");
+            addMessage("Choose Call Us, Write Us, or WhatsApp Us for support. Share the booking, transaction, or refund reference when possible.", "bot");
             return true;
         }
 
@@ -808,7 +829,7 @@
                     return;
                 }
 
-                if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:"))) {
+                if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:") || option.url.startsWith("https://wa.me/"))) {
                     window.location.href = option.url;
                     return;
                 }

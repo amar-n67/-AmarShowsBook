@@ -11,15 +11,18 @@ namespace AmarShowsBook.Controllers
         private readonly ApplicationDbContext _context;
         private readonly RbacService _rbacService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IActivityLogger _activityLogger;
 
         public DeveloperController(
             ApplicationDbContext context,
             RbacService rbacService,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            IActivityLogger activityLogger)
         {
             _context = context;
             _rbacService = rbacService;
             _environment = environment;
+            _activityLogger = activityLogger;
         }
 
         public IActionResult Index()
@@ -27,7 +30,7 @@ namespace AmarShowsBook.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
-        public IActionResult Profile()
+        public async Task<IActionResult> Profile()
         {
             EnsureDeveloperProfileStore();
 
@@ -37,6 +40,19 @@ namespace AmarShowsBook.Controllers
 
             ViewBag.CanEditDeveloperProfile = CanEditDeveloperProfile();
 
+            await _activityLogger.LogAsync(
+                userId: GetCurrentUserId(),
+                action: "VIEW_DEVELOPER_PROFILE",
+                module: "DEVELOPER",
+                entityType: "DEVELOPER_PROFILE",
+                entityId: developer?.DeveloperId,
+                description: "Viewed developer profile page",
+                status: "SUCCESS",
+                metadata: new
+                {
+                    CanEdit = ViewBag.CanEditDeveloperProfile
+                });
+
             return View("Index",
                 developer ??
                 new DeveloperVM
@@ -44,7 +60,11 @@ namespace AmarShowsBook.Controllers
                     FullName="Amar",
                     Bio="Developer Profile",
                     Email="example@gmail.com",
-                    ExperienceYears=0
+                    ExperienceYears=0,
+                    TwitterUrl="https://twitter.com/amar_an67",
+                    SupportPhone="+91 9651698863",
+                    SupportEmail="arcanaamar67@gmail.com",
+                    SupportWhatsAppText="Hi showTime Team, I need support. Please help me with my request."
                 });
         }
 
@@ -55,10 +75,25 @@ namespace AmarShowsBook.Controllers
             if (!CanEditDeveloperProfile())
             {
                 TempData["Error"] = "Only developer mode role can edit this profile.";
+                await _activityLogger.LogAsync(
+                    userId: GetCurrentUserId(),
+                    action: "UPDATE_DEVELOPER_PROFILE",
+                    module: "DEVELOPER",
+                    entityType: "DEVELOPER_PROFILE",
+                    entityId: model.DeveloperId,
+                    description: "Blocked developer profile update because user cannot edit developer profile",
+                    status: "FAILURE",
+                    errorCode: "DEV403",
+                    errorMessage: TempData["Error"]?.ToString(),
+                    errorSource: nameof(DeveloperController),
+                    isError: 1);
                 return RedirectToAction(nameof(Profile));
             }
 
             EnsureDeveloperProfileStore();
+            var oldProfile = _context.DeveloperProfiles?
+                .AsNoTracking()
+                .FirstOrDefault();
 
             if (profilePhoto != null && profilePhoto.Length > 0)
             {
@@ -66,6 +101,24 @@ namespace AmarShowsBook.Controllers
                 if (string.IsNullOrWhiteSpace(imagePath))
                 {
                     TempData["Error"] = "Scene cut: upload a valid JPG, PNG, WEBP, or GIF profile photo.";
+                    await _activityLogger.LogAsync(
+                        userId: GetCurrentUserId(),
+                        action: "UPLOAD_DEVELOPER_PHOTO",
+                        module: "DEVELOPER",
+                        entityType: "DEVELOPER_PROFILE",
+                        entityId: model.DeveloperId,
+                        description: "Rejected invalid developer profile photo upload",
+                        status: "FAILURE",
+                        errorCode: "DEV_UPLOAD_INVALID",
+                        errorMessage: TempData["Error"]?.ToString(),
+                        errorSource: nameof(DeveloperController),
+                        isError: 1,
+                        metadata: new
+                        {
+                            profilePhoto.FileName,
+                            profilePhoto.ContentType,
+                            profilePhoto.Length
+                        });
                     return RedirectToAction(nameof(Profile));
                 }
 
@@ -96,6 +149,9 @@ INSERT INTO public.developer_profiles
     facebook_url,
     youtube_url,
     website_url,
+    support_phone,
+    support_email,
+    support_whatsapp_text,
     updated_at
 )
 VALUES
@@ -121,6 +177,9 @@ VALUES
     {model.FacebookUrl},
     {model.YoutubeUrl},
     {model.WebsiteUrl},
+    {model.SupportPhone},
+    {model.SupportEmail},
+    {model.SupportWhatsAppText},
     CURRENT_TIMESTAMP
 )
 ON CONFLICT (developer_id)
@@ -145,11 +204,36 @@ DO UPDATE SET
     facebook_url = EXCLUDED.facebook_url,
     youtube_url = EXCLUDED.youtube_url,
     website_url = EXCLUDED.website_url,
+    support_phone = EXCLUDED.support_phone,
+    support_email = EXCLUDED.support_email,
+    support_whatsapp_text = EXCLUDED.support_whatsapp_text,
     updated_at = CURRENT_TIMESTAMP;
 ");
 
+            await _activityLogger.LogAsync(
+                userId: GetCurrentUserId(),
+                action: "UPDATE_DEVELOPER_PROFILE",
+                module: "DEVELOPER",
+                entityType: "DEVELOPER_PROFILE",
+                entityId: 1,
+                description: "Updated developer profile",
+                oldValue: oldProfile ?? new DeveloperVM { DeveloperId = 1 },
+                newValue: model,
+                status: "SUCCESS",
+                metadata: new
+                {
+                    HasUploadedPhoto = profilePhoto != null && profilePhoto.Length > 0
+                });
+
             TempData["Success"] = "Profile reel updated. The new developer scene is live.";
             return RedirectToAction(nameof(Profile));
+        }
+
+        private int? GetCurrentUserId()
+        {
+            return int.TryParse(HttpContext.Session.GetString("UserId"), out var userId)
+                ? userId
+                : null;
         }
 
         private bool CanEditDeveloperProfile()
@@ -222,9 +306,21 @@ CREATE TABLE IF NOT EXISTS public.developer_profiles
     facebook_url text,
     youtube_url text,
     website_url text,
+    support_phone text,
+    support_email text,
+    support_whatsapp_text text,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT ck_developer_profiles_single_row CHECK (developer_id = 1)
 );
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_phone text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_email text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_whatsapp_text text;
 
 INSERT INTO public.developer_profiles
 (
@@ -232,20 +328,36 @@ INSERT INTO public.developer_profiles
     full_name,
     email,
     bio,
-    experience_years
+    experience_years,
+    twitter_url,
+    support_phone,
+    support_email,
+    support_whatsapp_text
 )
 SELECT
     1,
     'Amar',
     'example@gmail.com',
     'Developer Profile',
-    0
+    0,
+    'https://twitter.com/amar_an67',
+    '+91 9651698863',
+    'arcanaamar67@gmail.com',
+    'Hi showTime Team, I need support. Please help me with my request.'
 WHERE NOT EXISTS
 (
     SELECT 1
     FROM public.developer_profiles
     WHERE developer_id = 1
 );
+
+UPDATE public.developer_profiles
+SET
+    twitter_url = COALESCE(NULLIF(twitter_url, ''), 'https://twitter.com/amar_an67'),
+    support_phone = COALESCE(NULLIF(support_phone, ''), '+91 9651698863'),
+    support_email = COALESCE(NULLIF(support_email, ''), 'arcanaamar67@gmail.com'),
+    support_whatsapp_text = COALESCE(NULLIF(support_whatsapp_text, ''), 'Hi showTime Team, I need support. Please help me with my request.')
+WHERE developer_id = 1;
 
 CREATE OR REPLACE VIEW public.""vwDeveloperProfile"" AS
 SELECT
@@ -269,7 +381,10 @@ SELECT
     instagram_url AS ""InstagramUrl"",
     facebook_url AS ""FacebookUrl"",
     youtube_url AS ""YoutubeUrl"",
-    website_url AS ""WebsiteUrl""
+    website_url AS ""WebsiteUrl"",
+    support_phone AS ""SupportPhone"",
+    support_email AS ""SupportEmail"",
+    support_whatsapp_text AS ""SupportWhatsAppText""
 FROM public.developer_profiles;
 ");
         }
