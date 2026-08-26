@@ -49,5 +49,15 @@ namespace AmarShowsBook.Models.ViewModels
         public string? SupportEmail { get; set; }
 
         public string? SupportWhatsAppText { get; set; }
+
+        public string? SupportWhatsAppPhone { get; set; }
+
+        public bool IsSupportWhatsAppSameAsPhone { get; set; }
+
+        public string? TopWhatsAppText { get; set; }
+
+        public string? SupportEmailSubject { get; set; }
+
+        public string? SupportEmailText { get; set; }
     }
 }

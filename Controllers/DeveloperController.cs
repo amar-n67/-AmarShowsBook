@@ -3,6 +3,7 @@ using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace AmarShowsBook.Controllers
 {
@@ -12,6 +13,8 @@ namespace AmarShowsBook.Controllers
         private readonly RbacService _rbacService;
         private readonly IWebHostEnvironment _environment;
         private readonly IActivityLogger _activityLogger;
+        private static readonly Regex SupportPhoneRegex = new(@"^\+?[0-9][0-9\s-]{8,18}$", RegexOptions.Compiled);
+        private static readonly Regex SupportEmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
 
         public DeveloperController(
             ApplicationDbContext context,
@@ -63,8 +66,13 @@ namespace AmarShowsBook.Controllers
                     ExperienceYears=0,
                     TwitterUrl="https://twitter.com/amar_an67",
                     SupportPhone="+91 9651698863",
+                    SupportWhatsAppPhone="+91 9651698863",
+                    IsSupportWhatsAppSameAsPhone=true,
                     SupportEmail="arcanaamar67@gmail.com",
-                    SupportWhatsAppText="Hi showTime Team, I need support. Please help me with my request."
+                    TopWhatsAppText="Hi Amar, I'm {user}. I visited your application (showTime) and would like to connect with you.",
+                    SupportWhatsAppText="Hi showTime Team, I'm {user}. I need support. Please help me with my request.",
+                    SupportEmailSubject="showTime Support Request",
+                    SupportEmailText="Hi showTime Team, I'm {user}. I need support. Please help me with my request."
                 });
         }
 
@@ -91,6 +99,26 @@ namespace AmarShowsBook.Controllers
             }
 
             EnsureDeveloperProfileStore();
+            NormalizeAndValidateSupportDetails(model);
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = string.Join(" ", ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage));
+                await _activityLogger.LogAsync(
+                    userId: GetCurrentUserId(),
+                    action: "UPDATE_DEVELOPER_PROFILE",
+                    module: "DEVELOPER",
+                    entityType: "DEVELOPER_PROFILE",
+                    entityId: model.DeveloperId,
+                    description: "Rejected developer profile update because support details are invalid",
+                    status: "FAILURE",
+                    errorCode: "DEV_SUPPORT_VALIDATION",
+                    errorMessage: TempData["Error"]?.ToString(),
+                    errorSource: nameof(DeveloperController),
+                    isError: 1,
+                    newValue: model);
+                return RedirectToAction(nameof(Profile));
+            }
+
             var oldProfile = _context.DeveloperProfiles?
                 .AsNoTracking()
                 .FirstOrDefault();
@@ -152,6 +180,11 @@ INSERT INTO public.developer_profiles
     support_phone,
     support_email,
     support_whatsapp_text,
+    support_whatsapp_phone,
+    is_support_whatsapp_same_as_phone,
+    top_whatsapp_text,
+    support_email_subject,
+    support_email_text,
     updated_at
 )
 VALUES
@@ -180,6 +213,11 @@ VALUES
     {model.SupportPhone},
     {model.SupportEmail},
     {model.SupportWhatsAppText},
+    {model.SupportWhatsAppPhone},
+    {model.IsSupportWhatsAppSameAsPhone},
+    {model.TopWhatsAppText},
+    {model.SupportEmailSubject},
+    {model.SupportEmailText},
     CURRENT_TIMESTAMP
 )
 ON CONFLICT (developer_id)
@@ -207,6 +245,11 @@ DO UPDATE SET
     support_phone = EXCLUDED.support_phone,
     support_email = EXCLUDED.support_email,
     support_whatsapp_text = EXCLUDED.support_whatsapp_text,
+    support_whatsapp_phone = EXCLUDED.support_whatsapp_phone,
+    is_support_whatsapp_same_as_phone = EXCLUDED.is_support_whatsapp_same_as_phone,
+    top_whatsapp_text = EXCLUDED.top_whatsapp_text,
+    support_email_subject = EXCLUDED.support_email_subject,
+    support_email_text = EXCLUDED.support_email_text,
     updated_at = CURRENT_TIMESTAMP;
 ");
 
@@ -234,6 +277,55 @@ DO UPDATE SET
             return int.TryParse(HttpContext.Session.GetString("UserId"), out var userId)
                 ? userId
                 : null;
+        }
+
+        private void NormalizeAndValidateSupportDetails(DeveloperVM model)
+        {
+            model.SupportPhone = string.IsNullOrWhiteSpace(model.SupportPhone)
+                ? "+91 9651698863"
+                : model.SupportPhone.Trim();
+            model.SupportEmail = string.IsNullOrWhiteSpace(model.SupportEmail)
+                ? "arcanaamar67@gmail.com"
+                : model.SupportEmail.Trim();
+
+            if (model.IsSupportWhatsAppSameAsPhone)
+            {
+                model.SupportWhatsAppPhone = model.SupportPhone;
+            }
+            else
+            {
+                model.SupportWhatsAppPhone = string.IsNullOrWhiteSpace(model.SupportWhatsAppPhone)
+                    ? model.SupportPhone
+                    : model.SupportWhatsAppPhone.Trim();
+            }
+
+            model.TopWhatsAppText = string.IsNullOrWhiteSpace(model.TopWhatsAppText)
+                ? "Hi Amar, I'm {user}. I visited your application (showTime) and would like to connect with you."
+                : model.TopWhatsAppText.Trim();
+            model.SupportWhatsAppText = string.IsNullOrWhiteSpace(model.SupportWhatsAppText)
+                ? "Hi showTime Team, I'm {user}. I need support. Please help me with my request."
+                : model.SupportWhatsAppText.Trim();
+            model.SupportEmailSubject = string.IsNullOrWhiteSpace(model.SupportEmailSubject)
+                ? "showTime Support Request"
+                : model.SupportEmailSubject.Trim();
+            model.SupportEmailText = string.IsNullOrWhiteSpace(model.SupportEmailText)
+                ? "Hi showTime Team, I'm {user}. I need support. Please help me with my request."
+                : model.SupportEmailText.Trim();
+
+            if (!SupportPhoneRegex.IsMatch(model.SupportPhone))
+            {
+                ModelState.AddModelError(nameof(model.SupportPhone), "Support phone must be a valid phone number.");
+            }
+
+            if (!SupportPhoneRegex.IsMatch(model.SupportWhatsAppPhone ?? string.Empty))
+            {
+                ModelState.AddModelError(nameof(model.SupportWhatsAppPhone), "Support WhatsApp number must be a valid phone number.");
+            }
+
+            if (!SupportEmailRegex.IsMatch(model.SupportEmail))
+            {
+                ModelState.AddModelError(nameof(model.SupportEmail), "Support email must be a valid email address.");
+            }
         }
 
         private bool CanEditDeveloperProfile()
@@ -309,6 +401,11 @@ CREATE TABLE IF NOT EXISTS public.developer_profiles
     support_phone text,
     support_email text,
     support_whatsapp_text text,
+    support_whatsapp_phone text,
+    is_support_whatsapp_same_as_phone boolean NOT NULL DEFAULT true,
+    top_whatsapp_text text,
+    support_email_subject text,
+    support_email_text text,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT ck_developer_profiles_single_row CHECK (developer_id = 1)
 );
@@ -322,6 +419,21 @@ ADD COLUMN IF NOT EXISTS support_email text;
 ALTER TABLE public.developer_profiles
 ADD COLUMN IF NOT EXISTS support_whatsapp_text text;
 
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_whatsapp_phone text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS is_support_whatsapp_same_as_phone boolean NOT NULL DEFAULT true;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS top_whatsapp_text text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_email_subject text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_email_text text;
+
 INSERT INTO public.developer_profiles
 (
     developer_id,
@@ -332,7 +444,12 @@ INSERT INTO public.developer_profiles
     twitter_url,
     support_phone,
     support_email,
-    support_whatsapp_text
+    support_whatsapp_text,
+    support_whatsapp_phone,
+    is_support_whatsapp_same_as_phone,
+    top_whatsapp_text,
+    support_email_subject,
+    support_email_text
 )
 SELECT
     1,
@@ -343,7 +460,12 @@ SELECT
     'https://twitter.com/amar_an67',
     '+91 9651698863',
     'arcanaamar67@gmail.com',
-    'Hi showTime Team, I need support. Please help me with my request.'
+    'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.',
+    '+91 9651698863',
+    true,
+    'Hi Amar, I''m {{user}}. I visited your application (showTime) and would like to connect with you.',
+    'showTime Support Request',
+    'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'
 WHERE NOT EXISTS
 (
     SELECT 1
@@ -356,7 +478,11 @@ SET
     twitter_url = COALESCE(NULLIF(twitter_url, ''), 'https://twitter.com/amar_an67'),
     support_phone = COALESCE(NULLIF(support_phone, ''), '+91 9651698863'),
     support_email = COALESCE(NULLIF(support_email, ''), 'arcanaamar67@gmail.com'),
-    support_whatsapp_text = COALESCE(NULLIF(support_whatsapp_text, ''), 'Hi showTime Team, I need support. Please help me with my request.')
+    support_whatsapp_text = COALESCE(NULLIF(support_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'),
+    support_whatsapp_phone = COALESCE(NULLIF(support_whatsapp_phone, ''), NULLIF(support_phone, ''), '+91 9651698863'),
+    top_whatsapp_text = COALESCE(NULLIF(top_whatsapp_text, ''), 'Hi Amar, I''m {{user}}. I visited your application (showTime) and would like to connect with you.'),
+    support_email_subject = COALESCE(NULLIF(support_email_subject, ''), 'showTime Support Request'),
+    support_email_text = COALESCE(NULLIF(support_email_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.')
 WHERE developer_id = 1;
 
 CREATE OR REPLACE VIEW public.""vwDeveloperProfile"" AS
@@ -384,7 +510,12 @@ SELECT
     website_url AS ""WebsiteUrl"",
     support_phone AS ""SupportPhone"",
     support_email AS ""SupportEmail"",
-    support_whatsapp_text AS ""SupportWhatsAppText""
+    support_whatsapp_text AS ""SupportWhatsAppText"",
+    support_whatsapp_phone AS ""SupportWhatsAppPhone"",
+    is_support_whatsapp_same_as_phone AS ""IsSupportWhatsAppSameAsPhone"",
+    top_whatsapp_text AS ""TopWhatsAppText"",
+    support_email_subject AS ""SupportEmailSubject"",
+    support_email_text AS ""SupportEmailText""
 FROM public.developer_profiles;
 ");
         }

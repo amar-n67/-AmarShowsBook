@@ -14,16 +14,28 @@
     var skillList = skillsText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     var technologyList = technologiesText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     var supportPhone = string.IsNullOrWhiteSpace(Model.SupportPhone) ? "+91 9651698863" : Model.SupportPhone.Trim();
+    var supportWhatsAppNumber = string.IsNullOrWhiteSpace(Model.SupportWhatsAppPhone) ? supportPhone : Model.SupportWhatsAppPhone.Trim();
     var supportEmail = string.IsNullOrWhiteSpace(Model.SupportEmail) ? "arcanaamar67@gmail.com" : Model.SupportEmail.Trim();
     var supportDialPhone = supportPhone.Replace(" ", "").Replace("-", "");
-    var supportWhatsAppPhone = supportDialPhone.Replace("+", "");
+    var supportWhatsAppPhone = supportWhatsAppNumber.Replace(" ", "").Replace("-", "").Replace("+", "");
     var currentSupportUser = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
-    var topWhatsAppText = $"Hi Amar, I'm {currentSupportUser}. I visited your application (showTime) and would like to connect with you.";
+    Func<string?, string, string> renderDraft = (template, fallback) =>
+        (string.IsNullOrWhiteSpace(template) ? fallback : template.Trim()).Replace("{user}", currentSupportUser);
+    var topWhatsAppText = renderDraft(
+        Model.TopWhatsAppText,
+        "Hi Amar, I'm {user}. I visited your application (showTime) and would like to connect with you.");
     var topWhatsAppUrl = $"https://wa.me/{supportWhatsAppPhone}?text={Uri.EscapeDataString(topWhatsAppText)}";
-    var supportWhatsAppText = string.IsNullOrWhiteSpace(Model.SupportWhatsAppText)
-        ? $"Hi showTime Team, I'm {currentSupportUser}. I need support. Please help me with my request."
-        : Model.SupportWhatsAppText.Trim();
+    var supportWhatsAppText = renderDraft(
+        Model.SupportWhatsAppText,
+        "Hi showTime Team, I'm {user}. I need support. Please help me with my request.");
     var supportWhatsApp = $"https://wa.me/{supportWhatsAppPhone}?text={Uri.EscapeDataString(supportWhatsAppText)}";
+    var supportEmailSubject = string.IsNullOrWhiteSpace(Model.SupportEmailSubject)
+        ? "showTime Support Request"
+        : Model.SupportEmailSubject.Trim();
+    var supportEmailText = renderDraft(
+        Model.SupportEmailText,
+        "Hi showTime Team, I'm {user}. I need support. Please help me with my request.");
+    var supportEmailUrl = $"mailto:{supportEmail}?subject={Uri.EscapeDataString(supportEmailSubject)}&body={Uri.EscapeDataString(supportEmailText)}";
     var applicationSections = new[]
     {
         new { Title = "Application Stack", Body = "ASP.NET Core MVC application using Razor views, EF Core, Npgsql, PostgreSQL tables/views, Bootstrap styling, JavaScript interactions, QR ticket generation, wallet, transactions, refunds, and admin dashboards." },
@@ -40,13 +52,13 @@
         new { Label = "Facebook", Url = Model.FacebookUrl },
         new { Label = "YouTube", Url = Model.YoutubeUrl },
         new { Label = "Website", Url = Model.WebsiteUrl },
-        new { Label = "Email", Url = (string?)$"mailto:{supportEmail}" },
+        new { Label = "Email", Url = (string?)supportEmailUrl },
         new { Label = "WhatsApp", Url = (string?)topWhatsAppUrl }
     };
     var supportContacts = new[]
     {
         new { Label = "Call Us", Url = $"tel:{supportDialPhone}", Tone = "phone" },
-        new { Label = "Write Us", Url = $"mailto:{supportEmail}", Tone = "mail" },
+        new { Label = "Write Us", Url = supportEmailUrl, Tone = "mail" },
         new { Label = "WhatsApp Us", Url = supportWhatsApp, Tone = "whatsapp" }
     };
 }
@@ -366,15 +378,35 @@ else
 </label>
 <label>
 <span>Support Phone</span>
-<input asp-for="SupportPhone" class="form-control" placeholder="+91 9651698863" />
+<input asp-for="SupportPhone" class="form-control" id="SupportPhone" placeholder="+91 9651698863" />
+</label>
+<label>
+<span>Support WhatsApp Number</span>
+<input asp-for="SupportWhatsAppPhone" class="form-control" id="SupportWhatsAppPhone" placeholder="+91 9651698863" />
+</label>
+<label class="developer-checkbox-label">
+<input asp-for="IsSupportWhatsAppSameAsPhone" id="IsSupportWhatsAppSameAsPhone" type="checkbox" />
+<span>WhatsApp number same as support phone</span>
 </label>
 <label>
 <span>Support Email</span>
 <input asp-for="SupportEmail" class="form-control" placeholder="support@example.com" />
 </label>
 <label class="dev-form-wide">
+<span>Top WhatsApp Draft</span>
+<textarea asp-for="TopWhatsAppText" class="form-control" rows="2" placeholder="Hi Amar, I'm {user}. I visited your application (showTime) and would like to connect with you."></textarea>
+</label>
+<label class="dev-form-wide">
 <span>Support WhatsApp Draft</span>
-<textarea asp-for="SupportWhatsAppText" class="form-control" rows="2" placeholder="Hi showTime Team, I need support. Please help me with my request."></textarea>
+<textarea asp-for="SupportWhatsAppText" class="form-control" rows="2" placeholder="Hi showTime Team, I'm {user}. I need support. Please help me with my request."></textarea>
+</label>
+<label>
+<span>Support Email Subject</span>
+<input asp-for="SupportEmailSubject" class="form-control" placeholder="showTime Support Request" />
+</label>
+<label class="dev-form-wide">
+<span>Support Email Draft</span>
+<textarea asp-for="SupportEmailText" class="form-control" rows="2" placeholder="Hi showTime Team, I'm {user}. I need support. Please help me with my request."></textarea>
 </label>
 </div>
 
@@ -835,6 +867,20 @@ font-weight:800;
 color:var(--app-card-text);
 }
 
+.dev-form-grid .developer-checkbox-label{
+display:flex;
+align-items:center;
+gap:9px;
+min-height:42px;
+padding-top:22px;
+}
+
+.developer-checkbox-label input{
+width:18px;
+height:18px;
+accent-color:var(--app-primary);
+}
+
 .dev-form-grid span{
 font-size:.82rem;
 color:var(--app-muted);
@@ -1168,5 +1214,26 @@ function toggleDeveloperEditor() {
     requestDeveloperEditorHide();
 }
 
-document.addEventListener("DOMContentLoaded", rememberDeveloperFormState);
+function syncSupportWhatsAppNumber() {
+    const sameCheckbox = document.getElementById("IsSupportWhatsAppSameAsPhone");
+    const phoneInput = document.getElementById("SupportPhone");
+    const whatsappInput = document.getElementById("SupportWhatsAppPhone");
+
+    if (!sameCheckbox || !phoneInput || !whatsappInput) return;
+
+    if (sameCheckbox.checked) {
+        whatsappInput.value = phoneInput.value;
+        whatsappInput.setAttribute("readonly", "readonly");
+    } else {
+        whatsappInput.removeAttribute("readonly");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    rememberDeveloperFormState();
+    syncSupportWhatsAppNumber();
+
+    document.getElementById("IsSupportWhatsAppSameAsPhone")?.addEventListener("change", syncSupportWhatsAppNumber);
+    document.getElementById("SupportPhone")?.addEventListener("input", syncSupportWhatsAppNumber);
+});
 </script>

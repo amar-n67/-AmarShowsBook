@@ -404,9 +404,41 @@ CREATE TABLE IF NOT EXISTS public.developer_profiles
     facebook_url text,
     youtube_url text,
     website_url text,
+    support_phone text,
+    support_email text,
+    support_whatsapp_text text,
+    support_whatsapp_phone text,
+    is_support_whatsapp_same_as_phone boolean NOT NULL DEFAULT true,
+    top_whatsapp_text text,
+    support_email_subject text,
+    support_email_text text,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT ck_developer_profiles_single_row CHECK (developer_id = 1)
 );
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_phone text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_email text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_whatsapp_text text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_whatsapp_phone text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS is_support_whatsapp_same_as_phone boolean NOT NULL DEFAULT true;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS top_whatsapp_text text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_email_subject text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS support_email_text text;
 
 INSERT INTO public.developer_profiles
 (
@@ -414,20 +446,50 @@ INSERT INTO public.developer_profiles
     full_name,
     email,
     bio,
-    experience_years
+    experience_years,
+    twitter_url,
+    support_phone,
+    support_email,
+    support_whatsapp_text,
+    support_whatsapp_phone,
+    is_support_whatsapp_same_as_phone,
+    top_whatsapp_text,
+    support_email_subject,
+    support_email_text
 )
 SELECT
     1,
     'Amar',
     'example@gmail.com',
     'Developer Profile',
-    0
+    0,
+    'https://twitter.com/amar_an67',
+    '+91 9651698863',
+    'arcanaamar67@gmail.com',
+    'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.',
+    '+91 9651698863',
+    true,
+    'Hi Amar, I''m {{user}}. I visited your application (showTime) and would like to connect with you.',
+    'showTime Support Request',
+    'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'
 WHERE NOT EXISTS
 (
     SELECT 1
     FROM public.developer_profiles
     WHERE developer_id = 1
 );
+
+UPDATE public.developer_profiles
+SET
+    twitter_url = COALESCE(NULLIF(twitter_url, ''), 'https://twitter.com/amar_an67'),
+    support_phone = COALESCE(NULLIF(support_phone, ''), '+91 9651698863'),
+    support_email = COALESCE(NULLIF(support_email, ''), 'arcanaamar67@gmail.com'),
+    support_whatsapp_text = COALESCE(NULLIF(support_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'),
+    support_whatsapp_phone = COALESCE(NULLIF(support_whatsapp_phone, ''), NULLIF(support_phone, ''), '+91 9651698863'),
+    top_whatsapp_text = COALESCE(NULLIF(top_whatsapp_text, ''), 'Hi Amar, I''m {{user}}. I visited your application (showTime) and would like to connect with you.'),
+    support_email_subject = COALESCE(NULLIF(support_email_subject, ''), 'showTime Support Request'),
+    support_email_text = COALESCE(NULLIF(support_email_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.')
+WHERE developer_id = 1;
 
 CREATE OR REPLACE VIEW public.""vwDeveloperProfile"" AS
 SELECT
@@ -451,7 +513,15 @@ SELECT
     instagram_url AS ""InstagramUrl"",
     facebook_url AS ""FacebookUrl"",
     youtube_url AS ""YoutubeUrl"",
-    website_url AS ""WebsiteUrl""
+    website_url AS ""WebsiteUrl"",
+    support_phone AS ""SupportPhone"",
+    support_email AS ""SupportEmail"",
+    support_whatsapp_text AS ""SupportWhatsAppText"",
+    support_whatsapp_phone AS ""SupportWhatsAppPhone"",
+    is_support_whatsapp_same_as_phone AS ""IsSupportWhatsAppSameAsPhone"",
+    top_whatsapp_text AS ""TopWhatsAppText"",
+    support_email_subject AS ""SupportEmailSubject"",
+    support_email_text AS ""SupportEmailText""
 FROM public.developer_profiles;
 ");
     }
