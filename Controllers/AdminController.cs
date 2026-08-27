@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace AmarShowsBook.Controllers
@@ -2444,6 +2445,7 @@ public async Task<IActionResult> CouponUsage(int page = 1)
 public async Task<IActionResult> Versions(int page = 1)
 {
     await EnsureAdminShowInfrastructure();
+    await SyncApplicationVersionsFromGit();
 
     if (!await _context.ApplicationVersions.AnyAsync())
     {
@@ -2677,6 +2679,222 @@ private static string IncrementPatchVersion(string? versionNumber)
 
     return $"{parts[0]}.{parts[1]}.{parts[2]}";
 }
+
+private async Task SyncApplicationVersionsFromGit()
+{
+    var commits =
+    await GetGitVersionCommits();
+
+    if(commits.Count==0)
+    {
+        return;
+    }
+
+    var releaseNotes =
+    await _context.ApplicationVersions
+    .AsNoTracking()
+    .Where(x=>x.ReleaseNotes!=null && x.ReleaseNotes.Contains("Git commit:"))
+    .Select(x=>x.ReleaseNotes!)
+    .ToListAsync();
+
+    var importedHashes =
+    releaseNotes
+    .SelectMany(ExtractGitHashes)
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    var newCommits =
+    commits
+    .Where(commit=>!importedHashes.Contains(commit.ShortHash) && !importedHashes.Contains(commit.Hash))
+    .ToList();
+
+    if(newCommits.Count==0)
+    {
+        return;
+    }
+
+    var latest =
+    await _context.ApplicationVersions
+    .OrderByDescending(x=>x.IsCurrent)
+    .ThenByDescending(x=>x.UpdatedAt)
+    .FirstOrDefaultAsync();
+
+    var latestVersion =
+    latest?.VersionNumber;
+
+    var currentVersions =
+    await _context.ApplicationVersions
+    .Where(x=>x.IsCurrent)
+    .ToListAsync();
+
+    foreach(var item in currentVersions)
+    {
+        item.IsCurrent=false;
+    }
+
+    foreach(var commit in newCommits)
+    {
+        latestVersion =
+        IncrementPatchVersion(latestVersion);
+
+        _context.ApplicationVersions.Add(new ApplicationVersion
+        {
+            VersionNumber=latestVersion,
+            ReleaseTitle=TrimVersionTitle(commit.Subject),
+            ReleaseNotes=$"Git commit: {commit.ShortHash} | Committed: {commit.CommittedAt.ToLocalTime():yyyy-MM-ddTHH:mm:sszzz}",
+            CreatedAt=commit.CommittedAt.UtcDateTime,
+            UpdatedAt=commit.CommittedAt.UtcDateTime,
+            CreatedBy="Git",
+            IsCurrent=commit==newCommits[^1]
+        });
+    }
+
+    await _context.SaveChangesAsync();
+}
+
+private static async Task<List<GitVersionCommit>> GetGitVersionCommits()
+{
+    try
+    {
+        var revision =
+        "HEAD";
+
+        var upstream =
+        await RunGitCommand("rev-parse","--abbrev-ref","--symbolic-full-name","@{u}");
+
+        if(upstream.ExitCode==0 && !string.IsNullOrWhiteSpace(upstream.Output))
+        {
+            revision=upstream.Output.Trim();
+        }
+
+        var log =
+        await RunGitCommand("log","--reverse","--format=%H%x1f%ct%x1f%s",revision);
+
+        if(log.ExitCode!=0 || string.IsNullOrWhiteSpace(log.Output))
+        {
+            return new List<GitVersionCommit>();
+        }
+
+        return log.Output
+        .Split('\n',StringSplitOptions.RemoveEmptyEntries)
+        .Select(ParseGitVersionCommit)
+        .Where(commit=>commit!=null)
+        .Select(commit=>commit!)
+        .ToList();
+    }
+    catch
+    {
+        return new List<GitVersionCommit>();
+    }
+}
+
+private static async Task<GitCommandResult> RunGitCommand(params string[] arguments)
+{
+    using var process =
+    new Process();
+
+    process.StartInfo.FileName="git";
+    process.StartInfo.WorkingDirectory=Directory.GetCurrentDirectory();
+    process.StartInfo.RedirectStandardOutput=true;
+    process.StartInfo.RedirectStandardError=true;
+    process.StartInfo.UseShellExecute=false;
+
+    foreach(var argument in arguments)
+    {
+        process.StartInfo.ArgumentList.Add(argument);
+    }
+
+    process.Start();
+
+    var outputTask =
+    process.StandardOutput.ReadToEndAsync();
+
+    var errorTask =
+    process.StandardError.ReadToEndAsync();
+
+    await process.WaitForExitAsync();
+
+    return new GitCommandResult(
+    process.ExitCode,
+    await outputTask,
+    await errorTask);
+}
+
+private static GitVersionCommit? ParseGitVersionCommit(string line)
+{
+    var parts =
+    line.Split('\u001f');
+
+    if(parts.Length<3 || string.IsNullOrWhiteSpace(parts[0]))
+    {
+        return null;
+    }
+
+    var committedAt =
+    long.TryParse(parts[1],out var unixSeconds)
+    ? DateTimeOffset.FromUnixTimeSeconds(unixSeconds)
+    : DateTimeOffset.UtcNow;
+
+    return new GitVersionCommit(
+    parts[0],
+    parts[0].Length>12 ? parts[0][..12] : parts[0],
+    committedAt,
+    string.Join(" ",parts.Skip(2)).Trim());
+}
+
+private static IEnumerable<string> ExtractGitHashes(string releaseNotes)
+{
+    const string marker =
+    "Git commit:";
+
+    var markerIndex =
+    releaseNotes.IndexOf(marker,StringComparison.OrdinalIgnoreCase);
+
+    if(markerIndex<0)
+    {
+        yield break;
+    }
+
+    var hashStart =
+    markerIndex+marker.Length;
+
+    var hash =
+    new string(
+    releaseNotes[hashStart..]
+    .TrimStart()
+    .TakeWhile(Uri.IsHexDigit)
+    .ToArray());
+
+    if(!string.IsNullOrWhiteSpace(hash))
+    {
+        yield return hash;
+    }
+}
+
+private static string TrimVersionTitle(string subject)
+{
+    const int maxLength =
+    255;
+
+    var title =
+    string.IsNullOrWhiteSpace(subject)
+    ? "Git release"
+    : subject.Trim();
+
+    return title.Length<=maxLength
+    ? title
+    : title[..maxLength];
+}
+
+private sealed record GitVersionCommit(
+string Hash,
+string ShortHash,
+DateTimeOffset CommittedAt,
+string Subject);
+
+private sealed record GitCommandResult(
+int ExitCode,
+string Output,
+string Error);
 
 public async Task<IActionResult> ContentManager()
 {

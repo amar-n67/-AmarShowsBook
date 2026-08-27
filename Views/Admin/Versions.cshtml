@@ -17,6 +17,16 @@
         versionParts.Add(0);
     }
     versionParts[2]++;
+    if(versionParts[2] > 9)
+    {
+        versionParts[2] = 0;
+        versionParts[1]++;
+    }
+    if(versionParts[1] > 9)
+    {
+        versionParts[1] = 0;
+        versionParts[0]++;
+    }
     var nextVersion = $"{versionParts[0]}.{versionParts[1]}.{versionParts[2]}";
     var versionNote = $"Created {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC";
 }
