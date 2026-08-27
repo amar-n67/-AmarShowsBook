@@ -773,6 +773,12 @@ html[data-theme="dark"] [style*="color: black"] {
     color: var(--app-input-text);
 }
 
+.cinema-popup-support-menu,
+.alert-support-menu {
+    position: relative;
+    display: inline-flex;
+}
+
 .cinema-popup-support,
 .alert-support-link {
     display: inline-flex;
@@ -781,6 +787,7 @@ html[data-theme="dark"] [style*="color: black"] {
     border-radius: 9px;
     text-decoration: none;
     font-weight: 850;
+    border: 0;
 }
 
 .cinema-popup-support {
@@ -799,6 +806,50 @@ html[data-theme="dark"] [style*="color: black"] {
     padding: 4px 9px;
     background: var(--app-primary);
     color: #fff;
+}
+
+.cinema-popup-support-options,
+.alert-support-options {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 30;
+    min-width: 150px;
+    padding: 6px;
+    border-radius: 10px;
+    background: var(--app-surface);
+    box-shadow: var(--app-shadow);
+    border: 1px solid var(--app-border);
+    display: none;
+}
+
+.alert-support-options {
+    top: calc(100% + 8px);
+    bottom: auto;
+}
+
+.cinema-popup-support-menu.support-open .cinema-popup-support-options,
+.alert-support-menu.support-open .alert-support-options {
+    display: grid;
+    gap: 4px;
+}
+
+.cinema-popup-support-options a,
+.alert-support-options a {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--app-text) !important;
+    text-decoration: none !important;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.cinema-popup-support-options a:hover,
+.cinema-popup-support-options a:focus-visible,
+.alert-support-options a:hover,
+.alert-support-options a:focus-visible {
+    background: var(--app-soft);
 }
 
 .alert-support-link:hover,
@@ -2034,6 +2085,9 @@ footer {
         : globalSupportDisplayName.Trim();
     var globalSupportWhatsAppText = $"Hi showTime Team, I'm {normalizedGlobalSupportDisplayName}. I need support. Please help me with my request.";
     var globalSupportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(globalSupportWhatsAppText)}";
+    var globalSupportEmailSubject = "showTime Support Request";
+    var globalSupportEmailText = $"Hi showTime Team, I'm {normalizedGlobalSupportDisplayName}. I need support. Please help me with my request.";
+    var globalSupportEmailUrl = $"mailto:arcanaamar67@gmail.com?subject={Uri.EscapeDataString(globalSupportEmailSubject)}&body={Uri.EscapeDataString(globalSupportEmailText)}";
 }
 
 <body>
@@ -2049,7 +2103,13 @@ footer {
             </div>
             <div class="cinema-popup-actions">
                 <button type="button" id="cinemaPopupCancel" class="cinema-popup-btn cinema-popup-cancel d-none">Retake</button>
-                <a id="cinemaPopupSupport" class="cinema-popup-support d-none" href="@globalSupportWhatsAppUrl" target="_blank" rel="noopener">Support</a>
+                <span id="cinemaPopupSupportMenu" class="cinema-popup-support-menu d-none">
+                    <button type="button" id="cinemaPopupSupport" class="cinema-popup-support" aria-expanded="false">Support</button>
+                    <span class="cinema-popup-support-options" role="menu" aria-label="Support options">
+                        <a href="@globalSupportEmailUrl" role="menuitem">Email Us</a>
+                        <a href="@globalSupportWhatsAppUrl" target="_blank" rel="noopener" role="menuitem">WhatsApp Us</a>
+                    </span>
+                </span>
                 <button type="button" id="cinemaPopupOk" class="cinema-popup-btn cinema-popup-ok">Continue</button>
             </div>
         </div>
@@ -2919,8 +2979,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const ok = document.getElementById("cinemaPopupOk");
         const cancel = document.getElementById("cinemaPopupCancel");
         const support = document.getElementById("cinemaPopupSupport");
+        const supportMenu = document.getElementById("cinemaPopupSupportMenu");
 
-        if (!popup || !title || !body || !ok || !cancel || !support) {
+        if (!popup || !title || !body || !ok || !cancel || !support || !supportMenu) {
             nativeAlert(message);
             return;
         }
@@ -2939,7 +3000,9 @@ document.addEventListener("DOMContentLoaded", function () {
         ok.innerText = settings.okText || "Continue";
         cancel.innerText = settings.cancelText || "Cancel";
         cancel.classList.toggle("d-none", popupType !== "confirm");
-        support.classList.toggle("d-none", popupType !== "error");
+        supportMenu.classList.toggle("d-none", popupType !== "error");
+        supportMenu.classList.remove("support-open");
+        support.setAttribute("aria-expanded", "false");
         popup.style.display = "block";
 
         ok.onclick = function () {
@@ -2950,6 +3013,11 @@ document.addEventListener("DOMContentLoaded", function () {
         cancel.onclick = function () {
             popup.style.display = "none";
             if (typeof settings.onCancel === "function") settings.onCancel();
+        };
+
+        support.onclick = function () {
+            const isOpen = supportMenu.classList.toggle("support-open");
+            support.setAttribute("aria-expanded", isOpen.toString());
         };
     };
 
@@ -2963,14 +3031,52 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".alert-danger").forEach(function (alert) {
-            if (alert.querySelector(".alert-support-link")) return;
-            const supportLink = document.createElement("a");
-            supportLink.className = "alert-support-link";
-            supportLink.href = "@globalSupportWhatsAppUrl";
-            supportLink.target = "_blank";
-            supportLink.rel = "noopener";
-            supportLink.textContent = "Support";
-            alert.appendChild(supportLink);
+            if (alert.querySelector(".alert-support-menu")) return;
+
+            const supportMenu = document.createElement("span");
+            supportMenu.className = "alert-support-menu";
+
+            const supportButton = document.createElement("button");
+            supportButton.type = "button";
+            supportButton.className = "alert-support-link";
+            supportButton.textContent = "Support";
+            supportButton.setAttribute("aria-expanded", "false");
+
+            const supportOptions = document.createElement("span");
+            supportOptions.className = "alert-support-options";
+            supportOptions.setAttribute("role", "menu");
+            supportOptions.setAttribute("aria-label", "Support options");
+
+            const emailLink = document.createElement("a");
+            emailLink.href = "@globalSupportEmailUrl";
+            emailLink.textContent = "Email Us";
+            emailLink.setAttribute("role", "menuitem");
+
+            const whatsappLink = document.createElement("a");
+            whatsappLink.href = "@globalSupportWhatsAppUrl";
+            whatsappLink.target = "_blank";
+            whatsappLink.rel = "noopener";
+            whatsappLink.textContent = "WhatsApp Us";
+            whatsappLink.setAttribute("role", "menuitem");
+
+            supportOptions.appendChild(emailLink);
+            supportOptions.appendChild(whatsappLink);
+            supportMenu.appendChild(supportButton);
+            supportMenu.appendChild(supportOptions);
+            alert.appendChild(supportMenu);
+
+            supportButton.addEventListener("click", function () {
+                const isOpen = supportMenu.classList.toggle("support-open");
+                supportButton.setAttribute("aria-expanded", isOpen.toString());
+            });
+        });
+
+        document.addEventListener("click", function (event) {
+            document.querySelectorAll(".cinema-popup-support-menu.support-open,.alert-support-menu.support-open").forEach(function (menu) {
+                if (menu.contains(event.target)) return;
+                menu.classList.remove("support-open");
+                menu.querySelector("button")?.setAttribute("aria-expanded", "false");
+            });
         });
     });
 })();
