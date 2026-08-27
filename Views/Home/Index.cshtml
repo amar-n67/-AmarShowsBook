@@ -1337,6 +1337,11 @@ function clearCurrentLocationFilter()
 function changeShowType(type)
 {
     const selectedType=type || "All";
+    const showTypeSelect=document.getElementById("showTypeFilter");
+    if(showTypeSelect)
+    {
+        showTypeSelect.value=selectedType;
+    }
     saveShowtimeFilters();
     window.location.href="/Home/ShowTime?type=" + encodeURIComponent(selectedType);
 }
@@ -1426,6 +1431,7 @@ function hasVisibleShows()
 function getShowtimeFilterState()
 {
     return {
+        type:document.getElementById("showTypeFilter")?.value || "All",
         country:document.getElementById("country")?.value || "",
         state:document.getElementById("state")?.value || "",
         district:document.getElementById("district")?.value || "",
@@ -1449,6 +1455,7 @@ function saveShowtimeFilters()
         const state=getShowtimeFilterState();
         const hasMeaningfulFilter=Boolean(
             state.country ||
+            (state.type && state.type!=="All") ||
             state.state ||
             state.district ||
             state.rating ||
@@ -1677,6 +1684,7 @@ async function restoreSavedShowtimeFilters()
     const saved=getSavedShowtimeFilters();
     const hasSavedFilter=Boolean(
         saved.country ||
+        (saved.type && saved.type!=="All") ||
         saved.state ||
         saved.district ||
         saved.rating ||
@@ -1715,6 +1723,7 @@ async function restoreSavedShowtimeFilters()
         setControlValue("ratingFilter",saved.rating || "");
         setControlValue("dateFilter",saved.date || "");
         setControlValue("sortShows",saved.sort || "upcoming");
+        setControlValue("showTypeFilter",saved.type || "All");
         locationDisplayOverride=saved.locationDisplayOverride || "";
         currentLocationFilter=saved.currentLocationFilter || null;
     }
@@ -2131,6 +2140,9 @@ function applyLocationFilter()
     const dateValue=
     document.getElementById("dateFilter")?.value || "";
 
+    const typeValue=
+    document.getElementById("showTypeFilter")?.value || "All";
+
     document.querySelectorAll(".show-card").forEach(card=>{
         const cardCountry=(card.dataset.country || "").toLowerCase();
         const cardState=(card.dataset.state || "").toLowerCase();
@@ -2138,6 +2150,7 @@ function applyLocationFilter()
         const cardLocation=(card.dataset.location || card.innerText || "").toLowerCase();
         const cardRating=card.dataset.rating || "";
         const cardDate=card.dataset.date || "";
+        const cardType=card.dataset.showType || "";
         let matchesCountry=!country || cardCountry===country || cardLocation.includes(country);
         let matchesState=!state || cardState===state || cardLocation.includes(state);
         let matchesDistrict=!district || cardRegion===district || cardLocation.includes(district);
@@ -2162,7 +2175,8 @@ function applyLocationFilter()
 
         const matchesRating=!ratingValue || cardRating===ratingValue;
         const matchesDate=!dateValue || cardDate===dateValue;
-        card.hidden=!(matchesCountry && matchesState && matchesDistrict && matchesRating && matchesDate);
+        const matchesType=typeValue==="All" || cardType===typeValue;
+        card.hidden=!(matchesCountry && matchesState && matchesDistrict && matchesRating && matchesDate && matchesType);
     });
 
     updateLocationSummary();
