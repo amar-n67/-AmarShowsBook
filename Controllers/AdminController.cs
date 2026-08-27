@@ -2441,7 +2441,7 @@ public async Task<IActionResult> CouponUsage(int page = 1)
     return View(rows);
 }
 
-public async Task<IActionResult> Versions()
+public async Task<IActionResult> Versions(int page = 1)
 {
     await EnsureAdminShowInfrastructure();
 
@@ -2460,11 +2460,26 @@ public async Task<IActionResult> Versions()
         await _context.SaveChangesAsync();
     }
 
-    var versions = await _context.ApplicationVersions
+    const int pageSize = 50;
+    page = Math.Max(page, 1);
+
+    var query = _context.ApplicationVersions
         .AsNoTracking()
         .OrderByDescending(x => x.IsCurrent)
-        .ThenByDescending(x => x.UpdatedAt)
+        .ThenByDescending(x => x.UpdatedAt);
+
+    var totalCount = await query.CountAsync();
+    var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+    page = Math.Min(page, totalPages);
+
+    var versions = await query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
         .ToListAsync();
+
+    ViewBag.CurrentPage = page;
+    ViewBag.TotalPages = totalPages;
+    ViewBag.TotalRecords = totalCount;
 
     return View(versions);
 }
@@ -2647,6 +2662,18 @@ private static string IncrementPatchVersion(string? versionNumber)
     }
 
     parts[2]++;
+
+    if(parts[2]>9)
+    {
+        parts[2]=0;
+        parts[1]++;
+    }
+
+    if(parts[1]>9)
+    {
+        parts[1]=0;
+        parts[0]++;
+    }
 
     return $"{parts[0]}.{parts[1]}.{parts[2]}";
 }

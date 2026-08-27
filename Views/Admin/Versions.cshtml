@@ -2,6 +2,8 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Application Versions";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
     var latestVersion =
         Model.OrderByDescending(x => x.IsCurrent)
         .ThenByDescending(x => x.UpdatedAt)
@@ -131,6 +133,13 @@
             </tbody>
         </table>
     </div>
+
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Versions"
+    })
 </section>
 
 <style>
