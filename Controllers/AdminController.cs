@@ -4285,39 +4285,6 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
 
     try
     {
-        var failedNotificationDeliveries = await _context.VwNotificationCenters
-            .AsNoTracking()
-            .Where(x =>
-                x.IsError == 1 ||
-                x.Status == "FAILED" ||
-                x.Status == "ERROR")
-            .OrderByDescending(x => x.CreatedAt)
-            .Take(25)
-            .ToListAsync();
-
-        events.AddRange(failedNotificationDeliveries.Select(x => new AdminNotificationActionItem
-        {
-            Id = $"action-notification-{x.NotificationId}",
-            Time = x.CreatedAt,
-            Category = "NOTIFICATION",
-            Title = string.IsNullOrWhiteSpace(x.Title) ? "Notification delivery issue" : x.Title,
-            Status = string.IsNullOrWhiteSpace(x.Status) ? "FAILED" : x.Status,
-            Priority = "HIGH",
-            UserName = x.UserName ?? string.Empty,
-            UserEmail = x.UserEmail ?? string.Empty,
-            Detail = $"Type {NullText(x.NotificationType)} | Template {NullText(x.TemplateCode)} - {NullText(x.TemplateName)} | Message {NullText(x.Message)} | Retries {x.RetryCount} | Sent {FormatDateText(x.SentAt)} | Delivered {FormatDateText(x.DeliveredAt)} | Read {FormatDateText(x.ReadAt)} | Failure {NullText(x.FailureReason)}",
-            ActionText = "Open Notifications",
-            ActionUrl = $"/Admin/Notifications?highlight=notification-{x.NotificationId}",
-            RequiresAction = true
-        }));
-    }
-    catch (Exception ex)
-    {
-        System.Diagnostics.Debug.WriteLine($"Notification action delivery source failed: {ex.Message}");
-    }
-
-    try
-    {
         var failedTransactions = await _context.VwBookingTransactionSummaries
             .AsNoTracking()
             .Where(x => x.IsPaymentError == 1 || x.TransactionStatus == "FAILED" || x.TransactionStatus == "ERROR")
@@ -4378,47 +4345,8 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationActi
         System.Diagnostics.Debug.WriteLine($"Notification action security source failed: {ex.Message}");
     }
 
-    try
-    {
-        var failedLogs = await _context.ActivityLogs
-            .AsNoTracking()
-            .Where(x => x.IsError > 0 || x.Status == "FAILURE")
-            .OrderByDescending(x => x.CreatedAt)
-            .Take(25)
-            .Select(x => new
-            {
-                Time = x.CreatedAt,
-                Type = x.Module,
-                Title = x.Action,
-                UserId = x.UserId,
-                EntityType = x.EntityType,
-                EntityId = x.EntityId,
-                Detail = (x.ErrorMessage ?? x.Description) ?? string.Empty,
-                Status = x.Status
-            })
-            .ToListAsync();
-
-        events.AddRange(failedLogs.Select(x => new AdminNotificationActionItem
-        {
-            Id = $"log-{x.Time.Ticks}",
-            Time = x.Time,
-            Category = string.IsNullOrWhiteSpace(x.Type) ? "LOG" : x.Type,
-            Title = string.IsNullOrWhiteSpace(x.Title) ? "Application event" : x.Title,
-            Status = string.IsNullOrWhiteSpace(x.Status) ? "FAILED" : x.Status,
-            Priority = "LOW",
-            UserName = x.UserId.HasValue ? $"User #{x.UserId.Value}" : string.Empty,
-            Detail = $"Entity {NullText(x.EntityType)} #{(x.EntityId.HasValue ? x.EntityId.Value.ToString(CultureInfo.InvariantCulture) : "NA")} | {NullText(x.Detail)}",
-            ActionText = "Open",
-            ActionUrl = "/Admin/ActivityLogs",
-            RequiresAction = false
-        }));
-    }
-    catch (Exception ex)
-    {
-        System.Diagnostics.Debug.WriteLine($"Notification action log source failed: {ex.Message}");
-    }
-
     return events
+        .Where(x => x.RequiresAction)
         .GroupBy(x => GetAdminNotificationDedupKey(x), StringComparer.OrdinalIgnoreCase)
         .Select(x => x.First())
         .OrderByDescending(x => x.RequiresAction)
@@ -4532,6 +4460,40 @@ private async Task<List<AdminNotificationActionItem>> BuildAdminNotificationArch
     catch (Exception ex)
     {
         System.Diagnostics.Debug.WriteLine($"Notification archive delivery source failed: {ex.Message}");
+    }
+
+    try
+    {
+        var failedNotificationDeliveries =
+            await _context.VwNotificationCenters
+            .AsNoTracking()
+            .Where(x =>
+                x.IsError == 1 ||
+                x.Status == "FAILED" ||
+                x.Status == "ERROR")
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(30)
+            .ToListAsync();
+
+        events.AddRange(failedNotificationDeliveries.Select(x => new AdminNotificationActionItem
+        {
+            Id = $"archive-notification-failed-{x.NotificationId}",
+            Time = x.CreatedAt,
+            Category = "NOTIFICATION",
+            Title = string.IsNullOrWhiteSpace(x.Title) ? "Notification delivery issue" : x.Title,
+            Status = string.IsNullOrWhiteSpace(x.Status) ? "FAILED" : x.Status,
+            Priority = "MEDIUM",
+            UserName = x.UserName ?? string.Empty,
+            UserEmail = x.UserEmail ?? string.Empty,
+            Detail = $"Type {NullText(x.NotificationType)} | Template {NullText(x.TemplateCode)} - {NullText(x.TemplateName)} | Message {NullText(x.Message)} | Retries {x.RetryCount} | Sent {FormatDateText(x.SentAt)} | Delivered {FormatDateText(x.DeliveredAt)} | Read {FormatDateText(x.ReadAt)} | Failure {NullText(x.FailureReason)}",
+            ActionText = "Review Delivery",
+            ActionUrl = $"/Admin/Notifications?highlight=notification-{x.NotificationId}",
+            RequiresAction = false
+        }));
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine($"Notification archive failed delivery source failed: {ex.Message}");
     }
 
     return events
