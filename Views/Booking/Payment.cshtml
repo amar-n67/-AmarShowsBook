@@ -2360,9 +2360,9 @@ async function completePayment()
 
         let response=
 
-        await fetch(
-        "/Booking/CompletePayment",
-        {
+	        await fetch(
+	        "/Booking/CompletePayment",
+	        {
             method:"POST",
 
             headers:
@@ -2377,22 +2377,27 @@ async function completePayment()
                 bookingId:@Model.Id,
                 paymentMethod:paymentMethod,
                 ...methodDetails
-            })
-        });
+	            })
+	        });
+	
+	        if(!response.ok)
+	        {
+	            throw new Error(`Payment request failed with status ${response.status}`);
+	        }
 
-        let result=
-        await response.json();
+	        let result=
+	        await response.json();
 
 
-        if(result.success)
-        {
-            setPaymentStatus("Payment confirmed. Preparing ticket...",100);
-            stopPaymentTimer();
-            await wait(1200);
-
-            window.location=
-            "/Booking/Confirmation?bookingId=@Model.Id";
-        }
+	        if(result.success)
+	        {
+	            setPaymentStatus("Payment confirmed. Preparing ticket...",100);
+	            stopPaymentTimer();
+	            await wait(1200);
+	
+	            window.location=
+	            result.redirectUrl || "/Booking/Confirmation?bookingId=@Model.Id";
+	        }
         else
         {
             resetPaymentStatus();
@@ -2410,13 +2415,13 @@ async function completePayment()
             paymentInProgress=false;
         }
     }
-    catch(error)
-    {
-        resetPaymentStatus();
-        showPaymentMessage(
-        "Payment could not be completed. Please try again.",
-        "error"
-        );
+	    catch(error)
+	    {
+	        resetPaymentStatus();
+	        showPaymentMessage(
+	        error.message || "Payment could not be completed. Please try again.",
+	        "error"
+	        );
 
         payButton.disabled =
         false;

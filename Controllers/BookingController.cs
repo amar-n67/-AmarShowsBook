@@ -1716,7 +1716,7 @@ long? couponId)
         if(existingTransaction==null)
         {
             var nowForMissingTransaction =
-DateTime.UtcNow;
+	DatabaseTimestampNow();
 
             existingTransaction =
             new Transaction
@@ -1759,7 +1759,7 @@ DateTime.UtcNow;
         existingBooking.WalletAmountUsed=walletAmountUsed;
         existingBooking.CouponId=couponId;
         var repairedAt =
-        DateTime.UtcNow;
+        DatabaseTimestampNow();
 
         existingBooking.UpdatedAt=repairedAt;
         existingBooking.ConfirmedAt ??= repairedAt;
@@ -1786,7 +1786,7 @@ DateTime.UtcNow;
     await _context.Database.BeginTransactionAsync();
 
     var now =
-    DateTime.UtcNow;
+    DatabaseTimestampNow();
 
     var seatLabels =
     draft.SeatNumbers
@@ -2436,13 +2436,15 @@ CheckPaymentStatus(long bookingId)
                 });
             }
 
-            booking.Status=
-            "CONFIRMED";
+	            booking.Status=
+	            "CONFIRMED";
 
-            try
-            {
-                var confirmedBooking =
-                await FinalizeBookingPayment(
+                Booking? confirmedBooking = null;
+
+	            try
+	            {
+	                confirmedBooking =
+	                await FinalizeBookingPayment(
                 booking,
                 request.PaymentMethod,
                 GetWalletUsage(booking.Id),
@@ -2507,11 +2509,12 @@ CheckPaymentStatus(long bookingId)
             HttpContext.Session.Remove(
             GetCouponIdSessionKey(booking.Id));
 
-            return Json(new
-            {
-                success=true
-            });
-        }
+	            return Json(new
+	            {
+	                success=true,
+		                redirectUrl=$"/Booking/Confirmation?confirmedBookingId={confirmedBooking!.Id}"
+		            });
+	        }
 
 private async Task EnsurePaymentMethodDetailsCompatibility()
 {
