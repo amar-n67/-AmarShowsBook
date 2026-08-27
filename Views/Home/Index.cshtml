@@ -36,16 +36,20 @@
     </div>
     <div class="location-picker">
         <label>Location</label>
-        <button type="button" class="location-choice-btn" id="locationSummaryButton" onclick="toggleLocationChooser()">All locations</button>
+        <button type="button" class="location-choice-btn" id="locationSummaryButton" onclick="toggleLocationChooser()" aria-expanded="false" title="All locations">
+            <span class="location-choice-symbol" aria-hidden="true">⌖</span>
+            <span class="location-choice-text">All locations</span>
+            <span class="location-toggle-symbol" aria-hidden="true">⌄</span>
+        </button>
     </div>
     <div class="location-field compact-filter-field">
-        <label for="ratingFilter">Rating</label>
+        <label for="ratingFilter">Rating <span aria-hidden="true">★</span></label>
         <select id="ratingFilter" class="form-control" onchange="applyLocationFilter()">
             <option value="">Any</option>
         </select>
     </div>
     <div class="location-field compact-filter-field">
-        <label for="dateFilter">Date</label>
+        <label for="dateFilter">Available Dates</label>
         <input id="dateFilter" class="form-control" type="date" onchange="applyLocationFilter()" />
     </div>
     <div class="location-field compact-filter-field">
@@ -59,6 +63,10 @@
             <option value="location">Location A-Z</option>
             <option value="type">Show type</option>
         </select>
+    </div>
+    <div class="location-field compact-filter-field filter-clear-field">
+        <label>&nbsp;</label>
+        <button type="button" class="filter-clear-btn" onclick="clearAllShowtimeFilters()">Clear</button>
     </div>
     <div class="location-panel" id="locationPanel" hidden>
         <div class="location-strip">
@@ -799,7 +807,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 .showtime-controls {
     display: grid;
-    grid-template-columns: minmax(96px, .7fr) minmax(150px, 1.25fr) minmax(96px, .75fr) minmax(108px, .85fr) minmax(118px, .9fr);
+    grid-template-columns: minmax(90px, .78fr) minmax(150px, 1.3fr) minmax(82px, .62fr) minmax(116px, .8fr) minmax(116px, .86fr) minmax(64px, auto);
     gap: 8px;
     align-items: end;
     margin: 10px 0 16px;
@@ -861,7 +869,8 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 .location-field input,
 .location-choice-btn,
 .location-current-btn,
-.location-reset-btn {
+.location-reset-btn,
+.filter-clear-btn {
     min-height: 34px;
     height: 34px;
     border-radius: 8px;
@@ -882,12 +891,33 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 }
 
 .location-choice-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     overflow: hidden;
     padding-right: 9px;
     text-align: left;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.location-choice-symbol,
+.location-toggle-symbol {
+    flex: 0 0 auto;
+    color: var(--app-primary);
+    font-size: 0.9rem;
+    font-weight: 950;
+    line-height: 1;
+}
+
+.location-choice-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.location-toggle-symbol {
+    margin-left: auto;
 }
 
 .location-field:not(.location-actions)::after {
@@ -907,6 +937,19 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--app-primary) 18%, transparent);
 }
 
+.location-field.is-filter-active label,
+.location-picker.is-filter-active label {
+    color: color-mix(in srgb, var(--app-primary) 76%, var(--app-muted));
+}
+
+.location-field.is-filter-active select,
+.location-field.is-filter-active input,
+.location-picker.is-filter-active .location-choice-btn {
+    background: color-mix(in srgb, var(--app-primary) 8%, #fff);
+    border-color: color-mix(in srgb, var(--app-primary) 42%, var(--app-input-border));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-primary) 7%, transparent);
+}
+
 .location-actions {
     align-self: end;
     display: grid;
@@ -919,7 +962,8 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 }
 
 .location-current-btn,
-.location-reset-btn {
+.location-reset-btn,
+.filter-clear-btn {
     border: 1px solid var(--app-input-border);
     min-width: 0;
     padding: 0 10px;
@@ -940,15 +984,36 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     color: var(--app-input-text);
 }
 
+.filter-clear-field {
+    flex: 0 0 auto;
+    min-width: 64px;
+}
+
+.filter-clear-btn {
+    width: 100%;
+    background: #fff;
+    color: var(--app-primary);
+    border-color: color-mix(in srgb, var(--app-primary) 30%, var(--app-input-border));
+}
+
 .location-current-btn:hover,
 .location-current-btn:focus-visible,
-.location-reset-btn:hover {
+.location-reset-btn:hover,
+.filter-clear-btn:hover,
+.filter-clear-btn:focus-visible {
     transform: translateY(-1px);
     border-color: var(--app-primary);
 }
 
 .location-current-btn:hover,
 .location-current-btn:focus-visible {
+    background: var(--app-primary);
+    color: #fff;
+    outline: none;
+}
+
+.filter-clear-btn:hover,
+.filter-clear-btn:focus-visible {
     background: var(--app-primary);
     color: #fff;
     outline: none;
@@ -1279,6 +1344,16 @@ function toggleLocationChooser()
     if(panel)
     {
         panel.hidden=!panel.hidden;
+        const button=document.getElementById("locationSummaryButton");
+        if(button)
+        {
+            button.setAttribute("aria-expanded",(!panel.hidden).toString());
+            const symbol=button.querySelector(".location-toggle-symbol");
+            if(symbol)
+            {
+                symbol.textContent=panel.hidden ? "⌄" : "⌃";
+            }
+        }
     }
 }
 
@@ -1301,12 +1376,43 @@ function updateLocationSummary()
     const button=document.getElementById("locationSummaryButton");
     if(button)
     {
-        button.textContent=locationName;
+        const text=button.querySelector(".location-choice-text");
+        if(text)
+        {
+            text.textContent=locationName;
+        }
+        else
+        {
+            button.textContent=locationName;
+        }
         button.title=locationName;
     }
 
     const prefix=locationDisplayOverride ? "Using current location" : "Using";
     setLocationStatus(locationName==="All locations" ? "Using all locations" : `${prefix} ${locationName}`);
+    updateFilterFieldStyles();
+}
+
+function toggleFilterActive(controlId,isActive)
+{
+    const control=document.getElementById(controlId);
+    const field=control?.closest(".location-field,.location-picker");
+    if(field)
+    {
+        field.classList.toggle("is-filter-active",Boolean(isActive));
+    }
+}
+
+function updateFilterFieldStyles()
+{
+    toggleFilterActive("showTypeFilter",(document.getElementById("showTypeFilter")?.value || "All") !== "All");
+    toggleFilterActive("locationSummaryButton",getSelectedLocationName() !== "All locations");
+    toggleFilterActive("country",Boolean(document.getElementById("country")?.value));
+    toggleFilterActive("state",Boolean(document.getElementById("state")?.value));
+    toggleFilterActive("district",Boolean(document.getElementById("district")?.value));
+    toggleFilterActive("ratingFilter",Boolean(document.getElementById("ratingFilter")?.value));
+    toggleFilterActive("dateFilter",Boolean(document.getElementById("dateFilter")?.value));
+    toggleFilterActive("sortShows",(document.getElementById("sortShows")?.value || "upcoming") !== "upcoming");
 }
 
 function hasVisibleShows()
@@ -1665,6 +1771,53 @@ function selectBestLocationOption(selectId,candidates)
     return "";
 }
 
+function setCurrentRegionOption(region)
+{
+    const select=document.getElementById("district");
+    const regionName=(region || "").trim();
+    if(!select || !regionName)
+    {
+        return "";
+    }
+
+    const normalizedRegion=normalizeLocationText(regionName);
+    Array.from(select.options).forEach(option=>{
+        const optionName=normalizeLocationText(option.dataset.name || option.value || option.textContent);
+        if(optionName===normalizedRegion)
+        {
+            option.remove();
+        }
+    });
+
+    const option=document.createElement("option");
+    option.value=regionName;
+    option.dataset.id="";
+    option.dataset.hasData="false";
+    option.dataset.name=regionName;
+    option.dataset.currentLocation="true";
+    option.textContent=regionName;
+    option.selected=true;
+
+    select.insertBefore(option,select.firstChild);
+    return regionName;
+}
+
+function selectAllOption(select)
+{
+    if(!select)
+    {
+        return;
+    }
+
+    if(Array.from(select.options).some(option=>option.value===""))
+    {
+        select.value="";
+        return;
+    }
+
+    select.selectedIndex=0;
+}
+
 async function loadCountries(selectedName)
 {
     try
@@ -1931,6 +2084,10 @@ async function detectCurrentLocation(isAuto)
         selectBestLocationOption("state",[state]);
         await loadDistricts(region);
         const matchedRegion=selectBestLocationOption("district",regionCandidates);
+        if(region)
+        {
+            setCurrentRegionOption(region);
+        }
 
         const detected=[region,state,country].filter(Boolean).join(", ");
         locationDisplayOverride=detected;
@@ -2053,7 +2210,43 @@ function updateFilterEmptyState()
     }
 }
 
-function showNearbyShows()
+async function setLocationToFirstVisibleShowRegion()
+{
+    const card=Array.from(document.querySelectorAll(".show-card")).find(item=>!item.hidden);
+    if(!card)
+    {
+        return "";
+    }
+
+    const country=card.dataset.country || "";
+    const state=card.dataset.state || "";
+    const region=card.dataset.region || "";
+
+    clearCurrentLocationFilter();
+
+    if(country)
+    {
+        await loadCountries(country);
+        selectBestLocationOption("country",[country]);
+    }
+
+    if(state)
+    {
+        await loadStates(state);
+        selectBestLocationOption("state",[state]);
+    }
+
+    if(region)
+    {
+        await loadDistricts(region);
+        selectBestLocationOption("district",[region]);
+    }
+
+    applyLocationFilter();
+    return getSelectedLocationName();
+}
+
+async function showNearbyShows()
 {
     const districtSelect=document.getElementById("district");
     const stateSelect=document.getElementById("state");
@@ -2064,9 +2257,11 @@ function showNearbyShows()
 
     if(hadCurrentLocation)
     {
+        selectAllOption(districtSelect);
         applyLocationFilter();
         if(hasVisibleShows())
         {
+            await setLocationToFirstVisibleShowRegion();
             setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
             return;
         }
@@ -2074,10 +2269,11 @@ function showNearbyShows()
 
     if(districtSelect?.value)
     {
-        districtSelect.selectedIndex=0;
+        selectAllOption(districtSelect);
         applyLocationFilter();
         if(hasVisibleShows())
         {
+            await setLocationToFirstVisibleShowRegion();
             setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
             return;
         }
@@ -2085,11 +2281,12 @@ function showNearbyShows()
 
     if(stateSelect?.value)
     {
-        stateSelect.selectedIndex=0;
+        selectAllOption(stateSelect);
         setSelectOptions("district",[],"All Regions");
         applyLocationFilter();
         if(hasVisibleShows())
         {
+            await setLocationToFirstVisibleShowRegion();
             setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
             return;
         }
@@ -2097,12 +2294,17 @@ function showNearbyShows()
 
     if(countrySelect?.value)
     {
-        countrySelect.selectedIndex=0;
+        selectAllOption(countrySelect);
         setSelectOptions("state",[],"All States");
         setSelectOptions("district",[],"All Regions");
     }
 
     applyLocationFilter();
+
+    if(hasVisibleShows())
+    {
+        await setLocationToFirstVisibleShowRegion();
+    }
 
     const relaxedLocation=getSelectedLocationName();
     setLocationStatus(relaxedLocation==="All locations"
@@ -2178,7 +2380,7 @@ function resetLocationFilter()
         const select=document.getElementById(id);
         if(select)
         {
-            select.selectedIndex=0;
+            selectAllOption(select);
         }
     });
 
@@ -2208,6 +2410,42 @@ function resetLocationFilter()
     sortShows();
 }
 
+async function clearAllShowtimeFilters()
+{
+    clearSavedShowtimeFilters();
+
+    ["ratingFilter","dateFilter"].forEach(id=>{
+        const field=document.getElementById(id);
+        if(field)
+        {
+            field.value="";
+        }
+    });
+
+    const sortSelect=document.getElementById("sortShows");
+    if(sortSelect)
+    {
+        sortSelect.value="upcoming";
+    }
+
+    ["country","state","district"].forEach(id=>{
+        const select=document.getElementById(id);
+        if(select)
+        {
+            selectAllOption(select);
+        }
+    });
+
+    clearCurrentLocationFilter();
+    await loadCountries();
+    await detectCurrentLocation(true);
+
+    if(!currentLocationFilter)
+    {
+        applyLocationFilter();
+    }
+}
+
 
 
 document.addEventListener(
@@ -2216,15 +2454,12 @@ async ()=>{
 
 await loadCountries();
 populateDynamicFilters();
-const restoredFilters=await restoreSavedShowtimeFilters();
-if(!restoredFilters)
-{
+clearSavedShowtimeFilters();
 await detectCurrentLocation(true);
 if(!currentLocationFilter)
 {
 updateLocationSummary();
 applyLocationFilter();
-}
 }
 
 
