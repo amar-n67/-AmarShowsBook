@@ -895,9 +895,15 @@ public async Task<IActionResult> MyBookings()
     bookings);
 }
 
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
+    [HttpGet]
+    public IActionResult CancelBooking()
+    {
+        return RedirectToAction(nameof(MyBookings));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
 {
     // Cancellation changes booking, ticket, seat lock, transaction, wallet, coupon, and refund records together.
     var userIdText = HttpContext.Session.GetString("UserId");
@@ -915,7 +921,7 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     }
 
     var schedule = await _context.ShowSchedules.FirstOrDefaultAsync(x=>x.Id==booking.ScheduleId);
-    var now = DateTime.UtcNow;
+    var now = DatabaseTimestampNow();
 
     if(schedule==null || schedule.StartTime<=now || booking.BookingStatus=="CANCELLED")
     {
@@ -955,9 +961,9 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
     booking.BookingStatus="CANCELLED";
     booking.PaymentStatus="REFUND_PENDING";
     booking.RefundStatus="PENDING";
-    booking.CancelledAt=DateTime.UtcNow;
+    booking.CancelledAt=now;
     booking.CancellationReason=string.IsNullOrWhiteSpace(reason) ? "Cancelled by customer" : reason.Trim();
-    booking.UpdatedAt=DateTime.UtcNow;
+    booking.UpdatedAt=now;
 
     var refundRate =
         GetCancellationRefundRate(schedule.StartTime,now);
@@ -980,16 +986,16 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
         booking_id=booking.Id,
         transaction_id=transaction.Id,
         user_id=booking.UserId,
-        refund_ref=$"RFD-{booking.Id}-{DateTime.UtcNow:yyyyMMddHHmmssfff}",
+        refund_ref=$"RFD-{booking.Id}-{now:yyyyMMddHHmmssfff}",
         refund_amount=sourceRefundAmount + walletRefundAmount,
         refund_reason=booking.CancellationReason,
         refund_status=refundStatus,
         refund_method=refundMethod,
         gateway_refund_id=refundStatus=="SUCCESS" ? $"AUTO-{Guid.NewGuid():N}" : null,
-        requested_at=DateTime.UtcNow,
-        processed_at=refundStatus=="SUCCESS" ? DateTime.UtcNow : null,
-        created_at=DateTime.UtcNow,
-        updated_at=DateTime.UtcNow,
+        requested_at=now,
+        processed_at=refundStatus=="SUCCESS" ? now : null,
+        created_at=now,
+        updated_at=now,
         workflow_action=refundStatus=="SUCCESS" ? "AUTO_REFUNDED" : "CUSTOMER_CANCELLED",
         admin_notes=refundStatus=="SUCCESS"
             ? $"Refund completed automatically under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
@@ -1015,13 +1021,13 @@ public async Task<IActionResult> CancelBooking(long bookingId, string? reason)
 
     transaction.RefundStatus=refundStatus;
     transaction.RefundedAmount=(transaction.RefundedAmount ?? 0) + refund.refund_amount;
-    transaction.UpdatedAt=DateTime.UtcNow;
+    transaction.UpdatedAt=now;
 
     var tickets = await _context.Tickets.Where(x=>x.BookingId==booking.Id).ToListAsync();
     foreach(var ticket in tickets)
     {
         ticket.TicketStatus="CANCELLED";
-        ticket.UpdatedAt=DateTime.UtcNow;
+        ticket.UpdatedAt=now;
     }
 
     var bookingSeats = await _context.BookingSeats.Where(x=>x.BookingId==booking.Id).ToListAsync();
@@ -3192,6 +3198,13 @@ WHERE uw.user_id = {booking.UserId}
 private string BuildAbsoluteUrl(string pathAndQuery)
 {
     return $"{GetPublicBaseUrl()}{pathAndQuery}";
+}
+
+private static DateTime DatabaseTimestampNow()
+{
+    return DateTime.SpecifyKind(
+        DateTime.UtcNow,
+        DateTimeKind.Unspecified);
 }
 
 private string GetPublicBaseUrl()

@@ -312,8 +312,9 @@ user.UpdatedBy = currentUser ?? "System";
         isError: 1
     );
 
+    // Previous wording: "The profile scene could not be saved. Please try again."
     TempData["Error"] =
-        "The profile scene could not be saved. Please try again.";
+        "We could not save your profile. Please try again.";
 
     return RedirectToAction("MyProfile");
 }

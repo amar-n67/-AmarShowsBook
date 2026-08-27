@@ -23,6 +23,7 @@ public class ActivityLoggingFilter : IAsyncActionFilter
         var action = context.RouteData.Values["action"]?.ToString() ?? "UNKNOWN";
         var userId = TryGetUserId(http.Session.GetString("UserId"));
         var status = executed.Exception == null ? "SUCCESS" : "FAILURE";
+        var errorMessage = GetExceptionMessage(executed.Exception);
 
         await _activityLogger.LogAsync(
             userId: userId,
@@ -31,7 +32,7 @@ public class ActivityLoggingFilter : IAsyncActionFilter
             entityType: "MVC_ACTION",
             description: $"{http.Request.Method} {controller}/{action}",
             status: status,
-            errorMessage: executed.Exception?.Message,
+            errorMessage: errorMessage,
             errorSource: executed.Exception?.Source,
             stackTrace: executed.Exception?.StackTrace,
             isError: executed.Exception == null ? 0 : 1,
@@ -48,5 +49,25 @@ public class ActivityLoggingFilter : IAsyncActionFilter
     private static int? TryGetUserId(string? value)
     {
         return int.TryParse(value, out var userId) ? userId : null;
+    }
+
+    private static string? GetExceptionMessage(Exception? exception)
+    {
+        if (exception == null)
+        {
+            return null;
+        }
+
+        var messages = new List<string>();
+
+        for (var current = exception; current != null; current = current.InnerException)
+        {
+            if (!string.IsNullOrWhiteSpace(current.Message))
+            {
+                messages.Add(current.Message);
+            }
+        }
+
+        return string.Join(" | ", messages.Distinct());
     }
 }

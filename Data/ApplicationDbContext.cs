@@ -156,29 +156,44 @@ modelBuilder.Entity<Refund>(entity =>
     entity.ToTable("refunds");
 
     entity.Property(x=>x.requested_at)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.processed_at)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.created_at)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.updated_at)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.approved_at)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.rejected_at)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.retried_at)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 });
 
     modelBuilder.Entity<ActivityLog>()
-        .ToTable("activity_logs");
+    .ToTable("activity_logs");
+
+    modelBuilder.Entity<ActivityLog>()
+        .Property(x => x.CreatedAt)
+        .HasColumnType("timestamp without time zone");
+
+    modelBuilder.Entity<RefundActionLog>(entity =>
+    {
+        entity.ToTable("refund_action_logs");
+
+        entity.Property(x => x.action_time)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x => x.created_at)
+            .HasColumnType("timestamp without time zone");
+    });
 
     modelBuilder.Entity<ApplicationVersion>()
         .ToTable("application_versions");
@@ -191,19 +206,19 @@ modelBuilder.Entity<Booking>(entity =>
     entity.ToTable("bookings");
 
     entity.Property(x=>x.BookedAt)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.ConfirmedAt)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.CreatedAt)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.UpdatedAt)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.CancelledAt)
-        .HasColumnType("timestamp with time zone");
+        .HasColumnType("timestamp without time zone");
 
     entity.Property(x=>x.WalletAmountUsed)
         .HasColumnName("wallet_amount_used");
@@ -220,16 +235,16 @@ modelBuilder.Entity<Booking>(entity =>
         entity.ToTable("transactions");
 
         entity.Property(x=>x.InitiatedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
 
         entity.Property(x=>x.CompletedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
 
         entity.Property(x=>x.CreatedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
 
         entity.Property(x=>x.UpdatedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
     });
 
     modelBuilder.Entity<BookingItem>(entity =>
@@ -237,7 +252,7 @@ modelBuilder.Entity<Booking>(entity =>
         entity.ToTable("booking_items");
 
         entity.Property(x=>x.CreatedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
     });
 
     modelBuilder.Entity<BookingSeat>(entity =>
@@ -245,7 +260,7 @@ modelBuilder.Entity<Booking>(entity =>
         entity.ToTable("booking_seats");
 
         entity.Property(x=>x.CreatedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
     });
 
     modelBuilder.Entity<Ticket>(entity =>
@@ -253,16 +268,16 @@ modelBuilder.Entity<Booking>(entity =>
         entity.ToTable("tickets");
 
         entity.Property(x=>x.IssuedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
 
         entity.Property(x=>x.CreatedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
 
         entity.Property(x=>x.UpdatedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
 
         entity.Property(x=>x.QrGeneratedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
     });
 
 

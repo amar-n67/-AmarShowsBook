@@ -2095,14 +2095,17 @@ footer {
         <div class="cinema-popup-card">
             <div class="cinema-popup-strip">
                 <span id="cinemaPopupReel">AmarShowsBook</span>
-                <span>Final Take</span>
+                @* Previous wording: "Final Take" *@
+                <span>Status</span>
             </div>
             <div class="cinema-popup-body">
-                <h5 id="cinemaPopupTitle" class="cinema-popup-title">Director's Note</h5>
+                @* Previous wording: "Director's Note" *@
+                <h5 id="cinemaPopupTitle" class="cinema-popup-title">Notice</h5>
                 <p id="cinemaPopupMessage" class="cinema-popup-message"></p>
             </div>
             <div class="cinema-popup-actions">
-                <button type="button" id="cinemaPopupCancel" class="cinema-popup-btn cinema-popup-cancel d-none">Retake</button>
+                @* Previous wording: "Retake" *@
+                <button type="button" id="cinemaPopupCancel" class="cinema-popup-btn cinema-popup-cancel d-none">Cancel</button>
                 <span id="cinemaPopupSupportMenu" class="cinema-popup-support-menu d-none">
                     <button type="button" id="cinemaPopupSupport" class="cinema-popup-support" aria-expanded="false">Support</button>
                     <span class="cinema-popup-support-options" role="menu" aria-label="Support options">
@@ -2292,9 +2295,9 @@ z-index:9999;">
                     }
                     <a class="film-nav-btn film-logout-btn"
                        href="/Auth/Logout"
-                       title="Exit Show"
-                       aria-label="Exit Show"
-                       onclick="return confirmLogout()"><span class="film-nav-icon">⏻</span><span class="film-nav-label">Exit Show</span></a>
+                       title="Logout"
+                       aria-label="Logout"
+                       onclick="return confirmLogout()"><span class="film-nav-icon">⏻</span><span class="film-nav-label">Logout</span></a>
                 </div>
 
                 <div class="film-user-card">
@@ -2825,10 +2828,14 @@ updateDateTime();
 
 <script>
 function confirmLogout() {
-    showCinemaPopup("Interval or exit? Your show will close and you will be logged out.", "confirm", {
-        title: "Exit The Show?",
-        okText: "Exit Show",
-        cancelText: "Stay Seated",
+    // Previous wording: "Interval or exit? Your show will close and you will be logged out."
+    showCinemaPopup("Are you sure you want to log out?", "confirm", {
+        // Previous wording: "Exit The Show?"
+        title: "Confirm Logout",
+        // Previous wording: "Exit Show"
+        okText: "Logout",
+        // Previous wording: "Stay Seated"
+        cancelText: "Stay Logged In",
         onOk: function () {
             window.location.href = "/Auth/Logout";
         }
@@ -2854,13 +2861,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const INACTIVITY_TIME = 3 * 60 * 1000;
 
+    // Previous wording used cinema-themed idle messages.
     const cinemaMessages = [
-        "🍿 Audience gone missing...",
-        "🎥 Projector waiting for you...",
-        "🎬 Interval chal raha hai...",
-        "📽 Scene ruk gaya hai boss...",
-        "🎞 Reel freeze ho gaya...",
-        "🛑 Show paused... hero kidhar hai?"
+        "Your session is inactive.",
+        "Please confirm you are still using the application.",
+        "Your session will expire soon.",
+        "Activity paused due to inactivity.",
+        "Please continue to keep your session active.",
+        "For your security, this session is about to end."
     ];
 
     function resetTimer() {
@@ -2991,10 +2999,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         popup.className = "cinema-popup-backdrop " + popupType;
         title.innerText = settings.title || (
-            popupType === "success" ? "Housefull Applause" :
-            popupType === "error" ? "Scene Cut" :
-            popupType === "confirm" ? "Director's Call" :
-            "Director's Note"
+            // Previous wording: "Housefull Applause"
+            popupType === "success" ? "Success" :
+            // Previous wording: "Scene Cut"
+            popupType === "error" ? "Action Required" :
+            // Previous wording: "Director's Call"
+            popupType === "confirm" ? "Please Confirm" :
+            // Previous wording: "Director's Note"
+            "Notice"
         );
         body.innerText = message;
         ok.innerText = settings.okText || "Continue";

@@ -1791,6 +1791,9 @@ public async Task<IActionResult> RefundDetails(long id)
 [HttpPost]
 public async Task<IActionResult> ApproveRefund(long id)
 {
+    var now =
+        DatabaseTimestampNow();
+
 
     if (!RbacAuthorizationHelper.CanAccess(
         HttpContext,
@@ -1823,17 +1826,17 @@ public async Task<IActionResult> ApproveRefund(long id)
         "APPROVED BY ADMIN";
 
     refund.processed_at =
-        DateTime.UtcNow;
+        now;
 
     refund.updated_at =
-        DateTime.UtcNow;
+        now;
 
 
     refund.approved_by =
         HttpContext.Session.GetString("UserName");
 
     refund.approved_at =
-        DateTime.UtcNow;
+        now;
 
     refund.admin_notes =
         "Refund approved by admin";
@@ -1852,7 +1855,7 @@ public async Task<IActionResult> ApproveRefund(long id)
                 HttpContext.Session.GetString("UserName"),
 
             action_time =
-                DateTime.UtcNow,
+                now,
 
             action_notes =
                 "Refund approved successfully",
@@ -1864,7 +1867,7 @@ public async Task<IActionResult> ApproveRefund(long id)
                     .ToString(),
 
             created_at =
-                DateTime.UtcNow
+                now
         });
 
 
@@ -1902,6 +1905,8 @@ public async Task<IActionResult> ApproveRefund(long id)
 [HttpPost]
 public async Task<IActionResult> RejectRefund(long id)
 {
+    var now =
+        DatabaseTimestampNow();
 
     if (!RbacAuthorizationHelper.CanAccess(
         HttpContext,
@@ -1936,14 +1941,14 @@ public async Task<IActionResult> RejectRefund(long id)
         "REJECTED BY ADMIN - TICKET REMAINS ACTIVE";
 
     refund.updated_at =
-        DateTime.UtcNow;
+        now;
 
 
     refund.rejected_by =
         HttpContext.Session.GetString("UserName");
 
     refund.rejected_at =
-        DateTime.UtcNow;
+        now;
 
     refund.admin_notes =
         "Refund rejected by admin. Ticket cancellation request denied and ticket remains active.";
@@ -1964,7 +1969,7 @@ public async Task<IActionResult> RejectRefund(long id)
                 HttpContext.Session.GetString("UserName"),
 
             action_time =
-                DateTime.UtcNow,
+                now,
 
             action_notes =
                 "Refund rejected by admin. Ticket remains active.",
@@ -1976,7 +1981,7 @@ public async Task<IActionResult> RejectRefund(long id)
                     .ToString(),
 
             created_at =
-                DateTime.UtcNow
+                now
         });
 
 
@@ -2021,7 +2026,7 @@ public async Task<IActionResult> RejectRefund(long id)
 private async Task RestoreBookingAfterRefundRejection(Refund refund)
 {
     var now =
-        DateTime.UtcNow;
+        DatabaseTimestampNow();
 
     var booking =
         await _context.Bookings
@@ -2109,6 +2114,13 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 "CONFIRMED";
         }
     }
+}
+
+private static DateTime DatabaseTimestampNow()
+{
+    return DateTime.SpecifyKind(
+        DateTime.UtcNow,
+        DateTimeKind.Unspecified);
 }
 
 private async Task<OtpDeliveryResult> SendRefundRejectionUserNotification(Refund refund)
@@ -2228,6 +2240,8 @@ private async Task<OtpDeliveryResult> TrySendRefundRejectionUserNotification(Ref
 [HttpPost]
 public async Task<IActionResult> RetryRefund(long id)
 {
+    var now =
+        DatabaseTimestampNow();
 
     if (!RbacAuthorizationHelper.CanAccess(
         HttpContext,
@@ -2262,14 +2276,14 @@ public async Task<IActionResult> RetryRefund(long id)
     refund.failure_reason = null;
 
     refund.updated_at =
-        DateTime.UtcNow;
+        now;
 
 
     refund.retried_by =
         HttpContext.Session.GetString("UserName");
 
     refund.retried_at =
-        DateTime.UtcNow;
+        now;
 
     refund.admin_notes =
         "Refund retry initiated by admin";
@@ -2288,7 +2302,7 @@ public async Task<IActionResult> RetryRefund(long id)
                 HttpContext.Session.GetString("UserName"),
 
             action_time =
-                DateTime.UtcNow,
+                now,
 
             action_notes =
                 "Refund retry initiated",
@@ -2300,7 +2314,7 @@ public async Task<IActionResult> RetryRefund(long id)
                     .ToString(),
 
             created_at =
-                DateTime.UtcNow
+                now
         });
 
 
@@ -2354,7 +2368,7 @@ public async Task<IActionResult> SaveRefundNotes(
     refund.admin_notes = notes;
 
     refund.updated_at =
-        DateTime.UtcNow;
+        DatabaseTimestampNow();
 
     await _context.SaveChangesAsync();
 

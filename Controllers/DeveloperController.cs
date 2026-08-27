@@ -268,7 +268,8 @@ DO UPDATE SET
                     HasUploadedPhoto = profilePhoto != null && profilePhoto.Length > 0
                 });
 
-            TempData["Success"] = "Profile reel updated. The new developer scene is live.";
+            // Previous wording: "Profile reel updated. The new developer scene is live."
+            TempData["Success"] = "Developer profile updated successfully.";
             return RedirectToAction(nameof(Profile));
         }
 

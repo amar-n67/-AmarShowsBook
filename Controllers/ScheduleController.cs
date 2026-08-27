@@ -62,7 +62,8 @@ namespace AmarShowsBook.Controllers
 
                 if (clash)
                 {
-                    ViewBag.Error = "🎤 This stage is already booked for another performance!";
+                    // Previous wording: "This stage is already booked for another performance!"
+                    ViewBag.Error = "This location is already booked for another performance at the selected time.";
                     return View();
                 }
             }

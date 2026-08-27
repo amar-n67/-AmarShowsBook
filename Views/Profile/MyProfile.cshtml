@@ -8,11 +8,15 @@
     <div class="profile-shell">
         <div class="profile-hero">
             <div>
-                <span class="profile-kicker">Now Editing</span>
-                <h2>Star Profile Cut</h2>
-                <p>Refresh your contact credits, preferred genre, language track, and poster shot.</p>
+                @* Previous wording: "Now Editing" *@
+                <span class="profile-kicker">Profile Settings</span>
+                @* Previous wording: "Star Profile Cut" *@
+                <h2>My Profile</h2>
+                @* Previous wording: "Refresh your contact credits, preferred genre, language track, and poster shot." *@
+                <p>Update your contact details, preferences, language, and profile image.</p>
             </div>
-            <div class="profile-ticket">Admit One</div>
+            @* Previous wording: "Admit One" *@
+            <div class="profile-ticket">Account</div>
         </div>
 
         @if (TempData["Success"] != null)
@@ -40,7 +44,8 @@
 
             <div class="profile-grid">
                 <aside class="poster-panel">
-                    <span class="poster-label">Profile Poster</span>
+                    @* Previous wording: "Profile Poster" *@
+                    <span class="poster-label">Profile Image</span>
                     @if (!string.IsNullOrEmpty(Model.ProfileImagePath))
                     {
                         <img id="profilePreview"
@@ -62,7 +67,8 @@
                         <label for="profileImage"
                                class="btn btn-warning btn-sm action-btn poster-upload-btn"
                                onclick="prepareImageChange()">
-                            Change Poster
+                            @* Previous wording: "Change Poster" *@
+                            Change Image
                         </label>
 
                         <button type="button" id="imageCancel"
@@ -74,8 +80,10 @@
                 <div class="fields-panel">
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Opening Shot</span>
-                    <h5>Stage Identity</h5>
+                    @* Previous wording: "Opening Shot" *@
+                    <span>Basic Details</span>
+                    @* Previous wording: "Stage Identity" *@
+                    <h5>Account Identity</h5>
                 </div>
 
                 <div class="field-block">
@@ -86,7 +94,7 @@
                                value="@Model.Name" readonly />
 
                         <button type="button" class="btn btn-warning btn-sm"
-                                onclick="editSimpleField('nameField', 'nameCancel')">Retake</button>
+                                onclick="editSimpleField('nameField', 'nameCancel')">Edit</button>
 
                         <button id="nameCancel" type="button"
                                 class="btn btn-secondary btn-sm d-none"
@@ -97,12 +105,15 @@
 
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Scene 01</span>
-                    <h5>Contact Credits</h5>
+                    @* Previous wording: "Scene 01" *@
+                    <span>Contact</span>
+                    @* Previous wording: "Contact Credits" *@
+                    <h5>Contact Details</h5>
                 </div>
 
                 <div class="field-block">
-                <label>Email Premiere</label>
+                @* Previous wording: "Email Premiere" *@
+                <label>Email</label>
 
                 <div class="input-group input-group-sm">
 
@@ -113,7 +124,7 @@
                     <span id="emailVerifiedIcon" class="text-success d-none ms-2">✔</span>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editEmail('@Model.Email')">Retake</button>
+                            onclick="editEmail('@Model.Email')">Edit</button>
 
                     <button id="emailCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -123,7 +134,8 @@
                 <div id="emailOtpSection" class="mt-2 d-none">
                     <button type="button" class="btn btn-info btn-sm"
                             onclick="sendEmailOtp('@Model.Email')">
-                        Send Secret Code
+                        @* Previous wording: "Send Secret Code" *@
+                        Send OTP
                     </button>
                 </div>
 
@@ -141,7 +153,8 @@
                 </div>
 
                 <div class="field-block">
-                <label>Mobile Hotline</label>
+                @* Previous wording: "Mobile Hotline" *@
+                <label>Mobile Number</label>
 
                 <div class="input-group input-group-sm">
 
@@ -152,7 +165,7 @@
                     <span id="mobileVerifiedIcon" class="text-success d-none ms-2">✔</span>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editMobile('@Model.Mobile')">Retake</button>
+                            onclick="editMobile('@Model.Mobile')">Edit</button>
 
                     <button id="mobileCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -162,7 +175,8 @@
                 <div id="mobileOtpSection" class="mt-2 d-none">
                     <button type="button" class="btn btn-info btn-sm"
                             onclick="sendMobileOtp('@Model.Mobile')">
-                        Send Secret Code
+                        @* Previous wording: "Send Secret Code" *@
+                        Send OTP
                     </button>
                 </div>
 
@@ -174,7 +188,8 @@
                     <button type="button"
                             class="btn btn-success btn-sm"
                             onclick="verifyMobileOtp()">
-                        Lock Scene
+                        @* Previous wording: "Lock Scene" *@
+                        Verify OTP
                     </button>
                 </div>
                 </div>
@@ -182,8 +197,10 @@
 
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Scene 02</span>
-                    <h5>Shooting Location</h5>
+                    @* Previous wording: "Scene 02" *@
+                    <span>Address</span>
+                    @* Previous wording: "Shooting Location" *@
+                    <h5>Saved Location</h5>
                 </div>
 
                 <div class="field-block">
@@ -195,7 +212,7 @@
                            value="@Model.Address" readonly />
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editAddress('@Model.Address')">Retake</button>
+                            onclick="editAddress('@Model.Address')">Edit</button>
 
                     <button id="addressCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -253,8 +270,10 @@
 
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Scene 03</span>
-                    <h5>Show Taste</h5>
+                    @* Previous wording: "Scene 03" *@
+                    <span>Preferences</span>
+                    @* Previous wording: "Show Taste" *@
+                    <h5>Content Preferences</h5>
                 </div>
 
                 <div class="field-split">
@@ -275,12 +294,13 @@
                     </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="enableProfileSelect('genreField')">Retake</button>
+                            onclick="enableProfileSelect('genreField')">Edit</button>
                 </div>
             </div>
 
             <div class="field-block">
-                <label>Dialogue Track</label>
+                @* Previous wording: "Dialogue Track" *@
+                <label>Preferred Language</label>
 
                 <div class="input-group input-group-sm">
                     <div class="position-relative flex-grow-1">
@@ -295,7 +315,7 @@
                     </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="enableProfileSelect('languageField')">Retake</button>
+                            onclick="enableProfileSelect('languageField')">Edit</button>
                 </div>
             </div>
                 </div>
@@ -303,7 +323,8 @@
 
             <section class="profile-scene cursor-scene">
                 <div class="scene-title">
-                    <span>Scene 04</span>
+                    @* Previous wording: "Scene 04" *@
+                    <span>Display</span>
                     <h5>Mouse Cursor Style</h5>
                 </div>
 
@@ -351,8 +372,10 @@
 
             <section class="profile-scene password-scene">
                 <div class="scene-title">
-                    <span>Scene 05</span>
-                    <h5>Security Retake</h5>
+                    @* Previous wording: "Scene 05" *@
+                    <span>Security</span>
+                    @* Previous wording: "Security Retake" *@
+                    <h5>Change Password</h5>
                 </div>
 
                 <div class="password-panel">
@@ -364,7 +387,10 @@
                                    value="@Model.Email" readonly />
 
                             <button type="button" class="btn btn-info btn-sm"
-                                    onclick="sendPasswordEmailOtp()">Send Secret Code</button>
+                                    onclick="sendPasswordEmailOtp()">
+                                @* Previous wording: "Send Secret Code" *@
+                                Send OTP
+                            </button>
                         </div>
                     </div>
 

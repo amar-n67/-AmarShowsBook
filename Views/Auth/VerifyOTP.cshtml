@@ -1,6 +1,8 @@
 <div class="card p-4 mx-auto auth-mini">
-<h3 class="text-center mb-2">Enter Secret Code</h3>
-<p class="text-center text-muted">Lock the scene before resetting password.</p>
+@* Previous wording: "Enter Secret Code" *@
+<h3 class="text-center mb-2">Enter OTP</h3>
+@* Previous wording: "Lock the scene before resetting password." *@
+<p class="text-center text-muted">Verify the OTP before resetting your password.</p>
 
 <form method="post" action="/Auth/VerifyOTP">
 
@@ -8,7 +10,8 @@
 
     <div class="d-flex justify-content-between">
         <button class="btn btn-primary">Verify</button>
-        <a href="/Auth/Login" class="btn btn-secondary">Back To Gate</a>
+        @* Previous wording: "Back To Gate" *@
+        <a href="/Auth/Login" class="btn btn-secondary">Back To Login</a>
     </div>
 
 </form>
@@ -33,7 +36,8 @@
                     ? `${message}\nDevelopment OTP: ${devOtp}`
                     : message;
                 showCinemaPopup(popupMessage, "success", {
-                    title: "Secret Code Sent",
+                    // Previous wording: "Secret Code Sent"
+                    title: "OTP Sent",
                     okText: "Enter Code"
                 });
             }

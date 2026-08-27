@@ -54,7 +54,8 @@ public async Task<IActionResult> Login(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            ViewBag.Error = "Missing credentials. The show cannot start without email and password.";
+            // Previous wording: "Missing credentials. The show cannot start without email and password."
+            ViewBag.Error = "Email and password are required.";
             return View();
         }
 
@@ -76,7 +77,8 @@ public async Task<IActionResult> Login(string email, string password)
 
         if (user == null)
         {
-            ViewBag.Error = "No performer found with this email.";
+            // Previous wording: "No performer found with this email."
+            ViewBag.Error = "No account found with this email.";
             return View();
         }
 
@@ -129,7 +131,8 @@ HttpContext.Session.SetString(
                 status: "FAILURE"
             );
 
-            ViewBag.Error = "Wrong script. Password did not match.";
+            // Previous wording: "Wrong script. Password did not match."
+            ViewBag.Error = "Incorrect password. Please try again.";
             return View();
         }
     }
@@ -137,7 +140,8 @@ HttpContext.Session.SetString(
     {
         System.Diagnostics.Debug.WriteLine(ex);
 
-        ViewBag.Error = "The projector had a technical pause. Please try login again.";
+        // Previous wording: "The projector had a technical pause. Please try login again."
+        ViewBag.Error = "We could not complete login. Please try again.";
         return View();
     }
 	}
@@ -300,7 +304,8 @@ WHERE uw.user_id = {userId}
 
             if (_context.Users.Any(u => u.Mobile == user.Mobile))
             {
-                return SignupError(user, "This mobile number already has a ticket in our records.");
+                // Previous wording: "This mobile number already has a ticket in our records."
+                return SignupError(user, "This mobile number is already registered.");
             }
 
             if (_context.Users.Any(u => u.Email.ToLower() == user.Email.ToLower()))
@@ -349,7 +354,8 @@ return RedirectToAction("Login");
             }
             catch
             {
-                return SignupError(user, "The signup scene could not be saved. Please try again.");
+                // Previous wording: "The signup scene could not be saved. Please try again."
+                return SignupError(user, "We could not create your account. Please try again.");
             }
         }
 
