@@ -23,14 +23,28 @@
         : "Explore movies, series, originals, sports, and family entertainment from top services.";
     var ottPlatforms = new[]
     {
-        new { Name = "Netflix", Description = "Global films, series, documentaries, and originals.", Url = "https://www.netflix.com", Accent = "#e50914", Initials = "N" },
-        new { Name = "Prime Video", Description = "Movies, shows, rentals, live sport, and Amazon Originals.", Url = "https://www.primevideo.com", Accent = "#00a8e1", Initials = "PV" },
-        new { Name = "Disney+ Hotstar", Description = "Disney, Marvel, Star, sports, and regional entertainment.", Url = "https://www.hotstar.com", Accent = "#1f80e0", Initials = "D+" },
-        new { Name = "JioCinema", Description = "Indian originals, films, reality shows, and live events.", Url = "https://www.jiocinema.com", Accent = "#d9008d", Initials = "JC" },
-        new { Name = "Sony LIV", Description = "TV shows, sport, originals, films, and premium series.", Url = "https://www.sonyliv.com", Accent = "#673ab7", Initials = "SL" },
-        new { Name = "ZEE5", Description = "Movies, serials, originals, music videos, and regional content.", Url = "https://www.zee5.com", Accent = "#8230c6", Initials = "Z5" },
-        new { Name = "YouTube", Description = "Trailers, creators, live streams, rentals, and premium channels.", Url = "https://www.youtube.com", Accent = "#ff0033", Initials = "YT" },
-        new { Name = "Aha", Description = "Telugu and Tamil films, shows, originals, and comedy specials.", Url = "https://www.aha.video", Accent = "#ff6b00", Initials = "AH" }
+        new { Name = "Netflix", Tagline = "Series, films, docs", Accent = "#e50914", Initials = "N" },
+        new { Name = "Prime Video", Tagline = "Cinema, sport, originals", Accent = "#00a8e1", Initials = "PV" },
+        new { Name = "Disney+ Hotstar", Tagline = "Family, fantasy, sport", Accent = "#1f80e0", Initials = "D+" },
+        new { Name = "JioCinema", Tagline = "Indian originals, live events", Accent = "#d9008d", Initials = "JC" },
+        new { Name = "Sony LIV", Tagline = "Shows, sport, premium TV", Accent = "#673ab7", Initials = "SL" },
+        new { Name = "ZEE5", Tagline = "Regional stories, serials", Accent = "#8230c6", Initials = "Z5" },
+        new { Name = "YouTube", Tagline = "Creators, rentals, streams", Accent = "#ff0033", Initials = "YT" },
+        new { Name = "Aha", Tagline = "Telugu and Tamil picks", Accent = "#ff6b00", Initials = "AH" }
+    };
+    var ottTitles = new[]
+    {
+        new { Platform = "Netflix", Title = "Red Notice", Type = "Movie", Rating = "7.8", Duration = "1h 58m", Year = "2026", Language = "English", Quality = "4K", Progress = "64", Description = "A slick action chase across museums, vaults, and rival thieves.", Accent = "#e50914", Initials = "RN", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Netflix", Title = "Delhi Crime Files", Type = "Series", Rating = "8.6", Duration = "7 episodes", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "38", Description = "A tight investigative drama following a citywide case.", Accent = "#e50914", Initials = "DC", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Prime Video", Title = "The Family Man", Type = "Series", Rating = "8.9", Duration = "10 episodes", Year = "2026", Language = "Hindi", Quality = "4K", Progress = "76", Description = "High-stakes espionage with sharp humor and family pressure.", Accent = "#00a8e1", Initials = "FM", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Prime Video", Title = "Citadel India", Type = "Series", Rating = "8.1", Duration = "6 episodes", Year = "2026", Language = "Hindi", Quality = "4K", Progress = "22", Description = "A covert network story with action, secrets, and betrayal.", Accent = "#00a8e1", Initials = "CI", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Disney+ Hotstar", Title = "Loki: Time Spiral", Type = "Series", Rating = "8.4", Duration = "6 episodes", Year = "2026", Language = "English", Quality = "4K", Progress = "51", Description = "A playful multiverse ride through impossible timelines.", Accent = "#1f80e0", Initials = "LK", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Disney+ Hotstar", Title = "Cricket Prime Live", Type = "Sports", Rating = "9.0", Duration = "Live", Year = "2026", Language = "Multi", Quality = "HD", Progress = "12", Description = "Match center, highlights, commentary, and live moments.", Accent = "#1f80e0", Initials = "CP", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "JioCinema", Title = "Asur Returns", Type = "Series", Rating = "8.5", Duration = "8 episodes", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "46", Description = "Mythology and cybercrime collide in a dark thriller.", Accent = "#d9008d", Initials = "AR", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Sony LIV", Title = "Scam: Market Line", Type = "Series", Rating = "8.7", Duration = "9 episodes", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "58", Description = "A tense financial drama built around ambition and fraud.", Accent = "#673ab7", Initials = "SM", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "ZEE5", Title = "Silence: Case Notes", Type = "Movie", Rating = "7.6", Duration = "2h 6m", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "31", Description = "A procedural mystery built on quiet clues and pressure.", Accent = "#8230c6", Initials = "SC", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "YouTube", Title = "Creator Premiere Live", Type = "Live", Rating = "8.0", Duration = "Live", Year = "2026", Language = "Multi", Quality = "HD", Progress = "5", Description = "Creator premieres, behind-the-scenes cuts, and fan chat moments.", Accent = "#ff0033", Initials = "YT", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Aha", Title = "Telugu Comedy Nights", Type = "Standup", Rating = "8.2", Duration = "1h 24m", Year = "2026", Language = "Telugu", Quality = "HD", Progress = "43", Description = "A fast, crowd-first special packed with local punchlines.", Accent = "#ff6b00", Initials = "TC", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" }
     };
     var musicPlatforms = new[]
     {
@@ -43,9 +57,6 @@
         new { Name = "SoundCloud", Description = "Independent artists, DJ sets, remixes, podcasts, and community audio.", Url = "https://soundcloud.com", Accent = "#ff5500", Initials = "SC" },
         new { Name = "Tidal", Description = "HiFi audio, editorial playlists, videos, and artist-first releases.", Url = "https://tidal.com", Accent = "#111111", Initials = "TD" }
     };
-    var selectedPlatforms = string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase)
-        ? musicPlatforms
-        : ottPlatforms;
 }
 
 <section class="showtime-page">
@@ -64,7 +75,7 @@
         <span class="hero-camera-flash" aria-hidden="true"></span>
     </div>
 
-<div class="showtime-controls">
+<div class="showtime-controls @(platformMode ? "platform-mode" : "")">
     <div class="location-field">
         <label for="showTypeFilter">Show type</label>
         <select id="showTypeFilter" class="form-control" onchange="changeShowType(this.value)">
@@ -140,7 +151,122 @@
     <p class="location-status" id="locationStatus" aria-live="polite"></p>
 </div>
 
-    @if (platformMode)
+    @if (string.Equals(selectedType, "OTT", StringComparison.OrdinalIgnoreCase))
+    {
+        var featuredOtt = ottTitles.First();
+        <section class="ott-studio" aria-label="OTT streaming">
+            <aside class="ott-rail" aria-label="OTT platforms">
+                <button type="button" class="ott-platform-pill active" data-platform="All" style="--platform-accent:var(--app-primary)">
+                    <span class="ott-platform-mark" aria-hidden="true">All</span>
+                    <span>All OTT's</span>
+                </button>
+                @foreach (var platform in ottPlatforms)
+                {
+                    <button type="button" class="ott-platform-pill" data-platform="@platform.Name" style="--platform-accent:@platform.Accent">
+                        <span class="ott-platform-mark" aria-hidden="true">@platform.Initials</span>
+                        <span>
+                            <strong>@platform.Name</strong>
+                            <small>@platform.Tagline</small>
+                        </span>
+                    </button>
+                }
+            </aside>
+
+            <div class="ott-main">
+                <section class="ott-player-shell" style="--ott-accent:@featuredOtt.Accent" aria-label="OTT video player">
+                    <div class="ott-video-frame">
+                        <video id="ottVideoPlayer" preload="metadata" playsinline poster="">
+                            <source src="@featuredOtt.Video" type="video/mp4" />
+                        </video>
+                        <div class="ott-video-fallback" id="ottVideoFallback">
+                            <span id="ottPlayerInitials">@featuredOtt.Initials</span>
+                        </div>
+                        <div class="ott-player-gradient" aria-hidden="true"></div>
+                        <button type="button" class="ott-big-play" id="ottBigPlay" title="Play" aria-label="Play">▶</button>
+                        <div class="ott-player-topline">
+                            <span id="ottPlayerPlatform">@featuredOtt.Platform</span>
+                            <span id="ottPlayerQuality">@featuredOtt.Quality</span>
+                        </div>
+                        <div class="ott-player-info">
+                            <p id="ottPlayerType">@featuredOtt.Type</p>
+                            <h2 id="ottPlayerTitle">@featuredOtt.Title</h2>
+                            <div class="ott-meta-row">
+                                <span id="ottPlayerRating">@featuredOtt.Rating</span>
+                                <span id="ottPlayerYear">@featuredOtt.Year</span>
+                                <span id="ottPlayerDuration">@featuredOtt.Duration</span>
+                                <span id="ottPlayerLanguage">@featuredOtt.Language</span>
+                            </div>
+                            <p id="ottPlayerDescription">@featuredOtt.Description</p>
+                        </div>
+                        <div class="ott-controls">
+                            <div class="ott-progress-row">
+                                <span id="ottCurrentTime">0:00</span>
+                                <input type="range" id="ottProgress" min="0" max="100" value="0" aria-label="Playback progress" />
+                                <span id="ottDuration">0:00</span>
+                            </div>
+                            <div class="ott-control-row">
+                                <button type="button" id="ottPlayPause" title="Play" aria-label="Play">▶</button>
+                                <button type="button" id="ottMute" title="Mute" aria-label="Mute">🔊</button>
+                                <input type="range" id="ottVolume" min="0" max="1" step="0.05" value="0.8" aria-label="Volume" />
+                                <select id="ottSpeed" aria-label="Playback speed">
+                                    <option value="0.75">0.75x</option>
+                                    <option value="1" selected>1x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                </select>
+                                <button type="button" id="ottNext" title="Next" aria-label="Next">›</button>
+                                <button type="button" id="ottFullscreen" title="Fullscreen" aria-label="Fullscreen">⛶</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="ott-section-head">
+                    <div>
+                        <span>OTT's</span>
+                        <h2>Streaming inside showTime</h2>
+                    </div>
+                    <div class="ott-search-wrap">
+                        <label for="ottSearch">Search</label>
+                        <input id="ottSearch" type="search" placeholder="Movie, series, sport..." autocomplete="off" />
+                    </div>
+                </div>
+
+                <section class="ott-catalog" aria-label="OTT catalog">
+                    @foreach (var title in ottTitles)
+                    {
+                        <button type="button"
+                                class="ott-title-card"
+                                data-platform="@title.Platform"
+                                data-title="@title.Title"
+                                data-type="@title.Type"
+                                data-rating="@title.Rating"
+                                data-duration="@title.Duration"
+                                data-year="@title.Year"
+                                data-language="@title.Language"
+                                data-quality="@title.Quality"
+                                data-description="@title.Description"
+                                data-accent="@title.Accent"
+                                data-initials="@title.Initials"
+                                data-progress="@title.Progress"
+                                data-video="@title.Video"
+                                style="--ott-card-accent:@title.Accent">
+                            <span class="ott-poster" aria-hidden="true">
+                                <strong>@title.Initials</strong>
+                            </span>
+                            <span class="ott-title-copy">
+                                <span>@title.Platform</span>
+                                <strong>@title.Title</strong>
+                                <small>@title.Type · @title.Duration · @title.Language</small>
+                                <i><b style="width:@title.Progress%"></b></i>
+                            </span>
+                        </button>
+                    }
+                </section>
+            </div>
+        </section>
+    }
+    else if (platformMode)
     {
         <section class="platform-board" aria-labelledby="platformBoardTitle">
             <div class="platform-board-head">
@@ -151,7 +277,7 @@
                 </div>
             </div>
             <div class="platform-grid">
-                @foreach (var platform in selectedPlatforms)
+                @foreach (var platform in musicPlatforms)
                 {
                     <a class="platform-card" href="@platform.Url" target="_blank" rel="noopener noreferrer" style="--platform-accent:@platform.Accent">
                         <span class="platform-mark" aria-hidden="true">@platform.Initials</span>
@@ -929,6 +1055,466 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         color: var(--app-muted);
     }
 
+    .ott-studio {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+    }
+
+    .ott-rail {
+        position: sticky;
+        top: 82px;
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: var(--app-card);
+        color: var(--app-card-text);
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+
+    .ott-platform-pill {
+        --platform-accent: var(--app-primary);
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        min-height: 58px;
+        padding: 8px;
+        border: 1px solid color-mix(in srgb, var(--platform-accent) 20%, var(--app-input-border));
+        border-radius: 8px;
+        background: #fff;
+        color: var(--app-input-text);
+        text-align: left;
+        cursor: pointer;
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .ott-platform-pill:hover,
+    .ott-platform-pill:focus-visible,
+    .ott-platform-pill.active {
+        transform: translateY(-1px);
+        border-color: var(--platform-accent);
+        background: color-mix(in srgb, var(--platform-accent) 10%, #fff);
+        outline: none;
+    }
+
+    .ott-platform-mark {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: var(--platform-accent);
+        color: #fff;
+        font-size: 0.74rem;
+        font-weight: 950;
+        letter-spacing: 0;
+    }
+
+    .ott-platform-pill span:last-child {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    .ott-platform-pill strong,
+    .ott-platform-pill small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ott-platform-pill small {
+        color: var(--app-muted);
+        font-size: 0.66rem;
+        font-weight: 750;
+    }
+
+    .ott-main {
+        min-width: 0;
+        display: grid;
+        gap: 14px;
+    }
+
+    .ott-player-shell {
+        --ott-accent: var(--app-primary);
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--ott-accent) 26%, var(--app-input-border));
+        border-radius: 8px;
+        background: #050505;
+        color: #fff;
+        box-shadow: 0 18px 38px rgba(15,23,42,.18);
+    }
+
+    .ott-video-frame {
+        position: relative;
+        min-height: 420px;
+        aspect-ratio: 16 / 9;
+        background:
+            radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--ott-accent) 38%, transparent), transparent 30%),
+            linear-gradient(135deg, #111, #050505 62%, color-mix(in srgb, var(--ott-accent) 18%, #090909));
+    }
+
+    .ott-video-frame video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.78;
+    }
+
+    .ott-video-fallback {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+    }
+
+    .ott-video-fallback span {
+        display: grid;
+        place-items: center;
+        width: clamp(90px, 14vw, 150px);
+        aspect-ratio: 1;
+        border: 1px solid rgba(255,255,255,.24);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--ott-accent) 84%, #111);
+        color: #fff;
+        font-size: clamp(1.9rem, 5vw, 4rem);
+        font-weight: 950;
+        box-shadow: 0 22px 54px rgba(0,0,0,.42);
+    }
+
+    .ott-player-gradient {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(180deg, rgba(0,0,0,.58), transparent 28%),
+            linear-gradient(0deg, rgba(0,0,0,.86), transparent 52%),
+            linear-gradient(90deg, rgba(0,0,0,.58), transparent 46%);
+    }
+
+    .ott-big-play {
+        position: absolute;
+        inset: 50% auto auto 50%;
+        transform: translate(-50%, -50%);
+        display: grid;
+        place-items: center;
+        width: 76px;
+        height: 76px;
+        border: 1px solid rgba(255,255,255,.38);
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--ott-accent) 82%, rgba(0,0,0,.68));
+        color: #fff;
+        font-size: 1.6rem;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 18px 46px rgba(0,0,0,.34);
+    }
+
+    .ott-video-frame.is-playing .ott-big-play {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .ott-player-topline {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        font-size: 0.72rem;
+        font-weight: 950;
+        text-transform: uppercase;
+    }
+
+    .ott-player-topline span {
+        min-height: 26px;
+        padding: 6px 9px;
+        border: 1px solid rgba(255,255,255,.24);
+        border-radius: 8px;
+        background: rgba(0,0,0,.34);
+        backdrop-filter: blur(14px);
+    }
+
+    .ott-player-info {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 86px;
+        max-width: min(680px, calc(100% - 36px));
+    }
+
+    .ott-player-info p,
+    .ott-player-info h2 {
+        margin: 0;
+    }
+
+    .ott-player-info > p:first-child {
+        color: color-mix(in srgb, var(--ott-accent) 78%, #fff);
+        font-size: 0.74rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .ott-player-info h2 {
+        margin-top: 4px;
+        font-size: clamp(1.45rem, 3vw, 2.4rem);
+        font-weight: 950;
+        line-height: 1.08;
+    }
+
+    .ott-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 10px 0;
+    }
+
+    .ott-meta-row span {
+        min-height: 25px;
+        padding: 5px 8px;
+        border-radius: 8px;
+        background: rgba(255,255,255,.14);
+        color: rgba(255,255,255,.88);
+        font-size: 0.74rem;
+        font-weight: 850;
+    }
+
+    .ott-player-info > p:last-child {
+        max-width: 620px;
+        color: rgba(255,255,255,.82);
+        font-size: 0.88rem;
+        line-height: 1.45;
+    }
+
+    .ott-controls {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 12px;
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: 8px;
+        background: rgba(0,0,0,.46);
+        backdrop-filter: blur(18px);
+    }
+
+    .ott-progress-row,
+    .ott-control-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+    }
+
+    .ott-progress-row span {
+        flex: 0 0 42px;
+        color: rgba(255,255,255,.78);
+        font-size: 0.72rem;
+        font-weight: 850;
+        text-align: center;
+    }
+
+    .ott-controls input[type="range"] {
+        min-width: 0;
+        accent-color: var(--ott-accent);
+    }
+
+    .ott-progress-row input {
+        flex: 1;
+    }
+
+    .ott-control-row button,
+    .ott-control-row select {
+        min-width: 38px;
+        height: 34px;
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 8px;
+        background: rgba(255,255,255,.12);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 900;
+    }
+
+    .ott-control-row button {
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+    }
+
+    .ott-control-row select {
+        padding: 0 6px;
+    }
+
+    .ott-control-row button:hover,
+    .ott-control-row button:focus-visible,
+    .ott-control-row select:focus-visible {
+        border-color: var(--ott-accent);
+        outline: none;
+    }
+
+    .ott-control-row #ottVolume {
+        width: 120px;
+    }
+
+    .ott-section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: end;
+        padding: 14px 16px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: var(--app-card);
+        color: var(--app-card-text);
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+
+    .ott-section-head span,
+    .ott-search-wrap label {
+        display: block;
+        color: var(--app-primary);
+        font-size: 0.64rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .ott-section-head h2 {
+        margin: 3px 0 0;
+        color: inherit;
+        font-size: 1.15rem;
+        font-weight: 950;
+    }
+
+    .ott-search-wrap {
+        flex: 0 1 260px;
+        display: grid;
+        gap: 4px;
+    }
+
+    .ott-search-wrap input {
+        width: 100%;
+        min-height: 36px;
+        padding: 0 11px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--app-input-text);
+        font-size: 0.82rem;
+        font-weight: 750;
+    }
+
+    .ott-catalog {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 12px;
+    }
+
+    .ott-title-card {
+        --ott-card-accent: var(--app-primary);
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 11px;
+        min-height: 126px;
+        padding: 10px;
+        border: 1px solid color-mix(in srgb, var(--ott-card-accent) 24%, var(--app-input-border));
+        border-radius: 8px;
+        background: #fff;
+        color: var(--app-input-text);
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 0 10px 22px rgba(15,23,42,.08);
+        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .ott-title-card:hover,
+    .ott-title-card:focus-visible,
+    .ott-title-card.active {
+        transform: translateY(-2px);
+        border-color: var(--ott-card-accent);
+        box-shadow: 0 14px 30px rgba(15,23,42,.13);
+        outline: none;
+    }
+
+    .ott-poster {
+        display: grid;
+        place-items: center;
+        width: 72px;
+        min-height: 106px;
+        border-radius: 8px;
+        background:
+            linear-gradient(160deg, color-mix(in srgb, var(--ott-card-accent) 86%, #111), #101010),
+            repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 2px, transparent 2px 10px);
+        color: #fff;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
+    }
+
+    .ott-poster strong {
+        font-size: 1.1rem;
+        font-weight: 950;
+    }
+
+    .ott-title-copy {
+        min-width: 0;
+        display: grid;
+        align-content: center;
+        gap: 5px;
+    }
+
+    .ott-title-copy span {
+        color: var(--ott-card-accent);
+        font-size: 0.64rem;
+        font-weight: 950;
+        text-transform: uppercase;
+    }
+
+    .ott-title-copy strong {
+        color: inherit;
+        font-size: 0.94rem;
+        font-weight: 950;
+        line-height: 1.18;
+        overflow-wrap: anywhere;
+    }
+
+    .ott-title-copy small {
+        color: var(--app-muted);
+        font-size: 0.72rem;
+        font-weight: 750;
+        line-height: 1.3;
+    }
+
+    .ott-title-copy i {
+        display: block;
+        width: 100%;
+        height: 5px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--app-input-border) 80%, transparent);
+    }
+
+    .ott-title-copy i b {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--ott-card-accent);
+    }
+
     .platform-board {
         display: grid;
         gap: 14px;
@@ -1292,6 +1878,18 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     box-shadow: 0 10px 24px rgba(15,23,42,.08);
 }
 
+.showtime-controls.platform-mode {
+    grid-template-columns: minmax(220px, 360px);
+    max-width: 380px;
+}
+
+.showtime-controls.platform-mode .location-picker,
+.showtime-controls.platform-mode .compact-filter-field,
+.showtime-controls.platform-mode .location-panel,
+.showtime-controls.platform-mode .location-status {
+    display: none;
+}
+
 .location-panel,
 .show-type-panel,
 .location-picker {
@@ -1641,6 +2239,16 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .ott-studio {
+        grid-template-columns: 1fr;
+    }
+
+    .ott-rail {
+        position: static;
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+        overflow-x: auto;
+    }
+
     .location-panel,
     .show-type-panel {
         grid-template-rows: auto auto;
@@ -1672,6 +2280,23 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         align-items: flex-start;
         flex-direction: column;
         padding: 24px;
+    }
+
+    .ott-video-frame {
+        min-height: 360px;
+    }
+
+    .ott-player-info {
+        bottom: 104px;
+    }
+
+    .ott-section-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ott-search-wrap {
+        flex-basis: auto;
     }
 
     .showtime-ticket {
@@ -1740,6 +2365,49 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         gap: 14px;
     }
 
+    .ott-rail {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+
+    .ott-video-frame {
+        min-height: 430px;
+        aspect-ratio: auto;
+    }
+
+    .ott-player-info {
+        left: 12px;
+        right: 12px;
+        bottom: 146px;
+        max-width: calc(100% - 24px);
+    }
+
+    .ott-player-info > p:last-child {
+        display: none;
+    }
+
+    .ott-controls {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+    }
+
+    .ott-progress-row,
+    .ott-control-row {
+        gap: 6px;
+    }
+
+    .ott-control-row {
+        flex-wrap: wrap;
+    }
+
+    .ott-control-row #ottVolume {
+        flex: 1 1 110px;
+    }
+
+    .ott-catalog {
+        grid-template-columns: 1fr;
+    }
+
     .platform-board-head {
         padding: 14px;
     }
@@ -1788,6 +2456,251 @@ const showtimeResetAfterNewsStorageKey="showtimeResetAfterNews";
 let locationDisplayOverride="";
 let currentLocationFilter=null;
 let isRestoringShowtimeFilters=false;
+const isPlatformMode=@(platformMode.ToString().ToLowerInvariant());
+const isOttMode=@(string.Equals(selectedType, "OTT", StringComparison.OrdinalIgnoreCase).ToString().ToLowerInvariant());
+
+function formatOttTime(seconds)
+{
+    if(!Number.isFinite(seconds) || seconds<0)
+    {
+        return "0:00";
+    }
+
+    const totalSeconds=Math.floor(seconds);
+    const minutes=Math.floor(totalSeconds/60);
+    const remainingSeconds=totalSeconds%60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2,"0")}`;
+}
+
+function setupOttExperience()
+{
+    if(!isOttMode)
+    {
+        return;
+    }
+
+    const shell=document.querySelector(".ott-player-shell");
+    const frame=document.querySelector(".ott-video-frame");
+    const video=document.getElementById("ottVideoPlayer");
+    const source=video?.querySelector("source");
+    const bigPlay=document.getElementById("ottBigPlay");
+    const playPause=document.getElementById("ottPlayPause");
+    const muteButton=document.getElementById("ottMute");
+    const progress=document.getElementById("ottProgress");
+    const volume=document.getElementById("ottVolume");
+    const speed=document.getElementById("ottSpeed");
+    const nextButton=document.getElementById("ottNext");
+    const fullscreenButton=document.getElementById("ottFullscreen");
+    const currentTime=document.getElementById("ottCurrentTime");
+    const duration=document.getElementById("ottDuration");
+    const search=document.getElementById("ottSearch");
+    const cards=Array.from(document.querySelectorAll(".ott-title-card"));
+    const platformButtons=Array.from(document.querySelectorAll(".ott-platform-pill"));
+    let currentIndex=0;
+    let selectedPlatform="All";
+
+    if(!shell || !frame || !video || !source || !cards.length)
+    {
+        return;
+    }
+
+    const setText=(id,value)=>{
+        const element=document.getElementById(id);
+        if(element)
+        {
+            element.textContent=value || "";
+        }
+    };
+
+    const syncPlaybackButtons=()=>{
+        const isPlaying=!video.paused && !video.ended;
+        frame.classList.toggle("is-playing",isPlaying);
+        if(bigPlay)
+        {
+            bigPlay.textContent=isPlaying ? "Ⅱ" : "▶";
+            bigPlay.title=isPlaying ? "Pause" : "Play";
+            bigPlay.setAttribute("aria-label",isPlaying ? "Pause" : "Play");
+        }
+        if(playPause)
+        {
+            playPause.textContent=isPlaying ? "Ⅱ" : "▶";
+            playPause.title=isPlaying ? "Pause" : "Play";
+            playPause.setAttribute("aria-label",isPlaying ? "Pause" : "Play");
+        }
+    };
+
+    const updateMuteButton=()=>{
+        if(muteButton)
+        {
+            muteButton.textContent=video.muted || video.volume===0 ? "🔇" : "🔊";
+            muteButton.title=video.muted || video.volume===0 ? "Unmute" : "Mute";
+            muteButton.setAttribute("aria-label",muteButton.title);
+        }
+    };
+
+    const updateVisibleCards=()=>{
+        const query=(search?.value || "").trim().toLowerCase();
+        cards.forEach(card=>{
+            const matchesPlatform=selectedPlatform==="All" || card.dataset.platform===selectedPlatform;
+            const searchBlob=[
+                card.dataset.platform,
+                card.dataset.title,
+                card.dataset.type,
+                card.dataset.language,
+                card.dataset.description
+            ].join(" ").toLowerCase();
+            const matchesSearch=!query || searchBlob.includes(query);
+            card.hidden=!(matchesPlatform && matchesSearch);
+        });
+    };
+
+    const loadCard=(card,shouldPlay)=>{
+        currentIndex=cards.indexOf(card);
+        cards.forEach(item=>item.classList.toggle("active",item===card));
+        const accent=card.dataset.accent || "var(--app-primary)";
+        shell.style.setProperty("--ott-accent",accent);
+        source.src=card.dataset.video || source.src;
+        video.load();
+        video.volume=Number(volume?.value || 0.8);
+        video.playbackRate=Number(speed?.value || 1);
+        setText("ottPlayerInitials",card.dataset.initials);
+        setText("ottPlayerPlatform",card.dataset.platform);
+        setText("ottPlayerQuality",card.dataset.quality);
+        setText("ottPlayerType",card.dataset.type);
+        setText("ottPlayerTitle",card.dataset.title);
+        setText("ottPlayerRating",`${card.dataset.rating || "NA"} ★`);
+        setText("ottPlayerYear",card.dataset.year);
+        setText("ottPlayerDuration",card.dataset.duration);
+        setText("ottPlayerLanguage",card.dataset.language);
+        setText("ottPlayerDescription",card.dataset.description);
+        if(progress)
+        {
+            progress.value="0";
+        }
+        if(currentTime)
+        {
+            currentTime.textContent="0:00";
+        }
+        syncPlaybackButtons();
+
+        if(shouldPlay)
+        {
+            video.play().catch(()=>syncPlaybackButtons());
+        }
+    };
+
+    const togglePlay=()=>{
+        if(video.paused || video.ended)
+        {
+            video.play().catch(()=>syncPlaybackButtons());
+        }
+        else
+        {
+            video.pause();
+        }
+    };
+
+    const playNext=()=>{
+        const visibleCards=cards.filter(card=>!card.hidden);
+        if(!visibleCards.length)
+        {
+            return;
+        }
+        const activeCard=cards[currentIndex] || visibleCards[0];
+        const visibleIndex=visibleCards.indexOf(activeCard);
+        const nextCard=visibleCards[(visibleIndex+1+visibleCards.length)%visibleCards.length];
+        loadCard(nextCard,true);
+    };
+
+    platformButtons.forEach(button=>{
+        button.addEventListener("click",()=>{
+            selectedPlatform=button.dataset.platform || "All";
+            platformButtons.forEach(item=>item.classList.toggle("active",item===button));
+            updateVisibleCards();
+            const firstVisible=cards.find(card=>!card.hidden);
+            if(firstVisible)
+            {
+                loadCard(firstVisible,false);
+            }
+        });
+    });
+
+    cards.forEach(card=>{
+        card.addEventListener("click",()=>loadCard(card,true));
+    });
+
+    search?.addEventListener("input",()=>{
+        updateVisibleCards();
+        const activeCard=cards[currentIndex];
+        if(activeCard?.hidden)
+        {
+            const firstVisible=cards.find(card=>!card.hidden);
+            if(firstVisible)
+            {
+                loadCard(firstVisible,false);
+            }
+        }
+    });
+
+    bigPlay?.addEventListener("click",togglePlay);
+    playPause?.addEventListener("click",togglePlay);
+    video.addEventListener("click",togglePlay);
+    video.addEventListener("play",syncPlaybackButtons);
+    video.addEventListener("pause",syncPlaybackButtons);
+    video.addEventListener("ended",playNext);
+    video.addEventListener("loadedmetadata",()=>{
+        if(duration)
+        {
+            duration.textContent=formatOttTime(video.duration);
+        }
+    });
+    video.addEventListener("timeupdate",()=>{
+        if(currentTime)
+        {
+            currentTime.textContent=formatOttTime(video.currentTime);
+        }
+        if(progress && Number.isFinite(video.duration) && video.duration>0)
+        {
+            progress.value=((video.currentTime/video.duration)*100).toString();
+        }
+    });
+
+    progress?.addEventListener("input",()=>{
+        if(Number.isFinite(video.duration) && video.duration>0)
+        {
+            video.currentTime=(Number(progress.value)/100)*video.duration;
+        }
+    });
+
+    volume?.addEventListener("input",()=>{
+        video.volume=Number(volume.value);
+        video.muted=video.volume===0;
+        updateMuteButton();
+    });
+
+    muteButton?.addEventListener("click",()=>{
+        video.muted=!video.muted;
+        updateMuteButton();
+    });
+
+    speed?.addEventListener("change",()=>{
+        video.playbackRate=Number(speed.value || 1);
+    });
+
+    nextButton?.addEventListener("click",playNext);
+    fullscreenButton?.addEventListener("click",()=>{
+        if(document.fullscreenElement)
+        {
+            document.exitFullscreen?.();
+            return;
+        }
+        frame.requestFullscreen?.();
+    });
+
+    loadCard(cards[0],false);
+    updateVisibleCards();
+    updateMuteButton();
+}
 
 function closeTrailer()
 {
@@ -2982,8 +3895,15 @@ document.addEventListener(
 "DOMContentLoaded",
 async ()=>{
 
+if(isPlatformMode)
+{
+setupOttExperience();
+return;
+}
+
 await loadCountries();
 populateDynamicFilters();
+setupOttExperience();
 let shouldUseCurrentLocationOnly=true;
 let shouldResetAfterNews=false;
 try
