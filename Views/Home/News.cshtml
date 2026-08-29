@@ -76,12 +76,83 @@
                             <h2>@channel.ChannelName</h2>
                             <p>@channel.Language · @channel.Region</p>
                         </div>
-                        <a href="@channel.LiveUrl" target="_blank" rel="noopener" aria-label="Watch @channel.ChannelName live">▶</a>
+                        <button type="button"
+                                class="news-play-button"
+                                data-player-name="@channel.ChannelName"
+                                data-player-id="@channel.Id"
+                                data-player-logo="@channel.LogoUrl"
+                                data-player-language="@channel.Language"
+                                data-player-category="@channel.Category"
+                                data-player-region="@channel.Region"
+                                data-player-description="@channel.Description"
+                                onclick="openNewsPlayer(this)"
+                                aria-label="Play @channel.ChannelName live">▶</button>
                     </article>
                 }
             </div>
 
-            <div class="news-board">
+            <section class="news-player" id="newsPlayer" aria-label="Live news player" hidden>
+                <div class="news-player-head">
+                    <button type="button" class="news-player-back" onclick="closeNewsPlayer()" aria-label="Back to news channels">
+                        <span aria-hidden="true">←</span>
+                        <span>Back to channels</span>
+                    </button>
+                    <div class="news-player-title">
+                        <img id="newsPlayerLogo" src="" alt="" />
+                        <div>
+                            <span id="newsPlayerMeta">Live channel</span>
+                            <h2 id="newsPlayerName">News Live</h2>
+                        </div>
+                    </div>
+                    <div class="news-player-tools">
+                        <button type="button" onclick="reloadNewsPlayer()" aria-label="Reload player">↻</button>
+                    </div>
+                </div>
+                <div class="news-player-frame-wrap" id="newsPlayerFrameWrap">
+                    <iframe id="newsPlayerFrame"
+                            title="Embedded live feed"
+                            src="about:blank"
+                            allow="autoplay; encrypted-media; fullscreen"
+                            tabindex="-1"
+                            allowfullscreen></iframe>
+                    <video id="newsPlayerVideo" playsinline preload="metadata" hidden></video>
+                    <div class="news-player-frame-mask news-player-frame-mask-top" aria-hidden="true"></div>
+                    <div class="news-player-frame-mask news-player-frame-mask-bottom" aria-hidden="true"></div>
+                    <div class="news-player-controls" aria-label="Player controls">
+                        <input type="range" id="newsProgressRange" class="news-progress-range" min="0" max="100" value="100" aria-label="Playback progress" oninput="seekNewsPlayer(this.value)" />
+                        <span id="newsProgressLabel" class="news-progress-label is-live">LIVE 0:00</span>
+                        <button type="button" id="newsCaptionButton" onclick="toggleNewsCaptions()" aria-label="Toggle captions">CC</button>
+                        <button type="button" id="newsMuteButton" onclick="toggleNewsMute()" aria-label="Toggle volume">🔇</button>
+                        <input type="range" id="newsVolumeRange" min="0" max="100" value="70" aria-label="Volume" oninput="changeNewsVolume(this.value)" />
+                        <select id="newsResolutionSelect" aria-label="Resolution" onchange="changeNewsResolution(this.value)">
+                            <option value="auto">Auto</option>
+                            <option value="hd1080">1080p</option>
+                            <option value="hd720">720p</option>
+                            <option value="large">480p</option>
+                            <option value="medium">360p</option>
+                        </select>
+                        <select id="newsSpeedSelect" aria-label="Speed" onchange="changeNewsSpeed(this.value)">
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2x</option>
+                        </select>
+                        <button type="button" id="newsFullscreenButton" onclick="fullscreenNewsPlayer()" aria-label="Maximize player">⛶</button>
+                        <button type="button" id="newsMiniButton" onclick="minimizeNewsPlayer()" aria-label="Minimize player">▾</button>
+                    </div>
+                    <div class="news-player-loader" id="newsPlayerLoader">
+                        <strong>Loading live channel</strong>
+                        <span>Official feed opens here on this page.</span>
+                    </div>
+                </div>
+                <div class="news-player-footer">
+                    <p id="newsPlayerDescription">Select a channel to start live playback.</p>
+                    <span id="newsPlayerStatus">Ready</span>
+                </div>
+            </section>
+
+            <div class="news-board" id="newsBoard">
                 <section class="news-channel-list" aria-label="News channels">
                     @foreach (var channel in Model.Channels)
                     {
@@ -104,7 +175,17 @@
                                 </div>
                             </div>
                             <div class="news-actions">
-                                <a href="@channel.LiveUrl" target="_blank" rel="noopener" aria-label="Watch @channel.ChannelName live">▶</a>
+                                <button type="button"
+                                        class="news-play-button"
+                                        data-player-name="@channel.ChannelName"
+                                        data-player-id="@channel.Id"
+                                        data-player-logo="@channel.LogoUrl"
+                                        data-player-language="@channel.Language"
+                                        data-player-category="@channel.Category"
+                                        data-player-region="@channel.Region"
+                                        data-player-description="@channel.Description"
+                                        onclick="openNewsPlayer(this)"
+                                        aria-label="Play @channel.ChannelName live">▶</button>
                                 <a href="@channel.WebsiteUrl" target="_blank" rel="noopener" aria-label="Open @channel.ChannelName website">↗</a>
                             </div>
                         </article>
@@ -214,7 +295,9 @@
 
 .news-controls button,
 .news-actions a,
-.news-feature a {
+.news-feature a,
+.news-play-button,
+.news-player button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -329,6 +412,13 @@
     margin: -6px 0 16px;
 }
 
+.news-page.is-player-open .news-controls,
+.news-page.is-player-open .news-filter-status,
+.news-page.is-player-open .news-feature-grid,
+.news-page.is-player-open .news-board {
+    display: none !important;
+}
+
 .news-feature-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -441,6 +531,395 @@
 }
 
 .news-actions a:first-child,
+.news-feature .news-play-button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+}
+
+.news-player {
+    display: grid;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 14px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    box-shadow: 0 18px 42px color-mix(in srgb, var(--app-page-text) 12%, transparent);
+}
+
+.news-player[hidden] {
+    display: none !important;
+}
+
+.news-player.is-mini {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1080;
+    width: min(520px, calc(100vw - 28px));
+    margin: 0;
+    padding: 8px;
+    gap: 8px;
+    cursor: grab;
+}
+
+.news-player.is-mini.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+
+.news-player.is-mini .news-player-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.news-player.is-mini .news-player-back,
+.news-player.is-mini .news-player-footer {
+    display: none;
+}
+
+.news-player.is-mini .news-player-title img {
+    width: 32px;
+    height: 32px;
+}
+
+.news-player.is-mini .news-player-title h2 {
+    font-size: 0.92rem;
+}
+
+.news-player.is-mini .news-player-title span {
+    font-size: 0.68rem;
+}
+
+.news-player.is-mini .news-player-frame-wrap {
+    display: grid;
+    grid-template-rows: auto auto;
+    aspect-ratio: auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.news-player.is-mini .news-player-frame-wrap.is-chrome-hidden {
+    cursor: default;
+}
+
+.news-player.is-mini .news-player-frame-wrap.is-chrome-hidden .news-player-controls {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+
+.news-player.is-mini .news-player-frame-wrap iframe,
+.news-player.is-mini .news-player-frame-wrap video {
+    position: relative;
+    inset: auto;
+    grid-row: 1;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+    transform: none;
+}
+
+.news-player.is-mini .news-player-frame-mask-top {
+    height: 42px;
+}
+
+.news-player.is-mini .news-player-frame-mask-bottom {
+    display: none;
+}
+
+.news-player.is-mini .news-player-controls {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    grid-row: 2;
+    gap: 6px;
+    padding: 6px;
+    border-width: 1px 0 0;
+    border-radius: 0;
+    background: #101010;
+    backdrop-filter: none;
+    cursor: default;
+}
+
+.news-player.is-mini .news-player-controls button {
+    width: 34px;
+    height: 32px;
+    min-width: 34px;
+}
+
+.news-player.is-mini .news-progress-range {
+    flex: 1 1 145px;
+    min-width: 120px;
+}
+
+.news-player.is-mini .news-progress-label {
+    min-width: 74px;
+    font-size: 0.7rem;
+}
+
+.news-player.is-mini .news-player-controls input[type="range"]:not(.news-progress-range) {
+    width: 92px;
+}
+
+.news-player.is-mini .news-player-controls select {
+    min-width: 74px;
+    font-size: 0.74rem;
+}
+
+.news-player-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.news-player-back {
+    min-width: 142px;
+}
+
+.news-player-title {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 10px;
+}
+
+.news-player-title img {
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: var(--app-input);
+    border: 1px solid var(--app-input-border);
+}
+
+.news-player-title span {
+    display: block;
+    color: var(--app-muted);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
+.news-player-title h2 {
+    margin: 2px 0 0;
+    font-size: 1.18rem;
+    line-height: 1.15;
+    letter-spacing: 0;
+}
+
+.news-player-tools {
+    display: flex;
+    gap: 8px;
+}
+
+.news-player-tools button {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+}
+
+.news-player-frame-wrap {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 280px;
+    border: 1px solid color-mix(in srgb, var(--app-page-text) 16%, transparent);
+    border-radius: 8px;
+    background: #050505;
+}
+
+.news-player-frame-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #050505;
+    pointer-events: none;
+    transform: scale(1.045);
+    transform-origin: center;
+}
+
+.news-player-frame-wrap video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: #050505;
+    object-fit: contain;
+}
+
+.news-player-frame-wrap iframe[hidden],
+.news-player-frame-wrap video[hidden] {
+    display: none;
+}
+
+.news-player-frame-mask {
+    position: absolute;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.news-player-frame-mask-top {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 86px;
+    background: linear-gradient(180deg, rgba(5,5,5,0.96), rgba(5,5,5,0.55) 66%, transparent);
+}
+
+.news-player-frame-mask-bottom {
+    right: 0;
+    bottom: 0;
+    width: min(180px, 30%);
+    height: 54px;
+    background:
+        linear-gradient(0deg, rgba(5,5,5,0.96), rgba(5,5,5,0.72) 64%, transparent),
+        linear-gradient(270deg, rgba(5,5,5,0.96), rgba(5,5,5,0.64) 58%, transparent);
+}
+
+.news-player-frame-wrap.is-chrome-hidden {
+    cursor: none;
+}
+
+.news-player-frame-wrap.is-chrome-hidden .news-player-controls {
+    opacity: 0;
+    transform: translateY(14px);
+    pointer-events: none;
+}
+
+.news-player-frame-wrap.is-chrome-hidden .news-player-frame-mask-top {
+    opacity: 0;
+}
+
+.news-player-controls {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 12px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 42px;
+    padding: 7px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 8px;
+    background: rgba(5,5,5,0.78);
+    backdrop-filter: blur(10px);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.news-player-controls button {
+    width: 38px;
+    height: 34px;
+    min-width: 38px;
+    padding: 0;
+    border-color: rgba(255,255,255,0.16);
+    color: #fff;
+    background: rgba(255,255,255,0.08);
+}
+
+.news-progress-range {
+    flex: 1 1 220px;
+    min-width: 150px;
+}
+
+.news-progress-label {
+    min-width: 82px;
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-align: center;
+}
+
+.news-progress-label.is-live {
+    color: #ff3b3b;
+}
+
+.news-progress-label.is-live::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    border-radius: 999px;
+    background: #ff3b3b;
+    box-shadow: 0 0 0 4px rgba(255,59,59,0.18);
+    vertical-align: 1px;
+}
+
+.news-player-controls button.is-active {
+    border-color: rgba(255,255,255,0.36);
+    background: rgba(255,255,255,0.18);
+}
+
+.news-player-controls input[type="range"] {
+    width: min(170px, 32vw);
+    accent-color: #fff;
+}
+
+.news-player-controls .news-progress-range {
+    width: auto;
+}
+
+.news-player-controls select {
+    height: 34px;
+    min-width: 82px;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 8px;
+    color: #fff;
+    background: rgba(255,255,255,0.08);
+    font-size: 0.82rem;
+    font-weight: 800;
+    outline: none;
+}
+
+.news-player-controls select:focus {
+    border-color: rgba(255,255,255,0.38);
+}
+
+.news-player-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: grid;
+    place-content: center;
+    gap: 4px;
+    color: #fff;
+    text-align: center;
+    background:
+        radial-gradient(circle at 50% 45%, rgba(255,255,255,0.12), transparent 34%),
+        #050505;
+    pointer-events: none;
+}
+
+.news-player-loader.is-hidden {
+    display: none;
+}
+
+.news-player-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--app-muted);
+    font-weight: 750;
+}
+
+.news-player-footer p {
+    margin: 0;
+}
+
+.news-player-footer span {
+    white-space: nowrap;
+}
+
 .news-feature a {
     background: color-mix(in srgb, var(--app-card) 84%, #ffffff);
     color: var(--app-card-text);
@@ -451,7 +930,11 @@
 .news-actions a:hover,
 .news-actions a:focus-visible,
 .news-feature a:hover,
-.news-feature a:focus-visible {
+.news-feature a:focus-visible,
+.news-play-button:hover,
+.news-play-button:focus-visible,
+.news-player button:hover,
+.news-player button:focus-visible {
     transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--app-primary) 62%, var(--app-input-border));
     background: var(--app-primary);
@@ -536,6 +1019,7 @@
     }
 
     .news-feature a,
+    .news-feature .news-play-button,
     .news-actions {
         grid-column: 1 / -1;
         width: 100%;
@@ -548,6 +1032,31 @@
     .news-channel-title {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .news-player.is-mini {
+        right: 8px !important;
+        left: 8px !important;
+        bottom: 8px !important;
+        width: auto;
+    }
+
+    .news-player.is-mini .news-player-frame-wrap {
+        min-height: 0;
+    }
+
+    .news-player.is-mini .news-player-controls {
+        align-items: stretch;
+    }
+
+    .news-player.is-mini .news-progress-range {
+        flex-basis: 100%;
+        min-width: 100%;
+    }
+
+    .news-player.is-mini .news-player-controls input[type="range"]:not(.news-progress-range) {
+        flex: 1 1 96px;
+        width: auto;
     }
 }
 </style>
@@ -654,6 +1163,662 @@ function setNewsStatus(fallbackToAll) {
     status.textContent = fallbackToAll
         ? "Showing all news channels"
         : `Showing ${visibleCount} news channels`;
+}
+
+let currentNewsPlayerUrl = "";
+let currentNewsPlayerType = "frame";
+let currentNewsVolume = 70;
+let currentNewsMuted = false;
+let currentNewsCaptions = false;
+let currentNewsSpeed = 1;
+let currentNewsResolution = "auto";
+let newsProgressTimer = 0;
+let newsLiveStartedAt = 0;
+let currentNewsPaused = false;
+let newsChromeTimer = 0;
+let newsChromeEventsBound = false;
+let newsPlayerDrag = {
+    active: false,
+    moved: false,
+    startX: 0,
+    startY: 0,
+    left: 0,
+    top: 0
+};
+
+function setNewsPlayerLoading(isLoading) {
+    const loader = document.getElementById("newsPlayerLoader");
+    if (loader) {
+        loader.classList.toggle("is-hidden", !isLoading);
+    }
+}
+
+function syncNewsFullscreenButton() {
+    const button = document.getElementById("newsFullscreenButton");
+    if (!button) {
+        return;
+    }
+
+    const isFullscreen = Boolean(document.fullscreenElement);
+    button.textContent = isFullscreen ? "⤢" : "⛶";
+    button.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Maximize player");
+}
+
+function syncNewsMiniButton() {
+    const button = document.getElementById("newsMiniButton");
+    const player = document.getElementById("newsPlayer");
+    if (!button || !player) {
+        return;
+    }
+
+    const isMini = player.classList.contains("is-mini");
+    button.textContent = isMini ? "▣" : "▾";
+    button.setAttribute("aria-label", isMini ? "Restore player" : "Minimize player");
+}
+
+function showNewsPlayerChrome() {
+    const frameWrap = document.getElementById("newsPlayerFrameWrap");
+    if (!frameWrap) {
+        return;
+    }
+
+    frameWrap.classList.remove("is-chrome-hidden");
+    window.clearTimeout(newsChromeTimer);
+    newsChromeTimer = window.setTimeout(hideNewsPlayerChrome, 3000);
+}
+
+function hideNewsPlayerChrome() {
+    const frameWrap = document.getElementById("newsPlayerFrameWrap");
+    if (frameWrap && !document.activeElement?.closest(".news-player-controls")) {
+        frameWrap.classList.add("is-chrome-hidden");
+    }
+}
+
+function bindNewsPlayerChromeEvents() {
+    if (newsChromeEventsBound) {
+        return;
+    }
+
+    const frameWrap = document.getElementById("newsPlayerFrameWrap");
+    if (!frameWrap) {
+        return;
+    }
+
+    ["mousemove", "touchstart", "pointerdown", "focusin"].forEach(eventName => {
+        frameWrap.addEventListener(eventName, showNewsPlayerChrome, { passive: true });
+    });
+
+    frameWrap.addEventListener("click", function (event) {
+        if (event.target.closest(".news-player-controls") || newsPlayerDrag.moved) {
+            newsPlayerDrag.moved = false;
+            return;
+        }
+
+        toggleNewsPlayback();
+        showNewsPlayerChrome();
+    });
+
+    document.addEventListener("fullscreenchange", function () {
+        syncNewsFullscreenButton();
+        showNewsPlayerChrome();
+    });
+
+    bindNewsMiniDragEvents();
+
+    newsChromeEventsBound = true;
+}
+
+function bindNewsMiniDragEvents() {
+    const player = document.getElementById("newsPlayer");
+    if (!player) {
+        return;
+    }
+
+    player.addEventListener("pointerdown", function (event) {
+        if (!player.classList.contains("is-mini") || event.target.closest("button, input, select, a, .news-player-controls")) {
+            return;
+        }
+
+        const rect = player.getBoundingClientRect();
+        newsPlayerDrag = {
+            active: true,
+            moved: false,
+            startX: event.clientX,
+            startY: event.clientY,
+            left: rect.left,
+            top: rect.top
+        };
+        player.classList.add("is-dragging");
+        player.setPointerCapture?.(event.pointerId);
+    });
+
+    player.addEventListener("pointermove", function (event) {
+        if (!newsPlayerDrag.active) {
+            return;
+        }
+
+        const dx = event.clientX - newsPlayerDrag.startX;
+        const dy = event.clientY - newsPlayerDrag.startY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+            newsPlayerDrag.moved = true;
+        }
+
+        const rect = player.getBoundingClientRect();
+        const nextLeft = Math.max(8, Math.min(window.innerWidth - rect.width - 8, newsPlayerDrag.left + dx));
+        const nextTop = Math.max(8, Math.min(window.innerHeight - rect.height - 8, newsPlayerDrag.top + dy));
+        player.style.left = `${nextLeft}px`;
+        player.style.top = `${nextTop}px`;
+        player.style.right = "auto";
+        player.style.bottom = "auto";
+    });
+
+    ["pointerup", "pointercancel"].forEach(eventName => {
+        player.addEventListener(eventName, function () {
+            if (!newsPlayerDrag.active) {
+                return;
+            }
+
+            newsPlayerDrag.active = false;
+            player.classList.remove("is-dragging");
+            window.setTimeout(function () {
+                newsPlayerDrag.moved = false;
+            }, 0);
+        });
+    });
+}
+
+function restoreNewsPlayerFromMini() {
+    const player = document.getElementById("newsPlayer");
+    if (!player) {
+        return;
+    }
+
+    player.classList.remove("is-mini", "is-dragging");
+    player.style.left = "";
+    player.style.top = "";
+    player.style.right = "";
+    player.style.bottom = "";
+    if (!player.hidden) {
+        document.querySelector(".news-page")?.classList.add("is-player-open");
+        document.getElementById("newsBoard")?.setAttribute("aria-hidden", "true");
+    }
+    syncNewsMiniButton();
+    showNewsPlayerChrome();
+    player.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function sendNewsFrameCommand(command, args = []) {
+    const frame = document.getElementById("newsPlayerFrame");
+    if (!frame || frame.hidden || !frame.contentWindow) {
+        return;
+    }
+
+    frame.contentWindow.postMessage(JSON.stringify({
+        event: "command",
+        func: command,
+        args
+    }), "*");
+}
+
+function prepareNewsFrameUrl(url) {
+    if (!url) {
+        return "about:blank";
+    }
+
+    try {
+        const playerUrl = new URL(url, window.location.origin);
+        playerUrl.searchParams.set("enablejsapi", "1");
+        playerUrl.searchParams.set("origin", window.location.origin);
+        playerUrl.searchParams.set("controls", "0");
+        playerUrl.searchParams.set("fs", "0");
+        playerUrl.searchParams.set("disablekb", "1");
+        playerUrl.searchParams.set("cc_load_policy", currentNewsCaptions ? "1" : "0");
+        playerUrl.searchParams.set("cc_lang_pref", "en");
+        playerUrl.searchParams.set("hl", "en");
+        return playerUrl.toString();
+    }
+    catch {
+        return url;
+    }
+}
+
+function formatNewsTime(seconds) {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+        return "LIVE";
+    }
+
+    const total = Math.floor(seconds);
+    const minutes = Math.floor(total / 60);
+    const remainingSeconds = total % 60;
+    return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function updateNewsProgress() {
+    const progress = document.getElementById("newsProgressRange");
+    const label = document.getElementById("newsProgressLabel");
+    const video = document.getElementById("newsPlayerVideo");
+
+    if (!progress || !label) {
+        return;
+    }
+
+    if (currentNewsPlayerType === "native" && video && Number.isFinite(video.duration) && video.duration > 0) {
+        progress.disabled = false;
+        progress.value = String(Math.min(100, Math.max(0, (video.currentTime / video.duration) * 100)));
+        label.textContent = `${formatNewsTime(video.currentTime)} / ${formatNewsTime(video.duration)}`;
+        label.classList.remove("is-live");
+        return;
+    }
+
+    const elapsed = newsLiveStartedAt ? Math.max(0, (Date.now() - newsLiveStartedAt) / 1000) : 0;
+    progress.disabled = true;
+    progress.value = "100";
+    label.textContent = `LIVE ${formatNewsTime(elapsed)}`;
+    label.classList.add("is-live");
+}
+
+function startNewsProgressTimer() {
+    window.clearInterval(newsProgressTimer);
+    updateNewsProgress();
+    newsProgressTimer = window.setInterval(updateNewsProgress, 1000);
+}
+
+function stopNewsProgressTimer() {
+    window.clearInterval(newsProgressTimer);
+    newsProgressTimer = 0;
+}
+
+function syncNewsPlayerControls() {
+    const muteButton = document.getElementById("newsMuteButton");
+    const captionButton = document.getElementById("newsCaptionButton");
+    const volumeRange = document.getElementById("newsVolumeRange");
+    const speedSelect = document.getElementById("newsSpeedSelect");
+    const resolutionSelect = document.getElementById("newsResolutionSelect");
+    const video = document.getElementById("newsPlayerVideo");
+
+    if (volumeRange) {
+        volumeRange.value = String(currentNewsVolume);
+    }
+
+    if (muteButton) {
+        muteButton.textContent = currentNewsMuted || currentNewsVolume === 0 ? "🔇" : "🔊";
+        muteButton.classList.toggle("is-active", !currentNewsMuted && currentNewsVolume > 0);
+    }
+
+    if (captionButton) {
+        captionButton.classList.toggle("is-active", currentNewsCaptions);
+    }
+
+    if (speedSelect) {
+        speedSelect.value = String(currentNewsSpeed);
+    }
+
+    if (resolutionSelect) {
+        resolutionSelect.value = currentNewsResolution;
+    }
+
+    if (video) {
+        video.volume = Math.max(0, Math.min(1, currentNewsVolume / 100));
+        video.muted = currentNewsMuted || currentNewsVolume === 0;
+        video.playbackRate = currentNewsSpeed;
+    }
+
+    if (currentNewsPlayerType === "frame") {
+        sendNewsFrameCommand(currentNewsMuted || currentNewsVolume === 0 ? "mute" : "unMute");
+        sendNewsFrameCommand("setVolume", [currentNewsVolume]);
+        sendNewsFrameCommand("setPlaybackRate", [currentNewsSpeed]);
+        sendNewsFrameCommand(currentNewsPaused ? "pauseVideo" : "playVideo");
+        if (currentNewsResolution !== "auto") {
+            sendNewsFrameCommand("setPlaybackQuality", [currentNewsResolution]);
+        }
+    }
+
+    updateNewsProgress();
+}
+
+function resetNewsPlayerMedia() {
+    const frame = document.getElementById("newsPlayerFrame");
+    const video = document.getElementById("newsPlayerVideo");
+
+    if (frame) {
+        frame.hidden = true;
+        frame.src = "about:blank";
+    }
+
+    if (video) {
+        video.pause();
+        video.hidden = true;
+        video.removeAttribute("src");
+        video.load();
+    }
+
+    stopNewsProgressTimer();
+    currentNewsPaused = false;
+    newsLiveStartedAt = 0;
+}
+
+async function resolveNewsLiveUrl(channelId) {
+    try {
+        const response = await fetch(`/Home/ResolveNewsLive?channelId=${encodeURIComponent(channelId)}`, {
+            headers: {
+                "Accept": "application/json",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        });
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: "Could not resolve the live feed."
+            };
+        }
+
+        const result = await response.json();
+        return {
+            success: Boolean(result.success),
+            playerUrl: result.playerUrl || "",
+            playerType: result.playerType || "frame",
+            message: result.message || ""
+        };
+    }
+    catch {
+        return {
+            success: false,
+            message: "Could not resolve the live feed."
+        };
+    }
+}
+
+async function openNewsPlayer(button) {
+    const page = document.querySelector(".news-page");
+    const player = document.getElementById("newsPlayer");
+    const board = document.getElementById("newsBoard");
+    const frame = document.getElementById("newsPlayerFrame");
+    const video = document.getElementById("newsPlayerVideo");
+    const logo = document.getElementById("newsPlayerLogo");
+    const name = document.getElementById("newsPlayerName");
+    const meta = document.getElementById("newsPlayerMeta");
+    const description = document.getElementById("newsPlayerDescription");
+    const status = document.getElementById("newsPlayerStatus");
+
+    if (!player || !frame || !button) {
+        return;
+    }
+
+    const channelId = button.dataset.playerId || "";
+    const keepMini = player.classList.contains("is-mini");
+
+    if (logo) {
+        logo.src = button.dataset.playerLogo || "";
+        logo.alt = `${button.dataset.playerName || "News channel"} logo`;
+    }
+
+    if (name) {
+        name.textContent = button.dataset.playerName || "News Live";
+    }
+
+    if (meta) {
+        meta.textContent = [button.dataset.playerCategory, button.dataset.playerLanguage, button.dataset.playerRegion]
+            .filter(Boolean)
+            .join(" · ") || "Live channel";
+    }
+
+    if (description) {
+        description.textContent = button.dataset.playerDescription || "Official live feed is playing inside this page.";
+    }
+
+    setNewsPlayerLoading(true);
+    resetNewsPlayerMedia();
+    bindNewsPlayerChromeEvents();
+    showNewsPlayerChrome();
+    player.hidden = false;
+
+    if (keepMini) {
+        page?.classList.remove("is-player-open");
+        board?.removeAttribute("aria-hidden");
+        player.classList.add("is-mini");
+        syncNewsMiniButton();
+    }
+    else {
+        page?.classList.add("is-player-open");
+        board?.setAttribute("aria-hidden", "true");
+        player.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    if (status) {
+        status.textContent = "Finding live feed";
+    }
+
+    const resolved = await resolveNewsLiveUrl(channelId);
+    currentNewsPlayerUrl = resolved.playerUrl || "";
+    currentNewsPlayerType = resolved.playerType || "frame";
+    currentNewsPaused = false;
+    newsLiveStartedAt = Date.now();
+
+    if (!resolved.success && !resolved.playerUrl) {
+        setNewsPlayerLoading(false);
+        if (status) {
+            status.textContent = resolved.message || "Live feed unavailable";
+        }
+        return;
+    }
+
+    if (status) {
+        status.textContent = resolved.success ? "Live" : (resolved.message || "Trying fallback");
+    }
+
+    if (currentNewsPlayerType === "native" && video) {
+        frame.hidden = true;
+        video.hidden = false;
+        video.muted = currentNewsMuted || currentNewsVolume === 0;
+        video.volume = Math.max(0, Math.min(1, currentNewsVolume / 100));
+        video.playbackRate = currentNewsSpeed;
+        video.autoplay = true;
+        video.src = currentNewsPlayerUrl;
+        Array.from(video.textTracks || []).forEach(track => {
+            track.mode = currentNewsCaptions ? "showing" : "disabled";
+        });
+        video.onloadeddata = function () {
+            setNewsPlayerLoading(false);
+            startNewsProgressTimer();
+        };
+        video.onerror = function () {
+            setNewsPlayerLoading(false);
+            if (status) {
+                status.textContent = "Live feed unavailable";
+            }
+        };
+        video.play().catch(function () {
+            currentNewsPaused = true;
+            syncNewsPlayerControls();
+            if (status) {
+                status.textContent = "Tap reload to start";
+            }
+        });
+    }
+    else {
+        video?.setAttribute("hidden", "");
+        frame.hidden = false;
+        frame.onload = function () {
+            setNewsPlayerLoading(false);
+            syncNewsPlayerControls();
+            startNewsProgressTimer();
+        };
+        frame.src = prepareNewsFrameUrl(currentNewsPlayerUrl);
+    }
+
+    syncNewsPlayerControls();
+
+    window.setTimeout(function () {
+        setNewsPlayerLoading(false);
+    }, 4500);
+}
+
+function closeNewsPlayer() {
+    const page = document.querySelector(".news-page");
+    const player = document.getElementById("newsPlayer");
+    const board = document.getElementById("newsBoard");
+    resetNewsPlayerMedia();
+    window.clearTimeout(newsChromeTimer);
+    restoreNewsPlayerFromMini();
+    currentNewsPlayerUrl = "";
+    currentNewsPlayerType = "frame";
+    currentNewsPaused = false;
+    page?.classList.remove("is-player-open");
+    player?.setAttribute("hidden", "");
+    board?.removeAttribute("aria-hidden");
+}
+
+function toggleNewsPlayback() {
+    const video = document.getElementById("newsPlayerVideo");
+    currentNewsPaused = !currentNewsPaused;
+
+    if (currentNewsPlayerType === "native" && video) {
+        if (currentNewsPaused) {
+            video.pause();
+        }
+        else {
+            video.play().catch(function () {
+                currentNewsPaused = true;
+            }).finally(syncNewsPlayerControls);
+        }
+    }
+    else {
+        sendNewsFrameCommand(currentNewsPaused ? "pauseVideo" : "playVideo");
+    }
+
+    syncNewsPlayerControls();
+}
+
+function reloadNewsPlayer() {
+    const frame = document.getElementById("newsPlayerFrame");
+    const video = document.getElementById("newsPlayerVideo");
+    if (!frame || !currentNewsPlayerUrl) {
+        return;
+    }
+
+    setNewsPlayerLoading(true);
+    if (currentNewsPlayerType === "native" && video) {
+        video.currentTime = 0;
+        video.play().finally(function () {
+            setNewsPlayerLoading(false);
+            startNewsProgressTimer();
+        });
+    }
+    else {
+        frame.src = "about:blank";
+        window.setTimeout(function () {
+            frame.src = prepareNewsFrameUrl(currentNewsPlayerUrl);
+        }, 80);
+    }
+}
+
+function seekNewsPlayer(value) {
+    const video = document.getElementById("newsPlayerVideo");
+    const parsed = Number(value);
+
+    if (currentNewsPlayerType !== "native" || !video || !Number.isFinite(video.duration) || video.duration <= 0 || !Number.isFinite(parsed)) {
+        updateNewsProgress();
+        return;
+    }
+
+    video.currentTime = Math.max(0, Math.min(video.duration, (parsed / 100) * video.duration));
+    updateNewsProgress();
+}
+
+function toggleNewsCaptions() {
+    const video = document.getElementById("newsPlayerVideo");
+    currentNewsCaptions = !currentNewsCaptions;
+
+    if (currentNewsPlayerType === "native" && video) {
+        Array.from(video.textTracks || []).forEach(track => {
+            track.mode = currentNewsCaptions ? "showing" : "disabled";
+        });
+    }
+    else if (currentNewsPlayerUrl) {
+        const frame = document.getElementById("newsPlayerFrame");
+        sendNewsFrameCommand(currentNewsCaptions ? "loadModule" : "unloadModule", ["captions"]);
+        if (currentNewsCaptions) {
+            sendNewsFrameCommand("setOption", ["captions", "track", { languageCode: "en" }]);
+            sendNewsFrameCommand("setOption", ["captions", "fontSize", 1]);
+        }
+        if (frame) {
+            frame.src = prepareNewsFrameUrl(currentNewsPlayerUrl);
+        }
+    }
+
+    syncNewsPlayerControls();
+}
+
+function changeNewsResolution(value) {
+    currentNewsResolution = value || "auto";
+    if (currentNewsPlayerType === "frame" && currentNewsResolution !== "auto") {
+        sendNewsFrameCommand("setPlaybackQuality", [currentNewsResolution]);
+    }
+    syncNewsPlayerControls();
+}
+
+function changeNewsSpeed(value) {
+    const parsed = Number(value);
+    currentNewsSpeed = Number.isFinite(parsed) ? Math.max(0.25, Math.min(2, parsed)) : 1;
+    syncNewsPlayerControls();
+}
+
+function toggleNewsMute() {
+    currentNewsMuted = !currentNewsMuted;
+    if (!currentNewsMuted && currentNewsVolume === 0) {
+        currentNewsVolume = 70;
+    }
+    syncNewsPlayerControls();
+}
+
+function changeNewsVolume(value) {
+    const parsed = Number(value);
+    currentNewsVolume = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 70;
+    currentNewsMuted = currentNewsVolume === 0;
+    syncNewsPlayerControls();
+}
+
+function fullscreenNewsPlayer() {
+    const frameWrap = document.getElementById("newsPlayerFrameWrap");
+    restoreNewsPlayerFromMini();
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen();
+        return;
+    }
+
+    if (!frameWrap || !frameWrap.requestFullscreen) {
+        return;
+    }
+
+    frameWrap.requestFullscreen();
+    showNewsPlayerChrome();
+}
+
+function minimizeNewsPlayer() {
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen();
+    }
+
+    const player = document.getElementById("newsPlayer");
+    if (!player) {
+        return;
+    }
+
+    if (player.classList.contains("is-mini")) {
+        restoreNewsPlayerFromMini();
+        return;
+    }
+
+    player.classList.add("is-mini");
+    player.style.left = "";
+    player.style.top = "";
+    player.style.right = "18px";
+    player.style.bottom = "18px";
+    document.querySelector(".news-page")?.classList.remove("is-player-open");
+    document.getElementById("newsBoard")?.removeAttribute("aria-hidden");
+    syncNewsMiniButton();
+    showNewsPlayerChrome();
 }
 
 function resetNewsFilters() {

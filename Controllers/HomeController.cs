@@ -1,6 +1,8 @@
 using AmarShowsBook.Services;
 using Npgsql;
 using System.Diagnostics;
+using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AmarShowsBook.Data;
@@ -244,6 +246,155 @@ foreach (var show in schedules)
                 });
 
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ResolveNewsLive(long? channelId, string? liveUrl)
+        {
+            if (channelId.HasValue)
+            {
+                liveUrl = await _context.NewsChannels
+                    .AsNoTracking()
+                    .Where(channel => channel.Id == channelId.Value && channel.IsActive)
+                    .Select(channel => channel.LiveUrl)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (string.IsNullOrWhiteSpace(liveUrl))
+            {
+                return BadRequest(new { success = false, message = "Live feed is missing." });
+            }
+
+            if (!Uri.TryCreate(liveUrl, UriKind.Absolute, out var uri))
+            {
+                return BadRequest(new { success = false, message = "Live feed is not valid." });
+            }
+
+            var host = uri.Host.Replace("www.", "", StringComparison.OrdinalIgnoreCase).ToLowerInvariant();
+            var isYouTube = host is "youtube.com" or "youtu.be" or "m.youtube.com" or "youtube-nocookie.com";
+
+            if (!isYouTube)
+            {
+                return Json(new
+                {
+                    success = true,
+                    playerUrl = uri.ToString(),
+                    playerType = IsNativeLiveStream(uri) ? "native" : "frame"
+                });
+            }
+
+            var directVideoId = GetYouTubeVideoId(uri);
+            if (!string.IsNullOrWhiteSpace(directVideoId))
+            {
+                return Json(new
+                {
+                    success = true,
+                    playerUrl = BuildYouTubeEmbedUrl(directVideoId),
+                    playerType = "frame"
+                });
+            }
+
+            var resolveUrl = BuildYouTubeLiveResolveUrl(uri);
+            try
+            {
+                using var http = new HttpClient();
+                http.Timeout = TimeSpan.FromSeconds(12);
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 AmarShowsBook/1.0");
+                http.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-IN,en;q=0.9");
+
+                var html = await http.GetStringAsync(resolveUrl);
+                var videoId = ResolveYouTubeLiveVideoId(html);
+
+                if (string.IsNullOrWhiteSpace(videoId))
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Live feed is not available for this channel right now."
+                    });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    playerUrl = BuildYouTubeEmbedUrl(videoId),
+                    playerType = "frame"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not resolve live feed for channel {ChannelId}", channelId);
+                return Json(new
+                {
+                    success = false,
+                    message = "Could not load the live stream right now."
+                });
+            }
+        }
+
+        private static bool IsNativeLiveStream(Uri uri)
+        {
+            var path = uri.AbsolutePath.ToLowerInvariant();
+            return path.EndsWith(".m3u8", StringComparison.Ordinal)
+                || path.EndsWith(".mp4", StringComparison.Ordinal)
+                || path.EndsWith(".webm", StringComparison.Ordinal)
+                || path.EndsWith(".ogg", StringComparison.Ordinal);
+        }
+
+        private static string BuildYouTubeLiveResolveUrl(Uri uri)
+        {
+            var path = uri.AbsolutePath.TrimEnd('/');
+            if (path.EndsWith("/live", StringComparison.OrdinalIgnoreCase))
+            {
+                return uri.ToString();
+            }
+
+            if (uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+            {
+                return uri.ToString();
+            }
+
+            return $"https://www.youtube.com{path}/live";
+        }
+
+        private static string BuildYouTubeEmbedUrl(string videoId)
+        {
+            return $"https://www.youtube-nocookie.com/embed/{WebUtility.UrlEncode(videoId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&controls=0&fs=0&disablekb=1&enablejsapi=1";
+        }
+
+        private static string? GetYouTubeVideoId(Uri uri)
+        {
+            if (uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+            {
+                return uri.AbsolutePath.Trim('/').Split('/').FirstOrDefault();
+            }
+
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("v", out var videoId))
+            {
+                return videoId.FirstOrDefault();
+            }
+
+            var embedMatch = Regex.Match(uri.AbsolutePath, @"/embed/([^/?]+)", RegexOptions.IgnoreCase);
+            return embedMatch.Success ? embedMatch.Groups[1].Value : null;
+        }
+
+        private static string? ResolveYouTubeLiveVideoId(string html)
+        {
+            var embedMatch = Regex.Match(html, @"youtube\.com/embed/([A-Za-z0-9_-]{6,})", RegexOptions.IgnoreCase);
+            if (embedMatch.Success)
+            {
+                return embedMatch.Groups[1].Value;
+            }
+
+            var watchEndpointMatch = Regex.Match(html, @"""watchEndpoint""\s*:\s*\{\s*""videoId""\s*:\s*""([A-Za-z0-9_-]{6,})""", RegexOptions.IgnoreCase);
+            if (watchEndpointMatch.Success)
+            {
+                return watchEndpointMatch.Groups[1].Value;
+            }
+
+            var videoIdMatch = Regex.Match(html, @"""videoId""\s*:\s*""([A-Za-z0-9_-]{6,})""", RegexOptions.IgnoreCase);
+            return videoIdMatch.Success ? videoIdMatch.Groups[1].Value : null;
         }
 
         private async Task EnsureHomeShowListingView()
