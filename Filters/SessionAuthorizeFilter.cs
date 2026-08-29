@@ -155,6 +155,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         {
             return action.Equals("Index", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("ShowTime", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("News", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("Error", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("GetCountries", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("GetStates", StringComparison.OrdinalIgnoreCase) ||

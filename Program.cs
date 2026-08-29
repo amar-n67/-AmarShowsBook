@@ -116,6 +116,7 @@ EnsureApplicationVersionTable(app);
 EnsureDeveloperProfileStore(app);
 EnsureAmaroChatStore(app);
 EnsureRbacStore(app);
+EnsureNewsStore(app);
 
 app.Lifetime.ApplicationStarted.Register(
 ()=>
@@ -530,6 +531,77 @@ FROM public.developer_profiles;
         app.Logger.LogWarning(
         ex,
         "Developer profile schema check skipped"
+        );
+    }
+}
+
+static void EnsureNewsStore(WebApplication app)
+{
+    using var scope =
+    app.Services.CreateScope();
+
+    try
+    {
+        var context =
+        scope.ServiceProvider
+        .GetRequiredService<
+        ApplicationDbContext>();
+
+        var sqlPath = Path.Combine(
+            app.Environment.ContentRootPath,
+            "Database",
+            "ensure_news_channels.sql");
+
+        if (File.Exists(sqlPath))
+        {
+            context.Database.ExecuteSqlRaw(File.ReadAllText(sqlPath));
+            return;
+        }
+
+        context.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS public.news_channels
+(
+    id bigserial PRIMARY KEY,
+    channel_code varchar(80) NOT NULL UNIQUE,
+    channel_name varchar(180) NOT NULL,
+    language varchar(80) NOT NULL,
+    category varchar(80) NOT NULL,
+    region varchar(120) NOT NULL,
+    country varchar(120) NOT NULL DEFAULT 'India',
+    state varchar(120) NOT NULL DEFAULT 'All',
+    city varchar(120) NOT NULL DEFAULT 'All',
+    description text,
+    logo_url text,
+    website_url text,
+    live_url text,
+    sort_order integer NOT NULL DEFAULT 0,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS public.news_broadcast_slots
+(
+    id bigserial PRIMARY KEY,
+    channel_id bigint NOT NULL REFERENCES public.news_channels(id) ON DELETE CASCADE,
+    program_title varchar(180) NOT NULL,
+    program_type varchar(80) NOT NULL,
+    starts_at timestamp with time zone NOT NULL,
+    ends_at timestamp with time zone NOT NULL,
+    is_live boolean NOT NULL DEFAULT true,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.news_channels ADD COLUMN IF NOT EXISTS country varchar(120) NOT NULL DEFAULT 'India';
+ALTER TABLE public.news_channels ADD COLUMN IF NOT EXISTS state varchar(120) NOT NULL DEFAULT 'All';
+ALTER TABLE public.news_channels ADD COLUMN IF NOT EXISTS city varchar(120) NOT NULL DEFAULT 'All';
+");
+    }
+    catch(Exception ex)
+    {
+        app.Logger.LogWarning(
+        ex,
+        "News schema check skipped"
         );
     }
 }

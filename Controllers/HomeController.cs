@@ -175,6 +175,77 @@ foreach (var show in schedules)
         throw;
     }
 }
+        public async Task<IActionResult> News()
+        {
+            var todayStartUtc = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Local).ToUniversalTime();
+            var decemberEndUtc = DateTime.SpecifyKind(new DateTime(2027, 1, 1), DateTimeKind.Local).ToUniversalTime();
+
+            var channels = await _context.NewsChannels
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.ChannelName)
+                .ToListAsync();
+
+            var slots = await _context.NewsBroadcastSlots
+                .AsNoTracking()
+                .Include(x => x.Channel)
+                .Where(x => x.StartsAt >= todayStartUtc && x.StartsAt < decemberEndUtc)
+                .OrderBy(x => x.StartsAt)
+                .ToListAsync();
+
+            var model = new NewsViewModel
+            {
+                Channels = channels,
+                Slots = slots,
+                Languages = channels
+                    .Select(x => x.Language)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                Categories = channels
+                    .Select(x => x.Category)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                Countries = channels
+                    .Select(x => x.Country)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                States = channels
+                    .Select(x => x.State)
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && !x.Equals("All", StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                Cities = channels
+                    .Select(x => x.City)
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && !x.Equals("All", StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList()
+            };
+
+            await _activityLogger.LogAsync(
+                action: "VIEW_NEWS",
+                module: "HOME",
+                entityType: "NEWS_CHANNEL",
+                description: "Viewed news channels",
+                status: "SUCCESS",
+                isError: 0,
+                metadata: new
+                {
+                    ChannelCount = channels.Count,
+                    SlotCount = slots.Count
+                });
+
+            return View(model);
+        }
+
         private async Task EnsureHomeShowListingView()
         {
             if (_homeShowListingViewReady)

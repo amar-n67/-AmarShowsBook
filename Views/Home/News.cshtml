@@ -1,0 +1,674 @@
+@model AmarShowsBook.Models.ViewModels.NewsViewModel
+@{
+    ViewData["Title"] = "News";
+    var nextSlot = Model.Slots.FirstOrDefault();
+    var featured = Model.Channels.Take(6).ToList();
+}
+
+<section class="news-page">
+    <div class="news-shell">
+        <header class="news-hero">
+            <div>
+                <span class="news-kicker">Live Desk</span>
+                <h1>News</h1>
+                <p>Live channels, regional desks, and upcoming bulletins in one place.</p>
+            </div>
+            <div class="news-summary">
+                <span>Channels</span>
+                <strong>@Model.Channels.Count active</strong>
+                <small>@(nextSlot == null ? "Schedule ready" : $"Next {nextSlot.StartsAt.ToLocalTime():dd MMM, hh:mm tt}")</small>
+            </div>
+        </header>
+
+        <div class="news-controls" aria-label="News filters">
+            <label class="news-search-field">
+                <span>Search</span>
+                <input id="newsFilterSearch" type="search" placeholder="Channel, language, location" oninput="filterNews()" />
+            </label>
+            <label>
+                <span>Country</span>
+                <select id="newsCountry" onchange="filterNews()">
+                    <option value="">All Country</option>
+                    @foreach (var country in Model.Countries)
+                    {
+                        <option value="@country">@country</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Language</span>
+                <select id="newsLanguage" onchange="filterNews()">
+                    <option value="">All Language</option>
+                    @foreach (var language in Model.Languages)
+                    {
+                        <option value="@language">@language</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Category</span>
+                <select id="newsCategory" onchange="filterNews()">
+                    <option value="">All Category</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </label>
+            <button type="button" class="news-reset-button" onclick="resetNewsFilters()" aria-label="Reset news filters">
+                <span aria-hidden="true">↺</span>
+                <span>Reset</span>
+            </button>
+            <button type="button" class="news-home-button" onclick="goNewsHome()" aria-label="Go home and reset filters">
+                <span aria-hidden="true">←</span>
+                <span>Home</span>
+            </button>
+        </div>
+        <p class="news-filter-status" id="newsFilterStatus" aria-live="polite">Showing all news channels</p>
+
+            <div class="news-feature-grid">
+                @foreach (var channel in featured)
+                {
+                    <article class="news-feature" data-news-card data-name="@channel.ChannelName" data-language="@channel.Language" data-category="@channel.Category" data-region="@channel.Region" data-country="@channel.Country" data-state="@channel.State" data-city="@channel.City">
+                        <img src="@channel.LogoUrl" alt="@channel.ChannelName logo" loading="lazy" />
+                        <div>
+                            <span>@channel.Category</span>
+                            <h2>@channel.ChannelName</h2>
+                            <p>@channel.Language · @channel.Region</p>
+                        </div>
+                        <a href="@channel.LiveUrl" target="_blank" rel="noopener" aria-label="Watch @channel.ChannelName live">▶</a>
+                    </article>
+                }
+            </div>
+
+            <div class="news-board">
+                <section class="news-channel-list" aria-label="News channels">
+                    @foreach (var channel in Model.Channels)
+                    {
+                        <article class="news-channel" data-news-card data-name="@channel.ChannelName" data-language="@channel.Language" data-category="@channel.Category" data-region="@channel.Region" data-country="@channel.Country" data-state="@channel.State" data-city="@channel.City">
+                            <img src="@channel.LogoUrl" alt="@channel.ChannelName logo" loading="lazy" />
+                            <div class="news-channel-main">
+                                <div class="news-channel-title">
+                                    <h2>@channel.ChannelName</h2>
+                                    <span>@channel.Language</span>
+                                </div>
+                                <p>@channel.Description</p>
+                                <div class="news-tags">
+                                    <span>@channel.Category</span>
+                                    <span>@channel.Region</span>
+                                    <span>@channel.Country</span>
+                                    @if (!string.Equals(channel.State, "All", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span>@channel.State</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="news-actions">
+                                <a href="@channel.LiveUrl" target="_blank" rel="noopener" aria-label="Watch @channel.ChannelName live">▶</a>
+                                <a href="@channel.WebsiteUrl" target="_blank" rel="noopener" aria-label="Open @channel.ChannelName website">↗</a>
+                            </div>
+                        </article>
+                    }
+                </section>
+
+                <aside class="news-schedule" aria-label="Upcoming news schedule">
+                    <div class="news-schedule-head">
+                        <span>Upcoming</span>
+                        <strong>@Model.Slots.Count slots</strong>
+                    </div>
+                    @foreach (var slot in Model.Slots)
+                    {
+                        <article class="news-slot" data-news-slot data-channel="@slot.Channel?.ChannelName" data-type="@slot.ProgramType" data-country="@slot.Channel?.Country" data-state="@slot.Channel?.State" data-city="@slot.Channel?.City">
+                            <time datetime="@slot.StartsAt.ToString("O")">@slot.StartsAt.ToLocalTime().ToString("dd MMM · hh:mm tt")</time>
+                            <h3>@slot.ProgramTitle</h3>
+                            <p>@slot.ProgramType</p>
+                        </article>
+                    }
+                </aside>
+            </div>
+    </div>
+</section>
+
+<style>
+.news-page {
+    color: var(--app-page-text);
+    padding-bottom: 40px;
+}
+
+.news-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+}
+
+.news-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 220px;
+    padding: 28px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    background:
+        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px),
+        linear-gradient(135deg, rgba(255,242,199,0.94), rgba(245,178,196,0.86), rgba(146,229,221,0.86));
+    color: #231f20;
+    box-shadow: 0 22px 64px rgba(35,31,32,0.22);
+}
+
+.news-kicker,
+.news-schedule-head span,
+.news-feature span {
+    color: #231f20;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.news-hero h1 {
+    margin: 8px 0;
+    color: #231f20;
+    font-size: clamp(2.5rem, 6vw, 5.2rem);
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+.news-hero p {
+    max-width: 640px;
+    color: #34303a;
+    font-size: 1.05rem;
+    margin: 0;
+}
+
+.news-summary {
+    min-width: 190px;
+    padding: 14px;
+    border: 1px dashed rgba(35,31,32,0.44);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.38);
+    text-align: right;
+}
+
+.news-summary span,
+.news-summary small {
+    color: var(--app-muted);
+    font-weight: 800;
+}
+
+.news-summary > span {
+    display: block;
+    color: #34303a;
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.news-summary strong {
+    display: block;
+    color: #231f20;
+    font-size: 1.3rem;
+    font-weight: 900;
+}
+
+.news-controls button,
+.news-actions a,
+.news-feature a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--app-page-text) 14%, transparent);
+    background: color-mix(in srgb, var(--app-card) 78%, var(--app-accent) 22%);
+    color: var(--app-page-text);
+    text-decoration: none;
+    min-width: 44px;
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+.news-controls {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr)) repeat(2, minmax(100px, 0.7fr));
+    align-items: end;
+    gap: 16px;
+    margin: 0 0 18px;
+    padding: 22px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+}
+
+.news-controls label {
+    display: grid;
+    min-width: 0;
+    gap: 7px;
+    color: var(--app-muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.news-controls label > span {
+    display: block;
+    line-height: 1.1;
+}
+
+.news-controls input,
+.news-controls select {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
+    box-sizing: border-box;
+    border: 1px solid var(--app-input-border);
+    border-radius: 999px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    padding: 0 14px;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 42px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.news-controls select {
+    padding-right: 34px;
+    background-image:
+        linear-gradient(45deg, transparent 50%, currentColor 50%),
+        linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 18px,
+        calc(100% - 13px) 18px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+.news-controls input[type="search"]::-webkit-search-decoration,
+.news-controls input[type="search"]::-webkit-search-cancel-button,
+.news-controls input[type="search"]::-webkit-search-results-button,
+.news-controls input[type="search"]::-webkit-search-results-decoration {
+    display: none;
+}
+
+.news-reset-button,
+.news-home-button {
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
+    padding: 0 14px;
+    white-space: nowrap;
+}
+
+.news-reset-button:hover,
+.news-reset-button:focus-visible,
+.news-home-button:hover,
+.news-home-button:focus-visible {
+    background: color-mix(in srgb, var(--app-card) 62%, var(--app-accent) 38%);
+    color: var(--app-page-text);
+}
+
+.news-filter-status {
+    color: var(--app-muted);
+    font-weight: 700;
+    margin: -6px 0 16px;
+}
+
+.news-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.news-feature,
+.news-channel,
+.news-slot {
+    background: color-mix(in srgb, var(--app-card) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--app-page-text) 12%, transparent);
+    border-radius: 8px;
+    color: var(--app-card-text);
+    box-shadow: 0 14px 34px color-mix(in srgb, var(--app-page-text) 8%, transparent);
+}
+
+.news-feature {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+}
+
+.news-feature img,
+.news-channel img {
+    width: 58px;
+    height: 58px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: var(--app-input);
+    border: 1px solid color-mix(in srgb, var(--app-page-text) 10%, transparent);
+}
+
+.news-feature h2,
+.news-channel h2,
+.news-slot h3 {
+    margin: 0;
+    letter-spacing: 0;
+}
+
+.news-feature h2,
+.news-channel h2 {
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.news-feature p,
+.news-channel p,
+.news-slot p {
+    margin: 4px 0 0;
+    color: var(--app-muted);
+}
+
+.news-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    gap: 16px;
+    align-items: start;
+}
+
+.news-channel-list {
+    display: grid;
+    gap: 10px;
+}
+
+.news-channel {
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+}
+
+.news-channel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.news-channel-title span,
+.news-tags span {
+    border: 1px solid color-mix(in srgb, var(--app-accent-strong) 22%, transparent);
+    color: var(--app-accent-strong);
+    background: color-mix(in srgb, var(--app-accent-strong) 12%, var(--app-card));
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.news-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.news-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.news-actions a {
+    background: var(--app-accent);
+    color: var(--app-page-text);
+}
+
+.news-actions a:first-child,
+.news-feature a {
+    background: var(--app-primary);
+    color: #ffffff;
+}
+
+.news-controls button:hover,
+.news-controls button:focus-visible,
+.news-actions a:hover,
+.news-actions a:focus-visible,
+.news-feature a:hover,
+.news-feature a:focus-visible {
+    border-color: color-mix(in srgb, var(--app-accent) 44%, var(--app-page-text) 12%);
+    background: color-mix(in srgb, var(--app-card) 62%, var(--app-accent) 38%);
+    color: var(--app-page-text);
+}
+
+.news-schedule {
+    position: sticky;
+    top: 86px;
+    display: grid;
+    gap: 8px;
+    max-height: calc(100vh - 110px);
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.news-schedule-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 2px;
+}
+
+.news-slot {
+    padding: 11px 12px;
+}
+
+.news-slot time {
+    color: var(--app-primary);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.news-slot h3 {
+    font-size: 0.95rem;
+    line-height: 1.25;
+    margin-top: 3px;
+}
+
+.news-hidden {
+    display: none !important;
+}
+
+@@media (max-width: 900px) {
+    .news-hero {
+        align-items: start;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .news-controls,
+    .news-feature-grid,
+    .news-board {
+        grid-template-columns: 1fr;
+    }
+
+    .news-controls {
+        gap: 12px;
+    }
+
+    .news-summary {
+        width: 100%;
+        text-align: left;
+    }
+
+    .news-schedule {
+        position: static;
+        max-height: none;
+    }
+}
+
+@@media (max-width: 560px) {
+    .news-page {
+        padding-inline: 10px;
+    }
+
+    .news-feature,
+    .news-channel {
+        grid-template-columns: 54px minmax(0, 1fr);
+    }
+
+    .news-feature a,
+    .news-actions {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .news-actions a {
+        flex: 1;
+    }
+
+    .news-channel-title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+function normalizeNewsText(value) {
+    return (value || "")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function newsLocationMatches(card, country, state, city) {
+    const cardCountry = normalizeNewsText(card.dataset.country);
+    const cardState = normalizeNewsText(card.dataset.state);
+    const cardCity = normalizeNewsText(card.dataset.city);
+    const cardRegion = normalizeNewsText(card.dataset.region);
+
+    const matchesCountry = !country ||
+        cardCountry === country ||
+        cardCountry === "world" ||
+        cardCountry === "all" ||
+        cardRegion.includes(country);
+
+    const matchesState = !state ||
+        cardState === state ||
+        cardState === "all" ||
+        cardRegion.includes(state);
+
+    const matchesCity = !city ||
+        cardCity === city ||
+        cardCity === "all" ||
+        cardRegion.includes(city);
+
+    return matchesCountry && matchesState && matchesCity;
+}
+
+function getNewsFilters() {
+    return {
+        search: normalizeNewsText(document.getElementById("newsFilterSearch")?.value),
+        country: normalizeNewsText(document.getElementById("newsCountry")?.value),
+        language: normalizeNewsText(document.getElementById("newsLanguage")?.value),
+        category: normalizeNewsText(document.getElementById("newsCategory")?.value)
+    };
+}
+
+function filterNews() {
+    const filters = getNewsFilters();
+
+    document.querySelectorAll("[data-news-card]").forEach(card => {
+        const haystack = [
+            card.dataset.name,
+            card.dataset.language,
+            card.dataset.category,
+            card.dataset.region,
+            card.dataset.country,
+            card.dataset.state,
+            card.dataset.city,
+            card.textContent
+        ].map(normalizeNewsText).join(" ");
+
+        const matchesSearch = !filters.search || haystack.includes(filters.search);
+        const matchesLanguage = !filters.language || normalizeNewsText(card.dataset.language) === filters.language;
+        const matchesCategory = !filters.category || normalizeNewsText(card.dataset.category) === filters.category;
+        const matchesLocation = newsLocationMatches(card, filters.country, "", "");
+        card.classList.toggle("news-hidden", !(matchesSearch && matchesLanguage && matchesCategory && matchesLocation));
+    });
+
+    const visibleChannels = Array.from(document.querySelectorAll(".news-channel"))
+        .filter(card => !card.classList.contains("news-hidden"));
+    const fallbackToAll = visibleChannels.length === 0;
+
+    if (fallbackToAll) {
+        document.querySelectorAll("[data-news-card]").forEach(card => card.classList.remove("news-hidden"));
+    }
+
+    document.querySelectorAll("[data-news-slot]").forEach(slot => {
+        const haystack = [
+            slot.dataset.channel,
+            slot.dataset.type,
+            slot.dataset.country,
+            slot.dataset.state,
+            slot.dataset.city,
+            slot.textContent
+        ].map(normalizeNewsText).join(" ");
+
+        const matchesSearch = !filters.search || haystack.includes(filters.search);
+        const matchesLocation = newsLocationMatches(slot, filters.country, "", "");
+        slot.classList.toggle("news-hidden", !fallbackToAll && !(matchesSearch && matchesLocation));
+    });
+
+    setNewsStatus(fallbackToAll);
+}
+
+function setNewsStatus(fallbackToAll) {
+    const status = document.getElementById("newsFilterStatus");
+    if (!status) return;
+
+    const visibleCount = Array.from(document.querySelectorAll(".news-channel"))
+        .filter(card => !card.classList.contains("news-hidden")).length;
+
+    status.textContent = fallbackToAll
+        ? "Showing all news channels"
+        : `Showing ${visibleCount} news channels`;
+}
+
+function resetNewsFilters() {
+    const search = document.getElementById("newsFilterSearch");
+    const country = document.getElementById("newsCountry");
+    const language = document.getElementById("newsLanguage");
+    const category = document.getElementById("newsCategory");
+    if (search) search.value = "";
+    if (country) country.value = "";
+    if (language) language.value = "";
+    if (category) category.value = "";
+    filterNews();
+}
+
+function goNewsHome() {
+    resetNewsFilters();
+    try {
+        localStorage.removeItem("showtimeFilters");
+        sessionStorage.removeItem("showtimeCurrentLocationInitialized");
+    }
+    catch {
+    }
+    window.location.href = "/Home/ShowTime";
+}
+
+document.addEventListener("DOMContentLoaded", filterNews);
+</script>

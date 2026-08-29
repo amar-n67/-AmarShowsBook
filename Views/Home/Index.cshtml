@@ -1616,6 +1616,11 @@ function changeShowType(type)
         showTypeSelect.value=selectedType;
     }
     saveShowtimeFilters();
+    if(selectedType.toLowerCase()==="news")
+    {
+        window.location.href="/Home/News";
+        return;
+    }
     window.location.href="/Home/ShowTime?type=" + encodeURIComponent(selectedType);
 }
 

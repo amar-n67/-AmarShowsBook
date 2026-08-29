@@ -53,6 +53,10 @@ public DbSet<DummyCard> DummyCards { get; set; }
 
         public DbSet<LiveStream> LiveStreams { get; set; }
 
+        public DbSet<NewsChannel> NewsChannels { get; set; }
+
+        public DbSet<NewsBroadcastSlot> NewsBroadcastSlots { get; set; }
+
         public DbSet<Location> Locations { get; set; }
 
         public DbSet<ShowSchedule> ShowSchedules { get; set; }
@@ -410,6 +414,23 @@ modelBuilder.Entity<Booking>(entity =>
         entity.Property(x=>x.PosterUrl).HasColumnName("PosterUrl");
         entity.Property(x=>x.Images).HasColumnName("Images");
         entity.Property(x=>x.TrailerUrl).HasColumnName("TrailerUrl");
+    });
+
+    modelBuilder.Entity<NewsChannel>(entity =>
+    {
+        entity.ToTable("news_channels");
+        entity.HasKey(x=>x.Id);
+        entity.HasIndex(x=>x.ChannelCode).IsUnique();
+    });
+
+    modelBuilder.Entity<NewsBroadcastSlot>(entity =>
+    {
+        entity.ToTable("news_broadcast_slots");
+        entity.HasKey(x=>x.Id);
+        entity.HasOne(x=>x.Channel)
+            .WithMany()
+            .HasForeignKey(x=>x.ChannelId)
+            .OnDelete(DeleteBehavior.Cascade);
     });
 
     modelBuilder.Entity<ShowSchedule>()
