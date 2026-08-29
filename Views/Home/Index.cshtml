@@ -13,6 +13,39 @@
     var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
     var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
     var isLoggedIn = Context.Session.GetString("UserEmail") != null;
+    var platformMode = string.Equals(selectedType, "OTT", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase);
+    var platformTitle = string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase)
+        ? "Music platforms"
+        : "OTT platforms";
+    var platformSubtitle = string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase)
+        ? "Stream playlists, albums, podcasts, and live audio from popular services."
+        : "Explore movies, series, originals, sports, and family entertainment from top services.";
+    var ottPlatforms = new[]
+    {
+        new { Name = "Netflix", Description = "Global films, series, documentaries, and originals.", Url = "https://www.netflix.com", Accent = "#e50914", Initials = "N" },
+        new { Name = "Prime Video", Description = "Movies, shows, rentals, live sport, and Amazon Originals.", Url = "https://www.primevideo.com", Accent = "#00a8e1", Initials = "PV" },
+        new { Name = "Disney+ Hotstar", Description = "Disney, Marvel, Star, sports, and regional entertainment.", Url = "https://www.hotstar.com", Accent = "#1f80e0", Initials = "D+" },
+        new { Name = "JioCinema", Description = "Indian originals, films, reality shows, and live events.", Url = "https://www.jiocinema.com", Accent = "#d9008d", Initials = "JC" },
+        new { Name = "Sony LIV", Description = "TV shows, sport, originals, films, and premium series.", Url = "https://www.sonyliv.com", Accent = "#673ab7", Initials = "SL" },
+        new { Name = "ZEE5", Description = "Movies, serials, originals, music videos, and regional content.", Url = "https://www.zee5.com", Accent = "#8230c6", Initials = "Z5" },
+        new { Name = "YouTube", Description = "Trailers, creators, live streams, rentals, and premium channels.", Url = "https://www.youtube.com", Accent = "#ff0033", Initials = "YT" },
+        new { Name = "Aha", Description = "Telugu and Tamil films, shows, originals, and comedy specials.", Url = "https://www.aha.video", Accent = "#ff6b00", Initials = "AH" }
+    };
+    var musicPlatforms = new[]
+    {
+        new { Name = "Spotify", Description = "Playlists, albums, podcasts, audiobooks, and discovery mixes.", Url = "https://open.spotify.com", Accent = "#1db954", Initials = "SP" },
+        new { Name = "Apple Music", Description = "Lossless music, curated radio, music videos, and artist pages.", Url = "https://music.apple.com", Accent = "#fa233b", Initials = "AM" },
+        new { Name = "YouTube Music", Description = "Official tracks, videos, live performances, and personalized mixes.", Url = "https://music.youtube.com", Accent = "#ff0033", Initials = "YM" },
+        new { Name = "Amazon Music", Description = "Songs, podcasts, stations, playlists, and Prime music access.", Url = "https://music.amazon.com", Accent = "#00a8e1", Initials = "AZ" },
+        new { Name = "JioSaavn", Description = "Bollywood, indie, regional songs, podcasts, and radio.", Url = "https://www.jiosaavn.com", Accent = "#2bc5b4", Initials = "JS" },
+        new { Name = "Gaana", Description = "Hindi, regional, devotional, radio, and mood-based playlists.", Url = "https://gaana.com", Accent = "#e72c30", Initials = "GA" },
+        new { Name = "SoundCloud", Description = "Independent artists, DJ sets, remixes, podcasts, and community audio.", Url = "https://soundcloud.com", Accent = "#ff5500", Initials = "SC" },
+        new { Name = "Tidal", Description = "HiFi audio, editorial playlists, videos, and artist-first releases.", Url = "https://tidal.com", Accent = "#111111", Initials = "TD" }
+    };
+    var selectedPlatforms = string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase)
+        ? musicPlatforms
+        : ottPlatforms;
 }
 
 <section class="showtime-page">
@@ -40,6 +73,8 @@
             <option value="Live" selected="@(selectedType == "Live" ? "selected" : null)">Live</option>
             <option value="Standup" selected="@(selectedType == "Standup" ? "selected" : null)">Standup</option>
             <option value="News" selected="@(selectedType == "News" ? "selected" : null)">News</option>
+            <option value="OTT" selected="@(selectedType == "OTT" ? "selected" : null)">OTT's</option>
+            <option value="Music" selected="@(selectedType == "Music" ? "selected" : null)">Music</option>
         </select>
     </div>
     <div class="location-picker">
@@ -105,6 +140,33 @@
     <p class="location-status" id="locationStatus" aria-live="polite"></p>
 </div>
 
+    @if (platformMode)
+    {
+        <section class="platform-board" aria-labelledby="platformBoardTitle">
+            <div class="platform-board-head">
+                <div>
+                    <span>@selectedType</span>
+                    <h2 id="platformBoardTitle">@platformTitle</h2>
+                    <p>@platformSubtitle</p>
+                </div>
+            </div>
+            <div class="platform-grid">
+                @foreach (var platform in selectedPlatforms)
+                {
+                    <a class="platform-card" href="@platform.Url" target="_blank" rel="noopener noreferrer" style="--platform-accent:@platform.Accent">
+                        <span class="platform-mark" aria-hidden="true">@platform.Initials</span>
+                        <span class="platform-copy">
+                            <strong>@platform.Name</strong>
+                            <small>@platform.Description</small>
+                        </span>
+                        <span class="platform-open" aria-hidden="true">↗</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
     <div class="schedule-board">
         @if (!Model.HomeShows.Any())
         {
@@ -239,6 +301,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 }
         }
     </div>
+    }
     <div class="empty-slate filter-empty-state" id="filterEmptyState" hidden>
         <span>No shows</span>
         <h2 id="filterEmptyTitle">No shows available.</h2>
@@ -864,6 +927,144 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     .empty-slate p {
         margin: 0;
         color: var(--app-muted);
+    }
+
+    .platform-board {
+        display: grid;
+        gap: 14px;
+        margin-top: 8px;
+    }
+
+    .platform-board-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding: 18px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background:
+            linear-gradient(135deg, color-mix(in srgb, var(--app-card) 84%, #fff 16%), var(--app-card)),
+            radial-gradient(circle at 90% 20%, color-mix(in srgb, var(--app-primary) 16%, transparent), transparent 34%);
+        color: var(--app-card-text);
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+
+    .platform-board-head span {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--app-primary);
+        font-size: 0.68rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .platform-board-head h2 {
+        margin: 0 0 5px;
+        color: inherit;
+        font-size: 1.35rem;
+        font-weight: 950;
+        line-height: 1.15;
+    }
+
+    .platform-board-head p {
+        margin: 0;
+        max-width: 680px;
+        color: var(--app-muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    .platform-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 14px;
+        align-items: stretch;
+    }
+
+    .platform-card {
+        --platform-accent: var(--app-primary);
+        position: relative;
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) 28px;
+        gap: 12px;
+        align-items: center;
+        min-height: 112px;
+        padding: 16px;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--platform-accent) 24%, var(--app-input-border));
+        border-radius: 8px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72)),
+            linear-gradient(135deg, color-mix(in srgb, var(--platform-accent) 18%, transparent), transparent 46%);
+        color: var(--app-card-text);
+        text-decoration: none;
+        box-shadow: 0 12px 26px rgba(15,23,42,.1);
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .platform-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: var(--platform-accent);
+    }
+
+    .platform-card:hover,
+    .platform-card:focus-visible {
+        transform: translateY(-3px);
+        border-color: var(--platform-accent);
+        box-shadow: 0 16px 34px rgba(15,23,42,.14);
+        outline: none;
+    }
+
+    .platform-mark {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: var(--platform-accent);
+        color: #fff;
+        font-size: 0.92rem;
+        font-weight: 950;
+        letter-spacing: 0;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 8px 18px color-mix(in srgb, var(--platform-accent) 28%, transparent);
+    }
+
+    .platform-copy {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
+    }
+
+    .platform-copy strong {
+        color: inherit;
+        font-size: 1rem;
+        font-weight: 950;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    .platform-copy small {
+        color: var(--app-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+
+    .platform-open {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--platform-accent) 12%, #fff);
+        color: var(--platform-accent);
+        font-weight: 950;
+        line-height: 1;
     }
     
     .movie-title {
@@ -1537,6 +1738,26 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     .schedule-board {
         grid-template-columns: 1fr;
         gap: 14px;
+    }
+
+    .platform-board-head {
+        padding: 14px;
+    }
+
+    .platform-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .platform-card {
+        grid-template-columns: 42px minmax(0, 1fr) 28px;
+        min-height: 102px;
+        padding: 14px;
+    }
+
+    .platform-mark {
+        width: 42px;
+        height: 42px;
+        font-size: 0.82rem;
     }
 
     .show-card {
