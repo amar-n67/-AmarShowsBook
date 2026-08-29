@@ -219,15 +219,17 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    border: 1px solid color-mix(in srgb, var(--app-page-text) 14%, transparent);
-    background: color-mix(in srgb, var(--app-card) 78%, var(--app-accent) 22%);
-    color: var(--app-page-text);
+    border: 1px solid color-mix(in srgb, var(--app-primary) 22%, var(--app-input-border));
+    background: color-mix(in srgb, var(--app-card) 84%, #ffffff);
+    color: var(--app-card-text);
     text-decoration: none;
     min-width: 44px;
     min-height: 42px;
     padding: 0 14px;
     border-radius: 999px;
-    font-weight: 800;
+    font-weight: 900;
+    box-shadow: 0 8px 20px rgba(15,23,42,.08);
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
 }
 
 .news-controls {
@@ -313,8 +315,12 @@
 .news-reset-button:focus-visible,
 .news-home-button:hover,
 .news-home-button:focus-visible {
-    background: color-mix(in srgb, var(--app-card) 62%, var(--app-accent) 38%);
-    color: var(--app-page-text);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--app-primary) 62%, var(--app-input-border));
+    background: var(--app-primary);
+    color: #fff;
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--app-primary) 28%, transparent);
+    outline: none;
 }
 
 .news-filter-status {
@@ -430,14 +436,14 @@
 }
 
 .news-actions a {
-    background: var(--app-accent);
-    color: var(--app-page-text);
+    background: color-mix(in srgb, var(--app-card) 84%, #ffffff);
+    color: var(--app-card-text);
 }
 
 .news-actions a:first-child,
 .news-feature a {
-    background: var(--app-primary);
-    color: #ffffff;
+    background: color-mix(in srgb, var(--app-card) 84%, #ffffff);
+    color: var(--app-card-text);
 }
 
 .news-controls button:hover,
@@ -446,9 +452,12 @@
 .news-actions a:focus-visible,
 .news-feature a:hover,
 .news-feature a:focus-visible {
-    border-color: color-mix(in srgb, var(--app-accent) 44%, var(--app-page-text) 12%);
-    background: color-mix(in srgb, var(--app-card) 62%, var(--app-accent) 38%);
-    color: var(--app-page-text);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--app-primary) 62%, var(--app-input-border));
+    background: var(--app-primary);
+    color: #fff;
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--app-primary) 28%, transparent);
+    outline: none;
 }
 
 .news-schedule {
