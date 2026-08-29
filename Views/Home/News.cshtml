@@ -668,16 +668,24 @@ function resetNewsFilters() {
     filterNews();
 }
 
-function goNewsHome() {
-    resetNewsFilters();
+function prepareHomeResetAfterNews() {
     try {
         localStorage.removeItem("showtimeFilters");
+        sessionStorage.setItem("showtimeResetAfterNews", "true");
         sessionStorage.removeItem("showtimeCurrentLocationInitialized");
     }
     catch {
     }
+}
+
+function goNewsHome() {
+    resetNewsFilters();
+    prepareHomeResetAfterNews();
     window.location.href = "/Home/ShowTime";
 }
 
-document.addEventListener("DOMContentLoaded", filterNews);
+document.addEventListener("DOMContentLoaded", function () {
+    prepareHomeResetAfterNews();
+    filterNews();
+});
 </script>

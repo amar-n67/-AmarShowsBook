@@ -1563,6 +1563,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 <script>
 const showtimeFilterStorageKey="showtimeFilters";
 const showtimeLaunchStorageKey="showtimeCurrentLocationInitialized";
+const showtimeResetAfterNewsStorageKey="showtimeResetAfterNews";
 let locationDisplayOverride="";
 let currentLocationFilter=null;
 let isRestoringShowtimeFilters=false;
@@ -2763,8 +2764,16 @@ async ()=>{
 await loadCountries();
 populateDynamicFilters();
 let shouldUseCurrentLocationOnly=true;
+let shouldResetAfterNews=false;
 try
 {
+shouldResetAfterNews=sessionStorage.getItem(showtimeResetAfterNewsStorageKey)==="true";
+if(shouldResetAfterNews)
+{
+sessionStorage.removeItem(showtimeResetAfterNewsStorageKey);
+sessionStorage.removeItem(showtimeLaunchStorageKey);
+clearSavedShowtimeFilters();
+}
 shouldUseCurrentLocationOnly=sessionStorage.getItem(showtimeLaunchStorageKey)!=="true";
 sessionStorage.setItem(showtimeLaunchStorageKey,"true");
 }
