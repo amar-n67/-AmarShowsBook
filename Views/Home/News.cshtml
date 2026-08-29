@@ -93,10 +93,6 @@
 
             <section class="news-player" id="newsPlayer" aria-label="Live news player" hidden>
                 <div class="news-player-head">
-                    <button type="button" class="news-player-back" onclick="closeNewsPlayer()" aria-label="Back to news channels">
-                        <span aria-hidden="true">←</span>
-                        <span>Back to channels</span>
-                    </button>
                     <div class="news-player-title">
                         <img id="newsPlayerLogo" src="" alt="" />
                         <div>
@@ -106,6 +102,7 @@
                     </div>
                     <div class="news-player-tools">
                         <button type="button" onclick="reloadNewsPlayer()" aria-label="Reload player">↻</button>
+                        <button type="button" class="news-player-close" onclick="closeNewsPlayer()" aria-label="Close popup player">×</button>
                     </div>
                 </div>
                 <div class="news-player-frame-wrap" id="newsPlayerFrameWrap">
@@ -573,7 +570,6 @@
     grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.news-player.is-mini .news-player-back,
 .news-player.is-mini .news-player-footer {
     display: none;
 }
@@ -676,10 +672,6 @@
     gap: 12px;
 }
 
-.news-player-back {
-    min-width: 142px;
-}
-
 .news-player-title {
     display: flex;
     align-items: center;
@@ -719,6 +711,14 @@
     width: 42px;
     height: 42px;
     padding: 0;
+}
+
+.news-player-close {
+    display: none;
+}
+
+.news-player.is-mini .news-player-close {
+    display: inline-flex;
 }
 
 .news-player-frame-wrap {
