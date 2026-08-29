@@ -52,9 +52,56 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             var userId =
             TryGetUserId(http.Session.GetString("UserId"));
 
+            if (userId == null)
+            {
+                context.Result = new RedirectToActionResult(
+                    "Login",
+                    "Auth",
+                    new { returnUrl = http.Request.Path + http.Request.QueryString });
+                return;
+            }
+
+            if (RequiresRoleAccess(controller, action, userId.Value, out var roleDeniedMessage) &&
+                roleDeniedMessage != null)
+            {
+                await _activityLogger.LogAsync(
+                    userId: userId,
+                    action: "RBAC_ROLE_ACCESS_DENIED",
+                    module: controller.ToUpperInvariant(),
+                    entityType: "ROUTE",
+                    description: roleDeniedMessage,
+                    status: "FAILURE",
+                    isError: 1,
+                    metadata: new
+                    {
+                        controller,
+                        action,
+                        path = http.Request.Path.ToString()
+                    });
+
+                if (IsAjaxOrApi(http.Request))
+                {
+                    context.Result = new ObjectResult(new
+                    {
+                        success = false,
+                        message = roleDeniedMessage
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                    return;
+                }
+
+                context.Result = new RedirectToActionResult(
+                    "ShowTime",
+                    "Home",
+                    new { accessDenied = true });
+                return;
+            }
+
             // RBAC-denied API calls return 403 JSON; page requests go back to the customer showTime page.
             if (RequiresPermission(controller, action, out var moduleCode, out var actionType) &&
-                (userId == null || !_rbacService.HasPermission(userId.Value, moduleCode, actionType)))
+                !_rbacService.HasPermission(userId.Value, moduleCode, actionType))
             {
                 await _activityLogger.LogAsync(
                     userId: userId,
@@ -216,6 +263,71 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         };
 
         return true;
+    }
+
+    private bool RequiresRoleAccess(
+        string controller,
+        string action,
+        int userId,
+        out string? deniedMessage)
+    {
+        deniedMessage = null;
+
+        if (controller.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            if (action.Equals("Dashboard", StringComparison.OrdinalIgnoreCase) ||
+                action.Equals("Index", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!_rbacService.CanOpenAdminDashboard(userId))
+                {
+                    deniedMessage = "Only Administrator, Super Admin, or Developer can access the admin dashboard.";
+                }
+
+                return true;
+            }
+
+            if (IsSuperAdminAreaAction(action) &&
+                !_rbacService.CanAccessSuperAdminArea(userId))
+            {
+                deniedMessage = "Only Super Admin or Developer can access this admin page.";
+                return true;
+            }
+
+            if (IsExportAction(action) && !_rbacService.IsSuperAdmin(userId))
+            {
+                deniedMessage = "Only Super Admin can export data.";
+                return true;
+            }
+        }
+
+        if (controller.Equals("Booking", StringComparison.OrdinalIgnoreCase) &&
+            action.Equals("DownloadTicket", StringComparison.OrdinalIgnoreCase) &&
+            !_rbacService.IsSuperAdmin(userId))
+        {
+            deniedMessage = "Only Super Admin can download or print tickets.";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsSuperAdminAreaAction(string action)
+    {
+        return action.Equals("Roles", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("CreateRole", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("UpdateRole", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("Permissions", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("CreatePermission", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("ToggleRolePermission", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("ManageShows", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("CreateManagedShow", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("UpdateManagedShow", StringComparison.OrdinalIgnoreCase) ||
+               action.Equals("DeleteManagedShow", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsExportAction(string action)
+    {
+        return action.StartsWith("Export", StringComparison.OrdinalIgnoreCase);
     }
 
     private static int? TryGetUserId(string? value)

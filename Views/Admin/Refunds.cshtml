@@ -1,9 +1,11 @@
 
 @model IEnumerable<AmarShowsBook.Models.Admin.VwRefundSummary>
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refund Management";
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
     var totalRefunds = Model.Count();
     var successRefunds = Model.Count(x => x.RefundStatus == "SUCCESS");
     var pendingRefunds = Model.Count(x => x.RefundStatus == "PENDING");
@@ -63,7 +65,9 @@
 
             </a>
 
-            <a
+            @if (canUsePrintTools)
+            {
+                <a
     asp-action="ExportRefunds"
     class="btn btn-dark rounded-pill px-4">
 
@@ -71,6 +75,7 @@
     Export
 
 </a>
+            }
         </div>
     </div>
     <div class="row g-4 mb-4">

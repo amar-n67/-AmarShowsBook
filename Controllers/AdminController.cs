@@ -45,6 +45,31 @@ namespace AmarShowsBook.Controllers
             ActionExecutionDelegate next)
         {
             var actionName = context.ActionDescriptor.RouteValues["action"] ?? string.Empty;
+            var currentUserId = TryGetSessionUserId();
+
+            if (RequiresAdminDashboardRole(actionName) &&
+                (currentUserId == null || !_rbacService.CanOpenAdminDashboard(currentUserId.Value)))
+            {
+                TempData["Error"] = "Only Administrator, Super Admin, or Developer can access the admin dashboard.";
+                context.Result = RedirectToAction("ShowTime", "Home");
+                return;
+            }
+
+            if (RequiresSuperAdminAreaRole(actionName) &&
+                (currentUserId == null || !_rbacService.CanAccessSuperAdminArea(currentUserId.Value)))
+            {
+                TempData["Error"] = "Only Super Admin or Developer can access this admin page.";
+                context.Result = RedirectToAction("ShowTime", "Home");
+                return;
+            }
+
+            if (actionName.StartsWith("Export", StringComparison.OrdinalIgnoreCase) &&
+                (currentUserId == null || !_rbacService.IsSuperAdmin(currentUserId.Value)))
+            {
+                TempData["Error"] = "Only Super Admin can export data.";
+                context.Result = RedirectToAction("ShowTime", "Home");
+                return;
+            }
 
             if (TryGetAdminPermission(actionName, out var moduleCode, out var actionType))
             {
@@ -63,6 +88,33 @@ namespace AmarShowsBook.Controllers
             ViewData["AdminNotificationCount"] = await GetAdminNotificationCount();
 
             await next();
+        }
+
+        private int? TryGetSessionUserId()
+        {
+            return int.TryParse(HttpContext.Session.GetString("UserId"), out var userId)
+                ? userId
+                : null;
+        }
+
+        private static bool RequiresAdminDashboardRole(string actionName)
+        {
+            return actionName.Equals(nameof(Dashboard), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals("Index", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool RequiresSuperAdminAreaRole(string actionName)
+        {
+            return actionName.Equals(nameof(Roles), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(CreateRole), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(UpdateRole), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Permissions), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(CreatePermission), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(ToggleRolePermission), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(ManageShows), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(CreateManagedShow), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(UpdateManagedShow), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(DeleteManagedShow), StringComparison.OrdinalIgnoreCase);
         }
 
 

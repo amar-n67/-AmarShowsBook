@@ -722,6 +722,8 @@ public class AmaroController : Controller
                     string.Equals(x.ActionType, action, StringComparison.OrdinalIgnoreCase));
         }
 
+        var canExport = _rbacService.IsSuperAdmin(userId);
+
         if (wantsDeveloper && !Can("DEVELOPER", "EDIT") && !_rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER"))
         {
             return new AmaroAskResponse(
@@ -738,6 +740,16 @@ public class AmaroController : Controller
 
         if (normalized.Contains("export"))
         {
+            if (!canExport)
+            {
+                return new AmaroAskResponse(
+                    "Only Super Admin can export data.",
+                    BuildPageOptions(menuItems, userId, normalized)
+                        .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase))
+                        .Take(4)
+                        .ToArray());
+            }
+
             var exportOptions = BuildPageOptions(menuItems, userId, normalized)
                 .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase))
                 .Take(4)
@@ -770,12 +782,13 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 $"Refund desk: {pending} pending, {failed} failed/error. Approve, reject, retry, and notes still run through the refund detail page for audit safety.",
+                FilterExportOptions(canExport,
                 new[]
                 {
                     new AmaroQuickOption("Refunds", "/Admin/Refunds"),
                     new AmaroQuickOption("Admin Dashboard", "/Admin/Dashboard"),
                     new AmaroQuickOption("Export Refunds", "/Admin/ExportRefunds")
-                });
+                }));
         }
 
         if ((normalized.Contains("security") || normalized.Contains("scanner") || normalized.Contains("ticket scan")) && Can("SCANNER"))
@@ -786,12 +799,13 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 $"Security desk: {issues} open issue rows, {invalid} invalid/duplicate scans, {devices} scanner devices registered.",
+                FilterExportOptions(canExport,
                 new[]
                 {
                     new AmaroQuickOption("Security", "/Admin/Security"),
                     new AmaroQuickOption("Scanner Devices", "/Admin/Security", "ask:open security scanner devices"),
                     new AmaroQuickOption("Export Security", "", "admin-export")
-                });
+                }));
         }
 
         if ((normalized.Contains("wallet") || normalized.Contains("balance")) && Can("WALLET"))
@@ -802,11 +816,12 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 $"Wallet desk: {active} active wallets, {blocked} blocked/suspended wallets, total balance INR {totalBalance:0.00}.",
+                FilterExportOptions(canExport,
                 new[]
                 {
                     new AmaroQuickOption("Wallets", "/Admin/Wallets"),
                     new AmaroQuickOption("Export Wallets", "", "admin-export")
-                });
+                }));
         }
 
         if ((normalized.Contains("notification") || normalized.Contains("message")) && Can("NOTIFICATION"))
@@ -816,11 +831,12 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 $"Notification center: {pending} pending/processing, {errors} failed/error.",
+                FilterExportOptions(canExport,
                 new[]
                 {
                     new AmaroQuickOption("Notifications", "/Admin/Notifications"),
                     new AmaroQuickOption("Export Notifications", "", "admin-export")
-                });
+                }));
         }
 
         if ((normalized.Contains("coupon") || normalized.Contains("discount")) && Can("COUPON"))
@@ -830,11 +846,12 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 $"Coupon usage: {used} usage rows, total discount INR {discount:0.00}.",
+                FilterExportOptions(canExport,
                 new[]
                 {
                     new AmaroQuickOption("Coupon Used", "/Admin/CouponUsage"),
                     new AmaroQuickOption("Export Coupons", "", "admin-export")
-                });
+                }));
         }
 
         if ((normalized.Contains("transaction") || normalized.Contains("payment")) && Can("PAYMENT"))
@@ -844,11 +861,12 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 $"Payment desk: {success} successful transactions, {failed} failed/error transactions.",
+                FilterExportOptions(canExport,
                 new[]
                 {
                     new AmaroQuickOption("Admin Transactions", "/Admin/Transactions"),
                     new AmaroQuickOption("Export Transactions", "", "admin-export")
-                });
+                }));
         }
 
         if ((normalized.Contains("booking") || normalized.Contains("ticket")) && Can("BOOKING"))
@@ -858,11 +876,12 @@ public class AmaroController : Controller
 
             return new AmaroAskResponse(
                 $"Booking desk: {confirmed} confirmed bookings, {cancelled} cancelled bookings.",
+                FilterExportOptions(canExport,
                 new[]
                 {
                     new AmaroQuickOption("Admin Bookings", "/Admin/Bookings"),
                     new AmaroQuickOption("Export Bookings", "", "admin-export")
-                });
+                }));
         }
 
         if ((normalized.Contains("role") || normalized.Contains("permission") || normalized.Contains("access")) && (Can("ROLE") || Can("PERMISSION") || Can("USER", "GRANT_ACCESS")))
@@ -1033,12 +1052,16 @@ public class AmaroController : Controller
     {
         var path = GetCurrentPath();
         var options = new List<AmaroQuickOption>();
+        var canExport = _rbacService.IsSuperAdmin(userId);
 
         if (path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase))
         {
             options.Add(new AmaroQuickOption("This Page Summary", "", "ask:what should i do on this page"));
             options.Add(new AmaroQuickOption("Search Records", "", "ask:search admin records"));
-            options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+            if (canExport)
+            {
+                options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+            }
             options.Add(new AmaroQuickOption("Admin Overview", "", "ask:admin overview"));
         }
         else if (path.StartsWith("/Booking/Seats", StringComparison.OrdinalIgnoreCase))
@@ -1165,6 +1188,7 @@ public class AmaroController : Controller
     {
         var alerts = new List<string>();
         var options = new List<AmaroQuickOption>();
+        var canExport = _rbacService.IsSuperAdmin(userId);
 
         if (can("REFUND", "VIEW"))
         {
@@ -1207,7 +1231,10 @@ public class AmaroController : Controller
         }
 
         options.Add(new AmaroQuickOption("Search Records", "", "ask:search admin records"));
-        options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+        if (canExport)
+        {
+            options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+        }
         options.AddRange(BuildPageOptions(menuItems, userId, "admin dashboard")
             .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase)));
 
@@ -1300,7 +1327,7 @@ VALUES
                 new AmaroQuickOption("My Bookings", "/Booking/MyBookings"),
                 new AmaroQuickOption("Wallet", "/Wallet/MyWallet"),
                 new AmaroQuickOption("Browse Shows", "/Home/ShowTime")
-            });
+                });
         }
 
         options.AddRange(new[]
@@ -1319,9 +1346,13 @@ VALUES
             options.AddRange(new[]
             {
                 new AmaroQuickOption("Admin Summary", "", "ask:admin summary"),
-                new AmaroQuickOption("Search Admin Records", "", "ask:search admin records"),
-                new AmaroQuickOption("Export This Page", "", "admin-export")
+                new AmaroQuickOption("Search Admin Records", "", "ask:search admin records")
             });
+
+            if (_rbacService.IsSuperAdmin(userId))
+            {
+                options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+            }
         }
 
         return options
@@ -1574,6 +1605,23 @@ VALUES
         return last
             .Replace("-", " ")
             .Replace("_", " ");
+    }
+
+    private static AmaroQuickOption[] FilterExportOptions(
+        bool canExport,
+        IEnumerable<AmaroQuickOption> options)
+    {
+        if (canExport)
+        {
+            return options.ToArray();
+        }
+
+        return options
+            .Where(option =>
+                !string.Equals(option.Command, "admin-export", StringComparison.OrdinalIgnoreCase) &&
+                !option.Label.Contains("export", StringComparison.OrdinalIgnoreCase) &&
+                !option.Url.Contains("/Export", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
     }
 
     private record AmaroMenuItem(string? MenuCode, string? MenuName, string? RoutePath);

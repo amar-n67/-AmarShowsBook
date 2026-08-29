@@ -1,9 +1,13 @@
 @model AmarShowsBook.Models.ViewModels.AdminDashboardViewModel
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Admin Dashboard";
+    var hasDashboardUserId = int.TryParse(Context.Session.GetString("UserId"), out var dashboardUserId);
+    var canUseSuperAdminDashboardLinks =
+        hasDashboardUserId && RbacService.CanAccessSuperAdminArea(dashboardUserId);
 
     string DateText(DateTime? value) => value.HasValue
         ? value.Value.ToString("dd MMM yyyy, hh:mm tt")
@@ -141,7 +145,10 @@
                     <h2>Show Inventory</h2>
                     <p>Content, venues, screens, and schedule readiness.</p>
                 </div>
-                <a href="/Admin/ManageShows">Manage Shows</a>
+                @if (canUseSuperAdminDashboardLinks)
+                {
+                    <a href="/Admin/ManageShows">Manage Shows</a>
+                }
             </div>
 
             <div class="dashboard-mini-grid">
@@ -350,7 +357,10 @@
             </div>
             <div class="dashboard-shortcuts">
                 <a href="/Admin/Users">Users <strong>@Model.TotalUsers</strong></a>
-                <a href="/Admin/Roles">Roles <strong>@Model.ActiveRoles</strong></a>
+                @if (canUseSuperAdminDashboardLinks)
+                {
+                    <a href="/Admin/Roles">Roles <strong>@Model.ActiveRoles</strong></a>
+                }
                 <a href="/Admin/CouponUsage">Coupons</a>
                 <a href="/Admin/ActivityLogs">Activity Logs</a>
                 <a href="/Admin/Versions">Versions</a>

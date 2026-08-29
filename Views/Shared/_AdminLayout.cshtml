@@ -195,6 +195,25 @@
     var hasUserId = int.TryParse(userIdText, out var currentUserId);
     Func<string, string, bool> canShowAdminNav = (module, action) =>
         hasUserId && RbacService.HasPermission(currentUserId, module, action);
+    Func<string, bool> canShowAdminAction = action =>
+    {
+        if (!hasUserId)
+        {
+            return false;
+        }
+
+        if (action == "Dashboard")
+        {
+            return RbacService.CanOpenAdminDashboard(currentUserId);
+        }
+
+        if (action == "Roles" || action == "ManageShows")
+        {
+            return RbacService.CanAccessSuperAdminArea(currentUserId);
+        }
+
+        return true;
+    };
     var adminNavItems = new[]
     {
         new { Action = "Dashboard", Label = "Dashboard", Url = "/Admin/Dashboard", Module = "ADMIN", Permission = "VIEW" },
@@ -276,7 +295,7 @@
 
         <nav class="admin-nav" aria-label="Admin navigation">
 
-            @foreach (var item in adminNavItems.Where(x => canShowAdminNav(x.Module, x.Permission)))
+            @foreach (var item in adminNavItems.Where(x => canShowAdminNav(x.Module, x.Permission) && canShowAdminAction(x.Action)))
             {
                 var isActive = currentAction == item.Action ||
                     (item.Action == "Transactions" && currentAction == "TransactionDetails") ||
@@ -327,13 +346,16 @@
                 </button>
             }
 
-            <button class="admin-icon-btn no-print"
-                    type="button"
-                    id="adminExportButton"
-                    data-admin-export
-                    title="Export visible admin data">
-                Export
-            </button>
+            @if (canUsePrintTools)
+            {
+                <button class="admin-icon-btn no-print"
+                        type="button"
+                        id="adminExportButton"
+                        data-admin-export
+                        title="Export visible admin data">
+                    Export
+                </button>
+            }
 
             <div class="admin-theme-switcher no-print" aria-label="Theme selector">
                 <button type="button" data-admin-theme="system" onclick="setAdminTheme('system')">System</button>
@@ -599,7 +621,10 @@
         <div class="admin-amaro-deck" data-amaro-command-deck>
             <button type="button" data-amaro-prompt="admin summary">Summary</button>
             <button type="button" data-amaro-prompt="search admin records">Search</button>
-            <button type="button" data-amaro-prompt="export this page">Export</button>
+            @if (canUsePrintTools)
+            {
+                <button type="button" data-amaro-prompt="export this page">Export</button>
+            }
             <button type="button" data-amaro-prompt="what can I do">Access</button>
             <button type="button" data-amaro-prompt="contact support">Support</button>
         </div>
@@ -872,7 +897,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 renderOptions(data.options || []);
             })
-            .catch(() => renderOptions(["Admin Summary", "Search Records", "Export This Page"]));
+            .catch(() => renderOptions([
+                "Admin Summary",
+                "Search Records",
+                ...(@canUsePrintTools.ToString().ToLowerInvariant() ? ["Export This Page"] : [])
+            ]));
     }
 
     commandDeck?.querySelectorAll("[data-amaro-prompt]").forEach(button => {

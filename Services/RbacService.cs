@@ -43,13 +43,29 @@ namespace AmarShowsBook.Services
 
         public bool CanUsePrintTools(int userId)
         {
+            return IsSuperAdmin(userId);
+        }
+
+        public bool CanOpenAdminDashboard(int userId)
+        {
             return HasAnyActiveRole(
-                    userId,
-                    "AMAR_SUPER_ADMIN",
-                    "AMAR_ADMIN",
-                    "AMAR_DEVELOPER")
-                || HasPermissionStrict(userId, "ADMIN", "VIEW")
-                || HasPermissionStrict(userId, "DEVELOPER", "EDIT");
+                userId,
+                "AMAR_SUPER_ADMIN",
+                "AMAR_ADMIN",
+                "AMAR_DEVELOPER");
+        }
+
+        public bool CanAccessSuperAdminArea(int userId)
+        {
+            return HasAnyActiveRole(
+                userId,
+                "AMAR_SUPER_ADMIN",
+                "AMAR_DEVELOPER");
+        }
+
+        public bool IsSuperAdmin(int userId)
+        {
+            return HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN");
         }
 
         public bool HasAnyActiveRole(
@@ -160,7 +176,8 @@ namespace AmarShowsBook.Services
                     x.UserId == userId &&
                     x.IsActive &&
                     x.RoleIsActive &&
-                    x.RoleCode == "AMAR_SUPER_ADMIN");
+                    (x.RoleCode == "AMAR_SUPER_ADMIN" ||
+                     x.RoleCode == "AMAR_DEVELOPER"));
         }
     }
 }

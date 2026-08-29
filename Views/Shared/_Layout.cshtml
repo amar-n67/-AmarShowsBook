@@ -2170,8 +2170,7 @@ z-index:9999;">
     var isLoggedIn = Context.Session.GetString("UserEmail") != null;
     var hasCurrentUserId = int.TryParse(Context.Session.GetString("UserId"), out var currentUserId);
     var canOpenAdmin = hasCurrentUserId &&
-        (RbacService.HasPermission(currentUserId, "ADMIN", "VIEW") ||
-         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN"));
+        RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
     var canOpenDeveloper = hasCurrentUserId &&
         (RbacService.HasPermission(currentUserId, "DEVELOPER", "EDIT") ||
          RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER"));
