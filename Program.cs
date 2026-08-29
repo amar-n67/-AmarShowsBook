@@ -117,6 +117,7 @@ EnsureDeveloperProfileStore(app);
 EnsureAmaroChatStore(app);
 EnsureRbacStore(app);
 EnsureNewsStore(app);
+EnsureAccountDeletionArchiveStore(app);
 
 app.Lifetime.ApplicationStarted.Register(
 ()=>
@@ -647,6 +648,928 @@ ON public.amaro_chat_messages(user_id, created_at DESC);
         app.Logger.LogWarning(
         ex,
         "Amaro chatbot schema check skipped"
+        );
+    }
+}
+
+static void EnsureAccountDeletionArchiveStore(WebApplication app)
+{
+    using var scope =
+    app.Services.CreateScope();
+
+    try
+    {
+        var context =
+        scope.ServiceProvider
+        .GetRequiredService<
+        ApplicationDbContext>();
+
+        context.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS public.user_account_archives
+(
+    id bigserial PRIMARY KEY,
+    original_user_id bigint NOT NULL,
+    email text NOT NULL,
+    mobile text,
+    password_hash text,
+    deleted_by text,
+    deletion_reason text,
+    deleted_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    recover_until timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 days'),
+    purge_after timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '3 months'),
+    status varchar(30) NOT NULL DEFAULT 'DELETED',
+    recovered_at timestamp with time zone,
+    recovered_by text,
+    purged_at timestamp with time zone,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_user_account_archives_original_user_id
+ON public.user_account_archives(original_user_id);
+
+CREATE INDEX IF NOT EXISTS ix_user_account_archives_email_status
+ON public.user_account_archives(lower(email), status);
+
+CREATE TABLE IF NOT EXISTS public.user_account_archive_records
+(
+    id bigserial PRIMARY KEY,
+    archive_id bigint NOT NULL REFERENCES public.user_account_archives(id) ON DELETE CASCADE,
+    original_user_id bigint NOT NULL,
+    table_schema text NOT NULL DEFAULT 'public',
+    table_name text NOT NULL,
+    pk_column text NOT NULL,
+    pk_value text NOT NULL,
+    record_data jsonb NOT NULL,
+    archived_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(archive_id, table_schema, table_name, pk_value)
+);
+
+CREATE INDEX IF NOT EXISTS ix_user_account_archive_records_archive_id
+ON public.user_account_archive_records(archive_id);
+
+CREATE OR REPLACE FUNCTION public.fn_archive_user_account(
+    p_user_id bigint,
+    p_deleted_by text,
+    p_reason text DEFAULT NULL
+)
+RETURNS bigint
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_archive_id bigint;
+    v_user public.""Users""%ROWTYPE;
+    v_row record;
+    v_sql text;
+BEGIN
+    SELECT *
+    INTO v_user
+    FROM public.""Users""
+    WHERE ""Id"" = p_user_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'User % was not found.', p_user_id;
+    END IF;
+
+    SELECT id
+    INTO v_archive_id
+    FROM public.user_account_archives
+    WHERE original_user_id = p_user_id
+      AND status = 'DELETED'
+    ORDER BY deleted_at DESC
+    LIMIT 1;
+
+    IF v_archive_id IS NULL THEN
+        INSERT INTO public.user_account_archives
+        (
+            original_user_id,
+            email,
+            mobile,
+            password_hash,
+            deleted_by,
+            deletion_reason,
+            status
+        )
+        VALUES
+        (
+            p_user_id,
+            v_user.""Email"",
+            v_user.""Mobile"",
+            v_user.""Password"",
+            p_deleted_by,
+            p_reason,
+            'DELETED'
+        )
+        RETURNING id INTO v_archive_id;
+    END IF;
+
+    INSERT INTO public.""DeletedUsers""
+    (
+        original_user_id,
+        name,
+        email,
+        mobile,
+        address,
+        country,
+        state,
+        district,
+        pincode,
+        language,
+        genre,
+        profile_image_path,
+        created_at,
+        updated_at,
+        deleted_at,
+        deleted_by,
+        is_revoked
+    )
+    SELECT
+        v_user.""Id"",
+        v_user.""Name"",
+        v_user.""Email"",
+        v_user.""Mobile"",
+        v_user.""Address"",
+        v_user.""Country"",
+        v_user.""State"",
+        v_user.""District"",
+        v_user.""Pincode"",
+        v_user.""Language"",
+        v_user.""Genre"",
+        v_user.""ProfileImagePath"",
+        v_user.""CreatedAt"",
+        v_user.""UpdatedAt"",
+        CURRENT_TIMESTAMP,
+        p_deleted_by,
+        false
+    WHERE NOT EXISTS
+    (
+        SELECT 1
+        FROM public.""DeletedUsers""
+        WHERE original_user_id = p_user_id
+          AND is_revoked = false
+    );
+
+    FOR v_row IN
+        SELECT *
+        FROM (VALUES
+            ('Users', 'Id', 'Id'),
+            ('booking_drafts', 'UserId', 'Id'),
+            ('bookings', 'user_id', 'id'),
+            ('transactions', 'user_id', 'id'),
+            ('refunds', 'user_id', 'id'),
+            ('coupon_usage', 'user_id', 'id'),
+            ('invoices', 'user_id', 'id'),
+            ('loyalty_history', 'user_id', 'id'),
+            ('seat_locks', 'user_id', 'id'),
+            ('user_notifications', 'user_id', 'id'),
+            ('user_role_mappings', 'user_id', 'id'),
+            ('user_roles', 'user_id', 'id'),
+            ('user_wallets', 'user_id', 'id'),
+            ('wallet_transactions', 'user_id', 'id'),
+            ('wallet_status_history', 'user_id', 'id'),
+            ('ticket_validation_logs', 'user_id', 'id'),
+            ('activity_logs', 'user_id', 'id'),
+            ('amaro_chat_sessions', 'user_id', 'id'),
+            ('amaro_chat_messages', 'user_id', 'id')
+        ) AS archive_table(table_name, user_column, pk_column)
+    LOOP
+        IF EXISTS
+        (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = v_row.table_name
+              AND column_name = v_row.user_column
+        )
+        AND EXISTS
+        (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = v_row.table_name
+              AND column_name = v_row.pk_column
+        )
+        THEN
+            v_sql := format(
+                'INSERT INTO public.user_account_archive_records
+                 (archive_id, original_user_id, table_schema, table_name, pk_column, pk_value, record_data)
+                 SELECT $1, $2, %L, %L, %L, t.%I::text, to_jsonb(t)
+                 FROM public.%I t
+                 WHERE t.%I = $2
+                 ON CONFLICT DO NOTHING',
+                'public',
+                v_row.table_name,
+                v_row.pk_column,
+                v_row.pk_column,
+                v_row.table_name,
+                v_row.user_column);
+
+            EXECUTE v_sql USING v_archive_id, p_user_id;
+        END IF;
+    END LOOP;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'booking_items',
+        'id',
+        bi.id::text,
+        to_jsonb(bi)
+    FROM public.booking_items bi
+    JOIN public.bookings b ON b.id = bi.booking_id
+    WHERE b.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'booked_seats',
+        'id',
+        bs.id::text,
+        to_jsonb(bs)
+    FROM public.booked_seats bs
+    JOIN public.bookings b ON b.id = bs.booking_id
+    WHERE b.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'booking_status_history',
+        'id',
+        bsh.id::text,
+        to_jsonb(bsh)
+    FROM public.booking_status_history bsh
+    JOIN public.bookings b ON b.id = bsh.booking_id
+    WHERE b.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'booking_seats',
+        'id',
+        bs.id::text,
+        to_jsonb(bs)
+    FROM public.booking_seats bs
+    JOIN public.bookings b ON b.id = bs.booking_id
+    WHERE b.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'tickets',
+        'id',
+        t.id::text,
+        to_jsonb(t)
+    FROM public.tickets t
+    JOIN public.bookings b ON b.id = t.booking_id
+    WHERE b.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'PaymentSessions',
+        'Id',
+        ps.""Id""::text,
+        to_jsonb(ps)
+    FROM public.""PaymentSessions"" ps
+    JOIN public.booking_drafts bd ON bd.""Id"" = ps.""BookingId""
+    WHERE bd.""UserId"" = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'invoice_items',
+        'id',
+        ii.id::text,
+        to_jsonb(ii)
+    FROM public.invoice_items ii
+    JOIN public.invoices i ON i.id = ii.invoice_id
+    WHERE i.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'invoice_audit_logs',
+        'id',
+        ial.id::text,
+        to_jsonb(ial)
+    FROM public.invoice_audit_logs ial
+    JOIN public.invoices i ON i.id = ial.invoice_id
+    WHERE i.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'refund_history',
+        'id',
+        rh.id::text,
+        to_jsonb(rh)
+    FROM public.refund_history rh
+    JOIN public.refunds r ON r.id = rh.refund_id
+    WHERE r.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'refund_invoices',
+        'id',
+        ri.id::text,
+        to_jsonb(ri)
+    FROM public.refund_invoices ri
+    JOIN public.refunds r ON r.id = ri.refund_id
+    WHERE r.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.user_account_archive_records
+    (
+        archive_id,
+        original_user_id,
+        table_schema,
+        table_name,
+        pk_column,
+        pk_value,
+        record_data
+    )
+    SELECT
+        v_archive_id,
+        p_user_id,
+        'public',
+        'notification_audit_logs',
+        'id',
+        nal.id::text,
+        to_jsonb(nal)
+    FROM public.notification_audit_logs nal
+    JOIN public.user_notifications un ON un.id = nal.notification_id
+    WHERE un.user_id = p_user_id
+    ON CONFLICT DO NOTHING;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'notification_audit_logs') THEN
+        DELETE FROM public.notification_audit_logs nal
+        USING public.user_notifications un
+        WHERE un.id = nal.notification_id
+          AND un.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'invoice_audit_logs') THEN
+        DELETE FROM public.invoice_audit_logs ial
+        USING public.invoices i
+        WHERE i.id = ial.invoice_id
+          AND i.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'invoice_items') THEN
+        DELETE FROM public.invoice_items ii
+        USING public.invoices i
+        WHERE i.id = ii.invoice_id
+          AND i.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'refund_invoices') THEN
+        DELETE FROM public.refund_invoices ri
+        USING public.refunds r
+        WHERE r.id = ri.refund_id
+          AND r.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'refund_history') THEN
+        DELETE FROM public.refund_history rh
+        USING public.refunds r
+        WHERE r.id = rh.refund_id
+          AND r.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'booked_seats') THEN
+        DELETE FROM public.booked_seats bs
+        USING public.bookings b
+        WHERE b.id = bs.booking_id
+          AND b.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'booking_seats') THEN
+        DELETE FROM public.booking_seats bs
+        USING public.bookings b
+        WHERE b.id = bs.booking_id
+          AND b.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'booking_items') THEN
+        DELETE FROM public.booking_items bi
+        USING public.bookings b
+        WHERE b.id = bi.booking_id
+          AND b.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tickets') THEN
+        DELETE FROM public.tickets t
+        USING public.bookings b
+        WHERE b.id = t.booking_id
+          AND b.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'booking_status_history') THEN
+        DELETE FROM public.booking_status_history bsh
+        USING public.bookings b
+        WHERE b.id = bsh.booking_id
+          AND b.user_id = p_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'PaymentSessions') THEN
+        DELETE FROM public.""PaymentSessions"" ps
+        USING public.booking_drafts bd
+        WHERE bd.""Id"" = ps.""BookingId""
+          AND bd.""UserId"" = p_user_id;
+    END IF;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'bookings'
+          AND column_name = 'transaction_id'
+    )
+    THEN
+        UPDATE public.bookings
+        SET transaction_id = NULL
+        WHERE user_id = p_user_id
+           OR transaction_id IN
+              (
+                  SELECT id
+                  FROM public.transactions
+                  WHERE user_id = p_user_id
+              );
+    END IF;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'transactions'
+          AND column_name = 'booking_id'
+    )
+    THEN
+        UPDATE public.transactions
+        SET booking_id = NULL
+        WHERE user_id = p_user_id
+           OR booking_id IN
+              (
+                  SELECT id
+                  FROM public.bookings
+                  WHERE user_id = p_user_id
+              );
+    END IF;
+
+    FOR v_row IN
+        SELECT *
+        FROM (VALUES
+            ('amaro_chat_messages', 'user_id'),
+            ('loyalty_history', 'user_id'),
+            ('coupon_usage', 'user_id'),
+            ('invoices', 'user_id'),
+            ('ticket_validation_logs', 'user_id'),
+            ('wallet_status_history', 'user_id'),
+            ('wallet_transactions', 'user_id'),
+            ('user_notifications', 'user_id'),
+            ('user_role_mappings', 'user_id'),
+            ('user_roles', 'user_id'),
+            ('user_wallets', 'user_id'),
+            ('seat_locks', 'user_id'),
+            ('refunds', 'user_id'),
+            ('bookings', 'user_id'),
+            ('transactions', 'user_id'),
+            ('activity_logs', 'user_id'),
+            ('amaro_chat_sessions', 'user_id'),
+            ('booking_drafts', 'UserId')
+        ) AS delete_table(table_name, user_column)
+    LOOP
+        IF EXISTS
+        (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = v_row.table_name
+              AND column_name = v_row.user_column
+        )
+        THEN
+            v_sql := format(
+                'DELETE FROM public.%I WHERE %I = $1',
+                v_row.table_name,
+                v_row.user_column);
+
+            EXECUTE v_sql USING p_user_id;
+        END IF;
+    END LOOP;
+
+    UPDATE public.""Users""
+    SET
+        ""Name"" = 'Deleted User',
+        ""Email"" = 'deleted+' || p_user_id || '@deleted.local',
+        ""Mobile"" = '0000000000',
+        ""Address"" = NULL,
+        ""Country"" = NULL,
+        ""State"" = NULL,
+        ""District"" = NULL,
+        ""Pincode"" = NULL,
+        ""Genre"" = 'Deleted',
+        ""Language"" = NULL,
+        ""ProfileImagePath"" = NULL,
+        is_active = false,
+        is_deleted = true,
+        ""UpdatedAt"" = CURRENT_TIMESTAMP,
+        ""UpdatedBy"" = COALESCE(p_deleted_by, 'ACCOUNT_DELETE')
+    WHERE ""Id"" = p_user_id;
+
+    RETURN v_archive_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.fn_recover_user_account(
+    p_archive_id bigint,
+    p_recovered_by text
+)
+RETURNS boolean
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_archive public.user_account_archives%ROWTYPE;
+    v_deleted public.""DeletedUsers""%ROWTYPE;
+    v_user_record jsonb;
+    v_record record;
+    v_exists boolean;
+    v_sql text;
+BEGIN
+    SELECT *
+    INTO v_archive
+    FROM public.user_account_archives
+    WHERE id = p_archive_id
+      AND status = 'DELETED'
+    ORDER BY deleted_at DESC
+    LIMIT 1;
+
+    IF NOT FOUND THEN
+        RETURN false;
+    END IF;
+
+    IF v_archive.recover_until < CURRENT_TIMESTAMP THEN
+        RETURN false;
+    END IF;
+
+    SELECT *
+    INTO v_deleted
+    FROM public.""DeletedUsers""
+    WHERE original_user_id = v_archive.original_user_id
+      AND is_revoked = false
+    ORDER BY deleted_at DESC
+    LIMIT 1;
+
+    SELECT record_data
+    INTO v_user_record
+    FROM public.user_account_archive_records
+    WHERE archive_id = p_archive_id
+      AND table_name = 'Users'
+    ORDER BY archived_at DESC
+    LIMIT 1;
+
+    UPDATE public.""Users""
+    SET
+        ""Name"" = COALESCE(v_user_record->>'Name', v_deleted.name, ""Name""),
+        ""Email"" = COALESCE(v_archive.email, v_deleted.email, ""Email""),
+        ""Mobile"" = COALESCE(v_archive.mobile, v_deleted.mobile, ""Mobile""),
+        ""Password"" = COALESCE(v_archive.password_hash, v_user_record->>'Password', ""Password""),
+        ""Address"" = COALESCE(v_user_record->>'Address', v_deleted.address),
+        ""Country"" = COALESCE(v_user_record->>'Country', v_deleted.country),
+        ""State"" = COALESCE(v_user_record->>'State', v_deleted.state),
+        ""District"" = COALESCE(v_user_record->>'District', v_deleted.district),
+        ""Pincode"" = COALESCE(v_user_record->>'Pincode', v_deleted.pincode),
+        ""Genre"" = COALESCE(v_user_record->>'Genre', v_deleted.genre, 'Dramatic'),
+        ""Language"" = COALESCE(v_user_record->>'Language', v_deleted.language, 'English'),
+        ""ProfileImagePath"" = COALESCE(v_user_record->>'ProfileImagePath', v_deleted.profile_image_path),
+        is_active = true,
+        is_deleted = false,
+        ""UpdatedAt"" = CURRENT_TIMESTAMP,
+        ""UpdatedBy"" = COALESCE(p_recovered_by, 'ACCOUNT_RECOVERY')
+    WHERE ""Id"" = v_archive.original_user_id;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'wallet_transactions') THEN
+        DELETE FROM public.wallet_transactions
+        WHERE user_id = v_archive.original_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'wallet_status_history') THEN
+        DELETE FROM public.wallet_status_history
+        WHERE user_id = v_archive.original_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'loyalty_history') THEN
+        DELETE FROM public.loyalty_history
+        WHERE user_id = v_archive.original_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_role_mappings') THEN
+        DELETE FROM public.user_role_mappings
+        WHERE user_id = v_archive.original_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_roles') THEN
+        DELETE FROM public.user_roles
+        WHERE user_id = v_archive.original_user_id;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_wallets') THEN
+        DELETE FROM public.user_wallets
+        WHERE user_id = v_archive.original_user_id;
+    END IF;
+
+    FOR v_record IN
+        SELECT *
+        FROM public.user_account_archive_records
+        WHERE archive_id = p_archive_id
+          AND table_name = 'transactions'
+        ORDER BY id
+    LOOP
+        SELECT EXISTS (SELECT 1 FROM public.transactions WHERE id::text = v_record.pk_value)
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            INSERT INTO public.transactions
+            SELECT *
+            FROM jsonb_populate_record(
+                NULL::public.transactions,
+                jsonb_set(v_record.record_data, '{{booking_id}}', 'null'::jsonb, true));
+        END IF;
+    END LOOP;
+
+    FOR v_record IN
+        SELECT *
+        FROM public.user_account_archive_records
+        WHERE archive_id = p_archive_id
+          AND table_name = 'bookings'
+        ORDER BY id
+    LOOP
+        SELECT EXISTS (SELECT 1 FROM public.bookings WHERE id::text = v_record.pk_value)
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            INSERT INTO public.bookings
+            SELECT *
+            FROM jsonb_populate_record(NULL::public.bookings, v_record.record_data);
+        END IF;
+    END LOOP;
+
+    UPDATE public.transactions t
+    SET booking_id = (records.record_data->>'booking_id')::bigint
+    FROM public.user_account_archive_records records
+    WHERE records.archive_id = p_archive_id
+      AND records.table_name = 'transactions'
+      AND records.record_data->>'booking_id' IS NOT NULL
+      AND t.id::text = records.pk_value
+      AND EXISTS
+      (
+          SELECT 1
+          FROM public.bookings b
+          WHERE b.id = (records.record_data->>'booking_id')::bigint
+      );
+
+    FOR v_record IN
+        SELECT *
+        FROM public.user_account_archive_records
+        WHERE archive_id = p_archive_id
+          AND table_name NOT IN ('Users', 'transactions', 'bookings')
+        ORDER BY
+            CASE table_name
+                WHEN 'booking_drafts' THEN 10
+                WHEN 'transactions' THEN 20
+                WHEN 'user_wallets' THEN 30
+                WHEN 'bookings' THEN 40
+                WHEN 'user_roles' THEN 50
+                WHEN 'user_role_mappings' THEN 60
+                WHEN 'refunds' THEN 65
+                WHEN 'wallet_transactions' THEN 70
+                WHEN 'coupon_usage' THEN 90
+                WHEN 'invoices' THEN 100
+                WHEN 'invoice_items' THEN 110
+                WHEN 'invoice_audit_logs' THEN 120
+                WHEN 'refund_history' THEN 130
+                WHEN 'refund_invoices' THEN 140
+                WHEN 'seat_locks' THEN 150
+                WHEN 'wallet_status_history' THEN 160
+                WHEN 'loyalty_history' THEN 170
+                WHEN 'user_notifications' THEN 180
+                WHEN 'notification_audit_logs' THEN 190
+                WHEN 'amaro_chat_sessions' THEN 200
+                WHEN 'amaro_chat_messages' THEN 210
+                WHEN 'booking_items' THEN 220
+                WHEN 'booking_seats' THEN 230
+                WHEN 'booking_status_history' THEN 240
+                WHEN 'tickets' THEN 250
+                WHEN 'booked_seats' THEN 260
+                WHEN 'PaymentSessions' THEN 270
+                ELSE 500
+            END,
+            id
+    LOOP
+        IF EXISTS
+        (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = v_record.table_schema
+              AND table_name = v_record.table_name
+              AND column_name = v_record.pk_column
+        )
+        THEN
+            v_sql := format(
+                'SELECT EXISTS (SELECT 1 FROM %I.%I WHERE %I::text = $1)',
+                v_record.table_schema,
+                v_record.table_name,
+                v_record.pk_column);
+            EXECUTE v_sql INTO v_exists USING v_record.pk_value;
+
+            IF NOT v_exists THEN
+                v_sql := format(
+                    'INSERT INTO %I.%I SELECT * FROM jsonb_populate_record(NULL::%I.%I, $1)',
+                    v_record.table_schema,
+                    v_record.table_name,
+                    v_record.table_schema,
+                    v_record.table_name);
+                EXECUTE v_sql USING v_record.record_data;
+            END IF;
+        END IF;
+    END LOOP;
+
+    UPDATE public.""DeletedUsers""
+    SET
+        is_revoked = true,
+        revoke_at = CURRENT_TIMESTAMP,
+        revoked_by = COALESCE(p_recovered_by, 'ACCOUNT_RECOVERY')
+    WHERE original_user_id = v_archive.original_user_id
+      AND is_revoked = false;
+
+    UPDATE public.user_account_archives
+    SET
+        status = 'RECOVERED',
+        recovered_at = CURRENT_TIMESTAMP,
+        recovered_by = COALESCE(p_recovered_by, 'ACCOUNT_RECOVERY')
+    WHERE id = p_archive_id;
+
+    RETURN true;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.fn_purge_expired_user_account_archives()
+RETURNS integer
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_count integer;
+BEGIN
+    UPDATE public.user_account_archives
+    SET
+        status = 'PURGED',
+        purged_at = CURRENT_TIMESTAMP
+    WHERE status = 'DELETED'
+      AND purge_after < CURRENT_TIMESTAMP;
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+
+    DELETE FROM public.user_account_archive_records records
+    USING public.user_account_archives archives
+    WHERE records.archive_id = archives.id
+      AND archives.status = 'PURGED';
+
+    DELETE FROM public.""DeletedUsers""
+    WHERE is_revoked = false
+      AND deleted_at < CURRENT_TIMESTAMP - INTERVAL '3 months';
+
+    RETURN v_count;
+END;
+$$;
+
+SELECT public.fn_purge_expired_user_account_archives();
+");
+    }
+    catch(Exception ex)
+    {
+        app.Logger.LogWarning(
+        ex,
+        "Account deletion archive schema check skipped"
         );
     }
 }

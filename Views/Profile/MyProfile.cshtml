@@ -446,6 +446,21 @@
                 </div>
             </section>
 
+            <section class="profile-scene delete-account-scene">
+                <div class="scene-title">
+                    <span>Danger Zone</span>
+                    <h5>Delete Account</h5>
+                </div>
+
+                <div class="delete-account-panel">
+                    <div>
+                        <strong>Archive and delete this account</strong>
+                        <p>Your profile and account-linked records will be archived. You can recover within 30 days by logging in again. Archive data is purged after 3 months.</p>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm delete-account-open" onclick="openDeleteAccountModal()">Delete Account</button>
+                </div>
+            </section>
+
             <div class="profile-actions">
                 <button type="submit"
                         class="btn btn-success btn-sm save-btn"
@@ -460,6 +475,59 @@
 
         </form>
         <form id="changePasswordForm" method="post" action="/Profile/ChangePassword"></form>
+        <form id="deleteAccountForm" method="post" action="/Profile/DeleteAccount">
+            @Html.AntiForgeryToken()
+            <div class="delete-modal" id="deleteAccountModal" hidden>
+                <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteAccountTitle">
+                    <div class="delete-dialog-head">
+                        <span>Account deletion</span>
+                        <button type="button" class="delete-dialog-close" onclick="closeDeleteAccountModal()" aria-label="Close">×</button>
+                    </div>
+                    <h3 id="deleteAccountTitle">Confirm account deletion</h3>
+                    <p class="delete-dialog-copy">Verify your email OTP, enter your password, and type the confirmation phrase. Recovery is available for 30 days after deletion.</p>
+
+                    <div class="field-block">
+                        <label>Email OTP</label>
+                        <div class="input-group input-group-sm">
+                            <input id="deleteEmailField" class="form-control clean-input" value="@Model.Email" readonly />
+                            <button type="button" class="btn btn-info btn-sm" onclick="sendDeleteAccountOtp()">Send OTP</button>
+                        </div>
+                    </div>
+
+                    <div class="field-block">
+                        <label>Verify OTP</label>
+                        <div class="input-group input-group-sm">
+                            <input id="deleteOtpInput" class="form-control clean-input" placeholder="Enter OTP" />
+                            <button type="button" class="btn btn-success btn-sm" onclick="verifyDeleteAccountOtp()">Verify</button>
+                        </div>
+                        <small id="deleteOtpStatus" class="delete-otp-status">OTP verification required.</small>
+                    </div>
+
+                    <div class="field-block">
+                        <label>Password</label>
+                        <div class="input-group input-group-sm">
+                            <input id="deletePassword" name="password" type="password" class="form-control clean-input" autocomplete="current-password" />
+                            <button type="button" class="btn btn-outline-light" data-password-toggle="deletePassword" title="Show password" onclick="togglePassword('deletePassword', this)"></button>
+                        </div>
+                    </div>
+
+                    <div class="field-block">
+                        <label>Confirmation Phrase</label>
+                        <input id="deleteConfirmationText" name="confirmationText" class="form-control clean-input" placeholder="DELETE MY ACCOUNT" autocomplete="off" />
+                    </div>
+
+                    <div class="field-block">
+                        <label>Reason</label>
+                        <textarea id="deletionReason" name="deletionReason" class="form-control clean-input" rows="3" maxlength="240" placeholder="Optional"></textarea>
+                    </div>
+
+                    <div class="delete-dialog-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteAccountModal()">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return validateDeleteAccountForm()">Delete Permanently</button>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -860,6 +928,105 @@ input.clean-input[readonly],
 .change-password-form {
     margin-top: 10px;
 }
+.delete-account-scene {
+    border-bottom-color: color-mix(in srgb, #dc3545 24%, #edf0f3);
+}
+.delete-account-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, #dc3545 38%, var(--app-input-border));
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, #dc3545 10%, var(--app-card)), var(--app-input));
+}
+.delete-account-panel strong {
+    display: block;
+    color: #9f1d2d;
+    font-weight: 900;
+}
+.delete-account-panel p {
+    margin: 4px 0 0;
+    color: var(--app-muted);
+    font-size: 0.88rem;
+}
+.delete-account-open {
+    flex: 0 0 auto;
+    font-weight: 850;
+}
+.delete-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1060;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 20, 28, 0.68);
+    backdrop-filter: blur(12px);
+}
+.delete-modal[hidden] {
+    display: none;
+}
+.delete-dialog {
+    width: min(100%, 540px);
+    max-height: min(92vh, 760px);
+    overflow: auto;
+    border: 1px solid color-mix(in srgb, #dc3545 34%, var(--app-input-border));
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    padding: 22px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.36);
+}
+.delete-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.delete-dialog-head span {
+    color: #dc3545;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.delete-dialog-close {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    font-size: 1.25rem;
+    line-height: 1;
+}
+.delete-dialog h3 {
+    margin: 0 0 8px;
+    font-weight: 900;
+}
+.delete-dialog-copy {
+    margin: 0 0 16px;
+    color: var(--app-muted);
+}
+.delete-otp-status {
+    display: block;
+    margin-top: 6px;
+    color: #dc3545;
+    font-weight: 750;
+}
+.delete-otp-status.verified {
+    color: #198754;
+}
+.delete-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
 .save-btn {
     min-width: 160px;
 }
@@ -874,6 +1041,15 @@ input.clean-input[readonly],
     .cursor-style-grid,
     .cursor-color-grid {
         grid-template-columns: 1fr;
+    }
+    .delete-account-panel,
+    .delete-dialog-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .delete-account-open,
+    .delete-dialog-actions .btn {
+        width: 100%;
     }
     .profile-form,
     .profile-hero {

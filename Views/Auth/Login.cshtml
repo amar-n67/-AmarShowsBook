@@ -50,6 +50,33 @@
             </button>
         </div>
     </div>
+
+    @if (ViewBag.RecoverArchiveId != null)
+    {
+        <div class="recovery-modal">
+            <div class="recovery-dialog" role="dialog" aria-modal="true" aria-labelledby="recoverAccountTitle">
+                <span class="recovery-kicker">Deleted Account</span>
+                <h2 id="recoverAccountTitle">Recover this account?</h2>
+                <p>
+                    This account was deleted, but it is still inside the 30 day recovery window.
+                    Recover now to restore the archived account data.
+                </p>
+                <div class="recovery-meta">
+                    <span>@ViewBag.RecoverEmail</span>
+                    <strong>Available until @ViewBag.RecoverUntil</strong>
+                </div>
+                <form method="post" action="/Auth/RecoverDeletedAccount">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="archiveId" value="@ViewBag.RecoverArchiveId" />
+                    <input type="hidden" name="recoveryChoice" value="recover" />
+                    <div class="recovery-actions">
+                        <a href="/Auth/Login" class="btn btn-secondary btn-sm">Cancel</a>
+                        <button type="submit" class="btn btn-success btn-sm">Recover Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
 </section>
 
 <style>
@@ -149,6 +176,63 @@
     width: calc(100% - 44px) !important;
     font-weight: 850;
 }
+.recovery-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 20, 28, 0.66);
+    backdrop-filter: blur(12px);
+}
+.recovery-dialog {
+    width: min(100%, 460px);
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 70%, #ffffff 30%);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    padding: 24px;
+    box-shadow: 0 28px 80px rgba(0,0,0,0.32);
+}
+.recovery-kicker {
+    display: inline-flex;
+    margin-bottom: 8px;
+    color: #dc3545;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.recovery-dialog h2 {
+    margin: 0 0 10px;
+    font-weight: 900;
+}
+.recovery-dialog p {
+    margin: 0;
+    color: var(--app-muted);
+}
+.recovery-meta {
+    display: grid;
+    gap: 4px;
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-input);
+}
+.recovery-meta span {
+    font-weight: 850;
+}
+.recovery-meta strong {
+    color: #198754;
+    font-size: 0.86rem;
+}
+.recovery-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
 @@media (max-width: 840px) {
     .auth-frame {
         grid-template-columns: 1fr;
@@ -167,6 +251,10 @@
             });
 
             const error = "@ViewBag.Error";
+            const success = "@TempData["Success"]";
+            if (success) {
+                showCinemaPopup(success, "success");
+            }
             if (error) {
                 showCinemaPopup(error, "error");
             }

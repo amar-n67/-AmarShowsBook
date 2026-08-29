@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
+using AmarShowsBook.Helpers;
 using AmarShowsBook.Models;
 using AmarShowsBook.Services;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using NpgsqlTypes;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
@@ -77,15 +80,86 @@ public async Task<IActionResult> Login(string email, string password)
 
         if (user == null)
         {
-            // Previous wording: "No performer found with this email."
+            var archivedAccount = await FindRecoverableArchive(email);
+            if (archivedAccount != null)
+            {
+                if (IsArchivePasswordValid(password, archivedAccount.PasswordHash))
+                {
+                    PrepareRecoveryView(archivedAccount, email);
+                    await _activityLogger.LogAsync(
+                        userId: archivedAccount.UserId > int.MaxValue ? null : (int)archivedAccount.UserId,
+                        action: "DELETED_ACCOUNT_LOGIN",
+                        module: "AUTH",
+                        entityType: "USER_ACCOUNT_ARCHIVE",
+                        entityId: archivedAccount.ArchiveId > int.MaxValue ? null : (int)archivedAccount.ArchiveId,
+                        description: "Deleted account login requested recovery decision",
+                        status: "SUCCESS",
+                        isError: 0);
+                    return View();
+                }
+
+                await _activityLogger.LogAsync(
+                    userId: archivedAccount.UserId > int.MaxValue ? null : (int)archivedAccount.UserId,
+                    action: "DELETED_ACCOUNT_LOGIN",
+                    module: "AUTH",
+                    entityType: "USER_ACCOUNT_ARCHIVE",
+                    entityId: archivedAccount.ArchiveId > int.MaxValue ? null : (int)archivedAccount.ArchiveId,
+                    description: "Deleted account login recovery password did not match",
+                    status: "FAILURE",
+                    errorCode: "RECOVERY_PASSWORD_INVALID",
+                    errorMessage: "Archived account found, but the password did not match",
+                    errorSource: "AuthController.Login",
+                    isError: 1);
+
+                ViewBag.Error = "This account is deleted, but the password did not match. Enter the password used before deletion to recover it.";
+                return View();
+            }
+
             ViewBag.Error = "No account found with this email.";
             return View();
         }
 
 if (!user.is_active || user.is_deleted)
 {
+    var archivedAccount = await FindRecoverableArchive(email);
+    if (user.is_deleted && archivedAccount != null)
+    {
+        if (IsArchivePasswordValid(password, archivedAccount.PasswordHash))
+        {
+            PrepareRecoveryView(archivedAccount, email);
+            await _activityLogger.LogAsync(
+                userId: user.Id,
+                action: "DELETED_ACCOUNT_LOGIN",
+                module: "AUTH",
+                entityType: "USER_ACCOUNT_ARCHIVE",
+                entityId: archivedAccount.ArchiveId > int.MaxValue ? null : (int)archivedAccount.ArchiveId,
+                description: "Deleted account login requested recovery decision",
+                status: "SUCCESS",
+                isError: 0);
+            return View();
+        }
+
+        await _activityLogger.LogAsync(
+            userId: user.Id,
+            action: "DELETED_ACCOUNT_LOGIN",
+            module: "AUTH",
+            entityType: "USER_ACCOUNT_ARCHIVE",
+            entityId: archivedAccount.ArchiveId > int.MaxValue ? null : (int)archivedAccount.ArchiveId,
+            description: "Deleted account login recovery password did not match",
+            status: "FAILURE",
+            errorCode: "RECOVERY_PASSWORD_INVALID",
+            errorMessage: "Archived account found, but the password did not match",
+            errorSource: "AuthController.Login",
+            isError: 1);
+
+        ViewBag.Error = "This account is deleted, but the password did not match. Enter the password used before deletion to recover it.";
+        return View();
+    }
+
     ViewBag.Error =
-        "Your account has been disabled by admin.";
+        user.is_deleted
+            ? "This account is deleted and cannot be recovered after the recovery window."
+            : "Your account has been disabled by admin.";
 
     return View();
 }
@@ -136,15 +210,317 @@ HttpContext.Session.SetString(
             return View();
         }
     }
+    catch (PostgresException ex)
+    {
+        await _activityLogger.LogAsync(
+            action: "LOGIN",
+            module: "AUTH",
+            entityType: "USER_ACCOUNT_ARCHIVE",
+            description: "Login stopped by database validation while checking deleted account recovery",
+            status: "FAILURE",
+            errorCode: ex.SqlState,
+            errorMessage: ex.MessageText,
+            errorSource: ex.TableName ?? ex.ConstraintName ?? "PostgreSQL",
+            stackTrace: ex.StackTrace,
+            isError: 2);
+
+        ViewBag.Error = $"Login did not proceed because the recovery database check failed: {ex.MessageText}";
+        return View();
+    }
+    catch (NpgsqlException ex)
+    {
+        await _activityLogger.LogAsync(
+            action: "LOGIN",
+            module: "AUTH",
+            entityType: "USER_ACCOUNT_ARCHIVE",
+            description: "Login stopped by database connection or command error while checking deleted account recovery",
+            status: "FAILURE",
+            errorCode: "DB_COMMAND_ERROR",
+            errorMessage: ex.Message,
+            errorSource: "PostgreSQL",
+            stackTrace: ex.StackTrace,
+            isError: 2);
+
+        ViewBag.Error = "Login did not proceed because the recovery database check could not finish. Please try again after the database connection is stable.";
+        return View();
+    }
     catch (Exception ex)
     {
-        System.Diagnostics.Debug.WriteLine(ex);
+        await _activityLogger.LogAsync(
+            action: "LOGIN",
+            module: "AUTH",
+            entityType: "USER",
+            description: "Login stopped by application error",
+            status: "FAILURE",
+            errorCode: "APP500",
+            errorMessage: ex.Message,
+            errorSource: ex.GetType().Name,
+            stackTrace: ex.StackTrace,
+            isError: 1);
 
-        // Previous wording: "The projector had a technical pause. Please try login again."
-        ViewBag.Error = "We could not complete login. Please try again.";
+        ViewBag.Error = $"Login did not proceed because the application hit {ex.GetType().Name}: {ex.Message}";
         return View();
     }
 	}
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecoverDeletedAccount(long archiveId, string recoveryChoice)
+        {
+            try
+            {
+                recoveryChoice = recoveryChoice?.Trim() ?? "";
+                var pendingArchiveId = HttpContext.Session.GetString("PendingRecoveryArchiveId");
+                var pendingEmail = HttpContext.Session.GetString("PendingRecoveryEmail");
+                var pendingExpiresRaw = HttpContext.Session.GetString("PendingRecoveryExpiresUtc");
+
+                if (string.Equals(recoveryChoice, "cancel", StringComparison.OrdinalIgnoreCase))
+                {
+                    ClearPendingRecovery();
+                    ViewBag.Error = "Recovery did not proceed because you selected Cancel. Your account will remain deleted.";
+                    return View("Login");
+                }
+
+                if (!string.Equals(recoveryChoice, "recover", StringComparison.OrdinalIgnoreCase))
+                {
+                    ViewBag.Error = "Recovery did not proceed because the selected action was missing or invalid. Please click Recover Account again.";
+                    return View("Login");
+                }
+
+                if (!long.TryParse(pendingArchiveId, out var sessionArchiveId) ||
+                    sessionArchiveId != archiveId ||
+                    string.IsNullOrWhiteSpace(pendingEmail) ||
+                    !DateTime.TryParse(pendingExpiresRaw, null, System.Globalization.DateTimeStyles.RoundtripKind, out var pendingExpiresUtc) ||
+                    pendingExpiresUtc < DateTime.UtcNow)
+                {
+                    ClearPendingRecovery();
+                    ViewBag.Error = "Recovery did not proceed because the recovery approval expired or no longer matches this account. Please log in again to restart recovery.";
+                    return View("Login");
+                }
+
+                var archivedAccount = await FindRecoverableArchive(pendingEmail, archiveId);
+                if (archivedAccount == null)
+                {
+                    ClearPendingRecovery();
+                    ViewBag.Error = "Recovery did not proceed because this account is outside the 30 day recovery window.";
+                    return View("Login");
+                }
+
+                var recovered = await RecoverUserAccount(archiveId, pendingEmail);
+                if (!recovered)
+                {
+                    ClearPendingRecovery();
+                    ViewBag.Error = "Recovery did not proceed because this account is outside the 30 day recovery window.";
+                    return View("Login");
+                }
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == archivedAccount.UserId);
+                if (user == null || user.is_deleted || !user.is_active)
+                {
+                    ViewBag.Error = "Recovery finished, but login did not start because the restored user row is not active yet. Please log in again.";
+                    return View("Login");
+                }
+
+                HttpContext.Session.SetString("UserId", user.Id.ToString());
+                HttpContext.Session.SetString("UserEmail", user.Email);
+                HttpContext.Session.SetString("UserName", user.Name ?? user.Email);
+                HttpContext.Session.SetString("UserGenre", user.Genre ?? "Dramatic");
+                HttpContext.Session.SetString("UserLanguage", user.Language ?? "English");
+                HttpContext.Session.SetString("ProfileImage", user.ProfileImagePath ?? "");
+                ClearPendingRecovery();
+
+                await _activityLogger.LogAsync(
+                    userId: user.Id,
+                    action: "RECOVER_DELETED_ACCOUNT",
+                    module: "AUTH",
+                    entityType: "USER_ACCOUNT_ARCHIVE",
+                    entityId: archiveId > int.MaxValue ? null : (int)archiveId,
+                    description: "Deleted user account recovered within recovery window",
+                    status: "SUCCESS",
+                    isError: 0);
+
+                TempData["Success"] = "Account recovered. Your saved data is available again.";
+                return RedirectToAction("MyProfile", "Profile");
+            }
+            catch (PostgresException ex)
+            {
+                await _activityLogger.LogAsync(
+                    action: "RECOVER_DELETED_ACCOUNT",
+                    module: "AUTH",
+                    entityType: "USER_ACCOUNT_ARCHIVE",
+                    entityId: archiveId > int.MaxValue ? null : (int)archiveId,
+                    description: "Deleted account recovery stopped by database validation",
+                    status: "FAILURE",
+                    errorCode: ex.SqlState,
+                    errorMessage: ex.MessageText,
+                    errorSource: ex.TableName ?? ex.ConstraintName ?? "PostgreSQL",
+                    stackTrace: ex.StackTrace,
+                    isError: 2);
+
+                ViewBag.Error = BuildRecoveryErrorMessage(ex);
+                return View("Login");
+            }
+            catch (NpgsqlException ex)
+            {
+                await _activityLogger.LogAsync(
+                    action: "RECOVER_DELETED_ACCOUNT",
+                    module: "AUTH",
+                    entityType: "USER_ACCOUNT_ARCHIVE",
+                    entityId: archiveId > int.MaxValue ? null : (int)archiveId,
+                    description: "Deleted account recovery stopped by database connection or command error",
+                    status: "FAILURE",
+                    errorCode: "DB_COMMAND_ERROR",
+                    errorMessage: ex.Message,
+                    errorSource: "PostgreSQL",
+                    stackTrace: ex.StackTrace,
+                    isError: 2);
+
+                ViewBag.Error = "Recovery did not proceed because the archive database command could not finish. Please try again after the database connection is stable.";
+                return View("Login");
+            }
+            catch (Exception ex)
+            {
+                await _activityLogger.LogAsync(
+                    action: "RECOVER_DELETED_ACCOUNT",
+                    module: "AUTH",
+                    entityType: "USER_ACCOUNT_ARCHIVE",
+                    entityId: archiveId > int.MaxValue ? null : (int)archiveId,
+                    description: "Deleted account recovery failed",
+                    status: "FAILURE",
+                    errorCode: "APP500",
+                    errorMessage: ex.Message,
+                    errorSource: "Application",
+                    stackTrace: ex.StackTrace,
+                    isError: 1);
+
+                ViewBag.Error = "Recovery did not proceed because the application hit an unexpected error. Your archived data was not purged; please try again.";
+                return View("Login");
+            }
+        }
+
+        private void PrepareRecoveryView(RecoverableAccount archivedAccount, string email)
+        {
+            ViewBag.RecoverArchiveId = archivedAccount.ArchiveId;
+            ViewBag.RecoverEmail = email;
+            ViewBag.RecoverUntil = archivedAccount.RecoverUntil.ToLocalTime().ToString("dd MMM yyyy hh:mm tt");
+            HttpContext.Session.SetString("PendingRecoveryArchiveId", archivedAccount.ArchiveId.ToString());
+            HttpContext.Session.SetString("PendingRecoveryEmail", email);
+            HttpContext.Session.SetString("PendingRecoveryExpiresUtc", DateTime.UtcNow.AddMinutes(10).ToString("O"));
+        }
+
+        private void ClearPendingRecovery()
+        {
+            HttpContext.Session.Remove("PendingRecoveryArchiveId");
+            HttpContext.Session.Remove("PendingRecoveryEmail");
+            HttpContext.Session.Remove("PendingRecoveryExpiresUtc");
+        }
+
+        private static bool IsArchivePasswordValid(string password, string passwordHash)
+        {
+            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(passwordHash))
+            {
+                return false;
+            }
+
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string BuildRecoveryErrorMessage(PostgresException ex)
+        {
+            var relation =
+                !string.IsNullOrWhiteSpace(ex.TableName)
+                    ? ex.TableName
+                    : ex.ConstraintName;
+
+            return ex.SqlState switch
+            {
+                PostgresErrorCodes.ForeignKeyViolation =>
+                    $"Recovery did not proceed because related data in {relation ?? "another table"} must be restored in order first. Your archive is still available.",
+                PostgresErrorCodes.UniqueViolation =>
+                    $"Recovery did not proceed because matching data already exists in {relation ?? "the active tables"}. Your archive is still available.",
+                PostgresErrorCodes.UndefinedTable =>
+                    $"Recovery did not proceed because required table {relation ?? "in the database"} was not found.",
+                PostgresErrorCodes.UndefinedColumn =>
+                    $"Recovery did not proceed because a required archive column is missing in {relation ?? "the database"}.",
+                PostgresErrorCodes.RaiseException =>
+                    $"Recovery did not proceed because the archive procedure stopped with: {ex.MessageText}",
+                _ =>
+                    $"Recovery did not proceed because the database stopped the restore step: {ex.MessageText}"
+            };
+        }
+
+        private async Task<RecoverableAccount?> FindRecoverableArchive(string email, long? archiveId = null)
+        {
+            var connectionString =
+                DatabaseConnectionStringResolver
+                .GetDatabaseConnectionString(_configuration);
+
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            var sql = @"
+SELECT
+    id,
+    original_user_id,
+    password_hash,
+    recover_until
+FROM public.user_account_archives
+WHERE lower(email) = lower(@email)
+  AND status = 'DELETED'
+  AND recover_until >= CURRENT_TIMESTAMP
+  AND (@archive_id IS NULL OR id = @archive_id)
+ORDER BY deleted_at DESC
+LIMIT 1;";
+
+            await using var command = new NpgsqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@email", NpgsqlDbType.Text, email);
+            command.Parameters.Add("@archive_id", NpgsqlDbType.Bigint).Value = (object?)archiveId ?? DBNull.Value;
+
+            await using var reader = await command.ExecuteReaderAsync();
+            if (!await reader.ReadAsync())
+            {
+                return null;
+            }
+
+            return new RecoverableAccount(
+                reader.GetInt64(0),
+                reader.GetInt64(1),
+                reader.IsDBNull(2) ? "" : reader.GetString(2),
+                reader.GetDateTime(3));
+        }
+
+        private async Task<bool> RecoverUserAccount(long archiveId, string recoveredBy)
+        {
+            var connectionString =
+                DatabaseConnectionStringResolver
+                .GetDatabaseConnectionString(_configuration);
+
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            await using var command = new NpgsqlCommand(
+                "SELECT public.fn_recover_user_account(@archive_id, @recovered_by);",
+                connection);
+            command.CommandTimeout = 120;
+            command.Parameters.AddWithValue("@archive_id", archiveId);
+            command.Parameters.AddWithValue("@recovered_by", recoveredBy);
+
+            var result = await command.ExecuteScalarAsync();
+            return result is bool recovered && recovered;
+        }
+
+        private record RecoverableAccount(
+            long ArchiveId,
+            long UserId,
+            string PasswordHash,
+            DateTime RecoverUntil);
 
         private async Task CreditFirstLoginWalletBonus(
         int userId,

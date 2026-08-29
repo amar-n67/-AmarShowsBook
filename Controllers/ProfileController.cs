@@ -2,6 +2,7 @@ using AmarShowsBook.Services;
 using Npgsql;
 using Microsoft.AspNetCore.Mvc;             
 using AmarShowsBook.Data;               
+using AmarShowsBook.Helpers;
 using AmarShowsBook.Models;                             
 using System.IO;
 using System.Text.RegularExpressions;                   
@@ -404,5 +405,164 @@ user.UpdatedBy = currentUser ?? "System";
 
     return RedirectToAction("MyProfile");
 }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAccount(string password, string confirmationText, string deletionReason)
+    {
+        try
+        {
+            var sessionEmail = HttpContext.Session.GetString("UserEmail");
+            if (string.IsNullOrWhiteSpace(sessionEmail))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == sessionEmail);
+            if (user == null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Auth");
+            }
+
+            if (HttpContext.Session.GetString("VerifiedEmailForProfile") != sessionEmail)
+            {
+                TempData["Error"] = "Verify your email OTP before deleting the account.";
+                return RedirectToAction("MyProfile");
+            }
+
+            if (string.IsNullOrWhiteSpace(password) ||
+                !BCrypt.Net.BCrypt.Verify(password, user.Password))
+            {
+                TempData["Error"] = "Password validation failed.";
+                return RedirectToAction("MyProfile");
+            }
+
+            if (!string.Equals((confirmationText ?? string.Empty).Trim(), "DELETE MY ACCOUNT", StringComparison.Ordinal))
+            {
+                TempData["Error"] = "Type DELETE MY ACCOUNT to confirm account deletion.";
+                return RedirectToAction("MyProfile");
+            }
+
+            var archiveId = await ArchiveUserAccount(user.Id, sessionEmail, deletionReason);
+
+            await _activityLogger.LogAsync(
+                userId: user.Id,
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                entityId: user.Id,
+                description: "User deleted account after OTP and password validation",
+                status: "SUCCESS",
+                isError: 0,
+                metadata: new
+                {
+                    ArchiveId = archiveId,
+                    RecoverUntilDays = 30,
+                    PurgeAfterMonths = 3
+                });
+
+            TempData["Success"] = "Your account was deleted. You can recover it within 30 days by logging in again.";
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login", "Auth");
+        }
+        catch (PostgresException ex)
+        {
+            await _activityLogger.LogAsync(
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Account deletion stopped by database validation",
+                status: "FAILURE",
+                errorCode: ex.SqlState,
+                errorMessage: ex.MessageText,
+                errorSource: ex.TableName ?? ex.ConstraintName ?? "PostgreSQL",
+                stackTrace: ex.StackTrace,
+                isError: 2);
+
+            TempData["Error"] = BuildDeleteAccountErrorMessage(ex);
+            return RedirectToAction("MyProfile");
+        }
+        catch (NpgsqlException ex)
+        {
+            await _activityLogger.LogAsync(
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Account deletion stopped by database connection or command error",
+                status: "FAILURE",
+                errorCode: "DB_COMMAND_ERROR",
+                errorMessage: ex.Message,
+                errorSource: "PostgreSQL",
+                stackTrace: ex.StackTrace,
+                isError: 2);
+
+            TempData["Error"] = "Account deletion did not proceed because the archive database command could not finish. Please try again after the database connection is stable.";
+            return RedirectToAction("MyProfile");
+        }
+        catch (Exception ex)
+        {
+            await _activityLogger.LogAsync(
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Account deletion failed",
+                status: "FAILURE",
+                errorCode: "APP500",
+                errorMessage: ex.Message,
+                errorSource: "Application",
+                stackTrace: ex.StackTrace,
+                isError: 1);
+
+            TempData["Error"] = "Account deletion did not proceed because the application hit an unexpected error after validation. Your account is still active; please try again.";
+            return RedirectToAction("MyProfile");
+        }
+    }
+
+    private async Task<long> ArchiveUserAccount(int userId, string deletedBy, string? deletionReason)
+    {
+        var connectionString =
+            DatabaseConnectionStringResolver
+                .GetDatabaseConnectionString(HttpContext.RequestServices.GetRequiredService<IConfiguration>());
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var command = new NpgsqlCommand(
+            "SELECT public.fn_archive_user_account(@user_id, @deleted_by, @reason);",
+            connection);
+        command.CommandTimeout = 120;
+
+        command.Parameters.AddWithValue("@user_id", userId);
+        command.Parameters.AddWithValue("@deleted_by", deletedBy);
+        command.Parameters.AddWithValue("@reason", (object?)deletionReason ?? DBNull.Value);
+
+        var result = await command.ExecuteScalarAsync();
+        return Convert.ToInt64(result);
+    }
+
+    private static string BuildDeleteAccountErrorMessage(PostgresException ex)
+    {
+        var relation =
+            !string.IsNullOrWhiteSpace(ex.TableName)
+                ? ex.TableName
+                : ex.ConstraintName;
+
+        return ex.SqlState switch
+        {
+            PostgresErrorCodes.ForeignKeyViolation =>
+                $"Account deletion did not proceed because related data in {relation ?? "another table"} must be archived first. No account data was deleted.",
+            PostgresErrorCodes.UniqueViolation =>
+                "Account deletion did not proceed because an active deletion archive already exists for this account. Try logging in again to recover, or contact support.",
+            PostgresErrorCodes.UndefinedTable =>
+                $"Account deletion did not proceed because the archive process could not find required table {relation ?? "in the database"}.",
+            PostgresErrorCodes.UndefinedColumn =>
+                $"Account deletion did not proceed because a required archive column is missing in {relation ?? "the database"}.",
+            PostgresErrorCodes.RaiseException =>
+                $"Account deletion did not proceed because the archive procedure stopped with: {ex.MessageText}",
+            _ =>
+                $"Account deletion did not proceed because the database stopped the archive step: {ex.MessageText}"
+        };
     }
 }

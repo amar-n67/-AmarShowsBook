@@ -16,6 +16,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             "SendOTP",
             "VerifyOTP",
             "ResetPassword",
+            "RecoverDeletedAccount",
             "CloseApplication"
         };
 
