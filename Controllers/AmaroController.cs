@@ -37,7 +37,7 @@ public class AmaroController : Controller
                     new AmaroQuickOption("Movies", "", "filter-type:Movie"),
                     new AmaroQuickOption("Standup", "", "filter-type:Standup"),
                     new AmaroQuickOption("Live Streams", "", "filter-type:Live"),
-                    new AmaroQuickOption("Contact Support", "", "support-options"),
+                    new AmaroQuickOption("Help", "", "support-options"),
                     new AmaroQuickOption("Login", "/Auth/Login")
                 }
             });
@@ -437,7 +437,7 @@ public class AmaroController : Controller
                 new[]
                 {
                     new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
-                    new AmaroQuickOption("Contact Support", "", "support-options"),
+                    new AmaroQuickOption("Help", "", "support-options"),
                     new AmaroQuickOption("Login", "/Auth/Login")
                 });
         }
@@ -1093,7 +1093,7 @@ public class AmaroController : Controller
             options.Add(new AmaroQuickOption("Recommended Shows", "", "ask:recommend shows"));
             options.Add(new AmaroQuickOption("Movies", "", "filter-type:Movie"));
             options.Add(new AmaroQuickOption("Available Seats", "", "show-suggestions"));
-            options.Add(new AmaroQuickOption("Contact Support", "", "support-options"));
+            options.Add(new AmaroQuickOption("Help", "", "support-options"));
         }
 
         var roleOptions = BuildMenuOptions(menuItems, userId)
@@ -1335,7 +1335,7 @@ VALUES
             new AmaroQuickOption("Book a Show", "/Home/ShowTime"),
             new AmaroQuickOption("Available Seats", "", "show-suggestions"),
             new AmaroQuickOption("Transactions", "/Transaction/History"),
-            new AmaroQuickOption("Contact Support", "", "support-options"),
+            new AmaroQuickOption("Help", "", "support-options"),
             new AmaroQuickOption("Change Theme", "", "theme-options"),
             new AmaroQuickOption("Change Cursor", "", "cursor-options")
         });
@@ -1375,7 +1375,7 @@ VALUES
         yield return new AmaroQuickOption("Transactions", "/Transaction/History");
         yield return new AmaroQuickOption("Wallet", "/Wallet/MyWallet");
         yield return new AmaroQuickOption("Profile", "/Profile/MyProfile");
-        yield return new AmaroQuickOption("Contact Support", "", "support-options");
+        yield return new AmaroQuickOption("Help", "", "support-options");
         yield return new AmaroQuickOption("Theme", "", "theme-options");
         yield return new AmaroQuickOption("Cursor", "", "cursor-options");
 

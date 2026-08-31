@@ -3982,17 +3982,13 @@ public async Task<IActionResult> RemoveUserRole(long userId, long roleId)
         return RedirectToAction("UserAccess");
     }
 
-    if (long.TryParse(HttpContext.Session.GetString("UserId"), out var currentUserId) &&
-        currentUserId == userId)
-    {
-        var activeRoleCount = _context.UserRoleMappings
-            .Count(x => x.UserId == userId && x.IsActive);
+    var activeRoleCount = _context.UserRoleMappings
+        .Count(x => x.UserId == userId && x.IsActive);
 
-        if (activeRoleCount <= 1)
-        {
-            TempData["Error"] = "You cannot remove your own last active role.";
-            return RedirectToAction("UserAccess");
-        }
+    if (activeRoleCount <= 1)
+    {
+        TempData["Error"] = "At least one active role is required for every user.";
+        return RedirectToAction("UserAccess");
     }
 
 

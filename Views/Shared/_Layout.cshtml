@@ -750,7 +750,9 @@ html[data-theme="dark"] [style*="color: black"] {
 
 .cinema-popup-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
     gap: 10px;
     padding: 0 24px 24px;
 }
@@ -775,88 +777,7 @@ html[data-theme="dark"] [style*="color: black"] {
 
 .cinema-popup-support-menu,
 .alert-support-menu {
-    position: relative;
-    display: inline-flex;
-}
-
-.cinema-popup-support,
-.alert-support-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9px;
-    text-decoration: none;
-    font-weight: 850;
-    border: 0;
-}
-
-.cinema-popup-support {
-    min-width: 110px;
-    padding: 8px 14px;
-    background: var(--app-primary);
-    color: #fff;
-}
-
-.cinema-popup-support.d-none {
-    display: none;
-}
-
-.alert-support-link {
     margin-left: 10px;
-    padding: 4px 9px;
-    background: var(--app-primary);
-    color: #fff;
-}
-
-.cinema-popup-support-options,
-.alert-support-options {
-    position: absolute;
-    right: 0;
-    bottom: calc(100% + 8px);
-    z-index: 30;
-    min-width: 150px;
-    padding: 6px;
-    border-radius: 10px;
-    background: var(--app-popup-surface);
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.28);
-    border: 1px solid var(--app-input-border);
-    display: none;
-}
-
-.alert-support-options {
-    top: calc(100% + 8px);
-    bottom: auto;
-}
-
-.cinema-popup-support-menu.support-open .cinema-popup-support-options,
-.alert-support-menu.support-open .alert-support-options {
-    display: grid;
-    gap: 4px;
-}
-
-.cinema-popup-support-options a,
-.alert-support-options a {
-    display: block;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: var(--app-input);
-    color: var(--app-input-text) !important;
-    text-decoration: none !important;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.cinema-popup-support-options a:hover,
-.cinema-popup-support-options a:focus-visible,
-.alert-support-options a:hover,
-.alert-support-options a:focus-visible {
-    background: var(--app-soft);
-}
-
-.alert-support-link:hover,
-.cinema-popup-support:hover {
-    color: #fff;
-    filter: brightness(1.04);
 }
 
 .cinema-popup-backdrop.error .cinema-popup-strip {
@@ -2108,9 +2029,17 @@ footer {
             <div class="cinema-popup-actions">
                 @* Previous wording: "Retake" *@
                 <button type="button" id="cinemaPopupCancel" class="cinema-popup-btn cinema-popup-cancel d-none">Cancel</button>
-                <span id="cinemaPopupSupportMenu" class="cinema-popup-support-menu d-none">
-                    <button type="button" id="cinemaPopupSupport" class="cinema-popup-support" aria-expanded="false">Support</button>
-                    <span class="cinema-popup-support-options" role="menu" aria-label="Support options">
+                <span id="cinemaPopupSupportMenu" class="cinema-popup-support-menu film-support-menu d-none">
+                    <button type="button"
+                            id="cinemaPopupSupport"
+                            class="cinema-popup-support film-nav-btn film-support-trigger"
+                            title="Help"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <span class="film-nav-icon">☎</span>
+                        <span class="film-nav-label">Help</span>
+                    </button>
+                    <span class="cinema-popup-support-options film-support-dropdown" role="menu" aria-label="Help options">
                         <a href="@globalSupportEmailUrl" role="menuitem">Email Us</a>
                         <a href="@globalSupportWhatsAppUrl" target="_blank" rel="noopener" role="menuitem">WhatsApp Us</a>
                     </span>
@@ -2268,13 +2197,13 @@ z-index:9999;">
                             <div class="film-support-menu">
                                 <button class="film-nav-btn film-support-trigger"
                                         type="button"
-                                        title="Contact Support"
+                                        title="Help"
                                         aria-haspopup="true"
                                         aria-expanded="false">
                                     <span class="film-nav-icon">☎</span>
-                                    <span class="film-nav-label">Support</span>
+                                    <span class="film-nav-label">Help</span>
                                 </button>
-                                <div class="film-support-dropdown" role="menu" aria-label="Support options">
+                                <div class="film-support-dropdown" role="menu" aria-label="Help options">
                                     <a href="tel:+919651698863" role="menuitem">Call Us</a>
                                     <a href="mailto:arcanaamar67@gmail.com" role="menuitem">Write Us</a>
                                     <a href="@supportWhatsAppUrl" target="_blank" rel="noopener" role="menuitem">WhatsApp Us</a>
@@ -2424,7 +2353,7 @@ z-index:9999;">
                 <button type="button" data-amaro-prompt="My upcoming bookings">Upcoming</button>
                 <button type="button" data-amaro-prompt="Change theme">Theme</button>
                 <button type="button" data-amaro-prompt="Change cursor">Cursor</button>
-                <button type="button" data-amaro-prompt="Contact support">Support</button>
+                <button type="button" data-amaro-prompt="Contact support">Help</button>
             </div>
             <div class="amaro-options" data-amaro-options></div>
             <div class="amaro-thread" data-amaro-thread>
@@ -2442,7 +2371,7 @@ z-index:9999;">
 
 <footer class="border-top footer text-muted">
 <div class="container">
-    &copy; 2026 - showTime · Support: <a href="tel:+919651698863">Call Us</a> · <a href="mailto:arcanaamar67@gmail.com">Write Us</a> · <a href="@supportWhatsAppUrl" target="_blank" rel="noopener">WhatsApp Us</a>
+    &copy; 2026 - showTime · Help: <a href="tel:+919651698863">Call Us</a> · <a href="mailto:arcanaamar67@gmail.com">Write Us</a> · <a href="@supportWhatsAppUrl" target="_blank" rel="noopener">WhatsApp Us</a>
 </div>
 </footer>
 
@@ -3012,7 +2941,6 @@ document.addEventListener("DOMContentLoaded", function () {
         cancel.classList.toggle("d-none", popupType !== "confirm");
         supportMenu.classList.toggle("d-none", popupType !== "error");
         supportMenu.classList.remove("support-open");
-        support.setAttribute("aria-expanded", "false");
         popup.style.display = "block";
 
         ok.onclick = function () {
@@ -3025,10 +2953,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (typeof settings.onCancel === "function") settings.onCancel();
         };
 
-        support.onclick = function () {
-            const isOpen = supportMenu.classList.toggle("support-open");
-            support.setAttribute("aria-expanded", isOpen.toString());
-        };
+        support.onclick = null;
     };
 
     window.showPopup = function (message, type) {
@@ -3044,18 +2969,30 @@ document.addEventListener("DOMContentLoaded", function () {
             if (alert.querySelector(".alert-support-menu")) return;
 
             const supportMenu = document.createElement("span");
-            supportMenu.className = "alert-support-menu";
+            supportMenu.className = "alert-support-menu film-support-menu";
 
-            const supportButton = document.createElement("button");
-            supportButton.type = "button";
-            supportButton.className = "alert-support-link";
-            supportButton.textContent = "Support";
-            supportButton.setAttribute("aria-expanded", "false");
+            const supportLabel = document.createElement("button");
+            supportLabel.type = "button";
+            supportLabel.className = "alert-support-link film-nav-btn film-support-trigger";
+            supportLabel.title = "Help";
+            supportLabel.setAttribute("aria-haspopup", "true");
+            supportLabel.setAttribute("aria-expanded", "false");
+
+            const supportIcon = document.createElement("span");
+            supportIcon.className = "film-nav-icon";
+            supportIcon.textContent = "☎";
+
+            const supportText = document.createElement("span");
+            supportText.className = "film-nav-label";
+            supportText.textContent = "Help";
+
+            supportLabel.appendChild(supportIcon);
+            supportLabel.appendChild(supportText);
 
             const supportOptions = document.createElement("span");
-            supportOptions.className = "alert-support-options";
+            supportOptions.className = "alert-support-options film-support-dropdown";
             supportOptions.setAttribute("role", "menu");
-            supportOptions.setAttribute("aria-label", "Support options");
+            supportOptions.setAttribute("aria-label", "Help options");
 
             const emailLink = document.createElement("a");
             emailLink.href = "@globalSupportEmailUrl";
@@ -3071,21 +3008,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             supportOptions.appendChild(emailLink);
             supportOptions.appendChild(whatsappLink);
-            supportMenu.appendChild(supportButton);
+            supportMenu.appendChild(supportLabel);
             supportMenu.appendChild(supportOptions);
             alert.appendChild(supportMenu);
-
-            supportButton.addEventListener("click", function () {
-                const isOpen = supportMenu.classList.toggle("support-open");
-                supportButton.setAttribute("aria-expanded", isOpen.toString());
-            });
         });
 
         document.addEventListener("click", function (event) {
-            document.querySelectorAll(".cinema-popup-support-menu.support-open,.alert-support-menu.support-open").forEach(function (menu) {
+            document.querySelectorAll(".cinema-popup-support-menu.support-open").forEach(function (menu) {
                 if (menu.contains(event.target)) return;
                 menu.classList.remove("support-open");
-                menu.querySelector("button")?.setAttribute("aria-expanded", "false");
             });
         });
     });

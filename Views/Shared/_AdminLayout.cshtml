@@ -192,6 +192,9 @@
         : adminDisplayName.Trim();
     var supportWhatsAppText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
     var supportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(supportWhatsAppText)}";
+    var supportEmailSubject = "showTime Support Request";
+    var supportEmailText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
+    var supportEmailUrl = $"mailto:arcanaamar67@gmail.com?subject={Uri.EscapeDataString(supportEmailSubject)}&body={Uri.EscapeDataString(supportEmailText)}";
     var hasUserId = int.TryParse(userIdText, out var currentUserId);
     var isDashboardOnlyAdmin = hasUserId &&
         RbacService.HasAnyActiveRole(currentUserId, "DUM_ADMIN") &&
@@ -748,7 +751,7 @@
                 <button type="button" data-amaro-prompt="export this page">Export</button>
             }
             <button type="button" data-amaro-prompt="what can I do">Access</button>
-            <button type="button" data-amaro-prompt="contact support">Support</button>
+            <button type="button" data-amaro-prompt="contact support">Help</button>
         </div>
         <div class="admin-amaro-options" data-amaro-options></div>
         <div class="admin-amaro-thread" data-amaro-thread>
@@ -837,14 +840,51 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".alert-danger").forEach(function (alert) {
-        if (alert.querySelector(".alert-support-link")) return;
-        const supportLink = document.createElement("a");
-        supportLink.className = "alert-support-link";
-        supportLink.href = "@supportWhatsAppUrl";
-        supportLink.target = "_blank";
-        supportLink.rel = "noopener";
-        supportLink.textContent = "Support";
-        alert.appendChild(supportLink);
+        if (alert.querySelector(".alert-support-menu")) return;
+
+        const supportMenu = document.createElement("span");
+        supportMenu.className = "alert-support-menu";
+
+        const supportLabel = document.createElement("button");
+        supportLabel.type = "button";
+        supportLabel.className = "alert-support-link";
+        supportLabel.title = "Help";
+        supportLabel.setAttribute("aria-haspopup", "true");
+        supportLabel.setAttribute("aria-expanded", "false");
+
+        const supportIcon = document.createElement("span");
+        supportIcon.className = "alert-support-icon";
+        supportIcon.textContent = "☎";
+
+        const supportText = document.createElement("span");
+        supportText.className = "alert-support-label";
+        supportText.textContent = "Help";
+
+        supportLabel.appendChild(supportIcon);
+        supportLabel.appendChild(supportText);
+
+        const supportOptions = document.createElement("span");
+        supportOptions.className = "alert-support-options";
+        supportOptions.setAttribute("role", "menu");
+        supportOptions.setAttribute("aria-label", "Help options");
+
+        const emailLink = document.createElement("a");
+        emailLink.href = "@supportEmailUrl";
+        emailLink.textContent = "Email Us";
+        emailLink.setAttribute("role", "menuitem");
+
+        const whatsappLink = document.createElement("a");
+        whatsappLink.href = "@supportWhatsAppUrl";
+        whatsappLink.target = "_blank";
+        whatsappLink.rel = "noopener";
+        whatsappLink.textContent = "WhatsApp Us";
+        whatsappLink.setAttribute("role", "menuitem");
+
+        supportOptions.appendChild(emailLink);
+        supportOptions.appendChild(whatsappLink);
+        supportMenu.appendChild(supportLabel);
+        supportMenu.appendChild(supportOptions);
+        alert.appendChild(supportMenu);
     });
 });
 </script>
