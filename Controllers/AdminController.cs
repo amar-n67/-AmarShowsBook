@@ -3855,15 +3855,44 @@ public async Task<IActionResult> AddUserRole(UserRoleUpdateViewModel request)
     }
 
 
-    var roleExists =
-        _context.Roles.Any(x =>
+    var requestedRole =
+        _context.Roles.FirstOrDefault(x =>
             x.Id == request.RoleId &&
             x.IsActive);
 
-    if (!roleExists)
+    if (requestedRole == null)
     {
         TempData["Error"] =
             "Role not found.";
+
+        return RedirectToAction("UserAccess");
+    }
+
+    var activeUserRoles =
+        _context.UserRoleMappings
+            .Where(x =>
+                x.UserId == request.UserId &&
+                x.IsActive)
+            .Join(
+                _context.Roles,
+                map => map.RoleId,
+                role => role.Id,
+                (map, role) => role.RoleCode)
+            .ToList();
+
+    var hasDumAdmin =
+        activeUserRoles.Any(roleCode =>
+            string.Equals(roleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase));
+    var hasOtherRoles =
+        activeUserRoles.Any(roleCode =>
+            !string.Equals(roleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase));
+    var isGrantingDumAdmin =
+        string.Equals(requestedRole.RoleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase);
+
+    if ((isGrantingDumAdmin && hasOtherRoles) || (!isGrantingDumAdmin && hasDumAdmin))
+    {
+        TempData["Error"] =
+            "dum_Admin role cannot be combined with any other role. Remove existing roles first.";
 
         return RedirectToAction("UserAccess");
     }

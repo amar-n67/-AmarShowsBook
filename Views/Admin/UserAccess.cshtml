@@ -102,10 +102,19 @@
 
             @foreach (var user in Model)
             {
+                var assignedRoles = allRoles
+                    .Where(role => user.RoleIds.Contains(role.Id))
+                    .ToList();
+                var hasDumAdmin = assignedRoles
+                    .Any(role => string.Equals(role.RoleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase));
+                var hasOtherRoles = assignedRoles
+                    .Any(role => !string.Equals(role.RoleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase));
                 var availableRoles = allRoles
                     .Where(role =>
                         role.IsActive &&
-                        !user.RoleIds.Contains(role.Id))
+                        !user.RoleIds.Contains(role.Id) &&
+                        !hasDumAdmin &&
+                        !(hasOtherRoles && string.Equals(role.RoleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase)))
                     .ToList();
 
                 <div class="access-card" data-filter-status="@(user.IsActive ? "ACTIVE" : "DISABLED")">
