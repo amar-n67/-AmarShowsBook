@@ -13,6 +13,7 @@ public class ProfileController : Controller
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ProfileController> _logger;
     private readonly IActivityLogger _activityLogger;
+    private readonly RbacService _rbacService;
     private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
     private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
     private static readonly Regex PasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", RegexOptions.Compiled);
@@ -21,11 +22,13 @@ public class ProfileController : Controller
     public ProfileController(
         ILogger<ProfileController> logger,
         ApplicationDbContext context,
-        IActivityLogger activityLogger)
+        IActivityLogger activityLogger,
+        RbacService rbacService)
         {
             _logger = logger;
             _context = context;
             _activityLogger = activityLogger;
+            _rbacService = rbacService;
         }
     public async Task<IActionResult> Index()
     {
@@ -424,6 +427,13 @@ user.UpdatedBy = currentUser ?? "System";
             {
                 HttpContext.Session.Clear();
                 return RedirectToAction("Login", "Auth");
+            }
+
+            if (_rbacService.HasAnyActiveRole(user.Id, "DUM_ADMIN") &&
+                !_rbacService.HasAnyActiveRole(user.Id, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER"))
+            {
+                TempData["Error"] = "Delete account is not available for dum_Admin users.";
+                return RedirectToAction("MyProfile");
             }
 
             if (HttpContext.Session.GetString("VerifiedEmailForProfile") != sessionEmail)

@@ -32,21 +32,31 @@
             </p>
         </div>
 
-        <div class="admin-actions">
-            @if (isDumAdmin)
-            {
-                <a class="admin-back-btn admin-page-back" href="/Profile/MyProfile">My Profile</a>
-                <a class="admin-back-btn admin-page-back" href="/Developer/Profile">Developer Profile</a>
-                <a class="admin-back-btn admin-page-back"
-                   href="/Auth/Logout"
-                   onclick="return confirm('Are you sure you want to logout?');">Logout</a>
-            }
-            else
-            {
+        @if (!isDumAdmin)
+        {
+            <div class="admin-actions">
                 <a class="admin-back-btn admin-page-back" href="/Home/ShowTime">← Back to Home</a>
-            }
-        </div>
+            </div>
+        }
     </div>
+
+    @if (isDumAdmin)
+    {
+        <div class="dashboard-profile-actions" aria-label="Account quick actions">
+            <a class="dashboard-profile-action" href="/Profile/MyProfile">
+                <span class="dashboard-profile-action-icon">👤</span>
+                <span>My Profile</span>
+            </a>
+            <a class="dashboard-profile-action" href="/Developer/Profile">
+                <span class="dashboard-profile-action-icon">🧩</span>
+                <span>Developer Profile</span>
+            </a>
+            <a class="dashboard-profile-action logout" href="/Auth/Logout" onclick="return confirmLogout();">
+                <span class="dashboard-profile-action-icon">⏻</span>
+                <span>Logout</span>
+            </a>
+        </div>
+    }
 
     <div class="dashboard-grid">
 
@@ -419,6 +429,55 @@
         background: linear-gradient(90deg, #dc2626, var(--admin-gold), var(--admin-teal));
     }
 
+    .admin-dashboard .dashboard-profile-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: -6px 0 18px;
+        flex-wrap: wrap;
+    }
+
+    .admin-dashboard .dashboard-profile-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 9px 15px;
+        border: 1px solid color-mix(in srgb, var(--admin-gold) 44%, var(--admin-line));
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--admin-panel-strong), rgba(255, 248, 220, 0.9));
+        color: var(--admin-ink);
+        font-size: 0.86rem;
+        font-weight: 900;
+        line-height: 1;
+        text-decoration: none;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.46);
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-profile-action:hover {
+        transform: translateY(-1px);
+        border-color: var(--admin-teal);
+        background: linear-gradient(135deg, rgba(255, 248, 220, 0.98), var(--admin-panel-strong));
+    }
+
+    .admin-dashboard .dashboard-profile-action.logout {
+        border-color: color-mix(in srgb, #dc2626 46%, var(--admin-line));
+        color: #b91c1c;
+    }
+
+    .admin-dashboard .dashboard-profile-action-icon {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.92rem;
+    }
+
     .admin-dashboard .dashboard-section-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -617,6 +676,14 @@
     }
 
     @@media(max-width: 620px) {
+        .admin-dashboard .dashboard-profile-actions {
+            justify-content: stretch;
+        }
+
+        .admin-dashboard .dashboard-profile-action {
+            flex: 1 1 100%;
+        }
+
         .admin-dashboard .dashboard-mini-grid,
         .admin-dashboard .dashboard-money-row,
         .admin-dashboard .dashboard-stack,

@@ -590,6 +590,92 @@
                 outline-offset: 1px;
             }
 
+            .admin-confirm-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 99999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
+                background: rgba(15, 23, 42, 0.5);
+                backdrop-filter: blur(7px);
+            }
+
+            .admin-confirm-backdrop.is-open {
+                display: flex;
+            }
+
+            .admin-confirm-dialog {
+                width: min(420px, 100%);
+                border: 1px solid color-mix(in srgb, var(--admin-gold, #f2bd2d) 48%, var(--admin-line, #d1d5db));
+                border-radius: 8px;
+                background: var(--admin-panel, #ffffff);
+                color: var(--admin-ink, #111827);
+                box-shadow: 0 28px 70px rgba(15, 23, 42, 0.28);
+                overflow: hidden;
+            }
+
+            .admin-confirm-dialog header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 16px 18px 10px;
+            }
+
+            .admin-confirm-mark {
+                width: 34px;
+                height: 34px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                background: linear-gradient(135deg, var(--admin-rose, #c94f68), var(--admin-gold, #f2bd2d));
+                color: #ffffff;
+                font-weight: 950;
+            }
+
+            .admin-confirm-dialog h2 {
+                margin: 0;
+                font-size: 1.08rem;
+                font-weight: 950;
+            }
+
+            .admin-confirm-dialog p {
+                margin: 0;
+                padding: 0 18px 16px;
+                color: var(--admin-muted, #526071);
+                font-size: 0.92rem;
+                line-height: 1.5;
+            }
+
+            .admin-confirm-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                padding: 14px 18px 18px;
+                background: var(--admin-panel-strong, #f8fafc);
+            }
+
+            .admin-confirm-actions button {
+                min-height: 38px;
+                padding: 8px 14px;
+                border: 1px solid var(--admin-line, #d1d5db);
+                border-radius: 999px;
+                font-weight: 900;
+            }
+
+            .admin-confirm-cancel {
+                background: var(--admin-panel, #ffffff);
+                color: var(--admin-ink, #111827);
+            }
+
+            .admin-confirm-ok {
+                border-color: color-mix(in srgb, var(--admin-rose, #c94f68) 58%, var(--admin-line, #d1d5db));
+                background: linear-gradient(135deg, var(--admin-rose, #c94f68), #dc2626);
+                color: #ffffff;
+            }
+
             @@media(max-width: 768px) {
                 .admin-pagination-panel,
                 .admin-page-search-form {
@@ -618,6 +704,20 @@
 
     </main>
 
+</div>
+
+<div class="admin-confirm-backdrop no-print" id="adminConfirmLogout" role="dialog" aria-modal="true" aria-labelledby="adminConfirmLogoutTitle">
+    <div class="admin-confirm-dialog">
+        <header>
+            <span class="admin-confirm-mark">⏻</span>
+            <h2 id="adminConfirmLogoutTitle">Confirm Logout</h2>
+        </header>
+        <p>Are you sure you want to log out?</p>
+        <div class="admin-confirm-actions">
+            <button class="admin-confirm-cancel" type="button" data-admin-logout-cancel>Stay Logged In</button>
+            <button class="admin-confirm-ok" type="button" data-admin-logout-ok>Logout</button>
+        </div>
+    </div>
 </div>
 
 <div class="admin-amaro-widget no-print" data-amaro-widget>
@@ -694,9 +794,43 @@
         window.location.href = "/Admin/Dashboard";
     };
 
+    window.confirmLogout = function () {
+        const popup = document.getElementById("adminConfirmLogout");
+        if (!popup) {
+            return confirm("Are you sure you want to logout?");
+        }
+
+        popup.classList.add("is-open");
+        return false;
+    };
+
     document.addEventListener("DOMContentLoaded", function () {
         const saved = localStorage.getItem("amarShowsTheme") || "cinema";
         window.setAdminTheme(saved);
+
+        const popup = document.getElementById("adminConfirmLogout");
+        const ok = document.querySelector("[data-admin-logout-ok]");
+        const cancel = document.querySelector("[data-admin-logout-cancel]");
+
+        ok?.addEventListener("click", function () {
+            window.location.href = "/Auth/Logout";
+        });
+
+        cancel?.addEventListener("click", function () {
+            popup?.classList.remove("is-open");
+        });
+
+        popup?.addEventListener("click", function (event) {
+            if (event.target === popup) {
+                popup.classList.remove("is-open");
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                popup?.classList.remove("is-open");
+            }
+        });
     });
 })();
 </script>
