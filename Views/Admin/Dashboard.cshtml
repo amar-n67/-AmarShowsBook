@@ -8,6 +8,11 @@
     var hasDashboardUserId = int.TryParse(Context.Session.GetString("UserId"), out var dashboardUserId);
     var canUseSuperAdminDashboardLinks =
         hasDashboardUserId && RbacService.CanAccessSuperAdminArea(dashboardUserId);
+    var isDumAdmin =
+        hasDashboardUserId &&
+        RbacService.HasAnyActiveRole(dashboardUserId, "DUM_ADMIN") &&
+        !RbacService.HasAnyActiveRole(dashboardUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER");
+    var canShowDashboardAdminLinks = canUseSuperAdminDashboardLinks || isDumAdmin;
 
     string DateText(DateTime? value) => value.HasValue
         ? value.Value.ToString("dd MMM yyyy, hh:mm tt")
@@ -28,7 +33,18 @@
         </div>
 
         <div class="admin-actions">
-            <a class="admin-back-btn admin-page-back" href="/Home/ShowTime">← Back to Home</a>
+            @if (isDumAdmin)
+            {
+                <a class="admin-back-btn admin-page-back" href="/Profile/MyProfile">My Profile</a>
+                <a class="admin-back-btn admin-page-back" href="/Developer/Profile">Developer Profile</a>
+                <a class="admin-back-btn admin-page-back"
+                   href="/Auth/Logout"
+                   onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+            }
+            else
+            {
+                <a class="admin-back-btn admin-page-back" href="/Home/ShowTime">← Back to Home</a>
+            }
         </div>
     </div>
 
@@ -145,7 +161,7 @@
                     <h2>Show Inventory</h2>
                     <p>Content, venues, screens, and schedule readiness.</p>
                 </div>
-                @if (canUseSuperAdminDashboardLinks)
+                @if (canShowDashboardAdminLinks)
                 {
                     <a href="/Admin/ManageShows">Manage Shows</a>
                 }
@@ -357,14 +373,22 @@
             </div>
             <div class="dashboard-shortcuts">
                 <a href="/Admin/Users">Users <strong>@Model.TotalUsers</strong></a>
+                <a href="/Admin/Bookings">Bookings <strong>@Model.TotalBookings</strong></a>
+                <a href="/Admin/Security">Security <strong>@Model.TicketValidationIssues</strong></a>
+                <a href="/Admin/Transactions">Transactions <strong>@Model.SuccessfulPayments</strong></a>
+                <a href="/Admin/Refunds">Refunds <strong>@Model.TotalRefunds</strong></a>
+                <a href="/Admin/CouponUsage">Coupon Used</a>
+                <a href="/Admin/Wallets">Wallets <strong>@CurrencyFormatter.FormatRupees(Model.TotalWalletBalance)</strong></a>
+                <a href="/Admin/Notifications">Notifications <strong>@Model.TotalNotifications</strong></a>
+                <a href="/Admin/ActivityLogs">Activity Logs</a>
+                <a href="/Admin/Versions">Versions</a>
                 @if (canUseSuperAdminDashboardLinks)
                 {
                     <a href="/Admin/Roles">Roles <strong>@Model.ActiveRoles</strong></a>
+                    <a href="/Admin/ContentManager">Content Manager</a>
+                    <a href="/Admin/ContentManager#news">News Manage</a>
+                    <a href="/Admin/ContentManager#music">Music Manage</a>
                 }
-                <a href="/Admin/CouponUsage">Coupons</a>
-                <a href="/Admin/ActivityLogs">Activity Logs</a>
-                <a href="/Admin/Versions">Versions</a>
-                <a href="/Admin/ContentManager">Content Manager</a>
             </div>
         </article>
     </div>
@@ -603,6 +627,7 @@
         .admin-dashboard .dashboard-list div {
             grid-template-columns: 1fr;
         }
+
     }
 </style>
 

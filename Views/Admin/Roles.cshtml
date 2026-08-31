@@ -41,7 +41,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach(var role in Model.Where(x => x.RoleCode == "AMAR_SUPER_ADMIN" || x.RoleCode == "AMAR_ADMIN" || x.RoleCode == "AMAR_DEVELOPER" || x.RoleCode == "AMAR_USER"))
+                @foreach(var role in Model.Where(x => x.RoleCode == "AMAR_SUPER_ADMIN" || x.RoleCode == "AMAR_ADMIN" || x.RoleCode == "AMAR_DEVELOPER" || x.RoleCode == "AMAR_USER" || x.RoleCode == "DUM_ADMIN"))
                 {
                     var isSuperAdmin = string.Equals(role.RoleCode, "AMAR_SUPER_ADMIN", StringComparison.OrdinalIgnoreCase);
                     <tr data-admin-searchable data-filter-status="@(role.IsActive ? "ACTIVE" : "INACTIVE")">

@@ -75,6 +75,13 @@ namespace AmarShowsBook.Controllers
             {
                 await EnsureRbacInfrastructure();
 
+                if (IsDashboardOnlyAdmin(currentUserId, actionName))
+                {
+                    TempData["Error"] = "dum_Admin can access only the allowed admin dashboard pages, Developer Profile, and My Profile.";
+                    context.Result = RedirectToAction(nameof(Dashboard));
+                    return;
+                }
+
                 if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, moduleCode, actionType))
                 {
                     TempData["Error"] = "You do not have permission to access this admin feature.";
@@ -117,16 +124,45 @@ namespace AmarShowsBook.Controllers
                    actionName.Equals(nameof(DeleteManagedShow), StringComparison.OrdinalIgnoreCase);
         }
 
+        private bool IsDashboardOnlyAdmin(int? userId, string actionName)
+        {
+            if (userId == null || IsDumAdminAllowedAction(actionName))
+            {
+                return false;
+            }
+
+            return _rbacService.HasAnyActiveRole(userId.Value, "DUM_ADMIN") &&
+                !_rbacService.HasAnyActiveRole(
+                    userId.Value,
+                    "AMAR_SUPER_ADMIN",
+                    "AMAR_ADMIN",
+                    "AMAR_DEVELOPER");
+        }
+
+        private static bool IsDumAdminAllowedAction(string actionName)
+        {
+            return actionName.Equals(nameof(Dashboard), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals("Index", StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Users), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Bookings), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Security), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Transactions), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(TransactionDetails), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Refunds), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(RefundDetails), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(CouponUsage), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Wallets), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Notifications), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(ActivityLogs), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Versions), StringComparison.OrdinalIgnoreCase);
+        }
 
         public async Task<IActionResult> Dashboard()
         {
 
 
-            if (!RbacAuthorizationHelper.CanAccess(
-                HttpContext,
-                _rbacService,
-                "ADMIN",
-                "VIEW"))
+            if (!int.TryParse(HttpContext.Session.GetString("UserId"), out var dashboardUserId) ||
+                !_rbacService.CanOpenAdminDashboard(dashboardUserId))
             {
                 return RedirectToAction("ShowTime", "Home");
             }
@@ -135,6 +171,8 @@ namespace AmarShowsBook.Controllers
             var today = DateTime.UtcNow.Date;
             var tomorrow = today.AddDays(1);
             var now = DateTime.UtcNow;
+
+            await EnsureAdminReportingViews();
 
             // These counts come from reporting views, which keeps dashboard cards consistent with admin tables.
             var vm = new AdminDashboardViewModel
@@ -731,14 +769,15 @@ namespace AmarShowsBook.Controllers
                 "AMAR_SUPER_ADMIN",
                 "AMAR_ADMIN",
                 "AMAR_DEVELOPER",
-                "AMAR_USER"
+                "AMAR_USER",
+                "DUM_ADMIN"
             };
 
             if (!allowedRoles.Contains(role.RoleCode))
             {
-                TempData["Error"] = "Only the four system roles can be edited.";
-                return RedirectToAction(nameof(Roles));
-            }
+            TempData["Error"] = "Only the system roles can be edited.";
+            return RedirectToAction(nameof(Roles));
+        }
 
             role.RoleName = (roleName ?? role.RoleName).Trim();
             role.RoleDescription = roleDescription?.Trim();
@@ -1194,11 +1233,13 @@ namespace AmarShowsBook.Controllers
         }
 
 
-        public IActionResult Bookings(int page = 1)
+        public async Task<IActionResult> Bookings(int page = 1)
         {
 
             const int pageSize = 50;
             page = Math.Max(page, 1);
+
+            await EnsureAdminReportingViews();
 
             var query =
                 _context.VwBookingCompleteDetails
@@ -1228,6 +1269,8 @@ namespace AmarShowsBook.Controllers
             const int pageSize = 50;
 
             page = Math.Max(page, 1);
+
+            await EnsureAdminReportingViews();
 
             var query = _context.VwBookingTransactionSummaries
                 .AsNoTracking()
@@ -1279,11 +1322,13 @@ namespace AmarShowsBook.Controllers
         }
 
 
-        public IActionResult ActivityLogs(int page = 1)
+        public async Task<IActionResult> ActivityLogs(int page = 1)
         {
 
             const int pageSize = 50;
             page = Math.Max(page, 1);
+
+            await EnsureAdminReportingViews();
 
             var query = _context
                 .VwEnterpriseActivityLogs
@@ -1337,6 +1382,8 @@ namespace AmarShowsBook.Controllers
             {
                 const int pageSize = 50;
                 page = Math.Max(page, 1);
+
+                await EnsureAdminReportingViews();
 
                 var query = _context.VwRefundSummaries
                     .AsNoTracking()
@@ -1684,6 +1731,8 @@ GROUP BY uw.id, u.""Id"";
 
         public async Task<IActionResult> Notifications(int page = 1)
         {
+            await EnsureAdminReportingViews();
+
             var actionNotifications = await BuildAdminNotificationActions();
             var archivedActionNotifications = await BuildAdminNotificationArchiveActions();
 
@@ -2168,15 +2217,207 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
     }
 }
 
-private static DateTime DatabaseTimestampNow()
-{
-    return DateTime.SpecifyKind(
-        DateTime.UtcNow,
-        DateTimeKind.Unspecified);
-}
+        private static DateTime DatabaseTimestampNow()
+        {
+            return DateTime.SpecifyKind(
+                DateTime.UtcNow,
+                DateTimeKind.Unspecified);
+        }
 
-private async Task<OtpDeliveryResult> SendRefundRejectionUserNotification(Refund refund)
-{
+        private async Task EnsureAdminReportingViews()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+DROP VIEW IF EXISTS public.vw_enterprise_activity_logs;
+DROP VIEW IF EXISTS public.vw_refund_summary;
+DROP VIEW IF EXISTS public.vw_notification_center;
+DROP VIEW IF EXISTS public.vw_booking_transaction_summary;
+DROP VIEW IF EXISTS public.vw_booking_complete_details;
+
+CREATE OR REPLACE VIEW public.vw_booking_complete_details AS
+SELECT
+    b.id AS booking_id,
+    COALESCE(b.booking_ref::varchar(100), ('Booking #' || b.id::text)::varchar(100)) AS booking_ref,
+    COALESCE(u.""Id"", b.user_id)::integer AS user_id,
+    COALESCE(u.""Name"", 'User #' || b.user_id::text) AS user_name,
+    COALESCE(u.""Email"", 'Unavailable') AS user_email,
+    COALESCE(ss.""Type"", 'Unknown') AS show_type,
+    COALESCE(m.""Title"", st.""Title"", ls.""Title"", 'Untitled Show') AS show_title,
+    COALESCE(l.""Area"", 'N/A') AS location_name,
+    COALESCE(ss.""StartTime"", b.booked_at, b.created_at) AS start_time,
+    COALESCE(seat_list.seat_numbers, 'N/A') AS seat_numbers,
+    COALESCE(b.booking_status, 'PENDING') AS booking_status,
+    COALESCE(b.payment_status, 'PENDING') AS payment_status,
+    COALESCE(b.total_tickets, 0) AS total_tickets,
+    COALESCE(b.total_amount, 0) AS total_amount,
+    b.tax_amount,
+    b.discount_amount,
+    b.payable_amount,
+    COALESCE(tx.transaction_ref::text, bt.""TransactionRef""::text, 'N/A') AS transaction_ref,
+    COALESCE(tx.payment_method::text, bt.""PaymentMethod""::text, 'N/A') AS payment_method,
+    COALESCE(tx.gateway_name::text, CASE WHEN bt.""Id"" IS NOT NULL THEN 'DUMMY_GATEWAY' END, 'N/A') AS gateway_name,
+    COALESCE(tx.status::text, bt.""PaymentStatus""::text, 'PENDING') AS transaction_status,
+    COALESCE(b.booked_at, b.created_at) AS booked_at,
+    b.confirmed_at,
+    b.cancelled_at,
+    COALESCE(b.created_at, b.booked_at, CURRENT_TIMESTAMP)::timestamp without time zone AS created_at,
+    CASE WHEN b.booking_status = 'FAILED' THEN 1 ELSE 0 END AS is_error
+FROM public.bookings b
+LEFT JOIN public.""Users"" u ON b.user_id = u.""Id""
+LEFT JOIN public.""ShowSchedules"" ss ON b.schedule_id = ss.""Id""
+LEFT JOIN public.""Movies"" m ON ss.""MovieId"" = m.""Id""
+LEFT JOIN public.""StandupShows"" st ON ss.""StandupShowId"" = st.""Id""
+LEFT JOIN public.""LiveStreams"" ls ON ss.""LiveStreamId"" = ls.""Id""
+LEFT JOIN public.""Locations"" l ON ss.""LocationId"" = l.""Id""
+LEFT JOIN LATERAL (
+    SELECT string_agg(tk.seat_number, ', ' ORDER BY tk.seat_number) AS seat_numbers
+    FROM public.tickets tk
+    WHERE tk.booking_id = b.id
+) seat_list ON true
+LEFT JOIN LATERAL (
+    SELECT t.*
+    FROM public.transactions t
+    WHERE t.id = b.transaction_id OR t.booking_id = b.id
+    ORDER BY
+        CASE WHEN t.id = b.transaction_id THEN 0 ELSE 1 END,
+        t.completed_at DESC NULLS LAST,
+        t.created_at DESC NULLS LAST
+    LIMIT 1
+) tx ON true
+LEFT JOIN LATERAL (
+    SELECT bt_inner.*
+    FROM public.booking_transactions bt_inner
+    WHERE bt_inner.""BookingId"" = b.id
+    ORDER BY bt_inner.""PaidAt"" DESC NULLS LAST, bt_inner.""CreatedAt"" DESC NULLS LAST
+    LIMIT 1
+) bt ON true;
+
+CREATE OR REPLACE VIEW public.vw_booking_transaction_summary AS
+SELECT
+    b.id AS booking_id,
+    COALESCE(b.booking_ref::varchar(100), ('Booking #' || b.id::text)::varchar(100)) AS booking_ref,
+    COALESCE(u.""Id"", b.user_id)::integer AS user_id,
+    COALESCE(u.""Name"", 'User #' || b.user_id::text) AS user_name,
+    COALESCE(u.""Email"", 'Unavailable') AS user_email,
+    COALESCE(s.""Type"", 'Unknown') AS show_type,
+    COALESCE(m.""Title"", ss.""Title"", ls.""Title"", 'Untitled Show') AS show_title,
+    COALESCE(b.booking_status, '') AS booking_status,
+    COALESCE(tx.id, bt.""Id"") AS transaction_id,
+    COALESCE(tx.transaction_ref::text, bt.""TransactionRef""::text, '') AS transaction_ref,
+    COALESCE(tx.payment_method::text, bt.""PaymentMethod""::text, '') AS payment_method,
+    COALESCE(tx.amount, bt.""Amount"", 0) AS transaction_amount,
+    COALESCE(tx.currency, 'INR') AS currency,
+    COALESCE(tx.status::text, bt.""PaymentStatus""::text, '') AS transaction_status,
+    COALESCE(tx.gateway_name::text, CASE WHEN bt.""Id"" IS NOT NULL THEN 'DUMMY_GATEWAY' END, '') AS gateway_name,
+    COALESCE(tx.failure_reason, '') AS failure_reason,
+    CASE WHEN lower(COALESCE(tx.status::text, bt.""PaymentStatus""::text, '')) = 'failed' THEN 1 ELSE 0 END AS is_payment_error,
+    COALESCE(b.total_amount, 0) AS total_amount,
+    COALESCE(b.created_at, b.booked_at, CURRENT_TIMESTAMP)::timestamp without time zone AS booking_created_at,
+    COALESCE(tx.completed_at, bt.""PaidAt""::timestamp without time zone) AS completed_at
+FROM public.bookings b
+LEFT JOIN LATERAL (
+    SELECT t.*
+    FROM public.transactions t
+    WHERE t.id = b.transaction_id OR t.booking_id = b.id
+    ORDER BY
+        CASE WHEN t.id = b.transaction_id THEN 0 ELSE 1 END,
+        t.completed_at DESC NULLS LAST,
+        t.created_at DESC NULLS LAST
+    LIMIT 1
+) tx ON true
+LEFT JOIN LATERAL (
+    SELECT bt_inner.*
+    FROM public.booking_transactions bt_inner
+    WHERE bt_inner.""BookingId"" = b.id
+    ORDER BY bt_inner.""PaidAt"" DESC NULLS LAST, bt_inner.""CreatedAt"" DESC NULLS LAST
+    LIMIT 1
+) bt ON true
+LEFT JOIN public.""Users"" u ON b.user_id = u.""Id""
+LEFT JOIN public.""ShowSchedules"" s ON b.schedule_id = s.""Id""
+LEFT JOIN public.""Movies"" m ON s.""MovieId"" = m.""Id""
+LEFT JOIN public.""StandupShows"" ss ON s.""StandupShowId"" = ss.""Id""
+LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id"";
+
+CREATE OR REPLACE VIEW public.vw_notification_center AS
+SELECT
+    un.id AS notification_id,
+    COALESCE(u.""Name"", 'User #' || un.user_id::text) AS user_name,
+    COALESCE(u.""Email"", un.recipient_email, 'Unavailable') AS user_email,
+    COALESCE(nt.template_code, 'CUSTOM'::varchar) AS template_code,
+    COALESCE(nt.template_name, left(COALESCE(un.title, 'Notification'), 180)::varchar) AS template_name,
+    un.notification_type,
+    un.title,
+    un.message,
+    un.status,
+    un.priority,
+    un.sent_at,
+    un.delivered_at,
+    un.read_at,
+    un.retry_count,
+    un.failure_reason,
+    un.created_at,
+    CASE WHEN un.status = 'FAILED' THEN 1 ELSE 0 END AS is_error
+FROM public.user_notifications un
+LEFT JOIN public.""Users"" u ON un.user_id = u.""Id""
+LEFT JOIN public.notification_templates nt ON un.template_id = nt.id;
+
+CREATE OR REPLACE VIEW public.vw_refund_summary AS
+SELECT
+    r.id AS refund_id,
+    r.refund_ref,
+    COALESCE(b.booking_ref::varchar(100), ('Booking #' || r.booking_id::text)::varchar(100)) AS booking_ref,
+    COALESCE(t.transaction_ref::varchar(100), ('Transaction #' || r.transaction_id::text)::varchar(100)) AS transaction_ref,
+    COALESCE(u.""Id"", r.user_id)::integer AS user_id,
+    COALESCE(u.""Name"", 'User #' || r.user_id::text) AS user_name,
+    COALESCE(u.""Email"", 'Unavailable') AS user_email,
+    r.refund_amount,
+    r.refund_reason,
+    r.refund_status,
+    r.refund_method,
+    r.workflow_action,
+    r.approved_by,
+    r.approved_at,
+    r.rejected_by,
+    r.rejected_at,
+    r.retried_by,
+    r.retried_at,
+    r.gateway_refund_id,
+    r.failure_reason,
+    r.requested_at,
+    r.processed_at,
+    r.created_at,
+    r.updated_at,
+    r.admin_notes,
+    CASE WHEN r.refund_status = 'SUCCESS' THEN 0 ELSE 1 END AS is_refund_error
+FROM public.refunds r
+LEFT JOIN public.bookings b ON r.booking_id = b.id
+LEFT JOIN public.transactions t ON r.transaction_id = t.id
+LEFT JOIN public.""Users"" u ON r.user_id = u.""Id"";
+
+CREATE OR REPLACE VIEW public.vw_enterprise_activity_logs AS
+SELECT u.""Id""::bigint AS entity_id, 'USER'::text AS module, 'USER_REGISTERED'::varchar AS action,
+       COALESCE(u.""Name"", 'User #' || u.""Id""::text) AS user_name, COALESCE(u.""Email"", 'Unavailable') AS user_email, NULL::text AS reference_no,
+       'SUCCESS'::varchar AS status, 'New user account created'::text AS description,
+       NULL::text AS error_message, u.""CreatedAt""::timestamp with time zone AS activity_time
+FROM public.""Users"" u
+UNION ALL
+SELECT t.id, 'TRANSACTION', t.status, COALESCE(u.""Name"", 'User #' || t.user_id::text), COALESCE(u.""Email"", 'Unavailable'), t.transaction_ref, t.status,
+       COALESCE(t.description, 'Transaction processed'), t.failure_reason, COALESCE(t.completed_at, t.created_at)::timestamp with time zone
+FROM public.transactions t
+LEFT JOIN public.""Users"" u ON u.""Id"" = t.user_id
+UNION ALL
+SELECT b.id, 'BOOKING', b.booking_status, COALESCE(u.""Name"", 'User #' || b.user_id::text), COALESCE(u.""Email"", 'Unavailable'), b.booking_ref, b.booking_status,
+       'Ticket booking activity', NULL::text, COALESCE(b.created_at, b.booked_at)::timestamp with time zone
+FROM public.bookings b
+LEFT JOIN public.""Users"" u ON u.""Id"" = b.user_id
+UNION ALL
+SELECT al.id::bigint, 'SYSTEM', al.action::varchar, COALESCE(u.""Name"", 'System'), COALESCE(u.""Email"", 'Unavailable'), NULL::text, al.status::varchar,
+       al.description, al.error_message, al.created_at::timestamp with time zone
+FROM public.activity_logs al
+LEFT JOIN public.""Users"" u ON u.""Id"" = al.user_id;");
+        }
+
+        private async Task<OtpDeliveryResult> SendRefundRejectionUserNotification(Refund refund)
+        {
     if (refund.user_id > int.MaxValue || refund.user_id < int.MinValue)
     {
         return new OtpDeliveryResult(false, false, "Refund user id is invalid.");
@@ -2484,6 +2725,7 @@ public IActionResult ExportRefunds()
 public async Task<IActionResult> CouponUsage(int page = 1)
 {
     await EnsureAdminShowInfrastructure();
+    await EnsureAdminReportingViews();
 
     const int pageSize = 50;
     page = Math.Max(page, 1);
@@ -2964,6 +3206,8 @@ string Error);
 
 public async Task<IActionResult> ContentManager()
 {
+    await EnsureNewsAdminSchema();
+
     ViewBag.Movies = await _context.Movies
         .AsNoTracking()
         .OrderByDescending(x => x.Id)
@@ -2980,6 +3224,13 @@ public async Task<IActionResult> ContentManager()
         .AsNoTracking()
         .OrderByDescending(x => x.Id)
         .Take(100)
+        .ToListAsync();
+
+    ViewBag.NewsChannels = await _context.NewsChannels
+        .AsNoTracking()
+        .OrderBy(x => x.SortOrder)
+        .ThenBy(x => x.ChannelName)
+        .Take(120)
         .ToListAsync();
 
     return View();
@@ -3136,6 +3387,135 @@ public async Task<IActionResult> DeleteContent(string contentType, int id)
     return RedirectToAction(nameof(ContentManager));
 }
 
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> SaveNewsChannel(
+    long? id,
+    string? channelCode,
+    string channelName,
+    string language,
+    string category,
+    string region,
+    string? country,
+    string? state,
+    string? city,
+    string? description,
+    string? logoUrl,
+    string? websiteUrl,
+    string? liveUrl,
+    int sortOrder,
+    bool isActive)
+{
+    await EnsureNewsAdminSchema();
+
+    channelName = (channelName ?? string.Empty).Trim();
+    language = string.IsNullOrWhiteSpace(language) ? "All" : language.Trim();
+    category = string.IsNullOrWhiteSpace(category) ? "News" : category.Trim();
+    region = string.IsNullOrWhiteSpace(region) ? "All" : region.Trim();
+
+    if (string.IsNullOrWhiteSpace(channelName))
+    {
+        TempData["Error"] = "News channel name is required.";
+        return RedirectToAction(nameof(ContentManager), null, null, "news");
+    }
+
+    var code = NormalizeCode(string.IsNullOrWhiteSpace(channelCode) ? channelName : channelCode);
+    var channel = id.HasValue
+        ? await _context.NewsChannels.FirstOrDefaultAsync(x => x.Id == id.Value)
+        : new NewsChannel();
+
+    if (channel == null)
+    {
+        TempData["Error"] = "News channel not found.";
+        return RedirectToAction(nameof(ContentManager), null, null, "news");
+    }
+
+    var codeExists = await _context.NewsChannels
+        .AnyAsync(x => x.ChannelCode == code && (!id.HasValue || x.Id != id.Value));
+
+    if (codeExists)
+    {
+        TempData["Error"] = "News channel code already exists.";
+        return RedirectToAction(nameof(ContentManager), null, null, "news");
+    }
+
+    channel.ChannelCode = code;
+    channel.ChannelName = channelName;
+    channel.Language = language;
+    channel.Category = category;
+    channel.Region = region;
+    channel.Country = string.IsNullOrWhiteSpace(country) ? "India" : country.Trim();
+    channel.State = string.IsNullOrWhiteSpace(state) ? "All" : state.Trim();
+    channel.City = string.IsNullOrWhiteSpace(city) ? "All" : city.Trim();
+    channel.Description = description?.Trim();
+    channel.LogoUrl = logoUrl?.Trim();
+    channel.WebsiteUrl = websiteUrl?.Trim();
+    channel.LiveUrl = liveUrl?.Trim();
+    channel.SortOrder = sortOrder;
+    channel.IsActive = isActive;
+    channel.UpdatedAt = DateTime.UtcNow;
+
+    if (!id.HasValue)
+    {
+        channel.CreatedAt = DateTime.UtcNow;
+        _context.NewsChannels.Add(channel);
+    }
+
+    await _context.SaveChangesAsync();
+    TempData["Success"] = id.HasValue ? "News channel updated." : "News channel inserted.";
+    return RedirectToAction(nameof(ContentManager), null, null, "news");
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> DeleteNewsChannel(long id)
+{
+    await EnsureNewsAdminSchema();
+
+    var channel = await _context.NewsChannels.FirstOrDefaultAsync(x => x.Id == id);
+    if (channel == null)
+    {
+        TempData["Error"] = "News channel not found.";
+        return RedirectToAction(nameof(ContentManager), null, null, "news");
+    }
+
+    _context.NewsChannels.Remove(channel);
+    await _context.SaveChangesAsync();
+
+    TempData["Success"] = "News channel deleted.";
+    return RedirectToAction(nameof(ContentManager), null, null, "news");
+}
+
+private async Task EnsureNewsAdminSchema()
+{
+    await _context.Database.ExecuteSqlRawAsync(@"
+CREATE TABLE IF NOT EXISTS public.news_channels
+(
+    id bigserial PRIMARY KEY,
+    channel_code varchar(80) NOT NULL UNIQUE,
+    channel_name varchar(180) NOT NULL,
+    language varchar(80) NOT NULL,
+    category varchar(80) NOT NULL,
+    region varchar(120) NOT NULL,
+    country varchar(120) NOT NULL DEFAULT 'India',
+    state varchar(120) NOT NULL DEFAULT 'All',
+    city varchar(120) NOT NULL DEFAULT 'All',
+    description text,
+    logo_url text,
+    website_url text,
+    live_url text,
+    sort_order integer NOT NULL DEFAULT 0,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE public.news_channels ADD COLUMN IF NOT EXISTS country varchar(120) NOT NULL DEFAULT 'India';
+ALTER TABLE public.news_channels ADD COLUMN IF NOT EXISTS state varchar(120) NOT NULL DEFAULT 'All';
+ALTER TABLE public.news_channels ADD COLUMN IF NOT EXISTS city varchar(120) NOT NULL DEFAULT 'All';
+");
+}
+
 private static string NormalizeContentType(string? contentType)
 {
     var value = (contentType ?? string.Empty).Trim().ToLowerInvariant();
@@ -3145,7 +3525,7 @@ private static string NormalizeContentType(string? contentType)
         return "Standup";
     }
 
-    if (value.Contains("live"))
+    if (value.Contains("live") || value.Contains("music"))
     {
         return "Live";
     }
@@ -3761,6 +4141,8 @@ private static bool TryGetAdminPermission(
         [nameof(ContentManager)] = ("SHOW", "VIEW"),
         [nameof(SaveContent)] = ("SHOW", "UPDATE"),
         [nameof(DeleteContent)] = ("SHOW", "DELETE"),
+        [nameof(SaveNewsChannel)] = ("SHOW", "UPDATE"),
+        [nameof(DeleteNewsChannel)] = ("SHOW", "DELETE"),
         [nameof(CreateManagedShow)] = ("SHOW", "CREATE"),
         [nameof(UpdateManagedShow)] = ("SHOW", "UPDATE"),
         [nameof(DeleteManagedShow)] = ("SHOW", "DELETE"),
@@ -3886,6 +4268,43 @@ GROUP BY
 private void EnsurePermissionSeedData()
 {
     var now = DateTime.UtcNow;
+
+    var roles = new[]
+    {
+        ("AMAR_SUPER_ADMIN", "Super Admin", "Full access to every application module, including developer tools."),
+        ("AMAR_ADMIN", "Administrator", "Administrative access to operations, users, shows, bookings, payments, refunds, wallet, coupons, notifications, scanner, and analytics."),
+        ("AMAR_DEVELOPER", "Developer", "Developer profile and developer-only editor access."),
+        ("AMAR_USER", "User", "Default customer role for booking and profile workflows."),
+        ("DUM_ADMIN", "dum_Admin", "Dashboard access with Developer Profile and My Profile.")
+    };
+
+    foreach (var roleSeed in roles)
+    {
+        var existingRole = _context.Roles.FirstOrDefault(x => x.RoleCode == roleSeed.Item1);
+        if (existingRole == null)
+        {
+            _context.Roles.Add(new Role
+            {
+                RoleCode = roleSeed.Item1,
+                RoleName = roleSeed.Item2,
+                RoleDescription = roleSeed.Item3,
+                IsSystemRole = true,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+        else
+        {
+            existingRole.RoleName = roleSeed.Item2;
+            existingRole.RoleDescription = roleSeed.Item3;
+            existingRole.IsSystemRole = true;
+            existingRole.IsActive = true;
+            existingRole.UpdatedAt = now;
+        }
+    }
+
+    _context.SaveChanges();
 
     var modules = new[]
     {
@@ -4019,7 +4438,7 @@ WHERE role_id IN
 (
     SELECT id
     FROM public.roles
-    WHERE role_code IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+    WHERE role_code IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER', 'DUM_ADMIN')
 );
 
 INSERT INTO public.role_permissions
@@ -4059,6 +4478,31 @@ SELECT r.id, p.id, {grantedBy}, CURRENT_TIMESTAMP
 FROM public.roles r
 JOIN public.permissions p ON p.permission_code = 'DEVELOPER_EDIT'
 WHERE r.role_code = 'AMAR_DEVELOPER'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, {grantedBy}, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON p.permission_code IN
+(
+    'ADMIN_VIEW',
+    'USER_VIEW',
+    'BOOKING_VIEW',
+    'SCANNER_VIEW',
+    'PAYMENT_VIEW',
+    'REFUND_VIEW',
+    'COUPON_VIEW',
+    'WALLET_VIEW',
+    'NOTIFICATION_VIEW',
+    'DEVELOPER_EDIT'
+)
+WHERE r.role_code = 'DUM_ADMIN'
 ON CONFLICT DO NOTHING;");
 }
 

@@ -191,6 +191,11 @@ HttpContext.Session.SetString(
                 isError: 0
             );
 
+            if (IsDashboardHomeUser(user.Id))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+
             return RedirectToAction("ShowTime", "Home");
         }
         else
@@ -210,6 +215,7 @@ HttpContext.Session.SetString(
             return View();
         }
     }
+
     catch (PostgresException ex)
     {
         await _activityLogger.LogAsync(
@@ -262,6 +268,27 @@ HttpContext.Session.SetString(
         return View();
     }
 	}
+
+        private bool IsDashboardHomeUser(int userId)
+        {
+            return _context.UserRoleMappings
+                .Join(
+                    _context.Roles,
+                    mapping => mapping.RoleId,
+                    role => role.Id,
+                    (mapping, role) => new
+                    {
+                        mapping.UserId,
+                        mapping.IsActive,
+                        role.RoleCode,
+                        RoleIsActive = role.IsActive
+                    })
+                .Any(x =>
+                    x.UserId == userId &&
+                    x.IsActive &&
+                    x.RoleIsActive &&
+                    x.RoleCode == "DUM_ADMIN");
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]

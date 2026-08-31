@@ -193,13 +193,35 @@
     var supportWhatsAppText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
     var supportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(supportWhatsAppText)}";
     var hasUserId = int.TryParse(userIdText, out var currentUserId);
+    var isDashboardOnlyAdmin = hasUserId &&
+        RbacService.HasAnyActiveRole(currentUserId, "DUM_ADMIN") &&
+        !RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER");
+    var dumAdminAllowedNavActions = new[]
+    {
+        "Dashboard",
+        "Users",
+        "Bookings",
+        "Security",
+        "Transactions",
+        "Refunds",
+        "CouponUsage",
+        "Wallets",
+        "Notifications",
+        "ActivityLogs",
+        "Versions"
+    };
     Func<string, string, bool> canShowAdminNav = (module, action) =>
-        hasUserId && RbacService.HasPermission(currentUserId, module, action);
+        hasUserId && (isDashboardOnlyAdmin || RbacService.HasPermission(currentUserId, module, action));
     Func<string, bool> canShowAdminAction = action =>
     {
         if (!hasUserId)
         {
             return false;
+        }
+
+        if (isDashboardOnlyAdmin)
+        {
+            return dumAdminAllowedNavActions.Contains(action);
         }
 
         if (action == "Dashboard")

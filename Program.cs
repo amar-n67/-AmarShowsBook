@@ -105,6 +105,18 @@ app.UseRouting();
 
 app.UseSession();
 
+app.Use(
+async (context, next) =>
+{
+    if (ShouldRedirectDashboardOnlyAdmin(context))
+    {
+        context.Response.Redirect("/Admin/Dashboard");
+        return;
+    }
+
+    await next();
+});
+
 app.MapControllerRoute(
 name:"default",
 pattern:
@@ -266,6 +278,57 @@ ex,
 });
 
 app.Run();
+
+static bool ShouldRedirectDashboardOnlyAdmin(HttpContext context)
+{
+    if (IsDashboardOnlyAdminAllowedPath(context.Request.Path))
+    {
+        return false;
+    }
+
+    if (!int.TryParse(context.Session.GetString("UserId"), out var userId))
+    {
+        return false;
+    }
+
+    var rbacService = context.RequestServices.GetRequiredService<RbacService>();
+
+    return rbacService.HasAnyActiveRole(userId, "DUM_ADMIN") &&
+        !rbacService.HasAnyActiveRole(
+            userId,
+            "AMAR_SUPER_ADMIN",
+            "AMAR_ADMIN",
+            "AMAR_DEVELOPER");
+}
+
+static bool IsDashboardOnlyAdminAllowedPath(PathString path)
+{
+    var value = path.Value ?? "/";
+
+    return value.StartsWith("/Admin/Dashboard", StringComparison.OrdinalIgnoreCase) ||
+        value.Equals("/Admin", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Users", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Bookings", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Security", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Transactions", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/TransactionDetails", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Refunds", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/RefundDetails", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/CouponUsage", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Wallets", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Notifications", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/ActivityLogs", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Versions", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Developer", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Profile/MyProfile", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Profile/ChangePassword", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Auth/Login", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Auth/Logout", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Auth/RecoverDeletedAccount", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Auth/ForgotPassword", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Auth/ResetPassword", StringComparison.OrdinalIgnoreCase) ||
+        value.Equals("/favicon.ico", StringComparison.OrdinalIgnoreCase);
+}
 
 static void BaselineExistingDatabase(WebApplication app, ApplicationDbContext context)
 {
@@ -1631,7 +1694,8 @@ VALUES
     ('AMAR_SUPER_ADMIN', 'Super Admin', 'Full access to every application module, including developer tools.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('AMAR_ADMIN', 'Administrator', 'Administrative access to operations, users, shows, bookings, payments, refunds, wallet, coupons, notifications, scanner, and analytics.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('AMAR_DEVELOPER', 'Developer', 'Developer profile and developer-only editor access.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('AMAR_USER', 'User', 'Default customer role for booking and profile workflows.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ('AMAR_USER', 'User', 'Default customer role for booking and profile workflows.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('DUM_ADMIN', 'dum_Admin', 'Dashboard access with Developer Profile and My Profile.', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (role_code) DO UPDATE
 SET role_name = EXCLUDED.role_name,
     role_description = EXCLUDED.role_description,
@@ -1988,12 +2052,36 @@ FROM public.roles r
 JOIN public.permissions p ON p.permission_code = 'DEVELOPER_EDIT'
 WHERE r.role_code = 'AMAR_DEVELOPER';
 
+INSERT INTO public.role_permissions
+(
+    role_id,
+    permission_id,
+    granted_by,
+    granted_at
+)
+SELECT r.id, p.id, NULL, CURRENT_TIMESTAMP
+FROM public.roles r
+JOIN public.permissions p ON p.permission_code IN
+(
+    'ADMIN_VIEW',
+    'USER_VIEW',
+    'BOOKING_VIEW',
+    'SCANNER_VIEW',
+    'PAYMENT_VIEW',
+    'REFUND_VIEW',
+    'COUPON_VIEW',
+    'WALLET_VIEW',
+    'NOTIFICATION_VIEW',
+    'DEVELOPER_EDIT'
+)
+WHERE r.role_code = 'DUM_ADMIN';
+
 DELETE FROM public.role_menu_access
 WHERE role_id IN
 (
     SELECT id
     FROM public.roles
-    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER', 'DUM_ADMIN')
 );
 
 DELETE FROM public.user_role_mappings
@@ -2001,7 +2089,7 @@ WHERE role_id IN
 (
     SELECT id
     FROM public.roles
-    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER', 'DUM_ADMIN')
 );
 
 DELETE FROM public.user_roles
@@ -2009,11 +2097,11 @@ WHERE role_id IN
 (
     SELECT id
     FROM public.roles
-    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER')
+    WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER', 'DUM_ADMIN')
 );
 
 DELETE FROM public.roles
-WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER');
+WHERE role_code NOT IN ('AMAR_SUPER_ADMIN', 'AMAR_ADMIN', 'AMAR_DEVELOPER', 'AMAR_USER', 'DUM_ADMIN');
 
 CREATE OR REPLACE VIEW public.vw_user_access_matrix AS
 SELECT

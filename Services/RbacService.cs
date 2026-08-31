@@ -52,7 +52,8 @@ namespace AmarShowsBook.Services
                 userId,
                 "AMAR_SUPER_ADMIN",
                 "AMAR_ADMIN",
-                "AMAR_DEVELOPER");
+                "AMAR_DEVELOPER",
+                "DUM_ADMIN");
         }
 
         public bool CanAccessSuperAdminArea(int userId)
