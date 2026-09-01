@@ -773,14 +773,27 @@
 <script src="~/js/admin/admin-dashboard.js" asp-append-version="true"></script>
 <script>
 (function () {
+    let committedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
+
     function markAdminTheme(choice) {
         document.querySelectorAll("[data-admin-theme]").forEach(button => {
             button.classList.toggle("active", button.dataset.adminTheme === choice);
         });
     }
 
+    function previewAdminTheme(choice) {
+        const theme = choice || committedTheme || "cinema";
+        document.documentElement.dataset.theme = theme;
+    }
+
+    function restoreAdminThemePreview() {
+        previewAdminTheme(committedTheme);
+        markAdminTheme(committedTheme);
+    }
+
     window.setAdminTheme = function (choice) {
         const theme = choice || "cinema";
+        committedTheme = theme;
         localStorage.setItem("amarShowsTheme", theme);
         localStorage.setItem("amarShowsThemeVersion", "3");
         document.documentElement.dataset.theme = theme;
@@ -808,7 +821,16 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         const saved = localStorage.getItem("amarShowsTheme") || "cinema";
+        committedTheme = saved;
         window.setAdminTheme(saved);
+
+        document.querySelectorAll("[data-admin-theme]").forEach(button => {
+            const choice = button.dataset.adminTheme;
+            button.addEventListener("mouseenter", () => previewAdminTheme(choice));
+            button.addEventListener("focus", () => previewAdminTheme(choice));
+            button.addEventListener("mouseleave", restoreAdminThemePreview);
+            button.addEventListener("blur", restoreAdminThemePreview);
+        });
 
         const popup = document.getElementById("adminConfirmLogout");
         const ok = document.querySelector("[data-admin-logout-ok]");

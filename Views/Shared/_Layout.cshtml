@@ -2787,14 +2787,28 @@ updateDateTime();
 
 <script>
 (function () {
+    let committedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
+
     function markThemeButton(choice) {
         document.querySelectorAll(".theme-toggle-btn").forEach(btn => {
             btn.classList.toggle("active", btn.dataset.themeChoice === choice);
         });
     }
 
+    function previewTheme(choice) {
+        const themeChoice = choice || committedTheme || "cinema";
+        document.documentElement.dataset.themeChoice = themeChoice;
+        document.documentElement.dataset.theme = themeChoice;
+    }
+
+    function restoreThemePreview() {
+        previewTheme(committedTheme);
+        markThemeButton(committedTheme);
+    }
+
     window.setAppTheme = function (choice) {
         const themeChoice = choice || "cinema";
+        committedTheme = themeChoice;
         localStorage.setItem("amarShowsTheme", themeChoice);
         localStorage.setItem("amarShowsThemeVersion", "3");
         document.documentElement.dataset.themeChoice = themeChoice;
@@ -2804,7 +2818,16 @@ updateDateTime();
 
     document.addEventListener("DOMContentLoaded", function () {
         const saved = localStorage.getItem("amarShowsTheme") || "cinema";
+        committedTheme = saved;
         window.setAppTheme(saved);
+
+        document.querySelectorAll(".theme-toggle-btn[data-theme-choice]").forEach(button => {
+            const choice = button.dataset.themeChoice;
+            button.addEventListener("mouseenter", () => previewTheme(choice));
+            button.addEventListener("focus", () => previewTheme(choice));
+            button.addEventListener("mouseleave", restoreThemePreview);
+            button.addEventListener("blur", restoreThemePreview);
+        });
     });
 })();
 </script>
