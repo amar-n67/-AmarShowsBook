@@ -3733,7 +3733,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function shouldSkip(element) {
-        return element.querySelector(".film-nav-icon,.theme-icon,.action-icon-inline,.alert-support-icon,.dashboard-profile-action-icon") ||
+        if (element.matches("[data-no-action-icon]")) return true;
+        return element.querySelector(".film-nav-icon,.theme-icon,.action-icon,.action-icon-inline,.alert-support-icon,.dashboard-profile-action-icon") ||
             element.closest(".film-nav-btn,.theme-toggle-btn,.cinema-popup-support,.alert-support-link");
     }
 
