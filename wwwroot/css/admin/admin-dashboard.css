@@ -376,24 +376,24 @@ html[data-theme="cinema"] .admin-sidebar {
 
 .admin-sidebar-toggle {
     position: fixed;
-    left: calc(var(--admin-sidebar-width) - 18px);
+    left: calc(var(--admin-sidebar-width) - 14px);
     top: 50%;
     z-index: 2147483000;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 64px;
-    min-height: 64px;
+    width: 28px;
+    height: 52px;
+    min-height: 52px;
     margin: 0;
-    border: 2px solid rgba(255, 255, 255, 0.88);
-    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    border-radius: 0 14px 14px 0;
     padding: 0;
-    background: #ffffff;
-    color: var(--admin-rose);
+    background: rgba(255, 255, 255, 0.96);
+    color: #334155;
     font-weight: 900;
     line-height: 1.05;
-    box-shadow: 0 16px 36px rgba(23, 25, 35, 0.32);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
     transform: translateY(-50%);
     transition: left 0.22s ease, transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
@@ -404,10 +404,10 @@ html[data-theme="cinema"] .admin-sidebar {
     justify-content: center;
     width: 28px;
     height: 28px;
-    border-radius: 999px;
-    background: rgba(216, 69, 92, 0.12);
+    border-radius: 0;
+    background: transparent;
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 2rem;
+    font-size: 1.55rem;
     font-weight: 900;
     line-height: 1;
 }
@@ -417,20 +417,20 @@ html[data-theme="cinema"] .admin-sidebar {
     background: var(--admin-rose);
     border-color: var(--admin-rose);
     color: #fff;
-    box-shadow: 0 16px 34px rgba(23, 25, 35, 0.3);
-    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+    transform: translateY(-50%) translateX(2px);
     outline: none;
 }
 
 .admin-wrapper.nav-collapsed .admin-sidebar-toggle {
-    left: 8px;
+    left: 0;
     margin: 0;
     transform: translateY(-50%);
 }
 
 .admin-wrapper.nav-collapsed .admin-sidebar-toggle:hover,
 .admin-wrapper.nav-collapsed .admin-sidebar-toggle:focus-visible {
-    transform: translateY(-50%) scale(1.05);
+    transform: translateY(-50%) translateX(2px);
 }
 
 .admin-logo {
@@ -439,12 +439,19 @@ html[data-theme="cinema"] .admin-sidebar {
     gap: 10px;
     min-height: 48px;
     margin-bottom: 24px;
-    padding-bottom: 18px;
+    padding: 0 2px 18px;
     border-bottom: 1px solid rgba(255,255,255,0.14);
     color: #ffe2a7;
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 850;
     white-space: nowrap;
+    overflow: hidden;
+}
+
+.admin-logo-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .admin-logo-mark {
@@ -1212,23 +1219,23 @@ html[data-theme="cinema"] .admin-topbar {
 
     .admin-sidebar-toggle {
         top: 50%;
-        left: 8px;
-        width: 36px;
-        height: 64px;
+        left: 0;
+        width: 28px;
+        height: 52px;
         min-width: 0;
         margin: 0;
         transform: translateY(-50%);
     }
 
     .admin-wrapper.nav-collapsed .admin-sidebar-toggle {
-        left: calc(min(82vw, 300px) - 18px);
+        left: calc(min(82vw, 300px) - 14px);
     }
 
     .admin-sidebar-toggle:hover,
     .admin-sidebar-toggle:focus-visible,
     .admin-wrapper.nav-collapsed .admin-sidebar-toggle:hover,
     .admin-wrapper.nav-collapsed .admin-sidebar-toggle:focus-visible {
-        transform: translateY(-50%) scale(1.05);
+        transform: translateY(-50%) translateX(2px);
     }
 
     .admin-main {
