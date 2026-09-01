@@ -62,17 +62,15 @@
 <section class="showtime-page">
     <div class="showtime-hero">
         <div>
-            <h1 class="cinematic-showtime-title" aria-label="showTime">
-                <span class="title-word title-show">show</span><span class="title-word title-time">Time</span>
-                <span class="title-light-sweep" aria-hidden="true"></span>
-            </h1>
+            <span class="showtime-kicker">NOW SHOWING</span>
+            <h1 class="showtime-title">showTime</h1>
             <p>@userName, find a show near you.</p>
         </div>
-        <span class="hero-spotlight" aria-hidden="true"></span>
-        <span class="hero-film-grain" aria-hidden="true"></span>
-        <span class="hero-curtain hero-curtain-left" aria-hidden="true"></span>
-        <span class="hero-curtain hero-curtain-right" aria-hidden="true"></span>
-        <span class="hero-camera-flash" aria-hidden="true"></span>
+        <div class="showtime-summary">
+            <span>Available Shows</span>
+            <strong>@Model.HomeShows.Count</strong>
+            <small>@selectedTypeLabel</small>
+        </div>
     </div>
 
 <div class="showtime-controls @(platformMode ? "platform-mode" : "")">
@@ -521,8 +519,6 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     
     .showtime-hero {
         position: relative;
-        overflow: hidden;
-        isolation: isolate;
         display: flex;
         justify-content: space-between;
         gap: 20px;
@@ -530,37 +526,20 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         min-height: 130px;
         padding: 24px;
         border-radius: 8px;
-        background: var(--app-nav);
-        color: var(--app-nav-text);
-        box-shadow: 0 14px 34px rgba(35, 31, 32, 0.16);
+        margin-bottom: 18px;
+        background:
+            repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px),
+            linear-gradient(135deg, rgba(255,242,199,0.94), rgba(245,178,196,0.86), rgba(146,229,221,0.86));
+        color: #231f20;
+        box-shadow: 0 22px 64px rgba(35,31,32,0.22);
     }
 
     .showtime-hero::before {
-        content: "";
-        position: absolute;
-        inset: -40% -22% -58% 34%;
-        z-index: -2;
-        background:
-            radial-gradient(circle at 18% 50%, rgba(255,255,255,0.34), transparent 9%),
-            linear-gradient(102deg, transparent 0%, rgba(255,255,255,0.03) 25%, rgba(255,226,139,0.28) 46%, rgba(255,255,255,0.08) 58%, transparent 72%);
-        clip-path: polygon(0 36%, 100% 0, 100% 100%, 0 66%);
-        opacity: 0.9;
-        transform-origin: left center;
-        animation: projectorBeam 5.8s ease-in-out infinite;
+        content: none;
     }
 
     .showtime-hero::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        pointer-events: none;
-        background:
-            linear-gradient(90deg, rgba(255,255,255,0.2) 0 8px, transparent 8px 18px) 0 12px / 72px 8px repeat-x,
-            linear-gradient(90deg, rgba(255,255,255,0.18) 0 8px, transparent 8px 18px) 0 calc(100% - 20px) / 72px 8px repeat-x,
-            repeating-linear-gradient(90deg, transparent 0 14px, rgba(255,255,255,0.04) 14px 15px);
-        opacity: 0.38;
-        animation: filmRoll 7s linear infinite;
+        content: none;
     }
 
     .showtime-hero > div {
@@ -572,67 +551,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     .hero-film-grain,
     .hero-curtain,
     .hero-camera-flash {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-    }
-
-    .hero-spotlight {
-        z-index: 1;
-        background:
-            radial-gradient(circle at var(--spotlight-x, 24%) var(--spotlight-y, 42%),
-                rgba(255,244,205,0.38) 0%,
-                rgba(255,213,128,0.16) 18%,
-                rgba(255,213,128,0.05) 34%,
-                transparent 58%);
-        mix-blend-mode: screen;
-        opacity: 0.85;
-        transition: background-position 120ms ease-out;
-    }
-
-    .hero-film-grain {
-        z-index: 1;
-        opacity: 0.18;
-        background-image:
-            radial-gradient(circle at 18% 24%, rgba(255,255,255,0.48) 0 1px, transparent 1.4px),
-            radial-gradient(circle at 76% 32%, rgba(255,255,255,0.36) 0 1px, transparent 1.5px),
-            radial-gradient(circle at 42% 72%, rgba(0,0,0,0.3) 0 1px, transparent 1.4px),
-            radial-gradient(circle at 88% 84%, rgba(255,255,255,0.28) 0 1px, transparent 1.6px),
-            radial-gradient(circle at 54% 18%, rgba(255,226,163,0.3) 0 1px, transparent 1.5px);
-        background-size: 19px 23px, 31px 29px, 27px 35px, 41px 37px, 53px 47px;
-        animation: filmGrain 0.9s steps(3,end) infinite, dustDrift 8s linear infinite;
-    }
-
-    .hero-curtain {
-        z-index: 1;
-        width: 34%;
-        background:
-            linear-gradient(90deg, rgba(39,0,8,0.92), rgba(118,7,20,0.86) 34%, rgba(189,24,36,0.56) 58%, rgba(68,0,13,0.18)),
-            repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0 3px, transparent 3px 18px);
-        opacity: 0.78;
-        filter: drop-shadow(0 0 22px rgba(0,0,0,0.38));
-        transform-origin: left center;
-        animation: curtainOpenLeft 0.95s cubic-bezier(.16,.92,.2,1) both;
-    }
-
-    .hero-curtain-right {
-        left: auto;
-        right: 0;
-        transform-origin: right center;
-        background:
-            linear-gradient(270deg, rgba(39,0,8,0.92), rgba(118,7,20,0.86) 34%, rgba(189,24,36,0.56) 58%, rgba(68,0,13,0.18)),
-            repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0 3px, transparent 3px 18px);
-        animation-name: curtainOpenRight;
-    }
-
-    .hero-camera-flash {
-        z-index: 3;
-        background:
-            radial-gradient(circle at 32% 36%, rgba(255,255,255,0.96), rgba(255,245,211,0.44) 18%, transparent 48%),
-            linear-gradient(105deg, transparent 18%, rgba(255,255,255,0.58) 42%, transparent 64%);
-        mix-blend-mode: screen;
-        opacity: 0;
-        animation: cameraFlash 1.15s ease-out 0.18s both;
+        display: none;
     }
     
     .showtime-kicker,
@@ -644,183 +563,60 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         font-weight: 850;
         letter-spacing: 0.08em;
     }
+
+    .showtime-kicker {
+        display: block;
+        margin-bottom: 8px;
+    }
     
     .showtime-hero h1 {
         margin: 0 0 6px;
-        color: inherit;
+        color: #231f20;
         font-size: clamp(2rem, 5vw, 3.8rem);
         font-weight: 900;
     }
 
-    .cinematic-showtime-title {
+    .showtime-title {
         position: relative;
         display: inline-flex;
         align-items: baseline;
         line-height: 0.92;
         text-transform: none;
-        text-shadow:
-            0 2px 0 rgba(0,0,0,0.3),
-            0 18px 36px rgba(0,0,0,0.38),
-            0 0 28px rgba(255,222,140,0.34);
-        animation: titleFocus 4.8s ease-in-out infinite;
+        text-shadow: none;
     }
 
-    .cinematic-showtime-title .title-word {
-        position: relative;
-        display: inline-block;
-        background: linear-gradient(180deg, #fff 0%, #ffe8a5 44%, #f4b84c 62%, #fff8df 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
-
-    .cinematic-showtime-title .title-time {
-        margin-left: 0.04em;
-        color: transparent;
-        filter: drop-shadow(0 0 14px rgba(255,209,112,0.48));
-    }
-
-    .title-light-sweep {
-        position: absolute;
-        inset: -16% -12%;
-        pointer-events: none;
-        background: linear-gradient(105deg, transparent 28%, rgba(255,255,255,0.88) 47%, transparent 58%);
-        mix-blend-mode: screen;
-        opacity: 0;
-        transform: translateX(-115%) skewX(-12deg);
-        animation: titleSweep 3.6s cubic-bezier(.4,0,.2,1) infinite;
-    }
-    
     .showtime-hero p {
         position: relative;
         margin: 0;
         max-width: 620px;
-        color: color-mix(in srgb, var(--app-nav-text) 82%, transparent);
-        font-size: 1rem;
+        color: #34303a;
+        font-size: 1.05rem;
     }
 
-    @@keyframes projectorBeam {
-        0%, 100% {
-            opacity: 0.62;
-            transform: rotate(-1.4deg) scaleX(0.98);
-        }
-        50% {
-            opacity: 1;
-            transform: rotate(1.8deg) scaleX(1.04);
-        }
+    .showtime-summary {
+        min-width: 190px;
+        padding: 14px;
+        border: 1px dashed rgba(35,31,32,0.44);
+        border-radius: 8px;
+        background: rgba(255,255,255,0.38);
+        text-align: right;
     }
 
-    @@keyframes filmRoll {
-        from {
-            background-position: 0 12px, 0 calc(100% - 20px), 0 0;
-        }
-        to {
-            background-position: 72px 12px, -72px calc(100% - 20px), 30px 0;
-        }
+    .showtime-summary span,
+    .showtime-summary small {
+        display: block;
+        color: #34303a;
+        font-weight: 850;
     }
 
-    @@keyframes titleSweep {
-        0%, 42% {
-            opacity: 0;
-            transform: translateX(-115%) skewX(-12deg);
-        }
-        52% {
-            opacity: 0.72;
-        }
-        68%, 100% {
-            opacity: 0;
-            transform: translateX(115%) skewX(-12deg);
-        }
+    .showtime-summary strong {
+        display: block;
+        color: #231f20;
+        font-size: 1.7rem;
+        font-weight: 950;
+        line-height: 1.1;
     }
 
-    @@keyframes titleFocus {
-        0%, 100% {
-            filter: saturate(1) contrast(1);
-        }
-        50% {
-            filter: saturate(1.18) contrast(1.08);
-        }
-    }
-
-    @@keyframes filmGrain {
-        0% {
-            transform: translate(0,0);
-        }
-        33% {
-            transform: translate(-1px,1px);
-        }
-        66% {
-            transform: translate(1px,-1px);
-        }
-        100% {
-            transform: translate(0,0);
-        }
-    }
-
-    @@keyframes dustDrift {
-        from {
-            background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
-        }
-        to {
-            background-position: 38px 46px, -31px 29px, 27px -35px, -41px -37px, 53px 94px;
-        }
-    }
-
-    @@keyframes curtainOpenLeft {
-        0% {
-            transform: translateX(0) scaleX(1.08);
-            opacity: 0.88;
-        }
-        100% {
-            transform: translateX(-42%) scaleX(0.72);
-            opacity: 0.68;
-        }
-    }
-
-    @@keyframes curtainOpenRight {
-        0% {
-            transform: translateX(0) scaleX(1.08);
-            opacity: 0.88;
-        }
-        100% {
-            transform: translateX(42%) scaleX(0.72);
-            opacity: 0.68;
-        }
-    }
-
-    @@keyframes cameraFlash {
-        0% {
-            opacity: 0;
-            transform: scale(0.98);
-        }
-        16% {
-            opacity: 0.95;
-        }
-        34% {
-            opacity: 0.24;
-        }
-        100% {
-            opacity: 0;
-            transform: scale(1.04);
-        }
-    }
-
-    @@media (prefers-reduced-motion: reduce) {
-        .showtime-hero::before,
-        .showtime-hero::after,
-        .cinematic-showtime-title,
-        .title-light-sweep,
-        .hero-film-grain,
-        .hero-curtain,
-        .hero-camera-flash {
-            animation: none;
-        }
-
-        .hero-camera-flash {
-            opacity: 0;
-        }
-    }
-    
     .showtime-ticket {
         min-width: 180px;
         padding: 14px;
@@ -2359,7 +2155,8 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
         flex-basis: auto;
     }
 
-    .showtime-ticket {
+    .showtime-ticket,
+    .showtime-summary {
         width: 100%;
         text-align: left;
     }
@@ -3997,23 +3794,6 @@ updateLocationSummary();
 applyLocationFilter();
 }
 
-const showtimeHero=document.querySelector(".showtime-hero");
-const motionAllowed=!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-if(showtimeHero && motionAllowed && window.matchMedia("(pointer: fine)").matches)
-{
-showtimeHero.addEventListener("pointermove",event=>{
-const rect=showtimeHero.getBoundingClientRect();
-const x=((event.clientX-rect.left)/rect.width)*100;
-const y=((event.clientY-rect.top)/rect.height)*100;
-showtimeHero.style.setProperty("--spotlight-x",`${Math.max(0,Math.min(100,x))}%`);
-showtimeHero.style.setProperty("--spotlight-y",`${Math.max(0,Math.min(100,y))}%`);
-});
-
-showtimeHero.addEventListener("pointerleave",()=>{
-showtimeHero.style.setProperty("--spotlight-x","24%");
-showtimeHero.style.setProperty("--spotlight-y","42%");
-});
-}
 }
 
 
