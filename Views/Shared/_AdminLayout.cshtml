@@ -751,7 +751,7 @@
                 <button type="button" data-amaro-prompt="export this page">Export</button>
             }
             <button type="button" data-amaro-prompt="what can I do">Access</button>
-            <button type="button" data-amaro-prompt="contact support">Help</button>
+            <button type="button" data-amaro-prompt="contact support"><span class="action-icon-inline" aria-hidden="true">☎</span>Help</button>
         </div>
         <div class="admin-amaro-options" data-amaro-options></div>
         <div class="admin-amaro-thread" data-amaro-thread>
@@ -1256,7 +1256,169 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 })();
 </script>
+<script>
+(function () {
+    const iconMap = new Map([
+        ["help", "☎"],
+        ["email us", "✉"],
+        ["write us", "✉"],
+        ["whatsapp us", "☎"],
+        ["call us", "☎"],
+        ["summary", "📊"],
+        ["admin summary", "📊"],
+        ["search", "🔎"],
+        ["search records", "🔎"],
+        ["export", "⬇"],
+        ["export this page", "⬇"],
+        ["access", "🔐"],
+        ["open", "→"],
+        ["view", "👁"],
+        ["view details", "👁"],
+        ["save", "✓"],
+        ["save device", "✓"],
+        ["save changes", "✓"],
+        ["update", "✓"],
+        ["edit", "✎"],
+        ["delete", "🗑"],
+        ["cancel", "×"],
+        ["close", "×"],
+        ["reset", "↺"],
+        ["print", "🖨"],
+        ["download", "⬇"],
+        ["insert", "+"],
+        ["insert news", "+"],
+        ["add validation", "+"],
+        ["grant", "+"],
+        ["remove", "−"],
+        ["reactivate", "↺"],
+        ["suspend", "⏸"],
+        ["back to dashboard", "←"],
+        ["back to transactions", "←"],
+        ["logout", "⏻"],
+        ["my profile", "👤"],
+        ["developer profile", "🧩"]
+    ]);
+
+    function normalizedText(element) {
+        return Array.from(element.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE)
+            .map(node => node.textContent || "")
+            .join(" ")
+            .trim()
+            .replace(/\s+/g, " ")
+            .replace(/^←\s*/, "")
+            .toLowerCase();
+    }
+
+    function iconFor(label) {
+        if (iconMap.has(label)) return iconMap.get(label);
+        if (label.startsWith("back ")) return "←";
+        if (label.startsWith("save ")) return "✓";
+        if (label.startsWith("delete ")) return "🗑";
+        if (label.startsWith("download ")) return "⬇";
+        if (label.startsWith("view ")) return "👁";
+        return null;
+    }
+
+    function shouldSkip(element) {
+        return element.querySelector(".action-icon-inline,.alert-support-icon,.dashboard-profile-action-icon,.admin-nav-icon,.admin-icon-btn-icon") ||
+            element.closest(".alert-support-link,.dashboard-profile-action,.admin-nav a");
+    }
+
+    function iconify(root) {
+        const elements = root.matches?.("a, button")
+            ? [root, ...root.querySelectorAll("a, button")]
+            : [...root.querySelectorAll("a, button")];
+        elements.forEach(element => {
+            if (shouldSkip(element)) return;
+            const label = normalizedText(element);
+            if (!label) return;
+            const icon = iconFor(label);
+            if (!icon) return;
+
+            const iconSpan = document.createElement("span");
+            iconSpan.className = "action-icon-inline";
+            iconSpan.setAttribute("aria-hidden", "true");
+            iconSpan.textContent = icon;
+            element.prepend(iconSpan);
+            element.classList.add("action-iconified");
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        iconify(document);
+        new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType !== Node.ELEMENT_NODE) return;
+                    iconify(node);
+                });
+            });
+        }).observe(document.body, { childList: true, subtree: true });
+    });
+})();
+</script>
 @await RenderSectionAsync("Scripts", required: false)
+
+<style>
+button:not(:disabled):not(.disabled):not([aria-disabled="true"]),
+a.btn:not(.disabled):not([aria-disabled="true"]),
+a[class*="btn"]:not(.disabled):not([aria-disabled="true"]),
+a[role="button"]:not(.disabled):not([aria-disabled="true"]),
+label[class*="btn"]:not(.disabled):not([aria-disabled="true"]),
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+summary {
+    transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease !important;
+}
+
+button:not(:disabled):not(.disabled):not([aria-disabled="true"]):hover,
+button:not(:disabled):not(.disabled):not([aria-disabled="true"]):focus-visible,
+a.btn:not(.disabled):not([aria-disabled="true"]):hover,
+a.btn:not(.disabled):not([aria-disabled="true"]):focus-visible,
+a[class*="btn"]:not(.disabled):not([aria-disabled="true"]):hover,
+a[class*="btn"]:not(.disabled):not([aria-disabled="true"]):focus-visible,
+a[role="button"]:not(.disabled):not([aria-disabled="true"]):hover,
+a[role="button"]:not(.disabled):not([aria-disabled="true"]):focus-visible,
+label[class*="btn"]:not(.disabled):not([aria-disabled="true"]):hover,
+label[class*="btn"]:not(.disabled):not([aria-disabled="true"]):focus-visible,
+input[type="button"]:not(:disabled):hover,
+input[type="button"]:not(:disabled):focus-visible,
+input[type="submit"]:not(:disabled):hover,
+input[type="submit"]:not(:disabled):focus-visible {
+    transform: translateY(-2px) !important;
+    background: var(--admin-rose) !important;
+    border-color: var(--admin-rose) !important;
+    color: #fff !important;
+    filter: brightness(1.04) saturate(1.08) !important;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22) !important;
+    text-decoration: none !important;
+    outline: none !important;
+}
+
+body .admin-page button.btn:not(:disabled):not(.disabled):hover,
+body .admin-page button.btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page a.btn:not(.disabled):hover,
+body .admin-page a.btn:not(.disabled):focus-visible,
+body .admin-page .content-actions .btn:not(:disabled):not(.disabled):hover,
+body .admin-page .content-actions .btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page .content-form .btn:not(:disabled):not(.disabled):hover,
+body .admin-page .content-form .btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page .version-actions .btn:not(:disabled):not(.disabled):hover,
+body .admin-page .version-actions .btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page .content-tabs a:hover,
+body .admin-page .content-tabs a:focus-visible,
+body .admin-page .wallet-history-panel summary:hover,
+body .admin-page .wallet-history-panel summary:focus-visible {
+    transform: translateY(-2px) !important;
+    background: var(--admin-rose) !important;
+    border-color: var(--admin-rose) !important;
+    color: #fff !important;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22) !important;
+    filter: brightness(1.04) saturate(1.08) !important;
+    outline: none !important;
+}
+</style>
 
 </body>
 </html>

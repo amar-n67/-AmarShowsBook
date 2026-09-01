@@ -529,6 +529,21 @@ html[data-theme="cinema"] .admin-topbar {
     white-space: nowrap;
 }
 
+.action-iconified {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.action-icon-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    line-height: 1;
+}
+
 .admin-back-btn {
     padding: 0 14px;
     background: rgba(23,25,35,0.08);
