@@ -611,6 +611,19 @@ html[data-theme="cinema"] .admin-topbar {
     line-height: 1;
 }
 
+.contact-svg-icon,
+.action-icon-inline svg,
+.alert-support-icon svg {
+    display: block;
+    width: 1em;
+    height: 1em;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .admin-back-btn {
     padding: 0 14px;
     background: rgba(23,25,35,0.08);
@@ -1028,6 +1041,7 @@ html[data-theme="cinema"] .admin-topbar {
 .alert-support-options a {
     display: flex;
     align-items: center;
+    gap: 7px;
     min-height: 34px;
     padding: 7px 10px;
     border-radius: 8px;

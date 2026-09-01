@@ -750,7 +750,7 @@
                 <button type="button" data-amaro-prompt="export this page">Export</button>
             }
             <button type="button" data-amaro-prompt="what can I do">Access</button>
-            <button type="button" data-amaro-prompt="contact support"><span class="action-icon-inline" aria-hidden="true">☎</span>Help</button>
+            <button type="button" data-amaro-prompt="contact support"><span class="action-icon-inline" aria-hidden="true"><svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span>Help</button>
         </div>
         <div class="admin-amaro-options" data-amaro-options></div>
         <div class="admin-amaro-thread" data-amaro-thread>
@@ -837,6 +837,12 @@
 })();
 </script>
 <script>
+window.contactIconSvg = window.contactIconSvg || function (type) {
+    if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+    if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
+    return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
+};
+
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".alert-danger").forEach(function (alert) {
         if (alert.querySelector(".alert-support-menu")) return;
@@ -853,7 +859,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const supportIcon = document.createElement("span");
         supportIcon.className = "alert-support-icon";
-        supportIcon.textContent = "☎";
+        supportIcon.innerHTML = window.contactIconSvg("call");
 
         const supportText = document.createElement("span");
         supportText.className = "alert-support-label";
@@ -867,18 +873,24 @@ document.addEventListener("DOMContentLoaded", function () {
         supportOptions.setAttribute("role", "menu");
         supportOptions.setAttribute("aria-label", "Help options");
 
+        const callLink = document.createElement("a");
+        callLink.href = "tel:+919651698863";
+        callLink.innerHTML = window.contactIconSvg("call") + "Call Us";
+        callLink.setAttribute("role", "menuitem");
+
         const emailLink = document.createElement("a");
         emailLink.href = "@supportEmailUrl";
-        emailLink.textContent = "Email Us";
+        emailLink.innerHTML = window.contactIconSvg("mail") + "Email Us";
         emailLink.setAttribute("role", "menuitem");
 
         const whatsappLink = document.createElement("a");
         whatsappLink.href = "@supportWhatsAppUrl";
         whatsappLink.target = "_blank";
         whatsappLink.rel = "noopener";
-        whatsappLink.textContent = "WhatsApp Us";
+        whatsappLink.innerHTML = window.contactIconSvg("whatsapp") + "WhatsApp Us";
         whatsappLink.setAttribute("role", "menuitem");
 
+        supportOptions.appendChild(callLink);
         supportOptions.appendChild(emailLink);
         supportOptions.appendChild(whatsappLink);
         supportMenu.appendChild(supportLabel);
@@ -1257,12 +1269,18 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <script>
 (function () {
+    function contactIconSvg(type) {
+        if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+        if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
+        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
+    }
+
     const iconMap = new Map([
-        ["help", "☎"],
-        ["email us", "✉"],
-        ["write us", "✉"],
-        ["whatsapp us", "☎"],
-        ["call us", "☎"],
+        ["help", contactIconSvg("call")],
+        ["email us", contactIconSvg("mail")],
+        ["write us", contactIconSvg("mail")],
+        ["whatsapp us", contactIconSvg("whatsapp")],
+        ["call us", contactIconSvg("call")],
         ["summary", "📊"],
         ["admin summary", "📊"],
         ["search", "🔎"],
@@ -1320,7 +1338,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function shouldSkip(element) {
-        return element.querySelector(".action-icon-inline,.alert-support-icon,.dashboard-profile-action-icon,.admin-nav-icon,.admin-icon-btn-icon") ||
+        return element.querySelector(".action-icon-inline,.contact-svg-icon,.alert-support-icon,.dashboard-profile-action-icon,.admin-nav-icon,.admin-icon-btn-icon") ||
             element.closest(".alert-support-link,.dashboard-profile-action,.admin-nav a");
     }
 
@@ -1338,7 +1356,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const iconSpan = document.createElement("span");
             iconSpan.className = "action-icon-inline";
             iconSpan.setAttribute("aria-hidden", "true");
-            iconSpan.textContent = icon;
+            if (icon.startsWith("<svg")) {
+                iconSpan.innerHTML = icon;
+            } else {
+                iconSpan.textContent = icon;
+            }
             element.prepend(iconSpan);
             element.classList.add("action-iconified");
         });
