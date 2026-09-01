@@ -8,11 +8,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // This script is shared by admin pages for sidebar state, page search, and CSV export.
     if (shell && toggle) {
         const refreshToggleLabel = () => {
+            const icon = toggle.querySelector(".admin-sidebar-toggle-icon");
             const isCompact = window.matchMedia("(max-width: 820px)").matches;
             const classOn = shell.classList.contains("nav-collapsed");
             const navVisible = isCompact ? classOn : !classOn;
             toggle.setAttribute("aria-expanded", String(navVisible));
-            toggle.textContent = navVisible ? "Menu" : "Show Menu";
+            toggle.title = navVisible ? "Hide Sidebar" : "Show Sidebar";
+            toggle.setAttribute("aria-label", navVisible ? "Hide Sidebar" : "Show Sidebar");
+            if (icon) {
+                icon.textContent = navVisible ? "‹" : "›";
+            }
         };
 
         toggle.addEventListener("click", () => {
