@@ -1508,6 +1508,11 @@ html[data-theme="cinema"] .admin-topbar {
 }
 
 @media print {
+    @page {
+        size: A4 landscape;
+        margin: 8mm;
+    }
+
     .admin-sidebar,
     .admin-topbar,
     .admin-actions,
@@ -1518,18 +1523,130 @@ html[data-theme="cinema"] .admin-topbar {
         display: none !important;
     }
 
+    .print-page-header,
+    .print-page-footer,
+    .print-page-watermark {
+        display: block !important;
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        pointer-events: none !important;
+    }
+
+    .print-page-header {
+        top: 0 !important;
+        z-index: 2147483001 !important;
+    }
+
+    .print-page-footer {
+        bottom: 0 !important;
+        z-index: 2147483001 !important;
+    }
+
+    .print-page-watermark {
+        display: flex !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        z-index: 2147483000 !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .print-page-watermark img {
+        width: 122mm !important;
+        max-width: 70% !important;
+        opacity: 0.12 !important;
+        transform: rotate(-18deg) !important;
+    }
+
     body {
         background: #fff !important;
         color: #111 !important;
+        margin: 0 !important;
+        min-height: 297mm;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     .admin-wrapper {
         display: block;
         min-height: auto;
+        overflow: visible !important;
     }
 
     .admin-main {
-        padding: 0 !important;
+        padding: 18mm 0 11mm !important;
+        overflow: visible !important;
+    }
+
+    .print-brand-sheet {
+        display: none !important;
+    }
+
+    .print-watermark {
+        display: none !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        text-overflow: clip !important;
+    }
+
+    .admin-table,
+    .table,
+    table {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        font-size: 6.4pt !important;
+        line-height: 1.25 !important;
+    }
+
+    th,
+    td,
+    th *,
+    td * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        padding: 3px 4px !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+    }
+
+    .table-wrapper,
+    .admin-table-wrap,
+    .notifications-table-wrap,
+    .security-table-wrap,
+    .scroll-list,
+    [class*="table-wrap"],
+    [class*="table-wrapper"],
+    [class*="scroll"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        overflow: visible !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+    }
+
+    .admin-page-header,
+    .admin-header,
+    .stats-grid,
+    .dashboard-grid,
+    .transaction-detail-grid {
+        display: block !important;
+    }
+
+    img,
+    svg {
+        max-width: 100% !important;
     }
 
     .table-wrapper,
@@ -1539,6 +1656,70 @@ html[data-theme="cinema"] .admin-topbar {
     .transaction-detail-hero {
         box-shadow: none !important;
         border-color: #cbd5e1 !important;
-        break-inside: avoid;
+        break-inside: auto;
     }
+}
+
+.print-page-header,
+.print-page-footer,
+.print-page-watermark {
+    display: none;
+}
+
+.print-page-header {
+    border-bottom: 1px solid #cbd5e1;
+    color: #111;
+    font-size: 8pt;
+}
+
+.print-page-header-inner,
+.print-page-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.print-page-header-inner {
+    padding-bottom: 7px;
+}
+
+.print-page-footer {
+    border-top: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 7.5pt;
+    font-weight: 700;
+}
+
+.print-page-footer-inner {
+    padding-top: 6px;
+}
+
+.print-page-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.print-page-brand img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.print-page-brand strong {
+    display: block;
+    color: #111;
+    font-size: 11pt;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.print-page-brand span {
+    display: block;
+    margin-top: 2px;
+    color: #475569;
+    font-size: 7.5pt;
+    font-weight: 700;
 }

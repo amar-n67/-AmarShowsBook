@@ -310,6 +310,28 @@
 
 <body>
 
+<div class="print-page-header" aria-hidden="true">
+    <div class="print-page-header-inner">
+        <div class="print-page-brand">
+            <img src="@Url.Content("~/images/brand/arcanaamar-showtime-logo-cropped.png")" alt="" />
+            <div>
+                <strong>showTime</strong>
+                <span>AmarShowsBook Admin</span>
+            </div>
+        </div>
+        <div>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</div>
+    </div>
+</div>
+<div class="print-page-watermark" aria-hidden="true">
+    <img src="@Url.Content("~/images/brand/arcanaamar-showtime-logo-cropped.png")" alt="" />
+</div>
+<div class="print-page-footer" aria-hidden="true">
+    <div class="print-page-footer-inner">
+        <span>showTime AmarShowsBook</span>
+        <span>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</span>
+    </div>
+</div>
+
 <div class="admin-wrapper" id="adminShell">
 
     <aside class="admin-sidebar" id="adminSidebar">
