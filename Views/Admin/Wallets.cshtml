@@ -151,6 +151,14 @@
                 {
                     @foreach (var item in Model)
                     {
+                        var historyRows =
+                            walletStatusHistory.TryGetValue(item.WalletId, out var foundHistory)
+                                ? foundHistory
+                                : new List<AmarShowsBook.Models.Admin.WalletStatusHistory>();
+                        var latestHistory = historyRows
+                            .OrderByDescending(x => x.CreatedAt)
+                            .FirstOrDefault();
+
                         <tr id="wallet-@item.WalletId" data-filter-status="@item.WalletStatus">
 
 
@@ -184,6 +192,14 @@
 
                                 <div class="amount-text danger-text">
                                     @CurrencyFormatter.FormatRupees(item.BlockedBalance)
+                                    <span class="app-info app-info-left">
+                                        <button type="button" class="app-info-btn" aria-label="Show blocked balance details">i</button>
+                                        <span class="app-info-popover" role="tooltip">
+                                            <b>Amount</b> @CurrencyFormatter.FormatRupees(item.BlockedBalance)<br />
+                                            <b>Reason</b> @(string.IsNullOrWhiteSpace(item.SuspensionReason) ? "No blocked balance reason recorded." : item.SuspensionReason)<br />
+                                            <b>When</b> @(item.SuspendedAt?.ToString("dd MMM yyyy hh:mm tt") ?? latestHistory?.CreatedAt.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                                        </span>
+                                    </span>
                                 </div>
 
                             </td>
@@ -202,6 +218,12 @@
 
                                 <span class="loyalty-badge">
                                     @item.LoyaltyPoints
+                                </span>
+                                <span class="app-info app-info-left">
+                                    <button type="button" class="app-info-btn" aria-label="Show loyalty balance details">i</button>
+                                    <span class="app-info-popover" role="tooltip">
+                                        Loyalty balance is the reward points available for this user. Points are earned from eligible showTime activity and can be used where redemption is allowed.
+                                    </span>
                                 </span>
 
                             </td>
@@ -229,13 +251,14 @@
                                             : item.WalletStatus)
                                     </span>
                                 }
-
-                                @{
-                                    var historyRows =
-                                        walletStatusHistory.TryGetValue(item.WalletId, out var foundHistory)
-                                            ? foundHistory
-                                            : new List<AmarShowsBook.Models.Admin.WalletStatusHistory>();
-                                }
+                                <span class="app-info app-info-left">
+                                    <button type="button" class="app-info-btn" aria-label="Show wallet status details">i</button>
+                                    <span class="app-info-popover" role="tooltip">
+                                        <b>Status</b> @(string.IsNullOrWhiteSpace(item.WalletStatus) ? "NA" : item.WalletStatus)<br />
+                                        <b>Reason</b> @(string.IsNullOrWhiteSpace(item.SuspensionReason) ? latestHistory?.ActionReason ?? "No wallet status reason recorded." : item.SuspensionReason)<br />
+                                        <b>When</b> @(item.SuspendedAt?.ToString("dd MMM yyyy hh:mm tt") ?? latestHistory?.CreatedAt.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                                    </span>
+                                </span>
 
                             </td>
 

@@ -1361,6 +1361,12 @@ payableAmount
 <div class="wallet-applied">
 
 Wallet used:
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show wallet used details">i</button>
+<span class="app-info-popover" role="tooltip">
+This wallet amount has already been applied to the booking and reduces the gateway payable amount.
+</span>
+</span>
 
 @CurrencyFormatter.FormatRupees(
 walletAmountUsed
@@ -1374,6 +1380,12 @@ walletAmountUsed
 <div class="wallet-applied">
 
 Coupon discount:
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show coupon discount details">i</button>
+<span class="app-info-popover" role="tooltip">
+Coupon discount reduces the payable amount. It is not treated as a refundable payment amount.
+</span>
+</span>
 
 @CurrencyFormatter.FormatRupees(
 couponDiscount

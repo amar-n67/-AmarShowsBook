@@ -83,11 +83,41 @@
         <article class="panel">
             <h2>Wallet</h2>
             <dl>
-                <dt>Status</dt><dd>@Model.WalletStatus</dd>
-                <dt>Blocked</dt><dd>@CurrencyFormatter.FormatRupees(Model.BlockedBalance)</dd>
+                <dt>Status</dt>
+                <dd>
+                    @Model.WalletStatus
+                    <span class="app-info app-info-left">
+                        <button type="button" class="app-info-btn" aria-label="Show wallet status details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            <b>Status</b> @(string.IsNullOrWhiteSpace(Model.WalletStatus) ? "NA" : Model.WalletStatus)<br />
+                            <b>Last Wallet Tx</b> @(Model.LastWalletTransactionAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                        </span>
+                    </span>
+                </dd>
+                <dt>Blocked</dt>
+                <dd>
+                    @CurrencyFormatter.FormatRupees(Model.BlockedBalance)
+                    <span class="app-info app-info-left">
+                        <button type="button" class="app-info-btn" aria-label="Show blocked balance details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            <b>Amount</b> @CurrencyFormatter.FormatRupees(Model.BlockedBalance)<br />
+                            <b>Reason</b> Wallet status history has the detailed reason on Wallet Management.<br />
+                            <b>Last Wallet Tx</b> @(Model.LastWalletTransactionAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                        </span>
+                    </span>
+                </dd>
                 <dt>Credits</dt><dd>@CurrencyFormatter.FormatRupees(Model.WalletCredits)</dd>
                 <dt>Debits</dt><dd>@CurrencyFormatter.FormatRupees(Model.WalletDebits)</dd>
-                <dt>Loyalty</dt><dd>@Model.LoyaltyPoints points</dd>
+                <dt>Loyalty</dt>
+                <dd>
+                    @Model.LoyaltyPoints points
+                    <span class="app-info app-info-left">
+                        <button type="button" class="app-info-btn" aria-label="Show loyalty balance details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            Loyalty balance is the reward points available for this user. Points are earned from eligible showTime activity and can be used where redemption is allowed.
+                        </span>
+                    </span>
+                </dd>
                 <dt>Last Wallet Tx</dt><dd>@(Model.LastWalletTransactionAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")</dd>
             </dl>
         </article>

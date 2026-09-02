@@ -706,7 +706,7 @@ html[data-theme="cinema"] .admin-topbar {
 
 .admin-theme-switcher button.active {
     background: var(--admin-gold);
-    color: #111827;
+    color: #111827 !important;
 }
 
 .admin-page,
@@ -778,6 +778,7 @@ html[data-theme="cinema"] .admin-topbar {
     inset: 0 0 auto;
     height: 4px;
     background: linear-gradient(90deg, var(--admin-gold), var(--admin-teal), var(--admin-rose));
+    pointer-events: none;
 }
 
 .dashboard-card span,
@@ -1728,4 +1729,127 @@ html[data-theme="cinema"] .admin-topbar {
     color: #475569;
     font-size: 7.5pt;
     font-weight: 700;
+}
+
+.app-info {
+    position: relative;
+    display: inline-flex !important;
+    align-items: center;
+    margin-left: 7px !important;
+    margin-bottom: 0 !important;
+    vertical-align: middle;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    z-index: 2;
+}
+
+.app-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #94a3b8;
+    border-radius: 50%;
+    background: #f8fafc;
+    color: #111827;
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: help;
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.app-info-btn:hover,
+.app-info-btn:focus-visible {
+    background: #fbbf24;
+    border-color: #f59e0b;
+    color: #111827;
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.app-info-popover {
+    position: absolute;
+    display: block;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    z-index: 1000;
+    width: min(280px, 72vw);
+    padding: 10px 12px;
+    margin-bottom: 0 !important;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #111827;
+    box-shadow: 0 18px 38px rgba(0,0,0,0.24);
+    font-size: 0.78rem !important;
+    font-weight: 650 !important;
+    line-height: 1.45;
+    letter-spacing: 0 !important;
+    text-align: left;
+    text-transform: none !important;
+    white-space: normal;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 6px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.app-info-popover::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 10px;
+    height: 10px;
+    border-right: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+    background: #fff;
+    transform: translate(-50%, -5px) rotate(45deg);
+}
+
+.app-info-popover b {
+    display: inline !important;
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.app-info:hover,
+.app-info:focus-within {
+    z-index: 1001;
+}
+
+.app-info:hover .app-info-popover,
+.app-info:focus-within .app-info-popover {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.app-info-left .app-info-popover {
+    left: auto;
+    right: 0;
+    transform: translate(0, 6px);
+}
+
+.app-info-left .app-info-popover::after {
+    left: auto;
+    right: 8px;
+}
+
+.app-info-left:hover .app-info-popover,
+.app-info-left:focus-within .app-info-popover {
+    transform: translate(0, 0);
+}
+
+.dashboard-card:has(.app-info),
+.stat-card:has(.app-info),
+.admin-detail-panel:has(.app-info),
+.card:has(.app-info),
+[class*="table-wrap"]:has(.app-info),
+[class*="table-wrapper"]:has(.app-info),
+.table-responsive:has(.app-info) {
+    overflow: visible !important;
 }

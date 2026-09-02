@@ -213,7 +213,18 @@
                          data-sort-amount="@((booking.PayableAmount ?? booking.TotalAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
                          data-sort-status="@statusText">
                     <div class="booking-top">
-                        <span class="booking-status @statusClass">@statusText</span>
+                        <span>
+                            <span class="booking-status @statusClass">@statusText</span>
+                            <span class="app-info">
+                                <button type="button" class="app-info-btn" aria-label="Show booking status details">i</button>
+                                <span class="app-info-popover" role="tooltip">
+                                    <b>Booking</b> @statusText<br />
+                                    <b>Payment</b> @(string.IsNullOrWhiteSpace(booking.PaymentStatus) ? "NA" : booking.PaymentStatus)<br />
+                                    <b>Refund</b> @refundLabel<br />
+                                    <b>Show</b> @bookingStartLocal.ToString("dd MMM yyyy, hh:mm tt")
+                                </span>
+                            </span>
+                        </span>
                         <strong>@booking.BookingRef</strong>
                     </div>
 
@@ -615,13 +626,18 @@
     display: grid;
     gap: 14px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     padding: 18px;
     border-radius: 8px;
     border: 1px solid var(--app-input-border);
     background: var(--app-card);
     color: var(--app-card-text);
     box-shadow: 0 14px 28px rgba(0,0,0,0.12);
+}
+
+.booking-card:hover,
+.booking-card:focus-within {
+    z-index: 5;
 }
 
 .booking-card::before {

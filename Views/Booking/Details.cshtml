@@ -139,6 +139,8 @@ border:1px solid var(--border);
 box-shadow:
 0 15px 40px rgba(0,0,0,.05);
 
+overflow:visible;
+
 }
 
 
@@ -671,6 +673,14 @@ Booking #@Model.Id
 
 <div>
 <span>Available</span>
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show available wallet details">i</button>
+<span class="app-info-popover" role="tooltip">
+<b>Wallet</b> Available wallet is balance minus blocked balance.<br />
+<b>Status</b> @(wallet?.WalletStatus ?? "NA")<br />
+<b>Blocked</b> @CurrencyFormatter.FormatRupees(wallet?.BlockedBalance ?? 0)
+</span>
+</span>
 <strong>
 @CurrencyFormatter.FormatRupees(
 usableWallet)
@@ -679,6 +689,12 @@ usableWallet)
 
 <div>
 <span>Used</span>
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show wallet used details">i</button>
+<span class="app-info-popover" role="tooltip">
+This amount will be deducted from your wallet for this booking before gateway payment is calculated.
+</span>
+</span>
 <strong>
 @CurrencyFormatter.FormatRupees(
 walletAmountUsed)
@@ -796,6 +812,12 @@ walletAmountUsed)
 
 <div>
 <span>Coupon Discount</span>
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show coupon discount details">i</button>
+<span class="app-info-popover" role="tooltip">
+Coupon discount reduces the payable amount. Coupon discount is not counted as a refundable wallet or payment amount.
+</span>
+</span>
 <strong>
 -@CurrencyFormatter.FormatRupees(
 couponDiscount)

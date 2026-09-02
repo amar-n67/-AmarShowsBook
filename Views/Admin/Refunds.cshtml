@@ -282,6 +282,12 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
+                        var refundDetailReason = !string.IsNullOrWhiteSpace(item.FailureReason)
+                            ? item.FailureReason
+                            : !string.IsNullOrWhiteSpace(item.RefundReason)
+                                ? item.RefundReason
+                                : "No refund reason recorded.";
+
                         <tr data-refund-status="@item.RefundStatus"
                             data-refund-method="@item.RefundMethod">
                             <td class="fw-semibold text-dark">
@@ -323,6 +329,17 @@
                                         FAILED
                                     </span>
                                 }
+                                @if (!string.Equals(item.RefundStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="app-info app-info-left">
+                                        <button type="button" class="app-info-btn" aria-label="Show refund status details">i</button>
+                                        <span class="app-info-popover" role="tooltip">
+                                            <b>Status</b> @(string.IsNullOrWhiteSpace(item.RefundStatus) ? "NA" : item.RefundStatus)<br />
+                                            <b>Reason</b> @refundDetailReason<br />
+                                            <b>Requested</b> @(item.RequestedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                                        </span>
+                                    </span>
+                                }
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
@@ -347,6 +364,14 @@
     {
         <span class="badge bg-danger px-3 py-2">
             Rejected - Ticket Active
+        </span>
+        <span class="app-info app-info-left">
+            <button type="button" class="app-info-btn" aria-label="Show rejected refund details">i</button>
+            <span class="app-info-popover" role="tooltip">
+                <b>Status</b> Rejected<br />
+                <b>Reason</b> @(string.IsNullOrWhiteSpace(item.RefundReason) ? "Ticket remains active or request was rejected by admin." : item.RefundReason)<br />
+                <b>Requested</b> @(item.RequestedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+            </span>
         </span>
     }
     else if (item.RefundStatus == "RETRY")

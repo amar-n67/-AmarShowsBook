@@ -31,7 +31,22 @@
                 <dt>Amount</dt>
                 <dd>@CurrencyFormatter.FormatRupees(Model.TransactionAmount)</dd>
                 <dt>Status</dt>
-                <dd>@(string.IsNullOrWhiteSpace(Model.TransactionStatus) ? "NA" : Model.TransactionStatus)</dd>
+                <dd>
+                    @(string.IsNullOrWhiteSpace(Model.TransactionStatus) ? "NA" : Model.TransactionStatus)
+                    @if (!string.Equals(Model.TransactionStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase)
+                        || !string.IsNullOrWhiteSpace(Model.FailureReason)
+                        || Model.CompletedAt == null)
+                    {
+                        <span class="app-info app-info-left">
+                            <button type="button" class="app-info-btn" aria-label="Show transaction status details">i</button>
+                            <span class="app-info-popover" role="tooltip">
+                                <b>Status</b> @(string.IsNullOrWhiteSpace(Model.TransactionStatus) ? "NA" : Model.TransactionStatus)<br />
+                                <b>Reason</b> @(string.IsNullOrWhiteSpace(Model.FailureReason) ? "Payment is not marked successful yet." : Model.FailureReason)<br />
+                                <b>When</b> @(Model.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                            </span>
+                        </span>
+                    }
+                </dd>
                 <dt>Method</dt>
                 <dd>@(string.IsNullOrWhiteSpace(Model.PaymentMethod) ? "NA" : Model.PaymentMethod)</dd>
                 <dt>Gateway</dt>

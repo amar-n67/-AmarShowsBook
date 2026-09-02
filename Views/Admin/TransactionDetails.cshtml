@@ -23,6 +23,19 @@
             <span class="badge @(Model.TransactionStatus == "SUCCESS" ? "success" : "danger")">
                 @Model.TransactionStatus
             </span>
+            @if (!string.Equals(Model.TransactionStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase)
+                || !string.IsNullOrWhiteSpace(Model.FailureReason)
+                || Model.CompletedAt == null)
+            {
+                <span class="app-info">
+                    <button type="button" class="app-info-btn" aria-label="Show transaction status details">i</button>
+                    <span class="app-info-popover" role="tooltip">
+                        <b>Status</b> @(string.IsNullOrWhiteSpace(Model.TransactionStatus) ? "NA" : Model.TransactionStatus)<br />
+                        <b>Reason</b> @(string.IsNullOrWhiteSpace(Model.FailureReason) ? "Payment is not marked successful yet." : Model.FailureReason)<br />
+                        <b>Completed</b> @(Model.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                    </span>
+                </span>
+            }
             <h2>@Model.TransactionRef</h2>
             <p>@Model.ShowTitle</p>
         </div>

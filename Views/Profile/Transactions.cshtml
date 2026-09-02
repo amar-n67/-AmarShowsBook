@@ -30,6 +30,17 @@
 
             <td>
                 @item.TransactionStatus
+                @if (!string.Equals(item.TransactionStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+                {
+                    <span class="app-info app-info-left">
+                        <button type="button" class="app-info-btn" aria-label="Show transaction status details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            <b>Status</b> @(string.IsNullOrWhiteSpace(item.TransactionStatus) ? "NA" : item.TransactionStatus)<br />
+                            <b>Reason</b> @(string.IsNullOrWhiteSpace(item.FailureReason) ? "Payment is not marked successful yet." : item.FailureReason)<br />
+                            <b>When</b> @(item.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                        </span>
+                    </span>
+                }
             </td>
 
             <td>

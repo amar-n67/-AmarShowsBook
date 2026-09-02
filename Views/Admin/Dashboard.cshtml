@@ -66,7 +66,15 @@
         </div>
 
         <div class="dashboard-card">
-            <span>Failed Bookings</span>
+            <span>
+                Failed Bookings
+                <span class="app-info app-info-left">
+                    <button type="button" class="app-info-btn" aria-label="Show failed booking details">i</button>
+                    <span class="app-info-popover" role="tooltip">
+                        Bookings counted here are not in a successful confirmed state or have an error flag.
+                    </span>
+                </span>
+            </span>
             <strong>@Model.FailedBookings</strong>
         </div>
 
@@ -76,7 +84,15 @@
         </div>
 
         <div class="dashboard-card">
-            <span>Failed Payments</span>
+            <span>
+                Failed Payments
+                <span class="app-info app-info-left">
+                    <button type="button" class="app-info-btn" aria-label="Show failed payment details">i</button>
+                    <span class="app-info-popover" role="tooltip">
+                        Payments counted here are failed gateway/payment transactions or payment records marked with an error.
+                    </span>
+                </span>
+            </span>
             <strong>@Model.FailedPayments</strong>
         </div>
 
@@ -86,7 +102,15 @@
         </div>
 
         <div class="dashboard-card">
-            <span>Refund Failures</span>
+            <span>
+                Refund Failures
+                <span class="app-info app-info-left">
+                    <button type="button" class="app-info-btn" aria-label="Show refund failure details">i</button>
+                    <span class="app-info-popover" role="tooltip">
+                        Refunds counted here are failed refund attempts or refund records with an error flag.
+                    </span>
+                </span>
+            </span>
             <strong>@Model.FailedRefunds</strong>
         </div>
 
@@ -356,7 +380,15 @@
             </div>
             <div class="dashboard-mini-grid">
                 <div>
-                    <span>Blocked Balance</span>
+                    <span>
+                        Blocked Balance
+                        <span class="app-info app-info-left">
+                            <button type="button" class="app-info-btn" aria-label="Show blocked wallet balance details">i</button>
+                            <span class="app-info-popover" role="tooltip">
+                                Total wallet money currently unavailable for users to spend. Individual reasons are available in Wallet Management.
+                            </span>
+                        </span>
+                    </span>
                     <strong>@CurrencyFormatter.FormatRupees(Model.BlockedWalletBalance)</strong>
                 </div>
                 <div>
@@ -418,10 +450,16 @@
         display: block;
         color: inherit;
         text-decoration: none;
+        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
     }
 
-    .admin-dashboard .dashboard-card-link:hover {
+    .admin-dashboard .dashboard-card-link:hover,
+    .admin-dashboard .dashboard-card-link:focus-visible {
         border-color: var(--admin-gold) !important;
+        background: linear-gradient(135deg, #fff7d6, #eefdfb) !important;
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16);
+        color: var(--admin-ink);
+        outline: none;
         transform: translateY(-1px);
     }
 
@@ -457,10 +495,14 @@
         transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
     }
 
-    .admin-dashboard .dashboard-profile-action:hover {
+    .admin-dashboard .dashboard-profile-action:hover,
+    .admin-dashboard .dashboard-profile-action:focus-visible {
         transform: translateY(-1px);
         border-color: var(--admin-teal);
         background: linear-gradient(135deg, rgba(255, 248, 220, 0.98), var(--admin-panel-strong));
+        color: var(--admin-ink);
+        outline: none;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
     }
 
     .admin-dashboard .dashboard-profile-action.logout {
@@ -529,6 +571,18 @@
         border-radius: 999px;
         background: var(--admin-panel-strong);
         font-size: 0.8rem;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.34);
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-section-head a:hover,
+    .admin-dashboard .dashboard-section-head a:focus-visible {
+        border-color: var(--admin-teal);
+        background: var(--admin-night);
+        color: white;
+        outline: none;
+        box-shadow: 0 12px 24px rgba(23,25,35,0.18);
+        transform: translateY(-1px);
     }
 
     .admin-dashboard .dashboard-section-actions {
@@ -553,11 +607,17 @@
         align-items: center;
         justify-content: center;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
     }
 
-    .admin-dashboard .dashboard-toggle-btn:hover {
+    .admin-dashboard .dashboard-toggle-btn:hover,
+    .admin-dashboard .dashboard-toggle-btn:focus-visible {
         border-color: var(--admin-gold);
-        color: var(--admin-teal);
+        background: var(--admin-gold);
+        color: #231f20;
+        outline: none;
+        box-shadow: 0 12px 24px rgba(23,25,35,0.16);
+        transform: translateY(-1px);
     }
 
     .admin-dashboard .dashboard-mini-grid,
@@ -662,6 +722,19 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
+        position: relative;
+        overflow: visible;
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-shortcuts a:hover,
+    .admin-dashboard .dashboard-shortcuts a:focus-visible {
+        border-color: var(--admin-gold);
+        background: linear-gradient(135deg, #fff7d6, #eefdfb);
+        color: var(--admin-ink);
+        outline: none;
+        box-shadow: 0 12px 24px rgba(15,23,42,0.12);
+        transform: translateY(-1px);
     }
 
     .admin-dashboard .dashboard-shortcuts strong {

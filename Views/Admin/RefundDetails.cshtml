@@ -5,6 +5,11 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refund Details";
+    var refundDetailReason = !string.IsNullOrWhiteSpace(Model.FailureReason)
+        ? Model.FailureReason
+        : !string.IsNullOrWhiteSpace(Model.RefundReason)
+            ? Model.RefundReason
+            : "No refund reason recorded.";
 }
 
 <section class="refund-details-page">
@@ -146,6 +151,17 @@
                             : Model.RefundStatus)
                     </span>
                 }
+                @if (!string.Equals(Model.RefundStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+                {
+                    <span class="app-info">
+                        <button type="button" class="app-info-btn" aria-label="Show refund status details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            <b>Status</b> @(string.IsNullOrWhiteSpace(Model.RefundStatus) ? "NA" : Model.RefundStatus)<br />
+                            <b>Reason</b> @refundDetailReason<br />
+                            <b>Requested</b> @(Model.RequestedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                        </span>
+                    </span>
+                }
 
             </p>
 
@@ -272,6 +288,14 @@
                 {
                     <span class="status failed">
                         YES
+                    </span>
+                    <span class="app-info">
+                        <button type="button" class="app-info-btn" aria-label="Show refund error details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            <b>Error</b> Yes<br />
+                            <b>Reason</b> @(string.IsNullOrWhiteSpace(Model.FailureReason) ? "No gateway failure reason recorded." : Model.FailureReason)<br />
+                            <b>Updated</b> @(Model.UpdatedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                        </span>
                     </span>
                 }
                 else
