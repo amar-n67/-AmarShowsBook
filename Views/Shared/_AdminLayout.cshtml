@@ -854,15 +854,6 @@
             button.addEventListener("blur", restoreAdminThemePreview);
         });
 
-        document.querySelectorAll("[data-admin-export]").forEach(button => {
-            button.addEventListener("click", function () {
-                const exportUrl = button.dataset.adminExportUrl || "";
-                if (exportUrl) {
-                    window.location.href = exportUrl;
-                }
-            });
-        });
-
         const popup = document.getElementById("adminConfirmLogout");
         const ok = document.querySelector("[data-admin-logout-ok]");
         const cancel = document.querySelector("[data-admin-logout-cancel]");
@@ -1030,7 +1021,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const exportButton = document.querySelector("[data-admin-export]");
             if (exportButton) {
                 exportButton.click();
-                addMessage((label || "Export") + " started for the visible rows on this page.", "bot");
+                addMessage((label || "Export") + " is being generated. Your download will start shortly.", "bot");
             } else {
                 addMessage("Open an admin table page first, then I can export its visible rows.", "bot");
             }

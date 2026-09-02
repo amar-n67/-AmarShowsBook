@@ -176,11 +176,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     exportButton?.addEventListener("click", () => {
         const previousLabel = exportButton.textContent;
+        const serverExportUrl = exportButton.dataset.adminExportUrl || "";
+
+        if (serverExportUrl) {
+            exportButton.textContent = "Exporting...";
+            exportButton.setAttribute("aria-busy", "true");
+            exportButton.disabled = true;
+
+            window.setTimeout(() => {
+                window.location.href = serverExportUrl;
+                window.setTimeout(() => {
+                    exportButton.textContent = previousLabel;
+                    exportButton.removeAttribute("aria-busy");
+                    exportButton.disabled = false;
+                }, 1800);
+            }, 80);
+            return;
+        }
+
         const rows = getTableExportRows();
         const exportRows = rows.length ? rows : getCardExportRows();
 
         if (!exportRows.length) {
-            exportButton.textContent = "No Data";
+            exportButton.textContent = "No visible data";
             window.setTimeout(() => {
                 exportButton.textContent = previousLabel;
             }, 1400);
