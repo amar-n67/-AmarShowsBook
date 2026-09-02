@@ -1,4 +1,4 @@
-AmarShowsBook RBAC notes
+showTime RBAC notes
 Updated: 2026-08-24
 
 Purpose
@@ -35,7 +35,7 @@ What this role can do
 - View activity logs and versions.
 - Access developer tools.
 - Use admin export buttons.
-- Ask Amaro for admin summaries, search, export, and developer help.
+- Ask showTime Assistant for admin summaries, search, export, and developer help.
 
 Limits
 - This role should be given only to the application owner or a fully trusted admin.
@@ -59,7 +59,7 @@ What this role can do
 - Use scanner/security pages.
 - View reports, activity logs, and versions.
 - Use admin export buttons.
-- Ask Amaro for admin summaries, admin search, export, refund, booking, wallet, coupon, notification, and scanner help.
+- Ask showTime Assistant for admin summaries, admin search, export, refund, booking, wallet, coupon, notification, and scanner help.
 
 Limits
 - Cannot use developer editor tools unless the user also has AMAR_DEVELOPER or AMAR_SUPER_ADMIN.
@@ -73,7 +73,7 @@ Meaning
 What this role can do
 - Open developer profile/editor pages.
 - Update developer profile data where the developer page allows it.
-- Ask Amaro about developer tools.
+- Ask showTime Assistant about developer tools.
 
 Limits
 - Does not automatically get admin dashboard access.
@@ -104,7 +104,7 @@ What this role can do
 - View own wallet.
 - Edit own profile.
 - Contact support.
-- Ask Amaro for show, booking, ticket, wallet, profile, transaction, support, theme, and cursor help.
+- Ask showTime Assistant for show, booking, ticket, wallet, profile, transaction, support, theme, and cursor help.
 
 Limits
 - Cannot open /Admin/Dashboard.
@@ -139,7 +139,7 @@ Where permission checks happen
 - Helpers/RbacAuthorizationHelper.cs helps controllers and views ask, "Can this user do this?"
 - AdminController checks important admin actions.
 - Views should hide or disable buttons when the current role is not allowed.
-- Amaro also checks RBAC before showing admin actions.
+- showTime Assistant also checks RBAC before showing admin actions.
 
 Important modules
 ADMIN
@@ -266,14 +266,14 @@ Admin page behavior
 Export behavior
 - Export buttons are role-aware.
 - Admin export should appear only on admin pages where the user has access.
-- Amaro can trigger Export This Page only if the page has an export button.
+- showTime Assistant can trigger Export This Page only if the page has an export button.
 
-Amaro behavior with roles
+Assistant behavior with roles
 - AMAR_USER gets customer help only.
 - AMAR_ADMIN gets admin operation help, search, summaries, and export.
 - AMAR_DEVELOPER gets developer help.
 - AMAR_SUPER_ADMIN gets all admin and developer help.
-- Amaro should never offer a role action that the user cannot actually open.
+- showTime Assistant should never offer a role action that the user cannot actually open.
 
 Developer checklist for new protected pages or buttons
 1. Choose the module.

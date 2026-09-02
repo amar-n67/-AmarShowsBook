@@ -1,4 +1,4 @@
--- AmarShowsBook enterprise schema rebuild script
+-- showTime enterprise schema rebuild script
 -- Run on an empty PostgreSQL database.
 -- Order: extensions -> functions -> tables -> foreign keys -> indexes -> triggers -> seed data -> views.
 
@@ -1838,9 +1838,23 @@ SELECT
     uw.reactivated_by,
     uw.reactivation_reason,
     uw.last_transaction_at,
-    count(wt.id) AS total_wallet_transactions,
-    COALESCE(sum(CASE WHEN wt.entry_type = 'CREDIT' THEN wt.amount ELSE 0 END), 0) AS total_credits,
-    COALESCE(sum(CASE WHEN wt.entry_type = 'DEBIT' THEN wt.amount ELSE 0 END), 0) AS total_debits
+    count(wt.id) FILTER
+    (
+        WHERE COALESCE(wt.is_deleted, false) = false
+          AND COALESCE(wt.status, wt.transaction_status, 'SUCCESS') = 'SUCCESS'
+    ) AS total_wallet_transactions,
+    COALESCE(sum(wt.amount) FILTER
+    (
+        WHERE wt.entry_type = 'CREDIT'
+          AND COALESCE(wt.is_deleted, false) = false
+          AND COALESCE(wt.status, wt.transaction_status, 'SUCCESS') = 'SUCCESS'
+    ), 0) AS total_credits,
+    COALESCE(sum(wt.amount) FILTER
+    (
+        WHERE wt.entry_type = 'DEBIT'
+          AND COALESCE(wt.is_deleted, false) = false
+          AND COALESCE(wt.status, wt.transaction_status, 'SUCCESS') = 'SUCCESS'
+    ), 0) AS total_debits
 FROM public.user_wallets uw
 JOIN public."Users" u ON uw.user_id = u."Id"
 LEFT JOIN public.wallet_transactions wt ON uw.id = wt.wallet_id

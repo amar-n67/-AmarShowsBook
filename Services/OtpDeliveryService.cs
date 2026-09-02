@@ -22,7 +22,7 @@ public class OtpDeliveryService
         var port = _configuration.GetValue("Otp:Email:SmtpPort", 587);
         var from = _configuration["Otp:Email:From"];
         var password = _configuration["Otp:Email:Password"];
-        var fromName = _configuration["Otp:Email:FromName"] ?? "AmarShowsBook";
+        var fromName = _configuration["Otp:Email:FromName"] ?? "showTime";
         var enableSsl = _configuration.GetValue("Otp:Email:EnableSsl", true);
 
         if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(password))
@@ -42,8 +42,8 @@ public class OtpDeliveryService
             using var mail = new MailMessage
             {
                 From = new MailAddress(from, fromName),
-                Subject = $"AmarShowsBook OTP for {purpose}",
-                Body = $"Your AmarShowsBook OTP for {purpose} is {otp}.\n\nIt is valid for 5 minutes. Do not share this code with anyone.",
+                Subject = $"showTime OTP for {purpose}",
+                Body = $"Your showTime OTP for {purpose} is {otp}.\n\nIt is valid for 5 minutes. Do not share this code with anyone.",
                 IsBodyHtml = false
             };
 
@@ -65,7 +65,7 @@ public class OtpDeliveryService
         var port = _configuration.GetValue("Otp:Email:SmtpPort", 587);
         var from = _configuration["Otp:Email:From"];
         var password = _configuration["Otp:Email:Password"];
-        var fromName = _configuration["Otp:Email:FromName"] ?? "AmarShowsBook";
+        var fromName = _configuration["Otp:Email:FromName"] ?? "showTime";
         var enableSsl = _configuration.GetValue("Otp:Email:EnableSsl", true);
 
         if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(password))
@@ -148,7 +148,7 @@ public class OtpDeliveryService
 
     private static string BuildFast2SmsMessageUrl(string apiKey, string mobile, string otp, string purpose)
     {
-        var message = $"Your AmarShowsBook OTP for {purpose} is {otp}. Valid for 5 minutes. Do not share it.";
+        var message = $"Your showTime OTP for {purpose} is {otp}. Valid for 5 minutes. Do not share it.";
 
         return "https://www.fast2sms.com/dev/bulkV2" +
             $"?authorization={Uri.EscapeDataString(apiKey)}" +

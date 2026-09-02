@@ -9,9 +9,9 @@
     <script>
         (function () {
             // Admin pages reuse the same saved theme and cursor choices as the public site.
-            const savedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
-            const savedCursor = localStorage.getItem("amarShowsCursor") || "liquid";
-            const savedCursorColor = localStorage.getItem("amarShowsCursorColor");
+            const savedTheme = localStorage.getItem("showTimeTheme") || "cinema";
+            const savedCursor = localStorage.getItem("showTimeCursor") || "liquid";
+            const savedCursorColor = localStorage.getItem("showTimeCursorColor");
             document.documentElement.dataset.theme = savedTheme;
             document.documentElement.dataset.cursorChoice = savedCursor;
             if (savedCursorColor) {
@@ -195,7 +195,7 @@
     var supportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(supportWhatsAppText)}";
     var supportEmailSubject = "showTime Support Request";
     var supportEmailText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
-    var supportEmailUrl = $"mailto:arcanaamar67@gmail.com?subject={Uri.EscapeDataString(supportEmailSubject)}&body={Uri.EscapeDataString(supportEmailText)}";
+    var supportEmailUrl = $"mailto:support@showtime.com?subject={Uri.EscapeDataString(supportEmailSubject)}&body={Uri.EscapeDataString(supportEmailText)}";
     var hasUserId = int.TryParse(userIdText, out var currentUserId);
     var isDashboardOnlyAdmin = hasUserId &&
         RbacService.HasAnyActiveRole(currentUserId, "DUM_ADMIN") &&
@@ -313,21 +313,20 @@
 <div class="print-page-header" aria-hidden="true">
     <div class="print-page-header-inner">
         <div class="print-page-brand">
-            <img src="@Url.Content("~/images/brand/arcanaamar-showtime-logo-cropped.png")" alt="" />
+            <img src="@Url.Content("~/images/brand/showtime-logo-cropped.png")" alt="" />
             <div>
                 <strong>showTime</strong>
-                <span>AmarShowsBook Admin</span>
+                <span>showTime Admin</span>
             </div>
         </div>
         <div>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</div>
     </div>
 </div>
 <div class="print-page-watermark" aria-hidden="true">
-    <img src="@Url.Content("~/images/brand/arcanaamar-showtime-logo-cropped.png")" alt="" />
 </div>
 <div class="print-page-footer" aria-hidden="true">
     <div class="print-page-footer-inner">
-        <span>showTime AmarShowsBook</span>
+        <span>showTime</span>
         <span>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</span>
     </div>
 </div>
@@ -751,18 +750,18 @@
             aria-expanded="false"
             aria-controls="adminAmaroPanel">
         <span>A</span>
-        <strong>Amaro</strong>
+        <strong>showTime Assistant</strong>
     </button>
     <section id="adminAmaroPanel"
              class="admin-amaro-panel"
-             aria-label="Amaro role assistant"
+             aria-label="showTime role assistant"
              hidden>
         <div class="admin-amaro-header">
             <div>
-                <span>Amaro</span>
+                <span>showTime Assistant</span>
                 <strong data-amaro-greeting>Ask me for admin summaries, search, exports, and role-allowed actions.</strong>
             </div>
-            <button type="button" data-amaro-close aria-label="Close Amaro">×</button>
+            <button type="button" data-amaro-close aria-label="Close showTime assistant">×</button>
         </div>
         <div class="admin-amaro-deck" data-amaro-command-deck>
             <button type="button" data-amaro-prompt="admin summary">Summary</button>
@@ -785,7 +784,7 @@
             <input data-amaro-input
                    type="text"
                    maxlength="300"
-                   placeholder="Ask Amaro to summarize, search, open, export, or guide actions"
+                   placeholder="Ask showTime Assistant to summarize, search, open, export, or guide actions"
                    autocomplete="off" />
             <button type="submit">Send</button>
         </form>
@@ -795,7 +794,7 @@
 <script src="~/js/admin/admin-dashboard.js" asp-append-version="true"></script>
 <script>
 (function () {
-    let committedTheme = localStorage.getItem("amarShowsTheme") || "cinema";
+    let committedTheme = localStorage.getItem("showTimeTheme") || "cinema";
 
     function markAdminTheme(choice) {
         document.querySelectorAll("[data-admin-theme]").forEach(button => {
@@ -816,8 +815,8 @@
     window.setAdminTheme = function (choice) {
         const theme = choice || "cinema";
         committedTheme = theme;
-        localStorage.setItem("amarShowsTheme", theme);
-        localStorage.setItem("amarShowsThemeVersion", "3");
+        localStorage.setItem("showTimeTheme", theme);
+        localStorage.setItem("showTimeThemeVersion", "3");
         document.documentElement.dataset.theme = theme;
         markAdminTheme(theme);
     };
@@ -842,7 +841,7 @@
     };
 
     document.addEventListener("DOMContentLoaded", function () {
-        const saved = localStorage.getItem("amarShowsTheme") || "cinema";
+        const saved = localStorage.getItem("showTimeTheme") || "cinema";
         committedTheme = saved;
         window.setAdminTheme(saved);
 
@@ -945,7 +944,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <script>
 (function () {
-    // Admin Amaro can trigger local export only when the current role can see the export button.
+    // Admin assistant can trigger local export only when the current role can see the export button.
     const widget = document.querySelector("[data-amaro-widget]");
     if (!widget) return;
 
@@ -1008,7 +1007,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (value === "support-options") {
             renderOptions([
                 { label: "Call Us", url: "tel:+919651698863" },
-                { label: "Write Us", url: "mailto:arcanaamar67@gmail.com" },
+                { label: "Write Us", url: "mailto:support@showtime.com" },
                 { label: "WhatsApp Us", url: "@supportWhatsAppUrl" },
                 { label: "Admin Dashboard", url: "/Admin/Dashboard" },
                 { label: "My Bookings", url: "/Booking/MyBookings" }
@@ -1136,7 +1135,7 @@ document.addEventListener("DOMContentLoaded", function () {
             addMessage(data.message || "I could not find details for that yet.", "bot");
             renderOptions(data.options || []);
         })
-        .catch(() => addMessage("I could not reach Amaro right now. Please try again.", "bot"));
+        .catch(() => addMessage("I could not reach showTime Assistant right now. Please try again.", "bot"));
     }
 
     function loadMenu() {
@@ -1214,8 +1213,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function applyCursorStyle(choice) {
-        const cursorChoice = choice || localStorage.getItem("amarShowsCursor") || "liquid";
-        const savedColor = localStorage.getItem("amarShowsCursorColor");
+        const cursorChoice = choice || localStorage.getItem("showTimeCursor") || "liquid";
+        const savedColor = localStorage.getItem("showTimeCursorColor");
 
         root.dataset.cursorChoice = cursorChoice;
         root.classList.remove(...cursorClasses);
@@ -1250,23 +1249,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     window.setAppCursorStyle = function (choice) {
         const cursorChoice = choice || "native";
-        localStorage.setItem("amarShowsCursor", cursorChoice);
+        localStorage.setItem("showTimeCursor", cursorChoice);
         applyCursorStyle(cursorChoice);
     };
 
     window.setAppCursorColor = function (color) {
         const cursorColor = color || "";
         if (cursorColor) {
-            localStorage.setItem("amarShowsCursorColor", cursorColor);
+            localStorage.setItem("showTimeCursorColor", cursorColor);
             root.style.setProperty("--app-cursor-color", cursorColor);
         } else {
-            localStorage.removeItem("amarShowsCursorColor");
+            localStorage.removeItem("showTimeCursorColor");
             root.style.removeProperty("--app-cursor-color");
         }
 
         applyLiveCursorColor(cursorColor);
 
-        if (!localStorage.getItem("amarShowsCursor") && cursorColor) {
+        if (!localStorage.getItem("showTimeCursor") && cursorColor) {
             window.setAppCursorStyle("liquid");
         }
     };
@@ -1301,8 +1300,8 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.appendChild(cursor);
         root.classList.add("cursor-hidden");
         isReady = true;
-        window.setAppCursorColor(localStorage.getItem("amarShowsCursorColor") || "");
-        applyCursorStyle(localStorage.getItem("amarShowsCursor") || "liquid");
+        window.setAppCursorColor(localStorage.getItem("showTimeCursorColor") || "");
+        applyCursorStyle(localStorage.getItem("showTimeCursor") || "liquid");
     });
 
     document.addEventListener("mousemove", moveCursor, { passive: true });

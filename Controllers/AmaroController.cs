@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmarShowsBook.Controllers;
 
-// Amaro answers from app data first, then limits every admin shortcut to the user's current roles.
+// The assistant answers from app data first, then limits every admin shortcut to the user's current roles.
 public class AmaroController : Controller
 {
     private const string SupportPhone = "+91 9651698863";
-    private const string SupportEmail = "arcanaamar67@gmail.com";
+    private const string SupportEmail = "support@showtime.com";
 
     private readonly ApplicationDbContext _context;
     private readonly RbacService _rbacService;
@@ -30,7 +30,7 @@ public class AmaroController : Controller
             return Json(new
             {
                 isLoggedIn = false,
-                greeting = "Hey guest, I'm Amaro. I can find today's shows now; login is needed only when you book or view account details.",
+                greeting = "Hey guest, I'm showTime Assistant. I can find today's shows now; login is needed only when you book or view account details.",
                 options = new[]
                 {
                     new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
@@ -51,8 +51,8 @@ public class AmaroController : Controller
         {
             isLoggedIn = true,
             greeting = string.IsNullOrWhiteSpace(pageName)
-                ? $"Hey {GetDisplayName()}, I'm Amaro. How may I help you?"
-                : $"Hey {GetDisplayName()}, I'm Amaro. I can help with {pageName} and your role-allowed actions.",
+                ? $"Hey {GetDisplayName()}, I'm showTime Assistant. How may I help you?"
+                : $"Hey {GetDisplayName()}, I'm showTime Assistant. I can help with {pageName} and your role-allowed actions.",
             options = proactiveOptions.Any() ? proactiveOptions : BuildMenuOptions(menuItems, userId)
         });
     }

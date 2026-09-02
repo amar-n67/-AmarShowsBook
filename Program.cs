@@ -524,17 +524,17 @@ INSERT INTO public.developer_profiles
 )
 SELECT
     1,
-    'Amar',
+    'showTime Team',
     'example@gmail.com',
     'Developer Profile',
     0,
-    'https://twitter.com/amar_an67',
+    '',
     '+91 9651698863',
-    'arcanaamar67@gmail.com',
+    'support@showtime.com',
     'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.',
     '+91 9651698863',
     true,
-    'Hi Amar, I''m {{user}}. I visited your application (showTime) and would like to connect with you.',
+    'Hi showTime Team, I''m {{user}}. I visited showTime and would like to connect with you.',
     'showTime Support Request',
     'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'
 WHERE NOT EXISTS
@@ -546,12 +546,12 @@ WHERE NOT EXISTS
 
 UPDATE public.developer_profiles
 SET
-    twitter_url = COALESCE(NULLIF(twitter_url, ''), 'https://twitter.com/amar_an67'),
+    twitter_url = COALESCE(NULLIF(twitter_url, ''), ''),
     support_phone = COALESCE(NULLIF(support_phone, ''), '+91 9651698863'),
-    support_email = COALESCE(NULLIF(support_email, ''), 'arcanaamar67@gmail.com'),
+    support_email = COALESCE(NULLIF(support_email, ''), 'support@showtime.com'),
     support_whatsapp_text = COALESCE(NULLIF(support_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'),
     support_whatsapp_phone = COALESCE(NULLIF(support_whatsapp_phone, ''), NULLIF(support_phone, ''), '+91 9651698863'),
-    top_whatsapp_text = COALESCE(NULLIF(top_whatsapp_text, ''), 'Hi Amar, I''m {{user}}. I visited your application (showTime) and would like to connect with you.'),
+    top_whatsapp_text = COALESCE(NULLIF(top_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I visited showTime and would like to connect with you.'),
     support_email_subject = COALESCE(NULLIF(support_email_subject, ''), 'showTime Support Request'),
     support_email_text = COALESCE(NULLIF(support_email_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.')
 WHERE developer_id = 1;
@@ -710,7 +710,7 @@ ON public.amaro_chat_messages(user_id, created_at DESC);
     {
         app.Logger.LogWarning(
         ex,
-        "Amaro chatbot schema check skipped"
+        "Assistant chat schema check skipped"
         );
     }
 }

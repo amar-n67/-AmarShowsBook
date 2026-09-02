@@ -1552,11 +1552,17 @@ html[data-theme="cinema"] .admin-topbar {
         justify-content: center !important;
     }
 
-    .print-page-watermark img {
-        width: 122mm !important;
-        max-width: 70% !important;
-        opacity: 0.12 !important;
+    .print-page-watermark::before {
+        content: "showTime";
+        color: rgba(15, 23, 42, 0.10) !important;
+        font-size: 56pt !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        letter-spacing: 0 !important;
+        text-align: center !important;
+        text-transform: none !important;
         transform: rotate(-18deg) !important;
+        white-space: nowrap !important;
     }
 
     body {

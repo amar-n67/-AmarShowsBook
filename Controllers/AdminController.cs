@@ -1718,9 +1718,23 @@ SELECT
     uw.reactivated_by,
     uw.reactivation_reason,
     uw.last_transaction_at,
-    count(wt.id) AS total_wallet_transactions,
-    COALESCE(sum(CASE WHEN wt.entry_type = 'CREDIT' THEN wt.amount ELSE 0 END), 0) AS total_credits,
-    COALESCE(sum(CASE WHEN wt.entry_type = 'DEBIT' THEN wt.amount ELSE 0 END), 0) AS total_debits
+    count(wt.id) FILTER
+    (
+        WHERE COALESCE(wt.is_deleted, false) = false
+          AND COALESCE(wt.status, wt.transaction_status, 'SUCCESS') = 'SUCCESS'
+    ) AS total_wallet_transactions,
+    COALESCE(sum(wt.amount) FILTER
+    (
+        WHERE wt.entry_type = 'CREDIT'
+          AND COALESCE(wt.is_deleted, false) = false
+          AND COALESCE(wt.status, wt.transaction_status, 'SUCCESS') = 'SUCCESS'
+    ), 0) AS total_credits,
+    COALESCE(sum(wt.amount) FILTER
+    (
+        WHERE wt.entry_type = 'DEBIT'
+          AND COALESCE(wt.is_deleted, false) = false
+          AND COALESCE(wt.status, wt.transaction_status, 'SUCCESS') = 'SUCCESS'
+    ), 0) AS total_debits
 FROM public.user_wallets uw
 JOIN public.""Users"" u ON uw.user_id = u.""Id""
 LEFT JOIN public.wallet_transactions wt ON uw.id = wt.wallet_id
@@ -2455,7 +2469,7 @@ LEFT JOIN public.""Users"" u ON u.""Id"" = al.user_id;");
         "Your ticket cannot be cancelled, so the ticket remains active and can still be used for the show.\n\n" +
         $"Refund reference: {refund.refund_ref}\n" +
         $"Refund amount requested: {CurrencyFormatter.FormatRupees(refund.refund_amount)}\n\n" +
-        "Thank you,\nAmarShowsBook";
+        "Thank you,\nshowTime";
 
     var emailResult =
         await _emailDeliveryService.SendEmailAsync(
@@ -5355,7 +5369,7 @@ LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id"";
         _context.Venues.Add(new Venue
         {
             VenueCode = "ASB-IND-001",
-            VenueName = "Amar Shows Multiplex",
+            VenueName = "showTime Multiplex",
             VenueType = "Multiplex",
             Country = "India",
             State = "Karnataka",

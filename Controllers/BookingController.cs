@@ -2930,7 +2930,7 @@ body{margin:0;background:#f4f6ff;font-family:Segoe UI,Arial,sans-serif;color:#17
 </div>
 </div>
 <div class="foot">
-<span>AmarShowsBook</span>
+<span>showTime</span>
 <span>Keep this file for entry verification</span>
 </div>
 </section>

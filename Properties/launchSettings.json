@@ -1,6 +1,6 @@
 ﻿{
   "profiles": {
-    "AmarShowsBook": {
+    "showTime": {
       "commandName": "Project",
       "launchBrowser": false,
       "applicationUrl": "http://localhost:9090",

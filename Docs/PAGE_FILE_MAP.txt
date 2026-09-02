@@ -1,4 +1,4 @@
-AmarShowsBook page and file map
+showTime page and file map
 Updated: 2026-08-24
 
 Purpose
@@ -15,13 +15,13 @@ How the project is arranged
 
 Shared layout and common UI
 - Views/Shared/_Layout.cshtml
-  Main user layout. It contains the public navbar, theme switcher, Support menu, Amaro chatbot, session popup, cinema popup, footer, and global theme CSS.
+  Main user layout. It contains the public navbar, theme switcher, Support menu, showTime Assistant chatbot, session popup, cinema popup, footer, and global theme CSS.
 
 - Views/Shared/_AdminLayout.cshtml
-  Admin layout. It contains the admin sidebar, admin topbar, admin theme switcher, admin Amaro chatbot, export button wiring, and admin cursor/theme scripts.
+  Admin layout. It contains the admin sidebar, admin topbar, admin theme switcher, admin showTime Assistant chatbot, export button wiring, and admin cursor/theme scripts.
 
 - wwwroot/css/admin/admin-dashboard.css
-  Main admin CSS. It controls admin dashboard layout, tables, filters, buttons, cards, Amaro admin widget, and admin theme compatibility.
+  Main admin CSS. It controls admin dashboard layout, tables, filters, buttons, cards, admin assistant widget, and admin theme compatibility.
 
 - wwwroot/js/admin/admin-dashboard.js
   Admin helper JavaScript. It handles admin menu toggle and export behavior.
@@ -30,35 +30,35 @@ Shared layout and common UI
   Profile page JavaScript. It handles profile edit, OTP helpers, address fields, and theme-aware editable inputs.
 
 - wwwroot/images/brand/
-  Application logo files. The current app logo is arcanaamar-showtime-logo-cropped.png.
+  Application logo files. The current app logo is showtime-logo-cropped.png.
 
 Branding
 - Main brand name: showTime.
-- Small brand text: arcanaamar.
-- Full application branding: arcanaamar showTime.
+- Small brand text: showTime.
+- Full application branding: showTime.
 
 Support contact
 - Mobile: +91 9651698863
-- Email: arcanaamar67@gmail.com
+- Email: support@showtime.com
 - Public menu Support hover actions:
-  Write to us -> mailto:arcanaamar67@gmail.com
+  Write to us -> mailto:support@showtime.com
   Call -> tel:+919651698863
-- Amaro also knows this support contact.
+- showTime Assistant also knows this support contact.
 
 Themes
-- Theme choice is saved in browser localStorage as amarShowsTheme.
+- Theme choice is saved in browser localStorage as showTimeTheme.
 - Current themes: system, dark, white, cinema.
 - Public theme code is mostly in Views/Shared/_Layout.cshtml.
 - Admin theme code is in Views/Shared/_AdminLayout.cshtml and wwwroot/css/admin/admin-dashboard.css.
-- Cursor style is saved in localStorage as amarShowsCursor.
+- Cursor style is saved in localStorage as showTimeCursor.
 
-Amaro chatbot
+showTime Assistant chatbot
 - Controller: Controllers/AmaroController.cs
 - Public widget: Views/Shared/_Layout.cshtml
 - Admin widget: Views/Shared/_AdminLayout.cshtml
 - Database table: public.amaro_chat_messages
-- Amaro can help with shows, seats, bookings, tickets, transactions, wallet, profile, support, theme, cursor, admin summaries, admin search, and admin export.
-- Amaro follows RBAC. It should not show admin actions that the logged-in user's role cannot use.
+- showTime Assistant can help with shows, seats, bookings, tickets, transactions, wallet, profile, support, theme, cursor, admin summaries, admin search, and admin export.
+- showTime Assistant follows RBAC. It should not show admin actions that the logged-in user's role cannot use.
 
 Authentication pages
 - /Auth/Login
@@ -275,7 +275,7 @@ Admin export buttons
 - Export buttons are role-aware.
 - They appear on admin dashboard/table pages where export is allowed.
 - Shared export behavior lives in Views/Shared/_AdminLayout.cshtml and wwwroot/js/admin/admin-dashboard.js.
-- Amaro can trigger Export This Page when the current page has an export button.
+- showTime Assistant can trigger Export This Page when the current page has an export button.
 
 Important services and filters
 - Services/RbacService.cs: main role and permission service.
@@ -297,5 +297,5 @@ Quick rule for making changes
 1. Find the URL in this file.
 2. Open its controller action.
 3. Open its view.
-4. Check shared layout/CSS if the problem is navbar, theme, Amaro, export, cursor, support, or footer.
+4. Check shared layout/CSS if the problem is navbar, theme, assistant, export, cursor, support, or footer.
 5. If it is an admin action, check RBAC before showing or running the button.

@@ -15,7 +15,7 @@
     var technologyList = technologiesText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     var supportPhone = string.IsNullOrWhiteSpace(Model.SupportPhone) ? "+91 9651698863" : Model.SupportPhone.Trim();
     var supportWhatsAppNumber = string.IsNullOrWhiteSpace(Model.SupportWhatsAppPhone) ? supportPhone : Model.SupportWhatsAppPhone.Trim();
-    var supportEmail = string.IsNullOrWhiteSpace(Model.SupportEmail) ? "arcanaamar67@gmail.com" : Model.SupportEmail.Trim();
+    var supportEmail = string.IsNullOrWhiteSpace(Model.SupportEmail) ? "support@showtime.com" : Model.SupportEmail.Trim();
     var supportDialPhone = supportPhone.Replace(" ", "").Replace("-", "");
     var supportWhatsAppPhone = supportWhatsAppNumber.Replace(" ", "").Replace("-", "").Replace("+", "");
     var currentSupportUser = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
@@ -23,7 +23,7 @@
         (string.IsNullOrWhiteSpace(template) ? fallback : template.Trim()).Replace("{user}", currentSupportUser);
     var topWhatsAppText = renderDraft(
         Model.TopWhatsAppText,
-        "Hi Amar, I'm {user}. I visited your application (showTime) and would like to connect with you.");
+        "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you.");
     var topWhatsAppUrl = $"https://wa.me/{supportWhatsAppPhone}?text={Uri.EscapeDataString(topWhatsAppText)}";
     var supportWhatsAppText = renderDraft(
         Model.SupportWhatsAppText,
@@ -416,7 +416,7 @@ else
 </label>
 <label class="dev-form-wide">
 <span>Top WhatsApp Draft</span>
-<textarea asp-for="TopWhatsAppText" class="form-control" rows="2" placeholder="Hi Amar, I'm {user}. I visited your application (showTime) and would like to connect with you."></textarea>
+<textarea asp-for="TopWhatsAppText" class="form-control" rows="2" placeholder="Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you."></textarea>
 </label>
 <label class="dev-form-wide">
 <span>Support WhatsApp Draft</span>

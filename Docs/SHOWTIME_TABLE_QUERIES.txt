@@ -1,4 +1,4 @@
-AmarShowsBook SQL query notes
+showTime SQL query notes
 Updated: 2026-08-24
 Database: AmarMovie_DB
 Database type: PostgreSQL
@@ -443,14 +443,14 @@ SUPPORT AND BRANDING NOTES
 
 Application name
 - Main name: showTime.
-- Small name above it: arcanaamar.
-- Full brand: arcanaamar showTime.
+- Small name above it: showTime.
+- Full brand: showTime.
 
 Support contact
 - Mobile: +91 9651698863
-- Email: arcanaamar67@gmail.com
+- Email: support@showtime.com
 
 Theme and cursor
-- Theme is stored in browser localStorage as amarShowsTheme.
-- Cursor style is stored in browser localStorage as amarShowsCursor.
+- Theme is stored in browser localStorage as showTimeTheme.
+- Cursor style is stored in browser localStorage as showTimeCursor.
 - These are browser settings, so there is no normal SQL query for changing them.

@@ -299,7 +299,7 @@ foreach (var show in schedules)
             {
                 using var http = new HttpClient();
                 http.Timeout = TimeSpan.FromSeconds(12);
-                http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 AmarShowsBook/1.0");
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 showTime/1.0");
                 http.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-IN,en;q=0.9");
 
                 var html = await http.GetStringAsync(resolveUrl);
