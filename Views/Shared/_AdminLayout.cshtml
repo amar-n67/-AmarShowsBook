@@ -397,6 +397,7 @@
                         type="button"
                         id="adminExportButton"
                         data-admin-export
+                        data-admin-export-url="@(ViewData["AdminExportUrl"] as string ?? "")"
                         title="Export visible admin data">
                     Export
                 </button>
@@ -851,6 +852,15 @@
             button.addEventListener("focus", () => previewAdminTheme(choice));
             button.addEventListener("mouseleave", restoreAdminThemePreview);
             button.addEventListener("blur", restoreAdminThemePreview);
+        });
+
+        document.querySelectorAll("[data-admin-export]").forEach(button => {
+            button.addEventListener("click", function () {
+                const exportUrl = button.dataset.adminExportUrl || "";
+                if (exportUrl) {
+                    window.location.href = exportUrl;
+                }
+            });
         });
 
         const popup = document.getElementById("adminConfirmLogout");

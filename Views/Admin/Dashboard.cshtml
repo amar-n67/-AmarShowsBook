@@ -5,6 +5,7 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Admin Dashboard";
+    ViewData["AdminExportUrl"] = "/Admin/ExportDashboard";
     var hasDashboardUserId = int.TryParse(Context.Session.GetString("UserId"), out var dashboardUserId);
     var canUseSuperAdminDashboardLinks =
         hasDashboardUserId && RbacService.CanAccessSuperAdminArea(dashboardUserId);

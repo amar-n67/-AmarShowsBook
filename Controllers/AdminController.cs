@@ -4,6 +4,7 @@ using AmarShowsBook.Models.Admin;
 using AmarShowsBook.Models.ViewModels;
 using AmarShowsBook.Services;
 using AmarShowsBook.Helpers;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -429,6 +430,495 @@ namespace AmarShowsBook.Controllers
             );
 
             return View(vm);
+        }
+
+        public async Task<IActionResult> ExportDashboard()
+        {
+            if (!int.TryParse(HttpContext.Session.GetString("UserId"), out var dashboardUserId) ||
+                !_rbacService.CanOpenAdminDashboard(dashboardUserId))
+            {
+                return RedirectToAction("ShowTime", "Home");
+            }
+
+            await EnsureAdminReportingViews();
+
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+            var now = DateTime.UtcNow;
+
+            var summaryRows = new List<(string Section, string Metric, decimal Value)>
+            {
+                ("Bookings", "Total Bookings", _context.VwBookingCompleteDetails.Count()),
+                ("Bookings", "Failed Bookings", _context.VwBookingCompleteDetails.Count(x => x.IsError == 1)),
+                ("Bookings", "Today Bookings", _context.VwBookingCompleteDetails.Count(x => x.BookedAt >= today && x.BookedAt < tomorrow)),
+                ("Bookings", "Confirmed Bookings", _context.VwBookingCompleteDetails.Count(x => x.BookingStatus == "CONFIRMED")),
+                ("Bookings", "Cancelled Bookings", _context.VwBookingCompleteDetails.Count(x => x.BookingStatus == "CANCELLED")),
+                ("Bookings", "Tickets Sold", _context.VwBookingCompleteDetails.Sum(x => (int?)x.TotalTickets) ?? 0),
+                ("Bookings", "Gross Booking Value", _context.VwBookingCompleteDetails.Sum(x => (decimal?)x.TotalAmount) ?? 0),
+                ("Bookings", "Payable Booking Value", _context.VwBookingCompleteDetails.Sum(x => x.PayableAmount ?? (decimal?)x.TotalAmount) ?? 0),
+                ("Payments", "Successful Payments", _context.VwBookingTransactionSummaries.Count(x => x.IsPaymentError == 0)),
+                ("Payments", "Failed Payments", _context.VwBookingTransactionSummaries.Count(x => x.IsPaymentError == 1)),
+                ("Payments", "Successful Payment Amount", _context.VwBookingTransactionSummaries.Where(x => x.IsPaymentError == 0).Sum(x => x.TransactionAmount) ?? 0),
+                ("Refunds", "Total Refunds", _context.VwRefundSummaries.Count()),
+                ("Refunds", "Failed Refunds", _context.VwRefundSummaries.Count(x => x.IsRefundError == 1)),
+                ("Refunds", "Pending Refunds", _context.VwRefundSummaries.Count(x => x.RefundStatus == "PENDING")),
+                ("Refunds", "Approved Refunds", _context.VwRefundSummaries.Count(x => x.RefundStatus == "APPROVED" || x.RefundStatus == "SUCCESS")),
+                ("Refunds", "Rejected Refunds", _context.VwRefundSummaries.Count(x => x.RefundStatus == "REJECTED")),
+                ("Refunds", "Requested Refund Amount", _context.VwRefundSummaries.Sum(x => x.RefundAmount) ?? 0),
+                ("Wallets", "Total Wallet Balance", _context.VwWalletSummaries.Sum(x => (decimal?)x.WalletBalance) ?? 0),
+                ("Wallets", "Total Credits", _context.VwWalletSummaries.Sum(x => (decimal?)x.TotalCredits) ?? 0),
+                ("Wallets", "Total Debits", _context.VwWalletSummaries.Sum(x => (decimal?)x.TotalDebits) ?? 0),
+                ("Wallets", "Blocked Wallet Balance", _context.VwWalletSummaries.Sum(x => (decimal?)x.BlockedBalance) ?? 0),
+                ("Notifications", "Total Notifications", _context.VwNotificationCenters.Count()),
+                ("Notifications", "Delivered Notifications", _context.VwNotificationCenters.Count(x => x.Status == "DELIVERED")),
+                ("Notifications", "Pending Notifications", _context.VwNotificationCenters.Count(x => x.Status == "PENDING")),
+                ("Notifications", "High Priority Notifications", _context.VwNotificationCenters.Count(x => x.Priority == "HIGH")),
+                ("Notifications", "Notification Failures", _context.VwNotificationCenters.Count(x => x.IsError == 1)),
+                ("Security", "Validated Tickets", _context.VwTicketValidationSummaries.Count(x => x.IsSecurityIssue == 0)),
+                ("Security", "Security Issues", _context.VwTicketValidationSummaries.Count(x => x.IsSecurityIssue == 1)),
+                ("Operations", "Invoice Failures", _context.VwInvoiceSummaries.Count(x => x.IsInvoiceError == 1)),
+                ("Operations", "Total Users", _context.Users.Count()),
+                ("Operations", "Movies", _context.Movies.Count()),
+                ("Operations", "Standups", _context.StandupShows.Count()),
+                ("Operations", "Live Streams", _context.LiveStreams.Count()),
+                ("Operations", "Total Schedules", _context.ShowSchedules.Count()),
+                ("Operations", "Upcoming Schedules", _context.ShowSchedules.Count(x => x.StartTime >= now)),
+                ("Operations", "Today Shows", _context.ShowSchedules.Count(x => x.StartTime >= today && x.StartTime < tomorrow)),
+                ("Operations", "Screens", _context.Screens.Count()),
+                ("Operations", "Venues", _context.Venues.Count()),
+                ("Operations", "Active Roles", _context.Roles.Count(x => x.IsActive))
+            };
+
+            var bookingStatusRows = await _context.VwBookingCompleteDetails
+                .GroupBy(x => x.BookingStatus)
+                .Select(x => new DashboardBreakdownItem
+                {
+                    Label = x.Key ?? "NA",
+                    Count = x.Count(),
+                    Amount = x.Sum(y => y.PayableAmount ?? (decimal?)y.TotalAmount) ?? 0
+                })
+                .OrderByDescending(x => x.Count)
+                .ToListAsync();
+
+            var showTypeRows = await _context.VwBookingCompleteDetails
+                .GroupBy(x => x.ShowType)
+                .Select(x => new DashboardBreakdownItem
+                {
+                    Label = x.Key ?? "NA",
+                    Count = x.Count(),
+                    Amount = x.Sum(y => y.PayableAmount ?? (decimal?)y.TotalAmount) ?? 0
+                })
+                .OrderByDescending(x => x.Count)
+                .ToListAsync();
+
+            var paymentRows = await _context.VwBookingTransactionSummaries
+                .GroupBy(x => x.PaymentMethod)
+                .Select(x => new DashboardBreakdownItem
+                {
+                    Label = x.Key ?? "NA",
+                    Count = x.Count(),
+                    Amount = x.Sum(y => y.TransactionAmount) ?? 0
+                })
+                .OrderByDescending(x => x.Count)
+                .ToListAsync();
+
+            var recentBookings = await _context.VwBookingCompleteDetails
+                .OrderByDescending(x => x.BookedAt)
+                .Take(50)
+                .Select(x => new
+                {
+                    x.BookingRef,
+                    x.ShowTitle,
+                    x.UserName,
+                    x.BookingStatus,
+                    x.PaymentStatus,
+                    x.TotalTickets,
+                    Amount = x.PayableAmount ?? x.TotalAmount,
+                    x.BookedAt
+                })
+                .ToListAsync();
+
+            var recentRefunds = await _context.VwRefundSummaries
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(50)
+                .Select(x => new
+                {
+                    x.RefundRef,
+                    x.BookingRef,
+                    x.TransactionRef,
+                    x.UserName,
+                    x.UserEmail,
+                    x.RefundAmount,
+                    x.RefundStatus,
+                    x.RefundMethod,
+                    x.RefundReason,
+                    x.FailureReason,
+                    x.RequestedAt,
+                    x.CreatedAt
+                })
+                .ToListAsync();
+
+            var allBookings = await _context.VwBookingCompleteDetails
+                .OrderByDescending(x => x.BookedAt)
+                .Select(x => new
+                {
+                    x.BookingId,
+                    x.BookingRef,
+                    x.UserId,
+                    x.UserName,
+                    x.UserEmail,
+                    x.ShowType,
+                    x.ShowTitle,
+                    x.LocationName,
+                    x.StartTime,
+                    x.TotalTickets,
+                    x.SeatNumbers,
+                    x.TotalAmount,
+                    x.TaxAmount,
+                    x.DiscountAmount,
+                    x.PayableAmount,
+                    x.BookingStatus,
+                    x.PaymentStatus,
+                    x.PaymentMethod,
+                    x.GatewayName,
+                    x.TransactionRef,
+                    x.TransactionStatus,
+                    x.BookedAt,
+                    x.ConfirmedAt,
+                    x.CancelledAt,
+                    x.IsError
+                })
+                .ToListAsync();
+
+            var allTransactions = await _context.VwBookingTransactionSummaries
+                .OrderByDescending(x => x.BookingCreatedAt)
+                .Select(x => new
+                {
+                    x.TransactionId,
+                    x.TransactionRef,
+                    x.BookingId,
+                    x.BookingRef,
+                    x.UserId,
+                    x.UserName,
+                    x.UserEmail,
+                    x.ShowType,
+                    x.ShowTitle,
+                    x.TotalAmount,
+                    x.TransactionAmount,
+                    x.Currency,
+                    x.PaymentMethod,
+                    x.GatewayName,
+                    x.TransactionStatus,
+                    x.FailureReason,
+                    x.CompletedAt,
+                    x.BookingCreatedAt,
+                    x.IsPaymentError
+                })
+                .ToListAsync();
+
+            var allWallets = await _context.VwWalletSummaries
+                .OrderByDescending(x => x.WalletBalance)
+                .Select(x => new
+                {
+                    x.WalletId,
+                    x.UserId,
+                    x.UserName,
+                    x.UserEmail,
+                    x.WalletBalance,
+                    x.BlockedBalance,
+                    x.TotalCredits,
+                    x.TotalDebits,
+                    x.LoyaltyPoints,
+                    x.TotalWalletTransactions,
+                    x.WalletStatus,
+                    x.SuspensionReason,
+                    x.SuspendedAt,
+                    x.SuspendedBy,
+                    x.ReactivatedAt,
+                    x.ReactivatedBy,
+                    x.ReactivationReason,
+                    x.LastTransactionAt
+                })
+                .ToListAsync();
+
+            var allNotifications = await _context.VwNotificationCenters
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => new
+                {
+                    x.NotificationId,
+                    x.UserName,
+                    x.UserEmail,
+                    x.TemplateCode,
+                    x.TemplateName,
+                    x.NotificationType,
+                    x.Title,
+                    x.Message,
+                    x.Status,
+                    x.Priority,
+                    x.SentAt,
+                    x.DeliveredAt,
+                    x.ReadAt,
+                    x.RetryCount,
+                    x.FailureReason,
+                    x.CreatedAt,
+                    x.IsError
+                })
+                .ToListAsync();
+
+            var securityRows = await _context.VwTicketValidationSummaries
+                .OrderByDescending(x => x.IsSecurityIssue)
+                .ThenByDescending(x => x.LastScannedAt ?? x.ValidatedAt)
+                .Select(x => new
+                {
+                    x.ValidationLogId,
+                    x.TicketId,
+                    x.TicketNumber,
+                    x.BookingRef,
+                    x.UserName,
+                    x.UserEmail,
+                    x.ValidationStatus,
+                    x.ValidationResult,
+                    x.GateName,
+                    x.DeviceId,
+                    x.ScannerUser,
+                    x.ValidatedAt,
+                    x.ValidationCount,
+                    x.LastScannedAt,
+                    x.IsSecurityIssue
+                })
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var summary = workbook.Worksheets.Add("Summary");
+            AddDashboardHeader(summary, "Dashboard Export");
+            summary.Cell(5, 1).Value = "Section";
+            summary.Cell(5, 2).Value = "Metric";
+            summary.Cell(5, 3).Value = "Value";
+            StyleHeaderRow(summary.Range("A5:C5"));
+
+            for (var i = 0; i < summaryRows.Count; i++)
+            {
+                var row = i + 6;
+                summary.Cell(row, 1).Value = summaryRows[i].Section;
+                summary.Cell(row, 2).Value = summaryRows[i].Metric;
+                summary.Cell(row, 3).Value = summaryRows[i].Value;
+            }
+
+            summary.Column(3).Style.NumberFormat.Format = "#,##0.00";
+            StyleUsedRange(summary);
+
+            AddBreakdownSheet(workbook, "Booking Status", bookingStatusRows);
+            AddBreakdownSheet(workbook, "Show Type", showTypeRows);
+            AddBreakdownSheet(workbook, "Payment Methods", paymentRows);
+            AddGraphicsSheet(workbook, summaryRows, bookingStatusRows, paymentRows);
+
+            var bookingsSheet = workbook.Worksheets.Add("Recent Bookings");
+            AddDashboardHeader(bookingsSheet, "Recent Bookings");
+            bookingsSheet.Cell(5, 1).InsertTable(recentBookings);
+            StyleUsedRange(bookingsSheet);
+
+            var refundsSheet = workbook.Worksheets.Add("Recent Refunds");
+            AddDashboardHeader(refundsSheet, "Recent Refunds");
+            refundsSheet.Cell(5, 1).InsertTable(recentRefunds);
+            StyleUsedRange(refundsSheet);
+
+            AddDataSheet(workbook, "All Bookings", allBookings);
+            AddDataSheet(workbook, "All Transactions", allTransactions);
+            AddDataSheet(workbook, "All Wallets", allWallets);
+            AddDataSheet(workbook, "All Notifications", allNotifications);
+            AddDataSheet(workbook, "Ticket Security", securityRows);
+
+            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-logo-cropped.png");
+            foreach (var worksheet in workbook.Worksheets)
+            {
+                AddLogoIfAvailable(worksheet, logoPath);
+                worksheet.SheetView.FreezeRows(5);
+                worksheet.PageSetup.PageOrientation = XLPageOrientation.Landscape;
+                worksheet.PageSetup.PagesWide = 1;
+                worksheet.PageSetup.PagesTall = 0;
+            }
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            await _activityLogger.LogAsync(
+                action: "EXPORT_ADMIN_DASHBOARD",
+                module: "ADMIN",
+                entityType: "DASHBOARD",
+                description: "Admin dashboard Excel export generated",
+                status: "SUCCESS",
+                isError: 0
+            );
+
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"showtime_dashboard_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+        private static void AddDashboardHeader(IXLWorksheet sheet, string title)
+        {
+            sheet.Cell(1, 2).Value = "showTime";
+            sheet.Cell(1, 2).Style.Font.FontSize = 22;
+            sheet.Cell(1, 2).Style.Font.Bold = true;
+            sheet.Cell(1, 2).Style.Font.FontColor = XLColor.FromHtml("#111827");
+
+            sheet.Cell(2, 2).Value = title;
+            sheet.Cell(2, 2).Style.Font.FontSize = 14;
+            sheet.Cell(2, 2).Style.Font.Bold = true;
+            sheet.Cell(2, 2).Style.Font.FontColor = XLColor.FromHtml("#475569");
+
+            sheet.Cell(3, 2).Value = $"Generated: {DateTime.Now:dd MMM yyyy hh:mm tt}";
+            sheet.Cell(3, 2).Style.Font.FontColor = XLColor.FromHtml("#64748b");
+        }
+
+        private static void AddLogoIfAvailable(IXLWorksheet sheet, string logoPath)
+        {
+            if (!System.IO.File.Exists(logoPath))
+            {
+                return;
+            }
+
+            sheet.AddPicture(logoPath)
+                .MoveTo(sheet.Cell(1, 1))
+                .WithSize(54, 54);
+        }
+
+        private static void StyleHeaderRow(IXLRange range)
+        {
+            range.Style.Fill.BackgroundColor = XLColor.FromHtml("#111827");
+            range.Style.Font.FontColor = XLColor.White;
+            range.Style.Font.Bold = true;
+            range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        }
+
+        private static void StyleUsedRange(IXLWorksheet sheet)
+        {
+            var range = sheet.RangeUsed();
+            if (range == null)
+            {
+                return;
+            }
+
+            range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.OutsideBorderColor = XLColor.FromHtml("#CBD5E1");
+            range.Style.Border.InsideBorderColor = XLColor.FromHtml("#E2E8F0");
+            range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            range.Style.Alignment.WrapText = true;
+
+            sheet.Columns().AdjustToContents(8, 80);
+            sheet.Rows().AdjustToContents();
+        }
+
+        private static void AddBreakdownSheet(
+            XLWorkbook workbook,
+            string sheetName,
+            List<DashboardBreakdownItem> rows)
+        {
+            var sheet = workbook.Worksheets.Add(sheetName);
+            AddDashboardHeader(sheet, sheetName);
+            sheet.Cell(5, 1).Value = "Label";
+            sheet.Cell(5, 2).Value = "Count";
+            sheet.Cell(5, 3).Value = "Amount";
+            StyleHeaderRow(sheet.Range("A5:C5"));
+
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var row = i + 6;
+                sheet.Cell(row, 1).Value = rows[i].Label;
+                sheet.Cell(row, 2).Value = rows[i].Count;
+                sheet.Cell(row, 3).Value = rows[i].Amount;
+            }
+
+            sheet.Column(3).Style.NumberFormat.Format = "#,##0.00";
+            StyleUsedRange(sheet);
+        }
+
+        private static void AddDataSheet<T>(
+            XLWorkbook workbook,
+            string sheetName,
+            IEnumerable<T> rows)
+        {
+            var sheet = workbook.Worksheets.Add(sheetName);
+            AddDashboardHeader(sheet, sheetName);
+            sheet.Cell(5, 1).InsertTable(rows);
+            StyleUsedRange(sheet);
+        }
+
+        private static void AddGraphicsSheet(
+            XLWorkbook workbook,
+            List<(string Section, string Metric, decimal Value)> summaryRows,
+            List<DashboardBreakdownItem> bookingStatusRows,
+            List<DashboardBreakdownItem> paymentRows)
+        {
+            var sheet = workbook.Worksheets.Add("Data Graphics");
+            AddDashboardHeader(sheet, "Graphical Summary");
+
+            sheet.Cell(5, 1).Value = "Dashboard Metrics";
+            sheet.Range("A5:D5").Merge();
+            sheet.Range("A5:D5").Style.Fill.BackgroundColor = XLColor.FromHtml("#0F172A");
+            sheet.Range("A5:D5").Style.Font.FontColor = XLColor.White;
+            sheet.Range("A5:D5").Style.Font.Bold = true;
+
+            var chartRows = summaryRows
+                .Where(x => x.Value > 0)
+                .OrderByDescending(x => x.Value)
+                .Take(16)
+                .ToList();
+            var maxValue = chartRows.Any() ? chartRows.Max(x => x.Value) : 1m;
+
+            for (var i = 0; i < chartRows.Count; i++)
+            {
+                var row = i + 6;
+                var barWidth = Math.Max(1, (int)Math.Round(chartRows[i].Value / maxValue * 42m));
+                sheet.Cell(row, 1).Value = chartRows[i].Metric;
+                sheet.Cell(row, 2).Value = chartRows[i].Value;
+                sheet.Cell(row, 3).Value = new string('|', barWidth);
+                sheet.Cell(row, 3).Style.Font.FontColor = XLColor.FromHtml("#0F766E");
+                sheet.Cell(row, 3).Style.Font.Bold = true;
+                sheet.Cell(row, 4).Value = chartRows[i].Section;
+            }
+
+            var bookingStart = chartRows.Count + 9;
+            sheet.Cell(bookingStart, 1).Value = "Booking Status";
+            sheet.Range(bookingStart, 1, bookingStart, 4).Merge();
+            sheet.Range(bookingStart, 1, bookingStart, 4).Style.Fill.BackgroundColor = XLColor.FromHtml("#D9A441");
+            sheet.Range(bookingStart, 1, bookingStart, 4).Style.Font.Bold = true;
+
+            AddSmallBars(sheet, bookingStatusRows, bookingStart + 1, "#B91C1C");
+
+            var paymentStart = bookingStart + bookingStatusRows.Count + 4;
+            sheet.Cell(paymentStart, 1).Value = "Payment Methods";
+            sheet.Range(paymentStart, 1, paymentStart, 4).Merge();
+            sheet.Range(paymentStart, 1, paymentStart, 4).Style.Fill.BackgroundColor = XLColor.FromHtml("#14B8A6");
+            sheet.Range(paymentStart, 1, paymentStart, 4).Style.Font.Bold = true;
+
+            AddSmallBars(sheet, paymentRows, paymentStart + 1, "#D97706");
+
+            sheet.Column(2).Style.NumberFormat.Format = "#,##0.00";
+            StyleUsedRange(sheet);
+        }
+
+        private static void AddSmallBars(
+            IXLWorksheet sheet,
+            List<DashboardBreakdownItem> rows,
+            int startRow,
+            string color)
+        {
+            var maxCount = rows.Any() ? rows.Max(x => x.Count) : 1;
+
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var row = startRow + i;
+                var barWidth = Math.Max(1, (int)Math.Round(rows[i].Count / (double)maxCount * 36));
+                sheet.Cell(row, 1).Value = rows[i].Label;
+                sheet.Cell(row, 2).Value = rows[i].Count;
+                sheet.Cell(row, 3).Value = new string('|', barWidth);
+                sheet.Cell(row, 3).Style.Font.FontColor = XLColor.FromHtml(color);
+                sheet.Cell(row, 3).Style.Font.Bold = true;
+                sheet.Cell(row, 4).Value = rows[i].Amount;
+            }
         }
 
 
@@ -4148,6 +4638,7 @@ private static bool TryGetAdminPermission(
     var map = new Dictionary<string, (string ModuleCode, string ActionType)>(StringComparer.OrdinalIgnoreCase)
     {
         [nameof(Dashboard)] = ("ADMIN", "VIEW"),
+        [nameof(ExportDashboard)] = ("ADMIN", "VIEW"),
         [nameof(ActivityLogs)] = ("ADMIN", "VIEW"),
         [nameof(Versions)] = ("ADMIN", "VIEW"),
         [nameof(CreateVersion)] = ("ADMIN", "VIEW"),
