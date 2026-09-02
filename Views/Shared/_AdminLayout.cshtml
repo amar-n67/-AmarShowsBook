@@ -751,22 +751,24 @@
             aria-expanded="false"
             aria-controls="adminAmaroPanel">
         <span>A</span>
-        <strong>showTime Assistant</strong>
+        <strong>Amaro</strong>
     </button>
     <section id="adminAmaroPanel"
              class="admin-amaro-panel"
-             aria-label="showTime role assistant"
+             aria-label="Amaro role assistant"
              hidden>
         <div class="admin-amaro-header">
             <div>
-                <span>showTime Assistant</span>
-                <strong data-amaro-greeting>Ask me for admin summaries, search, exports, and role-allowed actions.</strong>
+                <span>Amaro</span>
+                <strong data-amaro-greeting>Ask me for admin summaries, search, exports, print, and role-allowed actions.</strong>
             </div>
-            <button type="button" data-amaro-close aria-label="Close showTime assistant">×</button>
+            <button type="button" data-amaro-close aria-label="Close Amaro">×</button>
         </div>
         <div class="admin-amaro-deck" data-amaro-command-deck>
             <button type="button" data-amaro-prompt="admin summary">Summary</button>
             <button type="button" data-amaro-prompt="search admin records">Search</button>
+            <button type="button" data-amaro-prompt="print this page">Print</button>
+            <button type="button" data-amaro-prompt="go back">Back</button>
             @if (canUsePrintTools)
             {
                 <button type="button" data-amaro-prompt="export this page">Export</button>
@@ -785,7 +787,7 @@
             <input data-amaro-input
                    type="text"
                    maxlength="300"
-                   placeholder="Ask showTime Assistant to summarize, search, open, export, or guide actions"
+                   placeholder="Ask Amaro to summarize, search, open, print, export, or guide actions"
                    autocomplete="off" />
             <button type="submit">Send</button>
         </form>
@@ -959,6 +961,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const greeting = widget.querySelector("[data-amaro-greeting]");
     const commandDeck = widget.querySelector("[data-amaro-command-deck]");
     const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
+    const submitButton = form.querySelector("button[type='submit']");
 
     function addMessage(text, kind) {
         const bubble = document.createElement("div");
@@ -966,6 +969,87 @@ document.addEventListener("DOMContentLoaded", function () {
         bubble.textContent = text;
         thread.appendChild(bubble);
         thread.scrollTop = thread.scrollHeight;
+        return bubble;
+    }
+
+    function findPageSearchInput() {
+        return document.querySelector("#adminPageSearch") ||
+            document.querySelector("[data-page-filter-search]") ||
+            document.querySelector("input[type='search']") ||
+            Array.from(document.querySelectorAll("input[type='text']")).find(field =>
+                /search|filter|find/i.test(field.placeholder || field.name || field.id || ""));
+    }
+
+    function applyPageSearch(term) {
+        const searchInput = findPageSearchInput();
+        if (!searchInput) {
+            addMessage("I could not find a search box on this page.", "bot");
+            return true;
+        }
+
+        searchInput.focus();
+        searchInput.value = term || "";
+        ["input", "keyup", "change"].forEach(type => {
+            searchInput.dispatchEvent(new Event(type, { bubbles: true }));
+        });
+
+        addMessage(term ? `Searching this page for "${term}".` : "Search box is ready. Type what you want to find.", "bot");
+        return true;
+    }
+
+    function directCommandFor(text) {
+        const clean = String(text || "").trim();
+        const lower = clean.toLowerCase();
+        const markers = [
+            "search this page for ",
+            "search page for ",
+            "filter this page for ",
+            "find on this page ",
+            "search current page for ",
+            "page search "
+        ];
+
+        if (lower === "back" || lower === "go back" || lower.includes("previous page")) return "go-back";
+        if (lower === "print" || lower === "print page" || lower === "print this page" || lower.includes("print current page")) return "print-page";
+        if (lower === "clear search" || lower === "clear page search" || lower === "clear this page search") return "clear-page-search";
+        if (lower === "search this page" || lower === "search page" || lower === "filter this page") return "page-search:";
+        if (lower.includes("export dashboard") || lower.includes("dashboard export")) return "export-dashboard";
+        if (lower === "export" || lower === "export this page") return "admin-export";
+        if (lower === "close" || lower === "close bot" || lower === "hide bot" || lower === "hide amaro") return "close-bot";
+        if (lower === "top" || lower === "go top" || lower === "scroll top") return "scroll-top";
+        if (lower === "bottom" || lower === "go bottom" || lower === "scroll bottom") return "scroll-bottom";
+        if (lower === "reload" || lower === "refresh" || lower === "refresh page") return "reload-page";
+        if (lower === "home" || lower === "open home" || lower === "go home") return "open:/Home/ShowTime";
+        if (lower === "wallet" || lower === "open wallet" || lower === "my wallet") return "open:/Wallet/MyWallet";
+        if (lower === "transactions" || lower === "transaction" || lower === "my transactions") return "open:/Transaction/History";
+        if (lower === "bookings" || lower === "my bookings" || lower === "tickets" || lower === "my tickets") return "open:/Booking/MyBookings";
+        if (lower === "profile" || lower === "my profile" || lower === "open profile") return "open:/Profile/MyProfile";
+        if (lower === "admin" || lower === "dashboard" || lower === "admin dashboard") return "open:/Admin/Dashboard";
+        if (lower === "users" || lower === "admin users") return "open:/Admin/Users";
+        if (lower === "roles" || lower === "permissions") return "open:/Admin/Roles";
+        if (lower === "refunds" || lower === "admin refunds") return "open:/Admin/Refunds";
+        if (lower === "security" || lower === "scanner") return "open:/Admin/Security";
+        if (lower === "notifications") return "open:/Admin/Notifications";
+        if (lower === "coupons" || lower === "coupon usage") return "open:/Admin/CouponUsage";
+        if (lower === "activity" || lower === "activity logs") return "open:/Admin/ActivityLogs";
+        if (lower === "versions") return "open:/Admin/Versions";
+        if (lower === "theme dark" || lower === "dark") return "theme:dark";
+        if (lower === "theme white" || lower === "white") return "theme:white";
+        if (lower === "theme cinema" || lower === "cinema") return "theme:cinema";
+        if (lower === "theme system" || lower === "system theme") return "theme:system";
+        if (lower === "cursor native" || lower === "native cursor") return "cursor:native";
+        if (lower === "cursor liquid" || lower === "liquid cursor") return "cursor:liquid";
+        if (lower === "cursor precision" || lower === "precision cursor") return "cursor:precision";
+        if (lower === "cursor spotlight" || lower === "spotlight cursor") return "cursor:spotlight";
+
+        for (const marker of markers) {
+            const index = lower.indexOf(marker);
+            if (index >= 0) {
+                return "page-search:" + clean.slice(index + marker.length).trim();
+            }
+        }
+
+        return "";
     }
 
     function runCommand(command, label) {
@@ -1028,6 +1112,73 @@ document.addEventListener("DOMContentLoaded", function () {
             return true;
         }
 
+        if (value === "export-dashboard") {
+            addMessage("Dashboard Excel export is being generated. Your download will start shortly.", "bot");
+            window.location.href = "/Admin/ExportDashboard";
+            return true;
+        }
+
+        if (value === "print-page") {
+            addMessage("Opening the print dialog for this page.", "bot");
+            setTimeout(() => window.print(), 80);
+            return true;
+        }
+
+        if (value === "go-back") {
+            addMessage("Taking you back.", "bot");
+            setTimeout(() => {
+                if (window.adminBack) {
+                    window.adminBack();
+                } else if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = "/Admin/Dashboard";
+                }
+            }, 80);
+            return true;
+        }
+
+        if (value.startsWith("page-search:")) {
+            return applyPageSearch(value.slice("page-search:".length).trim());
+        }
+
+        if (value === "clear-page-search") {
+            return applyPageSearch("");
+        }
+
+        if (value === "close-bot") {
+            panel.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+            return true;
+        }
+
+        if (value === "scroll-top") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            addMessage("Moved to the top of the page.", "bot");
+            return true;
+        }
+
+        if (value === "scroll-bottom") {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+            addMessage("Moved to the bottom of the page.", "bot");
+            return true;
+        }
+
+        if (value === "reload-page") {
+            addMessage("Refreshing this page.", "bot");
+            setTimeout(() => window.location.reload(), 120);
+            return true;
+        }
+
+        if (value.startsWith("open:")) {
+            const url = value.slice(5);
+            if (url.startsWith("/")) {
+                addMessage("Opening " + (label || "that page") + ".", "bot");
+                window.location.href = url;
+                return true;
+            }
+        }
+
         if (value.startsWith("ask:")) {
             sendMessage(value.slice(4));
             return true;
@@ -1078,7 +1229,14 @@ document.addEventListener("DOMContentLoaded", function () {
             if (key.includes("theme")) option.command = "theme-options";
             if (key.includes("cursor")) option.command = "cursor-options";
             if (key.includes("support") || key.includes("contact")) option.command = "support-options";
-            if (key.includes("export")) option.command = "admin-export";
+            if (key.includes("export dashboard") || key.includes("dashboard export")) option.command = "export-dashboard";
+            else if (key.includes("export")) option.command = "admin-export";
+            if (key.includes("print")) option.command = "print-page";
+            if (key === "back" || key.includes("go back")) option.command = "go-back";
+            if (key.includes("search this page")) option.command = "page-search:";
+            if (key.includes("clear search")) option.command = "clear-page-search";
+            if (key === "home") option.command = "open:/Home/ShowTime";
+            if (key === "admin dashboard") option.command = "open:/Admin/Dashboard";
             if (key.includes("admin summary")) option.command = "ask:admin summary";
             if (key.includes("search admin")) option.command = "ask:search admin records";
             if (key.includes("booking") && key.includes("my")) option.url = "/Booking/MyBookings";
@@ -1123,6 +1281,21 @@ document.addEventListener("DOMContentLoaded", function () {
         addMessage(clean, "user");
         input.value = "";
 
+        const directCommand = directCommandFor(clean);
+        if (directCommand) {
+            options.innerHTML = "";
+            if (runCommand(directCommand, clean)) {
+                return;
+            }
+        }
+
+        const thinking = addMessage("Thinking...", "bot");
+        input.disabled = true;
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Wait";
+        }
+
         fetch("/Amaro/Ask", {
             method: "POST",
             headers: {
@@ -1133,10 +1306,22 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(response => response.json())
         .then(data => {
+            thinking.remove();
             addMessage(data.message || "I could not find details for that yet.", "bot");
             renderOptions(data.options || []);
         })
-        .catch(() => addMessage("I could not reach showTime Assistant right now. Please try again.", "bot"));
+        .catch(() => {
+            thinking.remove();
+            addMessage("I could not reach Amaro right now. Please try again.", "bot");
+        })
+        .finally(() => {
+            input.disabled = false;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Send";
+            }
+            input.focus();
+        });
     }
 
     function loadMenu() {

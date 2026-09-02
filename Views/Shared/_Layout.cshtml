@@ -2589,20 +2589,22 @@ z-index:9999;">
 <div class="amaro-widget no-print" data-amaro-widget>
         <button class="amaro-launcher" type="button" data-amaro-toggle aria-expanded="false" aria-controls="amaroPanel">
             <span>A</span>
-            <strong>showTime Assistant</strong>
+            <strong>Amaro</strong>
         </button>
-        <section id="amaroPanel" class="amaro-panel" aria-label="showTime assistant" hidden>
+        <section id="amaroPanel" class="amaro-panel" aria-label="Amaro assistant" hidden>
             <div class="amaro-header">
                 <div>
-                    <span>showTime Assistant</span>
-                    <strong data-amaro-greeting>Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm showTime Assistant. Ask me for today's shows or booking help.</strong>
+                    <span>Amaro</span>
+                    <strong data-amaro-greeting>Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows, booking help, page search, or print.</strong>
                 </div>
-                <button type="button" data-amaro-close aria-label="Close showTime assistant">×</button>
+                <button type="button" data-amaro-close aria-label="Close Amaro">×</button>
             </div>
             <div class="amaro-command-deck" data-amaro-command-deck>
                 <button type="button" data-amaro-prompt="Book a movie">Book</button>
                 <button type="button" data-amaro-prompt="Show prices and available seats">Seats</button>
                 <button type="button" data-amaro-prompt="My upcoming bookings">Upcoming</button>
+                <button type="button" data-amaro-prompt="print this page">Print</button>
+                <button type="button" data-amaro-prompt="go back">Back</button>
                 <button type="button" data-amaro-prompt="Change theme">Theme</button>
                 <button type="button" data-amaro-prompt="Change cursor">Cursor</button>
                 <button type="button" data-amaro-prompt="Contact support"><span class="action-icon-inline" aria-hidden="true"><svg class="contact-svg-icon" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span>Help</button>
@@ -2610,12 +2612,12 @@ z-index:9999;">
             <div class="amaro-options" data-amaro-options></div>
             <div class="amaro-thread" data-amaro-thread>
                 <div class="amaro-message amaro-message-bot">
-                    Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm showTime Assistant. Ask me for today's shows, show times, support, or how to book.
+                    Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows, show times, support, page actions, or how to book.
                 </div>
             </div>
             <form class="amaro-form" data-amaro-form>
                 @Html.AntiForgeryToken()
-                <input data-amaro-input type="text" maxlength="300" placeholder="Ask showTime Assistant to book, filter, open, switch, or check" autocomplete="off" />
+                <input data-amaro-input type="text" maxlength="300" placeholder="Ask Amaro to book, filter, open, print, switch, or check" autocomplete="off" />
                 <button type="submit">Send</button>
             </form>
         </section>
@@ -3512,73 +3514,107 @@ document.addEventListener("DOMContentLoaded", function () {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    min-height: 52px;
-    padding: 8px 16px 8px 8px;
-    border: 1px solid color-mix(in srgb, var(--app-primary) 34%, var(--app-input-border));
+    min-height: 50px;
+    padding: 7px 15px 7px 7px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 36%, var(--app-input-border));
     border-radius: 999px;
-    background: var(--app-card);
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--app-card) 94%, #ffffff 6%), var(--app-card)) padding-box,
+        linear-gradient(135deg, var(--app-primary), #14b8a6, #f59e0b) border-box;
     color: var(--app-card-text);
-    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.24);
     font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .amaro-launcher:hover,
 .amaro-launcher:focus-visible {
     transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--app-primary) 68%, #14b8a6);
+    box-shadow: 0 22px 54px rgba(15, 23, 42, 0.3);
     outline: none;
 }
 
 .amaro-launcher span {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: var(--app-primary);
+    background: linear-gradient(135deg, var(--app-primary), #14b8a6);
     color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.28);
 }
 
 .amaro-panel {
     position: absolute;
     right: 0;
-    bottom: 66px;
-    width: min(420px, calc(100vw - 28px));
-    border: 1px solid var(--app-input-border);
+    bottom: 64px;
+    display: grid;
+    grid-template-rows: auto auto auto minmax(180px, 1fr) auto;
+    width: min(440px, calc(100vw - 28px));
+    max-height: min(710px, calc(100vh - 104px));
+    border: 1px solid color-mix(in srgb, var(--app-primary) 30%, var(--app-input-border));
     border-radius: 8px;
     background: var(--app-card);
     color: var(--app-card-text);
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.34);
     overflow: hidden;
+}
+
+.amaro-panel[hidden] {
+    display: none;
+}
+
+.amaro-panel:not([hidden]) {
+    animation: amaroPanelIn 0.18s ease both;
+}
+
+@@keyframes amaroPanelIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .amaro-header {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px;
-    background: color-mix(in srgb, var(--app-primary) 14%, var(--app-card));
+    padding: 15px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--app-primary) 84%, #111827), #0f766e);
+    color: #fff;
     border-bottom: 1px solid var(--app-input-border);
 }
 
 .amaro-command-deck {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
-    padding: 10px 12px 4px;
+    padding: 10px 12px 6px;
 }
 
 .amaro-command-deck button {
     min-width: 0;
-    min-height: 38px;
-    border: 1px solid color-mix(in srgb, var(--app-primary) 24%, var(--app-input-border));
+    min-height: 36px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 28%, var(--app-input-border));
     border-radius: 8px;
-    background: color-mix(in srgb, var(--app-primary) 10%, var(--app-card));
+    background: color-mix(in srgb, var(--app-primary) 9%, var(--app-card));
     color: var(--app-card-text);
     font-size: 0.72rem;
     font-weight: 900;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: pointer;
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
 }
 
 .amaro-header span,
@@ -3591,48 +3627,65 @@ document.addEventListener("DOMContentLoaded", function () {
 .amaro-header strong {
     display: block;
     margin-top: 4px;
-    font-size: 0.9rem;
+    max-width: 340px;
+    font-size: 0.88rem;
     line-height: 1.3;
 }
 
 .amaro-header button {
+    display: grid;
+    place-items: center;
     width: 32px;
     height: 32px;
     border: 0;
-    border-radius: 50%;
-    background: var(--app-input);
-    color: var(--app-text);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
     font-size: 1.1rem;
     font-weight: 900;
+    cursor: pointer;
 }
 
 .amaro-options {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     overflow: visible;
-    padding: 10px 12px;
+    padding: 8px 12px 10px;
     border-bottom: 1px solid var(--app-input-border);
 }
 
 .amaro-options button {
     min-width: 0;
-    min-height: 32px;
-    border: 1px solid var(--app-input-border);
+    min-height: 34px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 24%, var(--app-input-border));
     border-radius: 8px;
     background: var(--app-input);
     color: var(--app-input-text);
     padding: 6px 10px;
     text-align: center;
     white-space: normal;
+    cursor: pointer;
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.amaro-command-deck button:hover,
+.amaro-command-deck button:focus-visible,
+.amaro-options button:hover,
+.amaro-options button:focus-visible {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--app-primary) 54%, #14b8a6);
+    background: color-mix(in srgb, var(--app-primary) 15%, var(--app-card));
+    outline: none;
 }
 
 .amaro-thread {
     display: grid;
     gap: 8px;
-    max-height: 310px;
+    align-content: start;
     overflow-y: auto;
     padding: 12px;
+    background: color-mix(in srgb, var(--app-card) 94%, var(--app-input) 6%);
 }
 
 .amaro-message {
@@ -3642,6 +3695,7 @@ document.addEventListener("DOMContentLoaded", function () {
     line-height: 1.35;
     font-size: 0.9rem;
     overflow-wrap: anywhere;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
 .amaro-message-bot {
@@ -3652,7 +3706,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 .amaro-message-user {
     justify-self: end;
-    background: var(--app-primary);
+    background: linear-gradient(135deg, var(--app-primary), #0f766e);
     color: #fff;
 }
 
@@ -3674,20 +3728,55 @@ document.addEventListener("DOMContentLoaded", function () {
     padding: 0 10px;
 }
 
+.amaro-form input:focus {
+    border-color: color-mix(in srgb, var(--app-primary) 60%, #14b8a6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-primary) 16%, transparent);
+    outline: none;
+}
+
+.amaro-form input:disabled {
+    opacity: 0.72;
+}
+
 .amaro-form button {
     min-height: 38px;
     border: 0;
     border-radius: 8px;
-    background: var(--app-primary);
+    background: linear-gradient(135deg, var(--app-primary), #14b8a6);
     color: #fff;
     font-weight: 900;
     padding: 0 13px;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.amaro-form button:hover,
+.amaro-form button:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--app-primary) 25%, transparent);
+    outline: none;
+}
+
+.amaro-form button:disabled {
+    cursor: wait;
+    opacity: 0.72;
+    transform: none;
+    box-shadow: none;
 }
 
 @@media (max-width: 560px) {
     .amaro-widget {
-        right: 14px;
-        bottom: 14px;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    .amaro-launcher strong {
+        display: none;
+    }
+
+    .amaro-panel {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 88px);
     }
 
     .amaro-command-deck {
@@ -3716,6 +3805,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const greeting = widget.querySelector("[data-amaro-greeting]");
     const commandDeck = widget.querySelector("[data-amaro-command-deck]");
     const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
+    const submitButton = form.querySelector("button[type='submit']");
 
     function addMessage(text, kind) {
         const bubble = document.createElement("div");
@@ -3723,6 +3813,79 @@ document.addEventListener("DOMContentLoaded", function () {
         bubble.textContent = text;
         thread.appendChild(bubble);
         thread.scrollTop = thread.scrollHeight;
+        return bubble;
+    }
+
+    function findPageSearchInput() {
+        return document.querySelector("[data-app-search-input]") ||
+            document.querySelector("[data-page-filter-search]") ||
+            document.querySelector("input[type='search']") ||
+            Array.from(document.querySelectorAll("input[type='text']")).find(field =>
+                /search|filter|find/i.test(field.placeholder || field.name || field.id || ""));
+    }
+
+    function applyPageSearch(term) {
+        const searchInput = findPageSearchInput();
+        if (!searchInput) {
+            addMessage("I could not find a search box on this page.", "bot");
+            return true;
+        }
+
+        searchInput.focus();
+        searchInput.value = term || "";
+        ["input", "keyup", "change"].forEach(type => {
+            searchInput.dispatchEvent(new Event(type, { bubbles: true }));
+        });
+
+        addMessage(term ? `Searching this page for "${term}".` : "Search box is ready. Type what you want to find.", "bot");
+        return true;
+    }
+
+    function directCommandFor(text) {
+        const clean = String(text || "").trim();
+        const lower = clean.toLowerCase();
+        const markers = [
+            "search this page for ",
+            "search page for ",
+            "filter this page for ",
+            "find on this page ",
+            "search current page for ",
+            "page search "
+        ];
+
+        if (lower === "back" || lower === "go back" || lower.includes("previous page")) return "go-back";
+        if (lower === "print" || lower === "print page" || lower === "print this page" || lower.includes("print current page")) return "print-page";
+        if (lower === "clear search" || lower === "clear page search" || lower === "clear this page search") return "clear-page-search";
+        if (lower === "search this page" || lower === "search page" || lower === "filter this page") return "page-search:";
+        if (lower.includes("export dashboard") || lower.includes("dashboard export")) return "export-dashboard";
+        if (lower === "export" || lower === "export this page") return "admin-export";
+        if (lower === "close" || lower === "close bot" || lower === "hide bot" || lower === "hide amaro") return "close-bot";
+        if (lower === "top" || lower === "go top" || lower === "scroll top") return "scroll-top";
+        if (lower === "bottom" || lower === "go bottom" || lower === "scroll bottom") return "scroll-bottom";
+        if (lower === "reload" || lower === "refresh" || lower === "refresh page") return "reload-page";
+        if (lower === "home" || lower === "open home" || lower === "go home") return "open:/Home/ShowTime";
+        if (lower === "wallet" || lower === "open wallet" || lower === "my wallet") return "open:/Wallet/MyWallet";
+        if (lower === "transactions" || lower === "transaction" || lower === "my transactions") return "open:/Transaction/History";
+        if (lower === "bookings" || lower === "my bookings" || lower === "tickets" || lower === "my tickets") return "open:/Booking/MyBookings";
+        if (lower === "profile" || lower === "my profile" || lower === "open profile") return "open:/Profile/MyProfile";
+        if (lower === "admin" || lower === "dashboard" || lower === "admin dashboard") return "open:/Admin/Dashboard";
+        if (lower === "theme dark" || lower === "dark") return "theme:dark";
+        if (lower === "theme white" || lower === "white") return "theme:white";
+        if (lower === "theme cinema" || lower === "cinema") return "theme:cinema";
+        if (lower === "theme system" || lower === "system theme") return "theme:system";
+        if (lower === "cursor native" || lower === "native cursor") return "cursor:native";
+        if (lower === "cursor liquid" || lower === "liquid cursor") return "cursor:liquid";
+        if (lower === "cursor precision" || lower === "precision cursor") return "cursor:precision";
+        if (lower === "cursor spotlight" || lower === "spotlight cursor") return "cursor:spotlight";
+
+        for (const marker of markers) {
+            const index = lower.indexOf(marker);
+            if (index >= 0) {
+                return "page-search:" + clean.slice(index + marker.length).trim();
+            }
+        }
+
+        return "";
     }
 
     function sendMessage(text) {
@@ -3731,6 +3894,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         addMessage(clean, "user");
         input.value = "";
+
+        const directCommand = directCommandFor(clean);
+        if (directCommand) {
+            options.innerHTML = "";
+            if (runCommand(directCommand, clean)) {
+                return;
+            }
+        }
+
+        const thinking = addMessage("Thinking...", "bot");
+        input.disabled = true;
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Wait";
+        }
 
         fetch("/Amaro/Ask", {
             method: "POST",
@@ -3742,10 +3920,22 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(response => response.json())
         .then(data => {
+            thinking.remove();
             addMessage(data.message || "I could not find details for that yet.", "bot");
             renderOptions(data.options || []);
         })
-        .catch(() => addMessage("I could not reach the helper service. Please try again.", "bot"));
+        .catch(() => {
+            thinking.remove();
+            addMessage("I could not reach Amaro right now. Please try again.", "bot");
+        })
+        .finally(() => {
+            input.disabled = false;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Send";
+            }
+            input.focus();
+        });
     }
 
     function runCommand(command, label) {
@@ -3813,6 +4003,71 @@ document.addEventListener("DOMContentLoaded", function () {
             return true;
         }
 
+        if (value === "export-dashboard") {
+            addMessage("Dashboard Excel export is being generated. Your download will start shortly.", "bot");
+            window.location.href = "/Admin/ExportDashboard";
+            return true;
+        }
+
+        if (value === "print-page") {
+            addMessage("Opening the print dialog for this page.", "bot");
+            setTimeout(() => window.print(), 80);
+            return true;
+        }
+
+        if (value === "go-back") {
+            addMessage("Taking you back.", "bot");
+            setTimeout(() => {
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = "/Home/ShowTime";
+                }
+            }, 80);
+            return true;
+        }
+
+        if (value.startsWith("page-search:")) {
+            return applyPageSearch(value.slice("page-search:".length).trim());
+        }
+
+        if (value === "clear-page-search") {
+            return applyPageSearch("");
+        }
+
+        if (value === "close-bot") {
+            panel.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+            return true;
+        }
+
+        if (value === "scroll-top") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            addMessage("Moved to the top of the page.", "bot");
+            return true;
+        }
+
+        if (value === "scroll-bottom") {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+            addMessage("Moved to the bottom of the page.", "bot");
+            return true;
+        }
+
+        if (value === "reload-page") {
+            addMessage("Refreshing this page.", "bot");
+            setTimeout(() => window.location.reload(), 120);
+            return true;
+        }
+
+        if (value.startsWith("open:")) {
+            const url = value.slice(5);
+            if (url.startsWith("/")) {
+                addMessage("Opening " + (label || "that page") + ".", "bot");
+                window.location.href = url;
+                return true;
+            }
+        }
+
         if (value.startsWith("theme:")) {
             const theme = value.split(":")[1] || "cinema";
             if (window.setAppTheme) {
@@ -3858,7 +4113,14 @@ document.addEventListener("DOMContentLoaded", function () {
             if (key.includes("theme")) option.command = "theme-options";
             if (key.includes("cursor")) option.command = "cursor-options";
             if (key.includes("support") || key.includes("contact")) option.command = "support-options";
-            if (key.includes("export")) option.command = "admin-export";
+            if (key.includes("export dashboard") || key.includes("dashboard export")) option.command = "export-dashboard";
+            else if (key.includes("export")) option.command = "admin-export";
+            if (key.includes("print")) option.command = "print-page";
+            if (key === "back" || key.includes("go back")) option.command = "go-back";
+            if (key.includes("search this page")) option.command = "page-search:";
+            if (key.includes("clear search")) option.command = "clear-page-search";
+            if (key === "home") option.command = "open:/Home/ShowTime";
+            if (key === "admin dashboard") option.command = "open:/Admin/Dashboard";
             if (key.includes("admin summary")) option.command = "ask:admin summary";
             if (key.includes("search admin")) option.command = "ask:search admin records";
             if (key.includes("booking") && key.includes("my")) option.url = "/Booking/MyBookings";

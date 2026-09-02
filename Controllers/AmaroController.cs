@@ -30,7 +30,7 @@ public class AmaroController : Controller
             return Json(new
             {
                 isLoggedIn = false,
-                greeting = "Hey guest, I'm showTime Assistant. I can find today's shows now; login is needed only when you book or view account details.",
+                greeting = "Hey guest, I'm Amaro. I can find today's shows now; login is needed only when you book or view account details.",
                 options = new[]
                 {
                     new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
@@ -51,8 +51,8 @@ public class AmaroController : Controller
         {
             isLoggedIn = true,
             greeting = string.IsNullOrWhiteSpace(pageName)
-                ? $"Hey {GetDisplayName()}, I'm showTime Assistant. How may I help you?"
-                : $"Hey {GetDisplayName()}, I'm showTime Assistant. I can help with {pageName} and your role-allowed actions.",
+                ? $"Hey {GetDisplayName()}, I'm Amaro. How may I help you?"
+                : $"Hey {GetDisplayName()}, I'm Amaro. I can help with {pageName} and your role-allowed actions.",
             options = proactiveOptions.Any() ? proactiveOptions : BuildMenuOptions(menuItems, userId)
         });
     }
@@ -116,8 +116,8 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, check wallet/profile/transactions, switch theme or cursor, and connect you to support.",
-                BuildAssistantOptions(menuItems, userId).Take(6).ToArray());
+                "I'm Amaro. I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, search the current page, print, go back, export allowed admin data, check wallet/profile/transactions, switch theme or cursor, and connect you to support.",
+                BuildAssistantOptions(menuItems, userId).Take(8).ToArray());
         }
 
         if (IsSupportIntent(normalized))
@@ -149,6 +149,34 @@ public class AmaroController : Controller
                     new AmaroQuickOption("Precision Cursor", "", "cursor:precision"),
                     new AmaroQuickOption("Spotlight Cursor", "", "cursor:spotlight")
                 });
+        }
+
+        var pageSearchTerm = ExtractPageSearchTerm(message);
+        if (pageSearchTerm != null)
+        {
+            return new AmaroAskResponse(
+                string.IsNullOrWhiteSpace(pageSearchTerm)
+                    ? "I can focus the search box on this page. Type what you want to filter, or tell me: search this page for booking, failed, wallet, or any visible text."
+                    : $"I will search this page for \"{pageSearchTerm}\".",
+                new[]
+                {
+                    new AmaroQuickOption("Search This Page", "", $"page-search:{pageSearchTerm}"),
+                    new AmaroQuickOption("Clear Search", "", "clear-page-search")
+                });
+        }
+
+        if (IsPrintIntent(normalized))
+        {
+            return new AmaroAskResponse(
+                "I can print the current page with the app print layout.",
+                new[] { new AmaroQuickOption("Print Page", "", "print-page") });
+        }
+
+        if (IsBackIntent(normalized))
+        {
+            return new AmaroAskResponse(
+                "I can take you back to the previous page.",
+                new[] { new AmaroQuickOption("Go Back", "", "go-back") });
         }
 
         if (IsProactiveIntent(normalized))
@@ -433,10 +461,12 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, and connect you to support. Login is required when you choose seats or view account details.",
+                "I'm Amaro. I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, search this page, print, go back, and connect you to support. Login is required when you choose seats or view account details.",
                 new[]
                 {
                     new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
+                    new AmaroQuickOption("Print Page", "", "print-page"),
+                    new AmaroQuickOption("Go Back", "", "go-back"),
                     new AmaroQuickOption("Help", "", "support-options"),
                     new AmaroQuickOption("Login", "/Auth/Login")
                 });
@@ -471,6 +501,34 @@ public class AmaroController : Controller
                     new AmaroQuickOption("Precision Cursor", "", "cursor:precision"),
                     new AmaroQuickOption("Spotlight Cursor", "", "cursor:spotlight")
                 });
+        }
+
+        var pageSearchTerm = ExtractPageSearchTerm(message);
+        if (pageSearchTerm != null)
+        {
+            return new AmaroAskResponse(
+                string.IsNullOrWhiteSpace(pageSearchTerm)
+                    ? "I can focus the search box on this page. Type what you want to filter, or tell me: search this page for movie, standup, live, or any visible text."
+                    : $"I will search this page for \"{pageSearchTerm}\".",
+                new[]
+                {
+                    new AmaroQuickOption("Search This Page", "", $"page-search:{pageSearchTerm}"),
+                    new AmaroQuickOption("Clear Search", "", "clear-page-search")
+                });
+        }
+
+        if (IsPrintIntent(normalized))
+        {
+            return new AmaroAskResponse(
+                "I can print the current page with the app print layout.",
+                new[] { new AmaroQuickOption("Print Page", "", "print-page") });
+        }
+
+        if (IsBackIntent(normalized))
+        {
+            return new AmaroAskResponse(
+                "I can take you back to the previous page.",
+                new[] { new AmaroQuickOption("Go Back", "", "go-back") });
         }
 
         if (IsShowDiscoveryIntent(normalized) || IsBookShowIntent(normalized))
@@ -750,10 +808,22 @@ public class AmaroController : Controller
                         .ToArray());
             }
 
+            if (normalized.Contains("dashboard"))
+            {
+                return new AmaroAskResponse(
+                    "I can generate the full dashboard Excel workbook with logo, sheets, charts, and auto-width columns.",
+                    new[]
+                    {
+                        new AmaroQuickOption("Export Dashboard", "", "export-dashboard"),
+                        new AmaroQuickOption("Admin Dashboard", "/Admin/Dashboard")
+                    });
+            }
+
             var exportOptions = BuildPageOptions(menuItems, userId, normalized)
                 .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase))
                 .Take(4)
                 .Append(new AmaroQuickOption("Export This Page", "", "admin-export"))
+                .Append(new AmaroQuickOption("Export Dashboard", "", "export-dashboard"))
                 .ToArray();
 
             return new AmaroAskResponse(
@@ -1096,6 +1166,10 @@ public class AmaroController : Controller
             options.Add(new AmaroQuickOption("Help", "", "support-options"));
         }
 
+        options.Add(new AmaroQuickOption("Search This Page", "", "page-search:"));
+        options.Add(new AmaroQuickOption("Print Page", "", "print-page"));
+        options.Add(new AmaroQuickOption("Go Back", "", "go-back"));
+
         var roleOptions = BuildMenuOptions(menuItems, userId)
             .Where(x => options.All(existing =>
                 !string.Equals(existing.Label, x.Label, StringComparison.OrdinalIgnoreCase) &&
@@ -1234,6 +1308,7 @@ public class AmaroController : Controller
         if (canExport)
         {
             options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+            options.Add(new AmaroQuickOption("Export Dashboard", "", "export-dashboard"));
         }
         options.AddRange(BuildPageOptions(menuItems, userId, "admin dashboard")
             .Where(x => x.Url.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase)));
@@ -1352,6 +1427,7 @@ VALUES
             if (_rbacService.IsSuperAdmin(userId))
             {
                 options.Add(new AmaroQuickOption("Export This Page", "", "admin-export"));
+                options.Add(new AmaroQuickOption("Export Dashboard", "", "export-dashboard"));
             }
         }
 
@@ -1376,6 +1452,9 @@ VALUES
         yield return new AmaroQuickOption("Wallet", "/Wallet/MyWallet");
         yield return new AmaroQuickOption("Profile", "/Profile/MyProfile");
         yield return new AmaroQuickOption("Help", "", "support-options");
+        yield return new AmaroQuickOption("Search This Page", "", "page-search:");
+        yield return new AmaroQuickOption("Print Page", "", "print-page");
+        yield return new AmaroQuickOption("Go Back", "", "go-back");
         yield return new AmaroQuickOption("Theme", "", "theme-options");
         yield return new AmaroQuickOption("Cursor", "", "cursor-options");
 
@@ -1445,6 +1524,52 @@ VALUES
         return normalized.Contains("cursor") ||
             normalized.Contains("mouse style") ||
             normalized.Contains("pointer style");
+    }
+
+    private static bool IsPrintIntent(string normalized)
+    {
+        return normalized is "print" or "print page" or "print this page" ||
+            normalized.Contains("print current page") ||
+            normalized.Contains("make pdf") ||
+            normalized.Contains("download pdf");
+    }
+
+    private static bool IsBackIntent(string normalized)
+    {
+        return normalized is "back" or "go back" ||
+            normalized.Contains("previous page") ||
+            normalized.Contains("last page");
+    }
+
+    private static string? ExtractPageSearchTerm(string message)
+    {
+        var clean = (message ?? string.Empty).Trim();
+        var lower = clean.ToLowerInvariant();
+        var markers = new[]
+        {
+            "search this page for ",
+            "search page for ",
+            "filter this page for ",
+            "find on this page ",
+            "search current page for ",
+            "page search "
+        };
+
+        foreach (var marker in markers)
+        {
+            var index = lower.IndexOf(marker, StringComparison.Ordinal);
+            if (index >= 0)
+            {
+                return clean[(index + marker.Length)..].Trim();
+            }
+        }
+
+        if (lower is "search this page" or "search page" or "filter this page" or "page search")
+        {
+            return string.Empty;
+        }
+
+        return null;
     }
 
     private static bool IsSupportIntent(string normalized)
