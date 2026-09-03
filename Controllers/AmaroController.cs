@@ -115,8 +115,11 @@ public class AmaroController : Controller
 
         if (IsHelpIntent(normalized))
         {
+            var canPrint = _rbacService.CanUsePrintTools(userId);
             return new AmaroAskResponse(
-                "I'm Amaro. I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, search the current page, print, go back, export allowed admin data, check wallet/profile/transactions, switch theme or cursor, and connect you to support.",
+                canPrint
+                    ? "I'm Amaro. I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, search the current page, print, go back, export allowed admin data, check wallet/profile/transactions, switch theme or cursor, and connect you to support."
+                    : "I'm Amaro. I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, search the current page, go back, check wallet/profile/transactions, switch theme or cursor, and connect you to support. Print and capture tools are admin-only.",
                 BuildAssistantOptions(menuItems, userId).Take(8).ToArray());
         }
 
@@ -167,6 +170,13 @@ public class AmaroController : Controller
 
         if (IsPrintIntent(normalized))
         {
+            if (!_rbacService.CanUsePrintTools(userId))
+            {
+                return new AmaroAskResponse(
+                    "Print is allowed only for Admin and Super Admin.",
+                    Array.Empty<AmaroQuickOption>());
+            }
+
             return new AmaroAskResponse(
                 "I can print the current page with the app print layout.",
                 new[] { new AmaroQuickOption("Print Page", "", "print-page") });
@@ -461,11 +471,10 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I'm Amaro. I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, search this page, print, go back, and connect you to support. Login is required when you choose seats or view account details.",
+                "I'm Amaro. I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, search this page, go back, and connect you to support. Print and capture tools are admin-only.",
                 new[]
                 {
                     new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
-                    new AmaroQuickOption("Print Page", "", "print-page"),
                     new AmaroQuickOption("Go Back", "", "go-back"),
                     new AmaroQuickOption("Help", "", "support-options"),
                     new AmaroQuickOption("Login", "/Auth/Login")
@@ -520,8 +529,8 @@ public class AmaroController : Controller
         if (IsPrintIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I can print the current page with the app print layout.",
-                new[] { new AmaroQuickOption("Print Page", "", "print-page") });
+                "Print is allowed only for Admin and Super Admin.",
+                Array.Empty<AmaroQuickOption>());
         }
 
         if (IsBackIntent(normalized))
@@ -1167,7 +1176,10 @@ public class AmaroController : Controller
         }
 
         options.Add(new AmaroQuickOption("Search This Page", "", "page-search:"));
-        options.Add(new AmaroQuickOption("Print Page", "", "print-page"));
+        if (_rbacService.CanUsePrintTools(userId))
+        {
+            options.Add(new AmaroQuickOption("Print Page", "", "print-page"));
+        }
         options.Add(new AmaroQuickOption("Go Back", "", "go-back"));
 
         var roleOptions = BuildMenuOptions(menuItems, userId)
@@ -1453,7 +1465,10 @@ VALUES
         yield return new AmaroQuickOption("Profile", "/Profile/MyProfile");
         yield return new AmaroQuickOption("Help", "", "support-options");
         yield return new AmaroQuickOption("Search This Page", "", "page-search:");
-        yield return new AmaroQuickOption("Print Page", "", "print-page");
+        if (_rbacService.CanUsePrintTools(userId))
+        {
+            yield return new AmaroQuickOption("Print Page", "", "print-page");
+        }
         yield return new AmaroQuickOption("Go Back", "", "go-back");
         yield return new AmaroQuickOption("Theme", "", "theme-options");
         yield return new AmaroQuickOption("Cursor", "", "cursor-options");

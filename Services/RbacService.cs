@@ -43,7 +43,7 @@ namespace AmarShowsBook.Services
 
         public bool CanUsePrintTools(int userId)
         {
-            return IsSuperAdmin(userId);
+            return HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
         }
 
         public bool CanOpenAdminDashboard(int userId)

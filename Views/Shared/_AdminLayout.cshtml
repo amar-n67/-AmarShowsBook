@@ -301,6 +301,9 @@
     };
     var canUsePrintTools =
         AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+    var canUseProtectedCapture =
+        hasUserId &&
+        RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
 
     var adminNotificationCount =
         ViewData["AdminNotificationCount"] is int notificationCount
@@ -308,7 +311,14 @@
             : 0;
 }
 
-<body>
+<body data-capture-allowed="@canUseProtectedCapture.ToString().ToLowerInvariant()">
+
+<div class="capture-protection-overlay no-print" data-capture-protection-overlay aria-hidden="true">
+    <div>
+        <strong>Protected Screen</strong>
+        <span>Recording, screenshots, search shortcuts, and print are allowed only for Admin and Super Admin.</span>
+    </div>
+</div>
 
 <div class="print-page-header" aria-hidden="true">
     <div class="print-page-header-inner">
@@ -796,6 +806,81 @@
 
 <script src="~/js/admin/admin-dashboard.js" asp-append-version="true"></script>
 <script>
+window.showCaptureProtection = window.showCaptureProtection || function (message) {
+    const overlay = document.querySelector("[data-capture-protection-overlay]");
+    if (!overlay) {
+        return;
+    }
+
+    const detail = overlay.querySelector("span");
+    if (detail && message) {
+        detail.textContent = message;
+    }
+
+    overlay.classList.add("is-visible");
+    clearTimeout(window.__captureProtectionTimer);
+    window.__captureProtectionTimer = setTimeout(() => {
+        overlay.classList.remove("is-visible");
+    }, 1800);
+};
+
+(function () {
+    const canCapture = document.body?.dataset.captureAllowed === "true";
+    if (canCapture) {
+        return;
+    }
+
+    const protectedMessage = "Recording, screenshots, search shortcuts, and print are allowed only for Admin and Super Admin.";
+    const nativePrint = window.print;
+
+    window.print = function () {
+        window.showCaptureProtection("Print is allowed only for Admin and Super Admin.");
+        return false;
+    };
+
+    window.__showTimeNativePrint = nativePrint;
+
+    if (navigator.mediaDevices?.getDisplayMedia) {
+        navigator.mediaDevices.getDisplayMedia = function () {
+            window.showCaptureProtection(protectedMessage);
+            return Promise.reject(new DOMException("Screen capture is restricted.", "NotAllowedError"));
+        };
+    }
+
+    document.addEventListener("keydown", function (event) {
+        const key = String(event.key || "").toLowerCase();
+        const code = String(event.code || "").toLowerCase();
+        const hasModifier = event.ctrlKey || event.metaKey;
+        const isBlockedShortcut =
+            (hasModifier && ["p", "s", "f", "u"].includes(key)) ||
+            (event.ctrlKey && event.shiftKey && ["i", "j", "c", "s"].includes(key)) ||
+            (event.metaKey && event.altKey && ["i", "j", "c"].includes(key)) ||
+            key === "f12" ||
+            key === "printscreen" ||
+            code === "printscreen" ||
+            (event.metaKey && event.shiftKey && ["3", "4", "5"].includes(key));
+
+        if (!isBlockedShortcut) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        window.showCaptureProtection(protectedMessage);
+    }, true);
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+        window.showCaptureProtection(protectedMessage);
+    }, true);
+
+    window.addEventListener("beforeprint", function (event) {
+        event.preventDefault?.();
+        window.showCaptureProtection("Print is allowed only for Admin and Super Admin.");
+    });
+})();
+</script>
+<script>
 (function () {
     let committedTheme = localStorage.getItem("showTimeTheme") || "cinema";
 
@@ -962,6 +1047,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const commandDeck = widget.querySelector("[data-amaro-command-deck]");
     const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
     const submitButton = form.querySelector("button[type='submit']");
+    const canCapture = document.body?.dataset.captureAllowed === "true";
 
     function addMessage(text, kind) {
         const bubble = document.createElement("div");
@@ -1119,6 +1205,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (value === "print-page") {
+            if (!canCapture) {
+                window.showCaptureProtection?.("Print is allowed only for Admin and Super Admin.");
+                addMessage("Print is blocked for your role.", "bot");
+                return true;
+            }
             addMessage("Opening the print dialog for this page.", "bot");
             setTimeout(() => window.print(), 80);
             return true;
@@ -1567,7 +1658,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function shouldSkip(element) {
-        return element.querySelector(".action-icon-inline,.contact-svg-icon,.alert-support-icon,.dashboard-profile-action-icon,.admin-nav-icon,.admin-icon-btn-icon") ||
+        const rawText = (element.textContent || "").trim();
+        return /^[←→↺✓✎×+\-−⏸⏻🖨⬇🔎🔐👁👤🧩📊]/u.test(rawText) ||
+            element.querySelector(".action-icon-inline,.contact-svg-icon,.alert-support-icon,.dashboard-profile-action-icon,.admin-nav-icon,.admin-icon-btn-icon") ||
             element.closest(".alert-support-link,.dashboard-profile-action,.admin-nav a");
     }
 

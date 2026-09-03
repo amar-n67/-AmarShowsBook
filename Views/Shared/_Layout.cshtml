@@ -1994,10 +1994,70 @@ footer {
     }
 }
 
+.capture-protection-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483600;
+    display: none;
+    place-items: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #fff;
+    text-align: center;
+    backdrop-filter: blur(12px);
+}
+
+.capture-protection-overlay.is-visible {
+    display: grid;
+}
+
+.capture-protection-overlay div {
+    max-width: 440px;
+    padding: 22px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.36);
+}
+
+.capture-protection-overlay strong,
+.capture-protection-overlay span {
+    display: block;
+}
+
+.capture-protection-overlay strong {
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+
+.capture-protection-overlay span {
+    margin-top: 8px;
+    color: #dbeafe;
+    line-height: 1.45;
+}
+
 @@media print {
     @@page {
         size: A4 landscape;
         margin: 8mm;
+    }
+
+    body[data-capture-allowed="false"] * {
+        display: none !important;
+    }
+
+    body[data-capture-allowed="false"]::before {
+        content: "Protected content. Print is allowed only for Admin and Super Admin.";
+        display: block !important;
+        margin: 35mm auto 0 !important;
+        max-width: 160mm !important;
+        padding: 12mm !important;
+        border: 2px solid #111827 !important;
+        color: #111827 !important;
+        font-size: 18pt !important;
+        font-weight: 900 !important;
+        line-height: 1.35 !important;
+        text-align: center !important;
     }
 
     header,
@@ -2238,9 +2298,19 @@ footer {
     var globalSupportEmailSubject = "showTime Support Request";
     var globalSupportEmailText = $"Hi showTime Team, I'm {normalizedGlobalSupportDisplayName}. I need support. Please help me with my request.";
     var globalSupportEmailUrl = $"mailto:support@showtime.com?subject={Uri.EscapeDataString(globalSupportEmailSubject)}&body={Uri.EscapeDataString(globalSupportEmailText)}";
+    var hasProtectedCaptureUserId = int.TryParse(Context.Session.GetString("UserId"), out var protectedCaptureUserId);
+    var canUseProtectedCapture =
+        hasProtectedCaptureUserId &&
+        RbacService.HasAnyActiveRole(protectedCaptureUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
 }
 
-<body>
+<body data-capture-allowed="@canUseProtectedCapture.ToString().ToLowerInvariant()">
+    <div class="capture-protection-overlay no-print" data-capture-protection-overlay aria-hidden="true">
+        <div>
+            <strong>Protected Screen</strong>
+            <span>Recording, screenshots, search shortcuts, and print are allowed only for Admin and Super Admin.</span>
+        </div>
+    </div>
     <div class="print-page-header" aria-hidden="true">
         <div class="print-page-header-inner">
             <div class="print-page-brand">
@@ -2603,7 +2673,10 @@ z-index:9999;">
                 <button type="button" data-amaro-prompt="Book a movie">Book</button>
                 <button type="button" data-amaro-prompt="Show prices and available seats">Seats</button>
                 <button type="button" data-amaro-prompt="My upcoming bookings">Upcoming</button>
-                <button type="button" data-amaro-prompt="print this page">Print</button>
+                @if (canUseProtectedCapture)
+                {
+                    <button type="button" data-amaro-prompt="print this page">Print</button>
+                }
                 <button type="button" data-amaro-prompt="go back">Back</button>
                 <button type="button" data-amaro-prompt="Change theme">Theme</button>
                 <button type="button" data-amaro-prompt="Change cursor">Cursor</button>
@@ -3035,6 +3108,82 @@ updateDateTime();
             button.addEventListener("mouseleave", restoreThemePreview);
             button.addEventListener("blur", restoreThemePreview);
         });
+    });
+})();
+</script>
+
+<script>
+window.showCaptureProtection = window.showCaptureProtection || function (message) {
+    const overlay = document.querySelector("[data-capture-protection-overlay]");
+    if (!overlay) {
+        return;
+    }
+
+    const detail = overlay.querySelector("span");
+    if (detail && message) {
+        detail.textContent = message;
+    }
+
+    overlay.classList.add("is-visible");
+    clearTimeout(window.__captureProtectionTimer);
+    window.__captureProtectionTimer = setTimeout(() => {
+        overlay.classList.remove("is-visible");
+    }, 1800);
+};
+
+(function () {
+    const canCapture = document.body?.dataset.captureAllowed === "true";
+    if (canCapture) {
+        return;
+    }
+
+    const protectedMessage = "Recording, screenshots, search shortcuts, and print are allowed only for Admin and Super Admin.";
+    const nativePrint = window.print;
+
+    window.print = function () {
+        window.showCaptureProtection("Print is allowed only for Admin and Super Admin.");
+        return false;
+    };
+
+    window.__showTimeNativePrint = nativePrint;
+
+    if (navigator.mediaDevices?.getDisplayMedia) {
+        navigator.mediaDevices.getDisplayMedia = function () {
+            window.showCaptureProtection(protectedMessage);
+            return Promise.reject(new DOMException("Screen capture is restricted.", "NotAllowedError"));
+        };
+    }
+
+    document.addEventListener("keydown", function (event) {
+        const key = String(event.key || "").toLowerCase();
+        const code = String(event.code || "").toLowerCase();
+        const hasModifier = event.ctrlKey || event.metaKey;
+        const isBlockedShortcut =
+            (hasModifier && ["p", "s", "f", "u"].includes(key)) ||
+            (event.ctrlKey && event.shiftKey && ["i", "j", "c", "s"].includes(key)) ||
+            (event.metaKey && event.altKey && ["i", "j", "c"].includes(key)) ||
+            key === "f12" ||
+            key === "printscreen" ||
+            code === "printscreen" ||
+            (event.metaKey && event.shiftKey && ["3", "4", "5"].includes(key));
+
+        if (!isBlockedShortcut) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        window.showCaptureProtection(protectedMessage);
+    }, true);
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+        window.showCaptureProtection(protectedMessage);
+    }, true);
+
+    window.addEventListener("beforeprint", function (event) {
+        event.preventDefault?.();
+        window.showCaptureProtection("Print is allowed only for Admin and Super Admin.");
     });
 })();
 </script>
@@ -3806,6 +3955,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const commandDeck = widget.querySelector("[data-amaro-command-deck]");
     const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
     const submitButton = form.querySelector("button[type='submit']");
+    const canCapture = document.body?.dataset.captureAllowed === "true";
 
     function addMessage(text, kind) {
         const bubble = document.createElement("div");
@@ -4010,6 +4160,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (value === "print-page") {
+            if (!canCapture) {
+                window.showCaptureProtection?.("Print is allowed only for Admin and Super Admin.");
+                addMessage("Print is blocked for your role.", "bot");
+                return true;
+            }
             addMessage("Opening the print dialog for this page.", "bot");
             setTimeout(() => window.print(), 80);
             return true;
@@ -4277,7 +4432,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function shouldSkip(element) {
         if (element.matches("[data-no-action-icon]")) return true;
-        return element.querySelector(".film-nav-icon,.theme-icon,.action-icon,.action-icon-inline,.contact-svg-icon,.alert-support-icon,.dashboard-profile-action-icon") ||
+        const rawText = (element.textContent || "").trim();
+        return /^[←→↺✓✎×+\-−⏸⏻🖨⬇🔎🔐👁👤🧩📊🎟💺📅◐◉✉]/u.test(rawText) ||
+            element.querySelector(".film-nav-icon,.theme-icon,.action-icon,.action-icon-inline,.contact-svg-icon,.alert-support-icon,.dashboard-profile-action-icon") ||
             element.closest(".film-nav-btn,.theme-toggle-btn,.cinema-popup-support,.alert-support-link");
     }
 
