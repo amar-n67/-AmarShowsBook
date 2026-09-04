@@ -7,7 +7,7 @@
         <div class="auth-copy">
             @* Previous wording: "Shot 01 / Entry Gate" *@
             <span class="auth-kicker">Account Access</span>
-            <h1>showTime</h1>
+            <img class="auth-logo" src="~/images/brand/showtime-login-logo.png" alt="showTime" asp-append-version="true" />
             @* Previous wording: "Take your mark, verify the script, and open the next scene." *@
             <p>Sign in securely to continue to your account.</p>
             <small class="auth-version">Version <span data-current-version></span></small>
@@ -107,11 +107,14 @@
         repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
     box-shadow: 0 24px 70px rgba(35, 31, 32, 0.24);
 }
-.auth-copy h1 {
-    margin: 8px 0 8px;
-    font-size: clamp(3rem, 7vw, 6rem);
-    font-weight: 900;
-    color: #231f20;
+.auth-logo {
+    display: block;
+    width: min(390px, 84%);
+    max-height: 260px;
+    margin: 12px 0 12px;
+    object-fit: contain;
+    object-position: left center;
+    filter: drop-shadow(0 12px 22px rgba(35, 31, 32, 0.24));
 }
 .auth-copy p {
     max-width: 520px;
@@ -239,6 +242,10 @@
     }
     .auth-copy {
         min-height: 260px;
+    }
+    .auth-logo {
+        width: min(290px, 92%);
+        max-height: 180px;
     }
 }
 </style>
