@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace AmarShowsBook.Controllers
 {
@@ -26,6 +27,8 @@ namespace AmarShowsBook.Controllers
         private readonly RbacService _rbacService;
 
         private readonly OtpDeliveryService _emailDeliveryService;
+        private static readonly Regex SupportPhoneRegex = new(@"^\+?[0-9][0-9\s-]{8,18}$", RegexOptions.Compiled);
+        private static readonly Regex SupportEmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
 
 
 
@@ -144,6 +147,7 @@ namespace AmarShowsBook.Controllers
         {
             return actionName.Equals(nameof(Dashboard), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals("Index", StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(UpdateSupportDetails), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(Users), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(Bookings), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(Security), StringComparison.OrdinalIgnoreCase) ||
@@ -429,7 +433,166 @@ namespace AmarShowsBook.Controllers
                 isError: 0
             );
 
+            ViewBag.SupportProfile = GetSupportProfile();
             return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSupportDetails(DeveloperVM model)
+        {
+            var currentUserId = TryGetSessionUserId();
+            if (currentUserId == null ||
+                !_rbacService.CanOpenAdminDashboard(currentUserId.Value))
+            {
+                TempData["Error"] = "You do not have permission to update support details.";
+                return RedirectToAction(nameof(Dashboard));
+            }
+
+            NormalizeAndValidateSupportDetails(model);
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = string.Join(" ", ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage));
+                return RedirectToAction(nameof(Dashboard));
+            }
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO public.developer_profiles
+(
+    developer_id,
+    full_name,
+    email,
+    bio,
+    experience_years,
+    support_phone,
+    support_email,
+    support_whatsapp_text,
+    support_whatsapp_phone,
+    is_support_whatsapp_same_as_phone,
+    top_whatsapp_text,
+    support_email_subject,
+    support_email_text,
+    updated_at
+)
+VALUES
+(
+    1,
+    'showTime Team',
+    'example@gmail.com',
+    'Developer Profile',
+    0,
+    {model.SupportPhone},
+    {model.SupportEmail},
+    {model.SupportWhatsAppText},
+    {model.SupportWhatsAppPhone},
+    {model.IsSupportWhatsAppSameAsPhone},
+    {model.TopWhatsAppText},
+    {model.SupportEmailSubject},
+    {model.SupportEmailText},
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT (developer_id)
+DO UPDATE SET
+    support_phone = EXCLUDED.support_phone,
+    support_email = EXCLUDED.support_email,
+    support_whatsapp_text = EXCLUDED.support_whatsapp_text,
+    support_whatsapp_phone = EXCLUDED.support_whatsapp_phone,
+    is_support_whatsapp_same_as_phone = EXCLUDED.is_support_whatsapp_same_as_phone,
+    top_whatsapp_text = EXCLUDED.top_whatsapp_text,
+    support_email_subject = EXCLUDED.support_email_subject,
+    support_email_text = EXCLUDED.support_email_text,
+    updated_at = CURRENT_TIMESTAMP;
+");
+
+            await _activityLogger.LogAsync(
+                userId: currentUserId,
+                action: "UPDATE_SUPPORT_DETAILS",
+                module: "ADMIN",
+                entityType: "DEVELOPER_PROFILE",
+                entityId: 1,
+                description: "Updated application support details from admin dashboard",
+                newValue: new
+                {
+                    model.SupportPhone,
+                    model.SupportEmail,
+                    model.SupportWhatsAppPhone,
+                    model.IsSupportWhatsAppSameAsPhone,
+                    model.TopWhatsAppText,
+                    model.SupportWhatsAppText,
+                    model.SupportEmailSubject,
+                    model.SupportEmailText
+                },
+                status: "SUCCESS");
+
+            TempData["Success"] = "Support details updated.";
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        private DeveloperVM GetSupportProfile()
+        {
+            return _context.DeveloperProfiles.AsNoTracking().FirstOrDefault() ??
+                new DeveloperVM
+                {
+                    SupportPhone = "+91 9651698863",
+                    SupportWhatsAppPhone = "+91 9651698863",
+                    IsSupportWhatsAppSameAsPhone = true,
+                    SupportEmail = "support@showtime.com",
+                    TopWhatsAppText = "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you.",
+                    SupportWhatsAppText = "Hi showTime Team, I'm {user}. I need support. Please help me with my request.",
+                    SupportEmailSubject = "showTime Support Request",
+                    SupportEmailText = "Hi showTime Team, I'm {user}. I need support. Please help me with my request."
+                };
+        }
+
+        private void NormalizeAndValidateSupportDetails(DeveloperVM model)
+        {
+            model.SupportPhone = string.IsNullOrWhiteSpace(model.SupportPhone)
+                ? "+91 9651698863"
+                : model.SupportPhone.Trim();
+            model.SupportEmail = string.IsNullOrWhiteSpace(model.SupportEmail)
+                ? "support@showtime.com"
+                : model.SupportEmail.Trim();
+
+            if (model.IsSupportWhatsAppSameAsPhone)
+            {
+                model.SupportWhatsAppPhone = model.SupportPhone;
+            }
+            else
+            {
+                model.SupportWhatsAppPhone = model.SupportWhatsAppPhone?.Trim();
+            }
+
+            model.TopWhatsAppText = string.IsNullOrWhiteSpace(model.TopWhatsAppText)
+                ? "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you."
+                : model.TopWhatsAppText.Trim();
+            model.SupportWhatsAppText = string.IsNullOrWhiteSpace(model.SupportWhatsAppText)
+                ? "Hi showTime Team, I'm {user}. I need support. Please help me with my request."
+                : model.SupportWhatsAppText.Trim();
+            model.SupportEmailSubject = string.IsNullOrWhiteSpace(model.SupportEmailSubject)
+                ? "showTime Support Request"
+                : model.SupportEmailSubject.Trim();
+            model.SupportEmailText = string.IsNullOrWhiteSpace(model.SupportEmailText)
+                ? "Hi showTime Team, I'm {user}. I need support. Please help me with my request."
+                : model.SupportEmailText.Trim();
+
+            if (!SupportPhoneRegex.IsMatch(model.SupportPhone))
+            {
+                ModelState.AddModelError(nameof(model.SupportPhone), "Support phone must be a valid phone number.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.SupportWhatsAppPhone))
+            {
+                ModelState.AddModelError(nameof(model.SupportWhatsAppPhone), "Support WhatsApp number is required unless it is same as support mobile.");
+            }
+            else if (!SupportPhoneRegex.IsMatch(model.SupportWhatsAppPhone))
+            {
+                ModelState.AddModelError(nameof(model.SupportWhatsAppPhone), "Support WhatsApp number must be a valid phone number.");
+            }
+
+            if (!SupportEmailRegex.IsMatch(model.SupportEmail))
+            {
+                ModelState.AddModelError(nameof(model.SupportEmail), "Support email must be a valid email address.");
+            }
         }
 
         public async Task<IActionResult> ExportDashboard()
@@ -4653,6 +4816,7 @@ private static bool TryGetAdminPermission(
     {
         [nameof(Dashboard)] = ("ADMIN", "VIEW"),
         [nameof(ExportDashboard)] = ("ADMIN", "VIEW"),
+        [nameof(UpdateSupportDetails)] = ("ADMIN", "VIEW"),
         [nameof(ActivityLogs)] = ("ADMIN", "VIEW"),
         [nameof(Versions)] = ("ADMIN", "VIEW"),
         [nameof(CreateVersion)] = ("ADMIN", "VIEW"),
