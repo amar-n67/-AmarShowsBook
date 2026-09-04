@@ -2111,16 +2111,17 @@ footer {
     }
 
     .print-page-watermark::before {
-        content: "showTime";
-        color: rgba(15, 23, 42, 0.10) !important;
-        font-size: 56pt !important;
-        font-weight: 900 !important;
-        line-height: 1 !important;
-        letter-spacing: 0 !important;
-        text-align: center !important;
-        text-transform: none !important;
+        content: none !important;
+    }
+
+    .print-page-watermark img {
+        display: block !important;
+        width: min(120mm, 62vw) !important;
+        height: auto !important;
+        max-height: 120mm !important;
+        object-fit: contain !important;
+        opacity: 0.10 !important;
         transform: rotate(-18deg) !important;
-        white-space: nowrap !important;
     }
 
     html,
@@ -2331,6 +2332,7 @@ footer {
         </div>
     </div>
     <div class="print-page-watermark" aria-hidden="true">
+        <img src="@Url.Content("~/images/brand/showtime-login-logo.png")" alt="" />
     </div>
     <div class="print-page-footer" aria-hidden="true">
         <div class="print-page-footer-inner">

@@ -1731,16 +1731,17 @@ html[data-theme="cinema"] .admin-topbar {
     }
 
     .print-page-watermark::before {
-        content: "showTime";
-        color: rgba(15, 23, 42, 0.10) !important;
-        font-size: 56pt !important;
-        font-weight: 900 !important;
-        line-height: 1 !important;
-        letter-spacing: 0 !important;
-        text-align: center !important;
-        text-transform: none !important;
+        content: none !important;
+    }
+
+    .print-page-watermark img {
+        display: block !important;
+        width: min(120mm, 62vw) !important;
+        height: auto !important;
+        max-height: 120mm !important;
+        object-fit: contain !important;
+        opacity: 0.10 !important;
         transform: rotate(-18deg) !important;
-        white-space: nowrap !important;
     }
 
     body {

@@ -728,10 +728,12 @@ namespace AmarShowsBook.Controllers
             AddDataSheet(workbook, "All Notifications", allNotifications);
             AddDataSheet(workbook, "Ticket Security", securityRows);
 
-            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-logo-cropped.png");
+            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-login-logo.png");
+            var watermarkPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-export-watermark.png");
             foreach (var worksheet in workbook.Worksheets)
             {
                 AddLogoIfAvailable(worksheet, logoPath);
+                AddWatermarkIfAvailable(worksheet, watermarkPath);
                 worksheet.SheetView.FreezeRows(5);
                 worksheet.PageSetup.PageOrientation = XLPageOrientation.Landscape;
                 worksheet.PageSetup.PagesWide = 1;
@@ -782,6 +784,18 @@ namespace AmarShowsBook.Controllers
             sheet.AddPicture(logoPath)
                 .MoveTo(sheet.Cell(1, 1))
                 .WithSize(54, 54);
+        }
+
+        private static void AddWatermarkIfAvailable(IXLWorksheet sheet, string watermarkPath)
+        {
+            if (!System.IO.File.Exists(watermarkPath))
+            {
+                return;
+            }
+
+            sheet.AddPicture(watermarkPath)
+                .MoveTo(sheet.Cell(9, 5))
+                .WithSize(360, 360);
         }
 
         private static void StyleHeaderRow(IXLRange range)
