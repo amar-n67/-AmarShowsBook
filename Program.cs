@@ -455,6 +455,7 @@ CREATE TABLE IF NOT EXISTS public.developer_profiles
     bio text,
     address text,
     experience_years integer NOT NULL DEFAULT 0,
+    experience_last_increment_year integer,
     skills text,
     education text,
     projects text,
@@ -485,6 +486,9 @@ ALTER TABLE public.developer_profiles
 ADD COLUMN IF NOT EXISTS support_phone text;
 
 ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS experience_last_increment_year integer;
+
+ALTER TABLE public.developer_profiles
 ADD COLUMN IF NOT EXISTS support_email text;
 
 ALTER TABLE public.developer_profiles
@@ -512,6 +516,7 @@ INSERT INTO public.developer_profiles
     email,
     bio,
     experience_years,
+    experience_last_increment_year,
     twitter_url,
     support_phone,
     support_email,
@@ -528,6 +533,11 @@ SELECT
     'example@gmail.com',
     'Developer Profile',
     0,
+    CASE
+        WHEN CURRENT_DATE >= make_date(EXTRACT(YEAR FROM CURRENT_DATE)::integer, 5, 16)
+            THEN EXTRACT(YEAR FROM CURRENT_DATE)::integer
+        ELSE EXTRACT(YEAR FROM CURRENT_DATE)::integer - 1
+    END,
     '',
     '+91 9651698863',
     'support@showtime.com',
@@ -555,6 +565,16 @@ SET
     support_email_subject = COALESCE(NULLIF(support_email_subject, ''), 'showTime Support Request'),
     support_email_text = COALESCE(NULLIF(support_email_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.')
 WHERE developer_id = 1;
+
+UPDATE public.developer_profiles
+SET experience_last_increment_year =
+    CASE
+        WHEN CURRENT_DATE >= make_date(EXTRACT(YEAR FROM CURRENT_DATE)::integer, 5, 16)
+            THEN EXTRACT(YEAR FROM CURRENT_DATE)::integer
+        ELSE EXTRACT(YEAR FROM CURRENT_DATE)::integer - 1
+    END
+WHERE developer_id = 1
+  AND experience_last_increment_year IS NULL;
 
 CREATE OR REPLACE VIEW public.""vwDeveloperProfile"" AS
 SELECT

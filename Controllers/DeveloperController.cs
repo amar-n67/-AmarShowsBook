@@ -36,6 +36,7 @@ namespace AmarShowsBook.Controllers
         public async Task<IActionResult> Profile()
         {
             EnsureDeveloperProfileStore();
+            ApplyAnnualExperienceIncrement();
 
             var developer =
             _context.DeveloperProfiles?
@@ -163,6 +164,7 @@ INSERT INTO public.developer_profiles
     bio,
     address,
     experience_years,
+    experience_last_increment_year,
     skills,
     education,
     projects,
@@ -196,6 +198,7 @@ VALUES
     {model.Bio},
     {model.Address},
     {Math.Max(0, model.ExperienceYears)},
+    {GetCurrentExperienceAnniversaryYear()},
     {model.Skills},
     {model.Education},
     {model.Projects},
@@ -228,6 +231,7 @@ DO UPDATE SET
     bio = EXCLUDED.bio,
     address = EXCLUDED.address,
     experience_years = EXCLUDED.experience_years,
+    experience_last_increment_year = EXCLUDED.experience_last_increment_year,
     skills = EXCLUDED.skills,
     education = EXCLUDED.education,
     projects = EXCLUDED.projects,
@@ -339,6 +343,37 @@ DO UPDATE SET
                  _rbacService.HasPermission(userId, "DEVELOPER", "EDIT"));
         }
 
+        private void ApplyAnnualExperienceIncrement()
+        {
+            var today = DateTime.Today;
+            var anniversary = new DateTime(today.Year, 5, 16);
+
+            if (today < anniversary)
+            {
+                return;
+            }
+
+            _context.Database.ExecuteSqlInterpolated($@"
+UPDATE public.developer_profiles
+SET
+    experience_years = GREATEST(0, experience_years) + 1,
+    experience_last_increment_year = {today.Year},
+    updated_at = CURRENT_TIMESTAMP
+WHERE developer_id = 1
+  AND COALESCE(experience_last_increment_year, {today.Year - 1}) < {today.Year};
+");
+        }
+
+        private static int GetCurrentExperienceAnniversaryYear()
+        {
+            var today = DateTime.Today;
+            var anniversary = new DateTime(today.Year, 5, 16);
+
+            return today >= anniversary
+                ? today.Year
+                : today.Year - 1;
+        }
+
         private async Task<string?> SaveProfilePhoto(IFormFile profilePhoto)
         {
             if (!profilePhoto.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
@@ -385,6 +420,7 @@ CREATE TABLE IF NOT EXISTS public.developer_profiles
     bio text,
     address text,
     experience_years integer NOT NULL DEFAULT 0,
+    experience_last_increment_year integer,
     skills text,
     education text,
     projects text,
@@ -413,6 +449,9 @@ CREATE TABLE IF NOT EXISTS public.developer_profiles
 
 ALTER TABLE public.developer_profiles
 ADD COLUMN IF NOT EXISTS support_phone text;
+
+ALTER TABLE public.developer_profiles
+ADD COLUMN IF NOT EXISTS experience_last_increment_year integer;
 
 ALTER TABLE public.developer_profiles
 ADD COLUMN IF NOT EXISTS support_email text;
@@ -485,6 +524,16 @@ SET
     support_email_subject = COALESCE(NULLIF(support_email_subject, ''), 'showTime Support Request'),
     support_email_text = COALESCE(NULLIF(support_email_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.')
 WHERE developer_id = 1;
+
+UPDATE public.developer_profiles
+SET experience_last_increment_year =
+    CASE
+        WHEN CURRENT_DATE >= make_date(EXTRACT(YEAR FROM CURRENT_DATE)::integer, 5, 16)
+            THEN EXTRACT(YEAR FROM CURRENT_DATE)::integer
+        ELSE EXTRACT(YEAR FROM CURRENT_DATE)::integer - 1
+    END
+WHERE developer_id = 1
+  AND experience_last_increment_year IS NULL;
 
 CREATE OR REPLACE VIEW public.""vwDeveloperProfile"" AS
 SELECT
