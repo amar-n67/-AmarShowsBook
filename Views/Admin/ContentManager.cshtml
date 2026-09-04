@@ -45,15 +45,35 @@
     </div>
 
     <div class="content-tabs">
-        <a href="#movies">Movies</a>
-        <a href="#standup">Standup</a>
-        <a href="#live">Live</a>
-        <a href="#news">News</a>
-        <a href="#music">Music</a>
+        <button type="button" data-content-target="movies" aria-expanded="false" aria-controls="movies">
+            <span>Movies</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="standup" aria-expanded="false" aria-controls="standup">
+            <span>Standup</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="live" aria-expanded="false" aria-controls="live">
+            <span>Live</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="news" aria-expanded="false" aria-controls="news">
+            <span>News</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="music" aria-expanded="false" aria-controls="music">
+            <span>Music</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
     </div>
 
-    <div id="movies" class="admin-detail-panel content-section">
-        <h2 class="h5">Movies</h2>
+    <div id="movies" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Movies</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="movies" aria-label="Hide Movies">
+                ↑
+            </button>
+        </div>
         @foreach (var item in movies)
         {
             <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="MOVIE">
@@ -83,8 +103,13 @@
         }
     </div>
 
-    <div id="standup" class="admin-detail-panel content-section">
-        <h2 class="h5">Standup</h2>
+    <div id="standup" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Standup</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="standup" aria-label="Hide Standup">
+                ↑
+            </button>
+        </div>
         @foreach (var item in standupShows)
         {
             <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="STANDUP">
@@ -111,8 +136,13 @@
         }
     </div>
 
-    <div id="live" class="admin-detail-panel content-section">
-        <h2 class="h5">Live</h2>
+    <div id="live" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Live</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="live" aria-label="Hide Live">
+                ↑
+            </button>
+        </div>
         <p class="content-section-note">Live records also power Music entries until they are scheduled.</p>
         @foreach (var item in liveStreams)
         {
@@ -140,8 +170,13 @@
         }
     </div>
 
-    <div id="news" class="admin-detail-panel content-section">
-        <h2 class="h5">News</h2>
+    <div id="news" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">News</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="news" aria-label="Hide News">
+                ↑
+            </button>
+        </div>
         <form asp-action="SaveNewsChannel" method="post" class="content-form news-form">
             @Html.AntiForgeryToken()
             <input name="channelName" class="form-control" placeholder="Channel name" required />
@@ -198,8 +233,13 @@
         }
     </div>
 
-    <div id="music" class="admin-detail-panel content-section">
-        <h2 class="h5">Music</h2>
+    <div id="music" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Music</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="music" aria-label="Hide Music">
+                ↑
+            </button>
+        </div>
         <p class="content-section-note">Choose Music in the insert form to add music content, then update it here.</p>
         @foreach (var item in liveStreams)
         {
@@ -223,6 +263,60 @@
     </div>
 </section>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buttons = Array.from(document.querySelectorAll("[data-content-target]"));
+    const sections = Array.from(document.querySelectorAll(".content-section"));
+
+    function setActiveSection(targetId, updateHash) {
+        const targetSection = targetId ? document.getElementById(targetId) : null;
+
+        sections.forEach(section => {
+            section.hidden = section !== targetSection;
+        });
+
+        buttons.forEach(button => {
+            const isActive = button.dataset.contentTarget === targetId && Boolean(targetSection);
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-expanded", isActive ? "true" : "false");
+            const arrow = button.querySelector(".content-toggle-arrow");
+            if (arrow) {
+                arrow.textContent = isActive ? "↑" : "↓";
+            }
+        });
+
+        if (updateHash) {
+            if (targetSection) {
+                history.replaceState(null, "", "#" + targetId);
+            } else {
+                history.replaceState(null, "", window.location.pathname + window.location.search);
+            }
+        }
+    }
+
+    buttons.forEach(button => {
+        button.addEventListener("click", function () {
+            const targetId = button.dataset.contentTarget;
+            const isOpen = button.getAttribute("aria-expanded") === "true";
+            setActiveSection(isOpen ? "" : targetId, true);
+        });
+    });
+
+    document.querySelectorAll("[data-content-collapse]").forEach(button => {
+        button.addEventListener("click", function () {
+            setActiveSection("", true);
+        });
+    });
+
+    const hashTarget = window.location.hash.replace("#", "");
+    if (hashTarget && document.getElementById(hashTarget)) {
+        setActiveSection(hashTarget, false);
+    } else {
+        setActiveSection("", false);
+    }
+});
+</script>
+
 <style>
 .content-tabs {
     display: flex;
@@ -231,14 +325,68 @@
     flex-wrap: wrap;
 }
 
-.content-tabs a {
+.content-tabs button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
     border: 1px solid var(--admin-line);
-    border-radius: 999px;
+    border-radius: 8px;
     padding: 8px 14px;
     background: var(--admin-panel);
     color: var(--admin-ink);
     font-weight: 850;
-    text-decoration: none;
+    line-height: 1;
+}
+
+.content-tabs button:hover,
+.content-tabs button:focus-visible,
+.content-tabs button.is-active {
+    border-color: var(--admin-rose);
+    background: var(--admin-night);
+    color: #ffffff;
+}
+
+.content-toggle-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-weight: 950;
+}
+
+.content-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.content-section-header h2 {
+    margin: 0;
+}
+
+.content-section-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    background: var(--admin-night);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.content-section-toggle:hover,
+.content-section-toggle:focus-visible {
+    background: var(--admin-rose);
+    color: #ffffff;
 }
 
 .content-form,
