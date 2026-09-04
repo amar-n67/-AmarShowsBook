@@ -454,17 +454,13 @@ html[data-theme="cinema"] .admin-sidebar {
     text-overflow: ellipsis;
 }
 
-.admin-logo-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, var(--admin-gold), #f7d278);
-    color: #241712;
-    font-size: 0.84rem;
-    box-shadow: 0 10px 26px rgba(217, 164, 65, 0.25);
+.admin-logo-image {
+    display: block;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 18px rgba(217, 164, 65, 0.28));
 }
 
 .admin-nav {

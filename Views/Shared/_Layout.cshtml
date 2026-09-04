@@ -813,6 +813,14 @@ html[data-theme="dark"] [style*="color: black"] {
     letter-spacing: 0;
 }
 
+.film-brand-logo {
+    display: block;
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 10px rgba(15,23,42,0.18));
+}
+
 .film-brand-badge {
     display: inline-flex;
     align-items: center;
@@ -854,7 +862,6 @@ html[data-theme="dark"] [style*="color: black"] {
 }
 
 .film-mobile-menu-icon,
-.film-brand-badge,
 .film-nav-icon {
     background:
         radial-gradient(circle at 32% 24%, rgba(255,255,255,.9), transparent 32%),
@@ -2264,8 +2271,8 @@ footer {
 }
 
 .print-page-brand img {
-    width: 30px;
-    height: 30px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
 }
 
@@ -2314,7 +2321,7 @@ footer {
     <div class="print-page-header" aria-hidden="true">
         <div class="print-page-header-inner">
             <div class="print-page-brand">
-                <img src="@Url.Content("~/images/brand/showtime-logo-cropped.png")" alt="" />
+                <img src="@Url.Content("~/images/brand/showtime-login-logo.png")" alt="" />
                 <div>
                     <strong>showTime</strong>
                     <span>showTime</span>
@@ -2478,7 +2485,7 @@ z-index:9999;">
 }
 
     <a class="navbar-brand film-brand" asp-controller="Home" asp-action="ShowTime">
-        <span class="film-brand-badge">🎬</span>
+        <img class="film-brand-logo" src="~/images/brand/showtime-login-logo.png" alt="" asp-append-version="true" />
         <span>showTime</span>
     </a>
 
