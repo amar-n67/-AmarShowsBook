@@ -488,7 +488,7 @@
                         <input name="SupportEmail" class="form-control" value="@supportProfile.SupportEmail" placeholder="support@example.com" />
                     </label>
                     <label class="support-details-wide">
-                        <span>Top WhatsApp Text</span>
+                        <span>Connect to Developer WhatsApp</span>
                         <textarea name="TopWhatsAppText" class="form-control" rows="2">@supportProfile.TopWhatsAppText</textarea>
                     </label>
                     <label class="support-details-wide">
@@ -635,7 +635,8 @@
     }
 
     .admin-dashboard .dashboard-section-head a,
-    .admin-dashboard .dashboard-shortcuts a {
+    .admin-dashboard .dashboard-shortcuts a,
+    .admin-dashboard .dashboard-shortcut-button {
         color: var(--admin-ink);
         text-decoration: none;
         font-weight: 850;
@@ -710,7 +711,8 @@
     .admin-dashboard .dashboard-stack div,
     .admin-dashboard .dashboard-list div,
     .admin-dashboard .dashboard-activity-list div,
-    .admin-dashboard .dashboard-shortcuts a {
+    .admin-dashboard .dashboard-shortcuts a,
+    .admin-dashboard .dashboard-shortcut-button {
         border: 1px solid var(--admin-line);
         border-radius: 8px;
         background: var(--admin-panel-strong);
@@ -802,11 +804,13 @@
         gap: 10px;
         position: relative;
         overflow: visible;
+        min-height: auto;
         width: 100%;
         color: var(--admin-ink);
         font: inherit;
         font-weight: 850;
         text-align: left;
+        appearance: none;
         cursor: pointer;
         transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
     }
@@ -830,7 +834,7 @@
     .support-details-modal {
         position: fixed;
         inset: 0;
-        z-index: 1200;
+        z-index: 2147483500;
         display: grid;
         place-items: center;
         padding: 18px;

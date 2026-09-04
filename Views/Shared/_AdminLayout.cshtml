@@ -304,6 +304,9 @@
     var canUseProtectedCapture =
         hasUserId &&
         RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
+    var canEditSupportDetails =
+        hasUserId &&
+        RbacService.CanOpenAdminDashboard(currentUserId);
 
     var adminNotificationCount =
         ViewData["AdminNotificationCount"] is int notificationCount
@@ -358,6 +361,13 @@
                 var isActive = currentAction == item.Action ||
                     (item.Action == "Transactions" && currentAction == "TransactionDetails") ||
                     (item.Action == "Refunds" && currentAction == "RefundDetails");
+
+                if (item.Action == "Versions" && canEditSupportDetails)
+                {
+                    <button type="button" class="admin-nav-button" onclick="openAdminSupportDetails()">
+                        <span class="admin-nav-label">Support Details</span>
+                    </button>
+                }
 
                 <a class="@(isActive ? "active" : "")" href="@item.Url">
                     <span class="admin-nav-label">@item.Label</span>
@@ -807,6 +817,21 @@
 
 <script src="~/js/admin/admin-dashboard.js" asp-append-version="true"></script>
 <script>
+window.openAdminSupportDetails = function () {
+    if (typeof window.openSupportDetailsModal === "function") {
+        window.openSupportDetailsModal();
+        return;
+    }
+
+    window.location.href = "/Admin/Dashboard#supportDetails";
+};
+
+if (window.location.pathname.toLowerCase() === "/admin/dashboard" &&
+    window.location.hash.toLowerCase() === "#supportdetails" &&
+    typeof window.openSupportDetailsModal === "function") {
+    window.openSupportDetailsModal();
+}
+
 window.showCaptureProtection = window.showCaptureProtection || function (message) {
     const overlay = document.querySelector("[data-capture-protection-overlay]");
     if (!overlay) {

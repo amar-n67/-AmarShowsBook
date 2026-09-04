@@ -470,19 +470,24 @@ html[data-theme="cinema"] .admin-sidebar {
     padding-bottom: 22px;
 }
 
-.admin-nav a {
+.admin-nav a,
+.admin-nav-button {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    width: 100%;
     min-height: 44px;
     padding: 11px 14px;
     border: 1px solid transparent;
     border-radius: 8px;
+    background: transparent;
     color: rgba(255,255,255,0.84);
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 800;
+    text-align: left;
+    cursor: pointer;
     transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border 0.18s ease;
 }
 
@@ -515,7 +520,9 @@ html[data-theme="cinema"] .admin-sidebar {
 }
 
 .admin-nav a:hover,
-.admin-nav a.active {
+.admin-nav a.active,
+.admin-nav-button:hover,
+.admin-nav-button:focus-visible {
     background: rgba(255,209,102,0.16);
     border-color: rgba(255,209,102,0.18);
     color: #ffd166;
