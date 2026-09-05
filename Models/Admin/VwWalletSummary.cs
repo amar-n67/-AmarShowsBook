@@ -10,10 +10,6 @@ public class VwWalletSummary
     [Column("wallet_id")]
     public long WalletId { get; set; }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // USER BASIC DETAILS
-    // =====================================================
 
     [Column("user_id")]
     public long UserId { get; set; }
@@ -24,10 +20,6 @@ public class VwWalletSummary
     [Column("user_email")]
     public string? UserEmail { get; set; }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // WALLET MONEY DETAILS
-    // =====================================================
 
     [Column("wallet_balance")]
     public decimal WalletBalance { get; set; }
@@ -41,19 +33,33 @@ public class VwWalletSummary
     [Column("total_debits")]
     public decimal TotalDebits { get; set; }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // WALLET STATUS
-    // =====================================================
 
     [Column("wallet_status")]
     public string? WalletStatus { get; set; }
 
+    [Column("suspension_reason")]
+    public string? SuspensionReason { get; set; }
+
+    [Column("suspended_at")]
+    public DateTime? SuspendedAt { get; set; }
+
+    [Column("suspended_by")]
+    public string? SuspendedBy { get; set; }
+
+    [Column("reactivated_at")]
+    public DateTime? ReactivatedAt { get; set; }
+
+    [Column("reactivated_by")]
+    public string? ReactivatedBy { get; set; }
+
+    [Column("reactivation_reason")]
+    public string? ReactivationReason { get; set; }
+
     [Column("loyalty_points")]
-    public int LoyaltyPoints { get; set; }
+    public long LoyaltyPoints { get; set; }
 
     [Column("total_wallet_transactions")]
-    public int TotalWalletTransactions { get; set; }
+    public long TotalWalletTransactions { get; set; }
 
     [Column("last_transaction_at")]
     public DateTime? LastTransactionAt { get; set; }

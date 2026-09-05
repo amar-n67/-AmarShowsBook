@@ -1,0 +1,455 @@
+@using AmarShowsBook.Models
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Data Manager";
+    var movies = ViewBag.Movies as List<Movie> ?? new List<Movie>();
+    var standupShows = ViewBag.StandupShows as List<StandupShow> ?? new List<StandupShow>();
+    var liveStreams = ViewBag.LiveStreams as List<LiveStream> ?? new List<LiveStream>();
+    var newsChannels = ViewBag.NewsChannels as List<NewsChannel> ?? new List<NewsChannel>();
+}
+
+<section class="admin-page content-manager-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Data Manager</h1>
+            <p>Insert, update, and delete master content for Movies, Standup, Live, News, and Music.</p>
+        </div>
+        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
+    </div>
+
+    @if(TempData["Success"]!=null){<div class="alert alert-success">@TempData["Success"]</div>}
+    @if(TempData["Error"]!=null){<div class="alert alert-danger">@TempData["Error"]</div>}
+
+    <div class="admin-detail-panel mb-4">
+        <h2 class="h5 mb-3">Insert New Content</h2>
+        <form asp-action="SaveContent" method="post" class="content-form">
+            @Html.AntiForgeryToken()
+            <select name="contentType" class="form-select" required>
+                <option value="Movie">Movie</option>
+                <option value="Standup">Standup</option>
+                <option value="Live">Live</option>
+                <option value="Music">Music</option>
+            </select>
+            <input name="title" class="form-control" placeholder="Title" required />
+            <input name="directorOrHost" class="form-control" placeholder="Director / Comedian / Host" />
+            <input name="producer" class="form-control movie-only" placeholder="Producer" />
+            <input name="cast" class="form-control movie-only" placeholder="Cast" />
+            <input name="duration" class="form-control" type="number" min="1" value="120" placeholder="Duration minutes" required />
+            <input name="imdbRating" class="form-control movie-only" type="number" min="0" max="10" step="0.1" placeholder="IMDB" />
+            <input name="posterUrl" class="form-control" placeholder="Poster URL" />
+            <input name="images" class="form-control wide-field" placeholder="Image URLs comma separated" />
+            <input name="trailerUrl" class="form-control wide-field" placeholder="Trailer URL" />
+            <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description"></textarea>
+            <button class="btn btn-primary" type="submit">Insert</button>
+        </form>
+    </div>
+
+    <div class="content-tabs">
+        <button type="button" data-content-target="movies" aria-expanded="false" aria-controls="movies">
+            <span>Movies</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="standup" aria-expanded="false" aria-controls="standup">
+            <span>Standup</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="live" aria-expanded="false" aria-controls="live">
+            <span>Live</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="news" aria-expanded="false" aria-controls="news">
+            <span>News</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="music" aria-expanded="false" aria-controls="music">
+            <span>Music</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+    </div>
+
+    <div id="movies" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Movies</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="movies" aria-label="Hide Movies">
+                ↑
+            </button>
+        </div>
+        @foreach (var item in movies)
+        {
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="MOVIE">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Movie" />
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="title" class="form-control" value="@item.Title" required />
+                <input name="directorOrHost" class="form-control" value="@item.Director" placeholder="Director" />
+                <input name="producer" class="form-control" value="@item.Producer" placeholder="Producer" />
+                <input name="cast" class="form-control" value="@item.Cast" placeholder="Cast" />
+                <input name="duration" class="form-control" type="number" min="1" value="@item.Duration" />
+                <input name="imdbRating" class="form-control" type="number" min="0" max="10" step="0.1" value="@item.ImdbRating" placeholder="IMDB" />
+                <input name="posterUrl" class="form-control wide-field" value="@item.PosterUrl" placeholder="Poster URL" />
+                <input name="images" class="form-control wide-field" value="@item.Images" placeholder="Images" />
+                <input name="trailerUrl" class="form-control wide-field" value="@item.TrailerUrl" placeholder="Trailer" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-Movie-@item.Id" onclick="return confirm('Delete movie @item.Title?')">Delete</button>
+                </div>
+            </form>
+            <form id="delete-Movie-@item.Id" asp-action="DeleteContent" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Movie" />
+                <input type="hidden" name="id" value="@item.Id" />
+            </form>
+        }
+    </div>
+
+    <div id="standup" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Standup</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="standup" aria-label="Hide Standup">
+                ↑
+            </button>
+        </div>
+        @foreach (var item in standupShows)
+        {
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="STANDUP">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Standup" />
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="title" class="form-control" value="@item.Title" required />
+                <input name="directorOrHost" class="form-control" value="@item.Comedian" placeholder="Comedian" />
+                <input name="duration" class="form-control" type="number" min="1" value="@item.Duration" />
+                <input name="posterUrl" class="form-control wide-field" value="@item.PosterUrl" placeholder="Poster URL" />
+                <input name="images" class="form-control wide-field" value="@item.Images" placeholder="Images" />
+                <input name="trailerUrl" class="form-control wide-field" value="@item.TrailerUrl" placeholder="Trailer" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-Standup-@item.Id" onclick="return confirm('Delete standup @item.Title?')">Delete</button>
+                </div>
+            </form>
+            <form id="delete-Standup-@item.Id" asp-action="DeleteContent" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Standup" />
+                <input type="hidden" name="id" value="@item.Id" />
+            </form>
+        }
+    </div>
+
+    <div id="live" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Live</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="live" aria-label="Hide Live">
+                ↑
+            </button>
+        </div>
+        <p class="content-section-note">Live records also power Music entries until they are scheduled.</p>
+        @foreach (var item in liveStreams)
+        {
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="LIVE">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Live" />
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="title" class="form-control" value="@item.Title" required />
+                <input name="directorOrHost" class="form-control" value="@item.Host" placeholder="Host" />
+                <input name="duration" class="form-control" type="number" min="1" value="@item.Duration" />
+                <input name="posterUrl" class="form-control wide-field" value="@item.PosterUrl" placeholder="Poster URL" />
+                <input name="images" class="form-control wide-field" value="@item.Images" placeholder="Images" />
+                <input name="trailerUrl" class="form-control wide-field" value="@item.TrailerUrl" placeholder="Trailer" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-Live-@item.Id" onclick="return confirm('Delete live stream @item.Title?')">Delete</button>
+                </div>
+            </form>
+            <form id="delete-Live-@item.Id" asp-action="DeleteContent" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Live" />
+                <input type="hidden" name="id" value="@item.Id" />
+            </form>
+        }
+    </div>
+
+    <div id="news" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">News</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="news" aria-label="Hide News">
+                ↑
+            </button>
+        </div>
+        <form asp-action="SaveNewsChannel" method="post" class="content-form news-form">
+            @Html.AntiForgeryToken()
+            <input name="channelName" class="form-control" placeholder="Channel name" required />
+            <input name="channelCode" class="form-control" placeholder="Code" />
+            <input name="language" class="form-control" placeholder="Language" value="Hindi/English" />
+            <input name="category" class="form-control" placeholder="Category" value="National" />
+            <input name="region" class="form-control" placeholder="Region" value="India" />
+            <input name="country" class="form-control" placeholder="Country" value="India" />
+            <input name="state" class="form-control" placeholder="State" value="All" />
+            <input name="city" class="form-control" placeholder="City" value="All" />
+            <input name="sortOrder" class="form-control" type="number" value="0" placeholder="Sort order" />
+            <input name="logoUrl" class="form-control wide-field" placeholder="Logo URL" />
+            <input name="websiteUrl" class="form-control wide-field" placeholder="Website URL" />
+            <input name="liveUrl" class="form-control wide-field" placeholder="Live URL" />
+            <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description"></textarea>
+            <label class="content-check">
+                <input type="checkbox" name="isActive" value="true" checked />
+                <span>Active</span>
+            </label>
+            <button class="btn btn-primary" type="submit">Insert News</button>
+        </form>
+
+        @foreach (var item in newsChannels)
+        {
+            <form asp-action="SaveNewsChannel" method="post" class="content-edit-row news-form" data-admin-searchable data-filter-method="NEWS">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="channelName" class="form-control" value="@item.ChannelName" required />
+                <input name="channelCode" class="form-control" value="@item.ChannelCode" placeholder="Code" />
+                <input name="language" class="form-control" value="@item.Language" placeholder="Language" />
+                <input name="category" class="form-control" value="@item.Category" placeholder="Category" />
+                <input name="region" class="form-control" value="@item.Region" placeholder="Region" />
+                <input name="country" class="form-control" value="@item.Country" placeholder="Country" />
+                <input name="state" class="form-control" value="@item.State" placeholder="State" />
+                <input name="city" class="form-control" value="@item.City" placeholder="City" />
+                <input name="sortOrder" class="form-control" type="number" value="@item.SortOrder" />
+                <input name="logoUrl" class="form-control wide-field" value="@item.LogoUrl" placeholder="Logo URL" />
+                <input name="websiteUrl" class="form-control wide-field" value="@item.WebsiteUrl" placeholder="Website URL" />
+                <input name="liveUrl" class="form-control wide-field" value="@item.LiveUrl" placeholder="Live URL" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <label class="content-check">
+                    <input type="checkbox" name="isActive" value="true" checked="@item.IsActive" />
+                    <span>Active</span>
+                </label>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-News-@item.Id" onclick="return confirm('Delete news channel @item.ChannelName?')">Delete</button>
+                </div>
+            </form>
+            <form id="delete-News-@item.Id" asp-action="DeleteNewsChannel" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@item.Id" />
+            </form>
+        }
+    </div>
+
+    <div id="music" class="admin-detail-panel content-section" hidden>
+        <div class="content-section-header">
+            <h2 class="h5">Music</h2>
+            <button type="button" class="content-section-toggle" data-content-collapse="music" aria-label="Hide Music">
+                ↑
+            </button>
+        </div>
+        <p class="content-section-note">Choose Music in the insert form to add music content, then update it here.</p>
+        @foreach (var item in liveStreams)
+        {
+            <form asp-action="SaveContent" method="post" class="content-edit-row" data-admin-searchable data-filter-method="MUSIC">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="contentType" value="Music" />
+                <input type="hidden" name="id" value="@item.Id" />
+                <input name="title" class="form-control" value="@item.Title" required />
+                <input name="directorOrHost" class="form-control" value="@item.Host" placeholder="Artist / Host" />
+                <input name="duration" class="form-control" type="number" min="1" value="@item.Duration" />
+                <input name="posterUrl" class="form-control wide-field" value="@item.PosterUrl" placeholder="Poster URL" />
+                <input name="images" class="form-control wide-field" value="@item.Images" placeholder="Images" />
+                <input name="trailerUrl" class="form-control wide-field" value="@item.TrailerUrl" placeholder="Trailer" />
+                <textarea name="description" class="form-control wide-field" rows="2" placeholder="Description">@item.Description</textarea>
+                <div class="content-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                    <button class="btn btn-danger btn-sm" type="submit" form="delete-Live-@item.Id" onclick="return confirm('Delete music item @item.Title?')">Delete</button>
+                </div>
+            </form>
+        }
+    </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buttons = Array.from(document.querySelectorAll("[data-content-target]"));
+    const sections = Array.from(document.querySelectorAll(".content-section"));
+
+    function setActiveSection(targetId, updateHash) {
+        const targetSection = targetId ? document.getElementById(targetId) : null;
+
+        sections.forEach(section => {
+            section.hidden = section !== targetSection;
+        });
+
+        buttons.forEach(button => {
+            const isActive = button.dataset.contentTarget === targetId && Boolean(targetSection);
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-expanded", isActive ? "true" : "false");
+            const arrow = button.querySelector(".content-toggle-arrow");
+            if (arrow) {
+                arrow.textContent = isActive ? "↑" : "↓";
+            }
+        });
+
+        if (updateHash) {
+            if (targetSection) {
+                history.replaceState(null, "", "#" + targetId);
+            } else {
+                history.replaceState(null, "", window.location.pathname + window.location.search);
+            }
+        }
+    }
+
+    buttons.forEach(button => {
+        button.addEventListener("click", function () {
+            const targetId = button.dataset.contentTarget;
+            const isOpen = button.getAttribute("aria-expanded") === "true";
+            setActiveSection(isOpen ? "" : targetId, true);
+        });
+    });
+
+    document.querySelectorAll("[data-content-collapse]").forEach(button => {
+        button.addEventListener("click", function () {
+            setActiveSection("", true);
+        });
+    });
+
+    const hashTarget = window.location.hash.replace("#", "");
+    if (hashTarget && document.getElementById(hashTarget)) {
+        setActiveSection(hashTarget, false);
+    } else {
+        setActiveSection("", false);
+    }
+});
+</script>
+
+<style>
+.content-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.content-tabs button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    padding: 8px 14px;
+    background: var(--admin-panel);
+    color: var(--admin-ink);
+    font-weight: 850;
+    line-height: 1;
+}
+
+.content-tabs button:hover,
+.content-tabs button:focus-visible,
+.content-tabs button.is-active {
+    border-color: var(--admin-rose);
+    background: var(--admin-night);
+    color: #ffffff;
+}
+
+.content-toggle-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-weight: 950;
+}
+
+.content-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.content-section-header h2 {
+    margin: 0;
+}
+
+.content-section-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--admin-line);
+    border-radius: 8px;
+    background: var(--admin-night);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.content-section-toggle:hover,
+.content-section-toggle:focus-visible {
+    background: var(--admin-rose);
+    color: #ffffff;
+}
+
+.content-form,
+.content-edit-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 10px;
+    align-items: end;
+}
+
+.content-edit-row {
+    padding: 14px 0;
+    border-top: 1px solid var(--admin-line);
+}
+
+.content-section {
+    margin-bottom: 18px;
+}
+
+.wide-field {
+    grid-column: span 2;
+}
+
+.content-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.content-section-note {
+    color: var(--admin-muted);
+    font-weight: 750;
+    margin-bottom: 12px;
+}
+
+.content-check {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--admin-ink);
+    font-weight: 800;
+}
+
+.content-actions .btn,
+.content-form .btn {
+    min-height: 38px;
+}
+
+@@media (max-width: 1100px) {
+    .content-form,
+    .content-edit-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@@media (max-width: 680px) {
+    .content-form,
+    .content-edit-row {
+        grid-template-columns: 1fr;
+    }
+
+    .wide-field {
+        grid-column: span 1;
+    }
+}
+</style>

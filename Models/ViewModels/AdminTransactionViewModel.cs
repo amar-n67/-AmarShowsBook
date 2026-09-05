@@ -1,10 +1,5 @@
 namespace AmarShowsBook.Models.ViewModels
 {
-    // =========================================================
-    // HUMAN COMMENT:
-    // Enterprise admin transaction monitoring model
-    // Added nullable properties to safely handle NULL DB values
-    // =========================================================
     public class AdminTransactionViewModel
     {
         public long TransactionId { get; set; }

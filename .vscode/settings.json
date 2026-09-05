@@ -18,5 +18,6 @@
         "**/.plugin_symlinks": true,
         "**/.rmv/catalog/**": true,
         "*/_*": false
-    }
+    },
+    "git.ignoreLimitWarning": true
 }

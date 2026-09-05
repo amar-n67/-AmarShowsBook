@@ -1,9 +1,43 @@
 @model AmarShowsBook.Models.ViewModels.AdminDashboardViewModel
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Admin Dashboard";
+    ViewData["AdminExportUrl"] = "/Admin/ExportDashboard";
+    var hasDashboardUserId = int.TryParse(Context.Session.GetString("UserId"), out var dashboardUserId);
+    var canUseSuperAdminDashboardLinks =
+        hasDashboardUserId && RbacService.CanAccessSuperAdminArea(dashboardUserId);
+    var isDumAdmin =
+        hasDashboardUserId &&
+        RbacService.HasAnyActiveRole(dashboardUserId, "DUM_ADMIN") &&
+        !RbacService.HasAnyActiveRole(dashboardUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER");
+    var canShowDashboardAdminLinks = canUseSuperAdminDashboardLinks || isDumAdmin;
+    var canEditSupportDetails = hasDashboardUserId && RbacService.CanOpenAdminDashboard(dashboardUserId);
+    var supportProfile = ViewBag.SupportProfile as AmarShowsBook.Models.ViewModels.DeveloperVM
+        ?? new AmarShowsBook.Models.ViewModels.DeveloperVM
+        {
+            SupportPhone = "+91 9651698863",
+            SupportWhatsAppPhone = "+91 9651698863",
+            IsSupportWhatsAppSameAsPhone = true,
+            DeveloperWhatsAppPhone = "+91 9651698863",
+            IsDeveloperWhatsAppSameAsPhone = true,
+            DeveloperEmail = "example@gmail.com",
+            DeveloperEmailSubject = "showTime Developer Contact",
+            DeveloperEmailText = "Hi showTime Team, I'm {user}. I would like to connect with the developer.",
+            SupportEmail = "support@showtime.com",
+            TopWhatsAppText = "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you.",
+            SupportWhatsAppText = "Hi showTime Team, I'm {user}. I need support. Please help me with my request.",
+            SupportEmailSubject = "showTime Support Request",
+            SupportEmailText = "Hi showTime Team, I'm {user}. I need support. Please help me with my request."
+        };
+
+    string DateText(DateTime? value) => value.HasValue
+        ? value.Value.ToString("dd MMM yyyy, hh:mm tt")
+        : "NA";
+
+    string Clean(string? value) => string.IsNullOrWhiteSpace(value) ? "NA" : value;
 }
 
 <section class="admin-dashboard">
@@ -17,11 +51,31 @@
             </p>
         </div>
 
-        <div class="admin-actions">
-            <!-- Human Comment: Lets admin return to the customer home page from the main dashboard. -->
-            <a class="admin-back-btn admin-page-back" href="/Home/Index">← Back to Home</a>
-        </div>
+        @if (!isDumAdmin)
+        {
+            <div class="admin-actions">
+                <a class="admin-back-btn admin-page-back" href="/Home/ShowTime">Back to Home</a>
+            </div>
+        }
     </div>
+
+    @if (isDumAdmin)
+    {
+        <div class="dashboard-profile-actions" aria-label="Account quick actions">
+            <a class="dashboard-profile-action" href="/Profile/MyProfile">
+                <span class="dashboard-profile-action-icon">👤</span>
+                <span>My Profile</span>
+            </a>
+            <a class="dashboard-profile-action" href="/Developer/Profile">
+                <span class="dashboard-profile-action-icon">🧩</span>
+                <span>Developer Profile</span>
+            </a>
+            <a class="dashboard-profile-action logout" href="/Auth/Logout" onclick="return confirmLogout();">
+                <span class="dashboard-profile-action-icon">⏻</span>
+                <span>Logout</span>
+            </a>
+        </div>
+    }
 
     <div class="dashboard-grid">
 
@@ -31,7 +85,15 @@
         </div>
 
         <div class="dashboard-card">
-            <span>Failed Bookings</span>
+            <span>
+                Failed Bookings
+                <span class="app-info app-info-left">
+                    <button type="button" class="app-info-btn" aria-label="Show failed booking details">i</button>
+                    <span class="app-info-popover" role="tooltip">
+                        Bookings counted here are not in a successful confirmed state or have an error flag.
+                    </span>
+                </span>
+            </span>
             <strong>@Model.FailedBookings</strong>
         </div>
 
@@ -41,7 +103,15 @@
         </div>
 
         <div class="dashboard-card">
-            <span>Failed Payments</span>
+            <span>
+                Failed Payments
+                <span class="app-info app-info-left">
+                    <button type="button" class="app-info-btn" aria-label="Show failed payment details">i</button>
+                    <span class="app-info-popover" role="tooltip">
+                        Payments counted here are failed gateway/payment transactions or payment records marked with an error.
+                    </span>
+                </span>
+            </span>
             <strong>@Model.FailedPayments</strong>
         </div>
 
@@ -51,7 +121,15 @@
         </div>
 
         <div class="dashboard-card">
-            <span>Refund Failures</span>
+            <span>
+                Refund Failures
+                <span class="app-info app-info-left">
+                    <button type="button" class="app-info-btn" aria-label="Show refund failure details">i</button>
+                    <span class="app-info-popover" role="tooltip">
+                        Refunds counted here are failed refund attempts or refund records with an error flag.
+                    </span>
+                </span>
+            </span>
             <strong>@Model.FailedRefunds</strong>
         </div>
 
@@ -65,10 +143,12 @@
             <strong>@Model.NotificationFailures</strong>
         </div>
 
-        <div class="dashboard-card">
+        <a class="dashboard-card dashboard-card-link security-alert-card"
+           href="/Admin/Security"
+           title="Review ticket security alerts">
             <span>Security Alerts</span>
             <strong>@Model.TicketValidationIssues</strong>
-        </div>
+        </a>
 
         <div class="dashboard-card">
             <span>Total Wallet Balance</span>
@@ -87,4 +167,1000 @@
 
     </div>
 
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Booking Health</h2>
+                    <p>Ticket volume, booking status, and upcoming show load.</p>
+                </div>
+                <a href="/Admin/Bookings">View Bookings</a>
+            </div>
+
+            <div class="dashboard-mini-grid">
+                <div>
+                    <span>Today Bookings</span>
+                    <strong>@Model.TodayBookings</strong>
+                </div>
+                <div>
+                    <span>Confirmed</span>
+                    <strong>@Model.ConfirmedBookings</strong>
+                </div>
+                <div>
+                    <span>Cancelled</span>
+                    <strong>@Model.CancelledBookings</strong>
+                </div>
+                <div>
+                    <span>Tickets Sold</span>
+                    <strong>@Model.TotalTickets</strong>
+                </div>
+            </div>
+
+            <div class="dashboard-money-row">
+                <div>
+                    <span>Gross Booking Value</span>
+                    <strong>@CurrencyFormatter.FormatRupees(Model.GrossBookingAmount)</strong>
+                </div>
+                <div>
+                    <span>Payable Booking Value</span>
+                    <strong>@CurrencyFormatter.FormatRupees(Model.PayableBookingAmount)</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Show Inventory</h2>
+                    <p>Content, venues, screens, and schedule readiness.</p>
+                </div>
+                @if (canShowDashboardAdminLinks)
+                {
+                    <a href="/Admin/ManageShows">Manage Shows</a>
+                }
+            </div>
+
+            <div class="dashboard-mini-grid">
+                <div>
+                    <span>Movies</span>
+                    <strong>@Model.TotalMovies</strong>
+                </div>
+                <div>
+                    <span>Standups</span>
+                    <strong>@Model.TotalStandups</strong>
+                </div>
+                <div>
+                    <span>Live Streams</span>
+                    <strong>@Model.TotalLiveStreams</strong>
+                </div>
+                <div>
+                    <span>Venues</span>
+                    <strong>@Model.TotalVenues</strong>
+                </div>
+                <div>
+                    <span>Screens</span>
+                    <strong>@Model.TotalScreens</strong>
+                </div>
+                <div>
+                    <span>Today Shows</span>
+                    <strong>@Model.TodaySchedules</strong>
+                </div>
+                <div>
+                    <span>Upcoming</span>
+                    <strong>@Model.UpcomingSchedules</strong>
+                </div>
+                <div>
+                    <span>Total Schedules</span>
+                    <strong>@Model.TotalSchedules</strong>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid three">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Payments</h2>
+                    <p>Successful collection and failed payment tracking.</p>
+                </div>
+                <a href="/Admin/Transactions">Open</a>
+            </div>
+            <div class="dashboard-stack">
+                <div><span>Collected</span><strong>@CurrencyFormatter.FormatRupees(Model.SuccessfulPaymentAmount)</strong></div>
+                <div><span>Successful</span><strong>@Model.SuccessfulPayments</strong></div>
+                <div><span>Failed</span><strong>@Model.FailedPayments</strong></div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Refunds</h2>
+                    <p>Pending requests and admin action state.</p>
+                </div>
+                <a href="/Admin/Refunds">Review</a>
+            </div>
+            <div class="dashboard-stack">
+                <div><span>Pending</span><strong>@Model.PendingRefunds</strong></div>
+                <div><span>Approved</span><strong>@Model.ApprovedRefunds</strong></div>
+                <div><span>Rejected</span><strong>@Model.RejectedRefunds</strong></div>
+                <div><span>Requested Amount</span><strong>@CurrencyFormatter.FormatRupees(Model.RequestedRefundAmount)</strong></div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Notifications</h2>
+                    <p>Delivery health and high priority alerts.</p>
+                </div>
+                <a href="/Admin/Notifications">Open</a>
+            </div>
+            <div class="dashboard-stack">
+                <div><span>Total Sent</span><strong>@Model.TotalNotifications</strong></div>
+                <div><span>Delivered</span><strong>@Model.DeliveredNotifications</strong></div>
+                <div><span>Pending</span><strong>@Model.PendingNotifications</strong></div>
+                <div><span>High Priority</span><strong>@Model.HighPriorityNotifications</strong></div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Booking Status Mix</h2>
+                    <p>Current distribution by booking state.</p>
+                </div>
+            </div>
+            <div class="dashboard-list">
+                @foreach (var item in Model.BookingStatusBreakdown)
+                {
+                    <div>
+                        <span>@Clean(item.Label)</span>
+                        <strong>@item.Count</strong>
+                        <em>@CurrencyFormatter.FormatRupees(item.Amount)</em>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Show Type Demand</h2>
+                    <p>Bookings and revenue by movies, standup, and live content.</p>
+                </div>
+            </div>
+            <div class="dashboard-list">
+                @foreach (var item in Model.ShowTypeBreakdown)
+                {
+                    <div>
+                        <span>@Clean(item.Label)</span>
+                        <strong>@item.Count</strong>
+                        <em>@CurrencyFormatter.FormatRupees(item.Amount)</em>
+                    </div>
+                }
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Recent Bookings</h2>
+                    <p>Latest customer bookings in the system.</p>
+                </div>
+                <a href="/Admin/Bookings">All</a>
+            </div>
+            <div class="dashboard-activity-list">
+                @foreach (var item in Model.RecentBookings)
+                {
+                    <div>
+                        <strong>@Clean(item.Title)</strong>
+                        <span>@Clean(item.Detail)</span>
+                        <em>@Clean(item.Status) • @DateText(item.Time)</em>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Recent Refunds</h2>
+                    <p>Latest refund movement for admin review.</p>
+                </div>
+                <a href="/Admin/Refunds">All</a>
+            </div>
+            <div class="dashboard-activity-list">
+                @foreach (var item in Model.RecentRefunds)
+                {
+                    <div>
+                        <strong>@Clean(item.Title)</strong>
+                        <span>@Clean(item.Detail)</span>
+                        <em>@Clean(item.Status) • @DateText(item.Time)</em>
+                    </div>
+                }
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-section-grid">
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Wallet And Security</h2>
+                    <p>Wallet exposure and ticket validation signals.</p>
+                </div>
+                <a href="/Admin/Security">Review Security</a>
+            </div>
+            <div class="dashboard-mini-grid">
+                <div>
+                    <span>
+                        Blocked Balance
+                        <span class="app-info app-info-left">
+                            <button type="button" class="app-info-btn" aria-label="Show blocked wallet balance details">i</button>
+                            <span class="app-info-popover" role="tooltip">
+                                Total wallet money currently unavailable for users to spend. Individual reasons are available in Wallet Management.
+                            </span>
+                        </span>
+                    </span>
+                    <strong>@CurrencyFormatter.FormatRupees(Model.BlockedWalletBalance)</strong>
+                </div>
+                <div>
+                    <span>Validated Tickets</span>
+                    <strong>@Model.ValidatedTickets</strong>
+                </div>
+                <div>
+                    <span>Security Issues</span>
+                    <strong>@Model.TicketValidationIssues</strong>
+                </div>
+                <div>
+                    <span>Active Roles</span>
+                    <strong>@Model.ActiveRoles</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="admin-detail-panel dashboard-insight-card">
+            <div class="dashboard-section-head">
+                <div>
+                    <h2>Admin Shortcuts</h2>
+                    <p>Common places to continue operations.</p>
+                </div>
+            </div>
+            <div class="dashboard-shortcuts">
+                <a href="/Admin/Users">Users <strong>@Model.TotalUsers</strong></a>
+                <a href="/Admin/Bookings">Bookings <strong>@Model.TotalBookings</strong></a>
+                <a href="/Admin/Security">Security <strong>@Model.TicketValidationIssues</strong></a>
+                <a href="/Admin/Transactions">Transactions <strong>@Model.SuccessfulPayments</strong></a>
+                <a href="/Admin/Refunds">Refunds <strong>@Model.TotalRefunds</strong></a>
+                <a href="/Admin/CouponUsage">Coupon Used</a>
+                <a href="/Admin/Wallets">Wallets <strong>@CurrencyFormatter.FormatRupees(Model.TotalWalletBalance)</strong></a>
+                <a href="/Admin/Notifications">Notifications <strong>@Model.TotalNotifications</strong></a>
+                <a href="/Admin/ActivityLogs">Activity Logs</a>
+                @if (canEditSupportDetails)
+                {
+                    <button type="button" class="dashboard-shortcut-button" onclick="openSupportDetailsModal()">Support Details</button>
+                }
+                <a href="/Admin/Versions">Versions</a>
+                @if (canUseSuperAdminDashboardLinks)
+                {
+                    <a href="/Admin/Roles">Roles <strong>@Model.ActiveRoles</strong></a>
+                    <a href="/Admin/ContentManager">Content Manager</a>
+                    <a href="/Admin/ContentManager#news">News Manage</a>
+                    <a href="/Admin/ContentManager#music">Music Manage</a>
+                }
+            </div>
+        </article>
+    </div>
+
 </section>
+
+@if (canEditSupportDetails)
+{
+    <div class="support-details-modal" id="supportDetailsModal" hidden>
+        <div class="support-details-dialog" role="dialog" aria-modal="true" aria-labelledby="supportDetailsTitle">
+            <div class="support-details-head">
+                <div>
+                    <span>Application Support</span>
+                    <h2 id="supportDetailsTitle">Update Support Details</h2>
+                </div>
+                <button type="button" class="support-details-close" aria-label="Close support details editor" onclick="closeSupportDetailsModal()">x</button>
+            </div>
+
+            <form asp-action="UpdateSupportDetails" method="post" class="support-details-form">
+                @Html.AntiForgeryToken()
+                <div class="support-details-groups">
+                    <section class="support-details-group" aria-labelledby="supportDetailsGroupTitle">
+                        <h3 id="supportDetailsGroupTitle">Support Details</h3>
+                        <div class="support-details-grid">
+                            <label>
+                                <span>Mobile Number</span>
+                                <input id="SupportPhone" name="SupportPhone" class="form-control" value="@supportProfile.SupportPhone" placeholder="+91 9651698863" oninput="syncSupportWhatsApp(false)" />
+                            </label>
+                            <label>
+                                <span>WhatsApp Number</span>
+                                <input id="SupportWhatsAppPhone" name="SupportWhatsAppPhone" class="form-control" value="@supportProfile.SupportWhatsAppPhone" placeholder="+91 9651698863" />
+                            </label>
+                            <label class="support-details-check">
+                                <input id="IsSupportWhatsAppSameAsPhone" name="IsSupportWhatsAppSameAsPhone" type="checkbox" value="true" onchange="syncSupportWhatsApp(true)" @(supportProfile.IsSupportWhatsAppSameAsPhone ? "checked" : "") />
+                                <input name="IsSupportWhatsAppSameAsPhone" type="hidden" value="false" />
+                                <span>WhatsApp same as mobile</span>
+                            </label>
+                            <label>
+                                <span>Email Address</span>
+                                <input name="SupportEmail" class="form-control" value="@supportProfile.SupportEmail" placeholder="support@example.com" />
+                            </label>
+                            <label class="support-details-wide">
+                                <span>WhatsApp Text</span>
+                                <textarea name="SupportWhatsAppText" class="form-control" rows="2">@supportProfile.SupportWhatsAppText</textarea>
+                            </label>
+                            <label>
+                                <span>Email Subject</span>
+                                <input name="SupportEmailSubject" class="form-control" value="@supportProfile.SupportEmailSubject" placeholder="showTime Support Request" />
+                            </label>
+                            <label class="support-details-wide">
+                                <span>Email Body</span>
+                                <textarea name="SupportEmailText" class="form-control" rows="3">@supportProfile.SupportEmailText</textarea>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="support-details-group" aria-labelledby="developerDetailsGroupTitle">
+                        <h3 id="developerDetailsGroupTitle">Developer Details</h3>
+                        <div class="support-details-grid">
+                            <label>
+                                <span>WhatsApp Number</span>
+                                <input id="DeveloperWhatsAppPhone" name="DeveloperWhatsAppPhone" class="form-control" value="@supportProfile.DeveloperWhatsAppPhone" placeholder="+91 9651698863" />
+                            </label>
+                            <label class="support-details-check">
+                                <input id="IsDeveloperWhatsAppSameAsPhone" name="IsDeveloperWhatsAppSameAsPhone" type="checkbox" value="true" onchange="syncDeveloperWhatsApp(true)" @(supportProfile.IsDeveloperWhatsAppSameAsPhone ? "checked" : "") />
+                                <input name="IsDeveloperWhatsAppSameAsPhone" type="hidden" value="false" />
+                                <span>WhatsApp same as support mobile</span>
+                            </label>
+                            <label>
+                                <span>Email Address</span>
+                                <input name="DeveloperEmail" class="form-control" value="@supportProfile.DeveloperEmail" placeholder="developer@example.com" />
+                            </label>
+                            <label>
+                                <span>Email Subject</span>
+                                <input name="DeveloperEmailSubject" class="form-control" value="@supportProfile.DeveloperEmailSubject" placeholder="showTime Developer Contact" />
+                            </label>
+                            <label class="support-details-wide">
+                                <span>Email Body</span>
+                                <textarea name="DeveloperEmailText" class="form-control" rows="2">@supportProfile.DeveloperEmailText</textarea>
+                            </label>
+                            <label class="support-details-wide">
+                                <span>WhatsApp Text</span>
+                                <textarea name="TopWhatsAppText" class="form-control" rows="2">@supportProfile.TopWhatsAppText</textarea>
+                            </label>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="support-details-actions">
+                    <button type="button" class="support-details-secondary" onclick="closeSupportDetailsModal()">Cancel</button>
+                    <button type="submit" class="support-details-primary">Update Support</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<style>
+    .admin-dashboard .dashboard-insight-card.is-collapsed {
+        min-height: 0;
+    }
+
+    .admin-dashboard .dashboard-insight-card.is-collapsed > :not(.dashboard-section-head) {
+        display: none !important;
+    }
+
+    .admin-dashboard .dashboard-card-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-card-link:hover,
+    .admin-dashboard .dashboard-card-link:focus-visible {
+        border-color: var(--admin-gold) !important;
+        background: linear-gradient(135deg, #fff7d6, #eefdfb) !important;
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16);
+        color: var(--admin-ink);
+        outline: none;
+        transform: translateY(-1px);
+    }
+
+    .admin-dashboard .security-alert-card::before {
+        background: linear-gradient(90deg, #dc2626, var(--admin-gold), var(--admin-teal));
+    }
+
+    .admin-dashboard .dashboard-profile-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: -6px 0 18px;
+        flex-wrap: wrap;
+    }
+
+    .admin-dashboard .dashboard-profile-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 9px 15px;
+        border: 1px solid color-mix(in srgb, var(--admin-gold) 44%, var(--admin-line));
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--admin-panel-strong), rgba(255, 248, 220, 0.9));
+        color: var(--admin-ink);
+        font-size: 0.86rem;
+        font-weight: 900;
+        line-height: 1;
+        text-decoration: none;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.46);
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-profile-action:hover,
+    .admin-dashboard .dashboard-profile-action:focus-visible {
+        transform: translateY(-1px);
+        border-color: var(--admin-teal);
+        background: linear-gradient(135deg, rgba(255, 248, 220, 0.98), var(--admin-panel-strong));
+        color: var(--admin-ink);
+        outline: none;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+    }
+
+    .admin-dashboard .dashboard-profile-action.logout {
+        border-color: color-mix(in srgb, #dc2626 46%, var(--admin-line));
+        color: #b91c1c;
+    }
+
+    .admin-dashboard .dashboard-profile-action-icon {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.92rem;
+    }
+
+    .admin-dashboard .dashboard-section-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .admin-dashboard .dashboard-section-grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .admin-dashboard .dashboard-insight-card {
+        padding: 18px;
+    }
+
+    .admin-dashboard .dashboard-section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .admin-dashboard .dashboard-section-head h2 {
+        margin: 0;
+        color: var(--admin-ink);
+        font-size: 1.05rem;
+        font-weight: 900;
+    }
+
+    .admin-dashboard .dashboard-section-head p {
+        margin: 5px 0 0;
+        color: var(--admin-muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+    }
+
+    .admin-dashboard .dashboard-section-head a,
+    .admin-dashboard .dashboard-shortcuts a,
+    .admin-dashboard .dashboard-shortcut-button {
+        color: var(--admin-ink);
+        text-decoration: none;
+        font-weight: 850;
+    }
+
+    .admin-dashboard .dashboard-section-head a {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        border: 1px solid var(--admin-line);
+        border-radius: 999px;
+        background: var(--admin-panel-strong);
+        font-size: 0.8rem;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.34);
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-section-head a:hover,
+    .admin-dashboard .dashboard-section-head a:focus-visible {
+        border-color: var(--admin-teal);
+        background: var(--admin-night);
+        color: white;
+        outline: none;
+        box-shadow: 0 12px 24px rgba(23,25,35,0.18);
+        transform: translateY(-1px);
+    }
+
+    .admin-dashboard .dashboard-section-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+
+    .admin-dashboard .dashboard-toggle-btn {
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--admin-line);
+        border-radius: 999px;
+        background: var(--admin-panel-strong);
+        color: var(--admin-ink);
+        font-size: 0.9rem;
+        font-weight: 950;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-toggle-btn:hover,
+    .admin-dashboard .dashboard-toggle-btn:focus-visible {
+        border-color: var(--admin-gold);
+        background: var(--admin-gold);
+        color: #231f20;
+        outline: none;
+        box-shadow: 0 12px 24px rgba(23,25,35,0.16);
+        transform: translateY(-1px);
+    }
+
+    .admin-dashboard .dashboard-mini-grid,
+    .admin-dashboard .dashboard-money-row,
+    .admin-dashboard .dashboard-stack {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .admin-dashboard .dashboard-mini-grid div,
+    .admin-dashboard .dashboard-money-row div,
+    .admin-dashboard .dashboard-stack div,
+    .admin-dashboard .dashboard-list div,
+    .admin-dashboard .dashboard-activity-list div,
+    .admin-dashboard .dashboard-shortcuts a,
+    .admin-dashboard .dashboard-shortcut-button {
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: var(--admin-panel-strong);
+        padding: 12px;
+    }
+
+    .admin-dashboard .dashboard-money-row {
+        margin-top: 10px;
+    }
+
+    .admin-dashboard .dashboard-mini-grid span,
+    .admin-dashboard .dashboard-money-row span,
+    .admin-dashboard .dashboard-stack span,
+    .admin-dashboard .dashboard-list span {
+        display: block;
+        color: var(--admin-muted);
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .admin-dashboard .dashboard-mini-grid strong,
+    .admin-dashboard .dashboard-money-row strong,
+    .admin-dashboard .dashboard-stack strong {
+        display: block;
+        margin-top: 6px;
+        color: var(--admin-ink);
+        font-size: 1.25rem;
+        font-weight: 950;
+    }
+
+    .admin-dashboard .dashboard-list,
+    .admin-dashboard .dashboard-activity-list,
+    .admin-dashboard .dashboard-shortcuts {
+        display: grid;
+        gap: 10px;
+    }
+
+    .admin-dashboard .dashboard-list div {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .admin-dashboard .dashboard-list strong {
+        color: var(--admin-ink);
+        font-size: 1rem;
+    }
+
+    .admin-dashboard .dashboard-list em,
+    .admin-dashboard .dashboard-activity-list em {
+        color: var(--admin-muted);
+        font-size: 0.78rem;
+        font-style: normal;
+    }
+
+    .admin-dashboard .dashboard-activity-list strong,
+    .admin-dashboard .dashboard-activity-list span,
+    .admin-dashboard .dashboard-activity-list em {
+        display: block;
+    }
+
+    .admin-dashboard .dashboard-activity-list strong {
+        color: var(--admin-ink);
+        font-size: 0.95rem;
+    }
+
+    .admin-dashboard .dashboard-activity-list span {
+        margin-top: 4px;
+        color: var(--admin-muted);
+        font-size: 0.85rem;
+    }
+
+    .admin-dashboard .dashboard-activity-list em {
+        margin-top: 6px;
+    }
+
+    .admin-dashboard .dashboard-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-dashboard .dashboard-shortcuts a,
+    .admin-dashboard .dashboard-shortcut-button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        position: relative;
+        overflow: visible;
+        min-height: auto;
+        width: 100%;
+        color: var(--admin-ink);
+        font: inherit;
+        font-weight: 850;
+        text-align: left;
+        appearance: none;
+        cursor: pointer;
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .admin-dashboard .dashboard-shortcuts a:hover,
+    .admin-dashboard .dashboard-shortcuts a:focus-visible,
+    .admin-dashboard .dashboard-shortcut-button:hover,
+    .admin-dashboard .dashboard-shortcut-button:focus-visible {
+        border-color: var(--admin-gold);
+        background: linear-gradient(135deg, #fff7d6, #eefdfb);
+        color: var(--admin-ink);
+        outline: none;
+        box-shadow: 0 12px 24px rgba(15,23,42,0.12);
+        transform: translateY(-1px);
+    }
+
+    .admin-dashboard .dashboard-shortcuts strong {
+        color: var(--admin-teal);
+    }
+
+    .support-details-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483500;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: rgba(15, 23, 42, 0.62);
+        backdrop-filter: blur(12px);
+    }
+
+    .support-details-modal[hidden] {
+        display: none !important;
+    }
+
+    .support-details-dialog {
+        width: min(760px, 100%);
+        max-height: min(760px, calc(100vh - 36px));
+        overflow: auto;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: var(--admin-panel-strong);
+        color: var(--admin-ink);
+        box-shadow: 0 28px 82px rgba(15, 23, 42, 0.34);
+    }
+
+    .support-details-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--admin-line);
+        background: linear-gradient(135deg, rgba(255, 248, 220, 0.96), rgba(238, 253, 251, 0.96));
+    }
+
+    .support-details-head span,
+    .support-details-form label > span {
+        display: block;
+        color: var(--admin-muted);
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .support-details-head h2 {
+        margin: 4px 0 0;
+        color: var(--admin-ink);
+        font-size: 1.15rem;
+        font-weight: 950;
+    }
+
+    .support-details-close {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--admin-line);
+        border-radius: 999px;
+        background: var(--admin-panel-strong);
+        color: var(--admin-ink);
+        font-weight: 950;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .support-details-form {
+        padding: 20px;
+    }
+
+    .support-details-groups {
+        display: grid;
+        gap: 16px;
+    }
+
+    .support-details-group {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--admin-panel-strong) 94%, var(--admin-teal) 4%);
+    }
+
+    .support-details-group h3 {
+        margin: 0;
+        color: var(--admin-ink);
+        font-size: 0.95rem;
+        font-weight: 950;
+    }
+
+    .support-details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .support-details-form label {
+        display: grid;
+        gap: 7px;
+        margin: 0;
+    }
+
+    .support-details-wide,
+    .support-details-check {
+        grid-column: 1 / -1;
+    }
+
+    .support-details-check {
+        display: flex !important;
+        align-items: center;
+        gap: 9px;
+        padding: 10px 12px;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--admin-panel-strong) 88%, var(--admin-gold) 8%);
+    }
+
+    .support-details-check input {
+        width: 18px;
+        height: 18px;
+    }
+
+    .support-details-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .support-details-primary,
+    .support-details-secondary {
+        min-height: 40px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .support-details-primary {
+        border: 1px solid var(--admin-teal);
+        background: var(--admin-teal);
+        color: white;
+    }
+
+    .support-details-secondary {
+        border: 1px solid var(--admin-line);
+        background: var(--admin-panel-strong);
+        color: var(--admin-ink);
+    }
+
+    @@media(max-width: 1100px) {
+        .admin-dashboard .dashboard-section-grid,
+        .admin-dashboard .dashboard-section-grid.three {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media(max-width: 620px) {
+        .admin-dashboard .dashboard-profile-actions {
+            justify-content: stretch;
+        }
+
+        .admin-dashboard .dashboard-profile-action {
+            flex: 1 1 100%;
+        }
+
+        .admin-dashboard .dashboard-mini-grid,
+        .admin-dashboard .dashboard-money-row,
+        .admin-dashboard .dashboard-stack,
+        .admin-dashboard .dashboard-shortcuts {
+            grid-template-columns: 1fr;
+        }
+
+        .admin-dashboard .dashboard-list div {
+            grid-template-columns: 1fr;
+        }
+
+        .support-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+    }
+</style>
+
+<script>
+    const supportDetailsModal = document.getElementById("supportDetailsModal");
+
+    function openSupportDetailsModal() {
+        if (!supportDetailsModal) {
+            return;
+        }
+
+        supportDetailsModal.hidden = false;
+        syncSupportWhatsApp(true);
+        syncDeveloperWhatsApp(true);
+        supportDetailsModal.querySelector("input, textarea, button")?.focus();
+    }
+
+    function closeSupportDetailsModal() {
+        if (supportDetailsModal) {
+            supportDetailsModal.hidden = true;
+        }
+    }
+
+    supportDetailsModal?.addEventListener("click", (event) => {
+        if (event.target === supportDetailsModal) {
+            closeSupportDetailsModal();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && supportDetailsModal && !supportDetailsModal.hidden) {
+            closeSupportDetailsModal();
+        }
+    });
+
+    const sameAsPhone = document.getElementById("IsSupportWhatsAppSameAsPhone");
+    const developerSameAsPhone = document.getElementById("IsDeveloperWhatsAppSameAsPhone");
+    const supportPhone = document.getElementById("SupportPhone");
+    const supportWhatsApp = document.getElementById("SupportWhatsAppPhone");
+    const developerWhatsApp = document.getElementById("DeveloperWhatsAppPhone");
+
+    function syncSupportWhatsApp(clearWhenUnchecked = false) {
+        if (!sameAsPhone || !supportPhone || !supportWhatsApp) {
+            return;
+        }
+
+        supportWhatsApp.disabled = sameAsPhone.checked;
+        if (sameAsPhone.checked) {
+            supportWhatsApp.value = supportPhone.value;
+            return;
+        }
+
+        if (clearWhenUnchecked) {
+            supportWhatsApp.value = "";
+        }
+    }
+
+    function syncDeveloperWhatsApp(clearWhenUnchecked = false) {
+        if (!developerSameAsPhone || !supportPhone || !developerWhatsApp) {
+            return;
+        }
+
+        developerWhatsApp.disabled = developerSameAsPhone.checked;
+        if (developerSameAsPhone.checked) {
+            developerWhatsApp.value = supportPhone.value;
+            return;
+        }
+
+        if (clearWhenUnchecked) {
+            developerWhatsApp.value = "";
+        }
+    }
+
+    sameAsPhone?.addEventListener("change", () => syncSupportWhatsApp(true));
+    supportPhone?.addEventListener("input", () => syncSupportWhatsApp(false));
+    developerSameAsPhone?.addEventListener("change", () => syncDeveloperWhatsApp(true));
+    supportPhone?.addEventListener("input", () => syncDeveloperWhatsApp(false));
+    syncSupportWhatsApp(true);
+    syncDeveloperWhatsApp(true);
+
+    document.querySelectorAll(".admin-dashboard .dashboard-insight-card").forEach((card) => {
+        const head = card.querySelector(".dashboard-section-head");
+
+        if (!head || head.querySelector(".dashboard-toggle-btn")) {
+            return;
+        }
+
+        let actions = head.querySelector(".dashboard-section-actions");
+
+        if (!actions) {
+            actions = document.createElement("div");
+            actions.className = "dashboard-section-actions";
+
+            [...head.querySelectorAll(":scope > a")].forEach((link) => {
+                actions.appendChild(link);
+            });
+
+            head.appendChild(actions);
+        }
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dashboard-toggle-btn";
+        button.setAttribute("aria-label", "Hide section");
+        button.textContent = "▲";
+
+        button.addEventListener("click", () => {
+            const collapsed = card.classList.toggle("is-collapsed");
+            button.textContent = collapsed ? "▼" : "▲";
+            button.setAttribute("aria-label", collapsed ? "Show section" : "Hide section");
+        });
+
+        actions.appendChild(button);
+    });
+</script>

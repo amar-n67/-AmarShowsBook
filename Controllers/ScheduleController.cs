@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
-using System;
-using System.Linq;
+using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
@@ -52,7 +51,6 @@ namespace AmarShowsBook.Controllers
 
             DateTime endTime = startTime.AddMinutes(duration);
 
-            // ❗ CLASH CHECK (ONLY FOR STANDUP)
             if (type == "Standup")
             {
                 bool clash = _context.ShowSchedules.Any(s =>
@@ -64,7 +62,8 @@ namespace AmarShowsBook.Controllers
 
                 if (clash)
                 {
-                    ViewBag.Error = "🎤 This stage is already booked for another performance!";
+                    // Previous wording: "This stage is already booked for another performance!"
+                    ViewBag.Error = "This location is already booked for another performance at the selected time.";
                     return View();
                 }
             }
@@ -74,7 +73,8 @@ namespace AmarShowsBook.Controllers
                 Type = type,
                 LocationId = locationId,
                 StartTime = startTime,
-                EndTime = endTime
+                EndTime = endTime,
+                ShowDay = startTime.ToString("dddd", CultureInfo.InvariantCulture)
             };
 
             if (type == "Movie") schedule.MovieId = itemId;

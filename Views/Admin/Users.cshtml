@@ -52,7 +52,7 @@
 
                 @foreach (var user in Model)
                 {
-                    <tr>
+                    <tr data-filter-status="@($"{(user.is_active ? "ACTIVE" : "DISABLED")}|{(user.is_deleted ? "DELETED" : "NORMAL")}")">
 
                         <td>@user.Name</td>
 
@@ -98,7 +98,6 @@
 
                             <div class="admin-actions">
 
-                                <!-- DETAILS -->
 
                                 <a href="/Admin/UserDetails/@user.Id"
                                    class="btn btn-primary">
@@ -107,7 +106,6 @@
 
                                 </a>
 
-                                <!-- ENABLE / DISABLE -->
 
                                 @if (user.is_active)
                                 {
@@ -138,7 +136,6 @@
                                     </form>
                                 }
 
-                                <!-- DELETE / REVOKE -->
 
                                 @if (user.is_deleted)
                                 {
@@ -177,19 +174,11 @@
 
     </div>
 
-    <!-- Human Comment: Admin tables show 50 rows per page and share the transaction pagination style. -->
-    <div class="pagination-area">
-
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a class="page-btn @(i == currentPage ? "active" : "")"
-               href="/Admin/Users?page=@i">
-
-                @i
-
-            </a>
-        }
-
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Users"
+    })
 
 </section>

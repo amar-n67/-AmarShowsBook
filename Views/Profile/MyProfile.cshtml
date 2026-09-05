@@ -1,17 +1,29 @@
 @model AmarShowsBook.Models.User
+@inject AmarShowsBook.Services.RbacService RbacService
+@{
+    var profileName = string.IsNullOrWhiteSpace(Model.Name) ? "User" : Model.Name;
+    var profileInitial = profileName.Trim()[0].ToString().ToUpperInvariant();
+    var hasCurrentUserId = int.TryParse(Context.Session.GetString("UserId"), out var currentUserId);
+    var isDumAdmin = hasCurrentUserId &&
+        RbacService.HasAnyActiveRole(currentUserId, "DUM_ADMIN") &&
+        !RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER");
+}
 
 <div class="profile-page">
     <div class="profile-shell">
         <div class="profile-hero">
             <div>
-                <span class="profile-kicker">Now Editing</span>
-                <h2>Star Profile Cut</h2>
-                <p>Refresh your contact credits, preferred genre, language track, and poster shot.</p>
+                @* Previous wording: "Now Editing" *@
+                <span class="profile-kicker">Profile Settings</span>
+                @* Previous wording: "Star Profile Cut" *@
+                <h2>My Profile</h2>
+                @* Previous wording: "Refresh your contact credits, preferred genre, language track, and poster shot." *@
+                <p>Update your contact details, preferences, language, and profile image.</p>
             </div>
-            <div class="profile-ticket">Admit One</div>
+            @* Previous wording: "Admit One" *@
+            <div class="profile-ticket">Account</div>
         </div>
 
-        <!-- SUCCESS / ERROR -->
         @if (TempData["Success"] != null)
         {
             <div class="alert alert-success profile-alert">@TempData["Success"]</div>
@@ -37,10 +49,18 @@
 
             <div class="profile-grid">
                 <aside class="poster-panel">
-                    <span class="poster-label">Profile Poster</span>
-                    <img id="profilePreview"
-                         src="@(!string.IsNullOrEmpty(Model.ProfileImagePath) ? Model.ProfileImagePath : "/uploads/default.png")"
-                         class="profile-poster" />
+                    @* Previous wording: "Profile Poster" *@
+                    <span class="poster-label">Profile Image</span>
+                    @if (!string.IsNullOrEmpty(Model.ProfileImagePath))
+                    {
+                        <img id="profilePreview"
+                             src="@Model.ProfileImagePath"
+                             class="profile-poster" />
+                    }
+                    else
+                    {
+                        <div id="profilePreview" class="profile-poster profile-poster-initial">@profileInitial</div>
+                    }
 
                     <input type="file" name="profileImage"
                            id="profileImage"
@@ -52,7 +72,8 @@
                         <label for="profileImage"
                                class="btn btn-warning btn-sm action-btn poster-upload-btn"
                                onclick="prepareImageChange()">
-                            Change Poster
+                            @* Previous wording: "Change Poster" *@
+                            Change Image
                         </label>
 
                         <button type="button" id="imageCancel"
@@ -62,11 +83,12 @@
                 </aside>
 
                 <div class="fields-panel">
-            <!-- ================= NAME ================= -->
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Opening Shot</span>
-                    <h5>Stage Identity</h5>
+                    @* Previous wording: "Opening Shot" *@
+                    <span>Basic Details</span>
+                    @* Previous wording: "Stage Identity" *@
+                    <h5>Account Identity</h5>
                 </div>
 
                 <div class="field-block">
@@ -77,7 +99,7 @@
                                value="@Model.Name" readonly />
 
                         <button type="button" class="btn btn-warning btn-sm"
-                                onclick="editSimpleField('nameField', 'nameCancel')">Retake</button>
+                                onclick="editSimpleField('nameField', 'nameCancel')">Edit</button>
 
                         <button id="nameCancel" type="button"
                                 class="btn btn-secondary btn-sm d-none"
@@ -86,15 +108,17 @@
                 </div>
             </section>
 
-            <!-- ================= EMAIL ================= -->
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Scene 01</span>
-                    <h5>Contact Credits</h5>
+                    @* Previous wording: "Scene 01" *@
+                    <span>Contact</span>
+                    @* Previous wording: "Contact Credits" *@
+                    <h5>Contact Details</h5>
                 </div>
 
                 <div class="field-block">
-                <label>Email Premiere</label>
+                @* Previous wording: "Email Premiere" *@
+                <label>Email</label>
 
                 <div class="input-group input-group-sm">
 
@@ -105,7 +129,7 @@
                     <span id="emailVerifiedIcon" class="text-success d-none ms-2">✔</span>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editEmail('@Model.Email')">Retake</button>
+                            onclick="editEmail('@Model.Email')">Edit</button>
 
                     <button id="emailCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -115,7 +139,8 @@
                 <div id="emailOtpSection" class="mt-2 d-none">
                     <button type="button" class="btn btn-info btn-sm"
                             onclick="sendEmailOtp('@Model.Email')">
-                        Send Secret Code
+                        @* Previous wording: "Send Secret Code" *@
+                        Send OTP
                     </button>
                 </div>
 
@@ -132,9 +157,9 @@
                 </div>
                 </div>
 
-            <!-- ================= MOBILE ================= -->
                 <div class="field-block">
-                <label>Mobile Hotline</label>
+                @* Previous wording: "Mobile Hotline" *@
+                <label>Mobile Number</label>
 
                 <div class="input-group input-group-sm">
 
@@ -145,7 +170,7 @@
                     <span id="mobileVerifiedIcon" class="text-success d-none ms-2">✔</span>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editMobile('@Model.Mobile')">Retake</button>
+                            onclick="editMobile('@Model.Mobile')">Edit</button>
 
                     <button id="mobileCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -155,7 +180,8 @@
                 <div id="mobileOtpSection" class="mt-2 d-none">
                     <button type="button" class="btn btn-info btn-sm"
                             onclick="sendMobileOtp('@Model.Mobile')">
-                        Send Secret Code
+                        @* Previous wording: "Send Secret Code" *@
+                        Send OTP
                     </button>
                 </div>
 
@@ -167,17 +193,19 @@
                     <button type="button"
                             class="btn btn-success btn-sm"
                             onclick="verifyMobileOtp()">
-                        Lock Scene
+                        @* Previous wording: "Lock Scene" *@
+                        Verify OTP
                     </button>
                 </div>
                 </div>
             </section>
 
-            <!-- ================= ADDRESS ================= -->
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Scene 02</span>
-                    <h5>Shooting Location</h5>
+                    @* Previous wording: "Scene 02" *@
+                    <span>Address</span>
+                    @* Previous wording: "Shooting Location" *@
+                    <h5>Saved Location</h5>
                 </div>
 
                 <div class="field-block">
@@ -189,7 +217,7 @@
                            value="@Model.Address" readonly />
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="editAddress('@Model.Address')">Retake</button>
+                            onclick="editAddress('@Model.Address')">Edit</button>
 
                     <button id="addressCancel" type="button"
                             class="btn btn-secondary btn-sm d-none"
@@ -245,11 +273,12 @@
                 </div>
             </section>
 
-            <!-- ================= GENRE ================= -->
             <section class="profile-scene">
                 <div class="scene-title">
-                    <span>Scene 03</span>
-                    <h5>Show Taste</h5>
+                    @* Previous wording: "Scene 03" *@
+                    <span>Preferences</span>
+                    @* Previous wording: "Show Taste" *@
+                    <h5>Content Preferences</h5>
                 </div>
 
                 <div class="field-split">
@@ -270,13 +299,13 @@
                     </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="enableProfileSelect('genreField')">Retake</button>
+                            onclick="enableProfileSelect('genreField')">Edit</button>
                 </div>
             </div>
 
-            <!-- ================= LANGUAGE ================= -->
             <div class="field-block">
-                <label>Dialogue Track</label>
+                @* Previous wording: "Dialogue Track" *@
+                <label>Preferred Language</label>
 
                 <div class="input-group input-group-sm">
                     <div class="position-relative flex-grow-1">
@@ -291,17 +320,67 @@
                     </div>
 
                     <button type="button" class="btn btn-warning btn-sm"
-                            onclick="enableProfileSelect('languageField')">Retake</button>
+                            onclick="enableProfileSelect('languageField')">Edit</button>
                 </div>
             </div>
                 </div>
             </section>
 
-            <!-- ================= PASSWORD ================= -->
+            <section class="profile-scene cursor-scene">
+                <div class="scene-title">
+                    @* Previous wording: "Scene 04" *@
+                    <span>Display</span>
+                    <h5>Mouse Cursor Style</h5>
+                </div>
+
+                <div class="cursor-style-grid" aria-label="Cursor style options">
+                    <button type="button" class="cursor-style-option" data-cursor-choice="native" onclick="setAppCursorStyle('native')">
+                        <span class="cursor-preview cursor-preview-native"></span>
+                        <span>
+                            <strong>Native</strong>
+                            <small>System pointer</small>
+                        </span>
+                    </button>
+                    <button type="button" class="cursor-style-option" data-cursor-choice="liquid" onclick="setAppCursorStyle('liquid')">
+                        <span class="cursor-preview cursor-preview-liquid"></span>
+                        <span>
+                            <strong>Liquid</strong>
+                            <small>Soft trailing dot</small>
+                        </span>
+                    </button>
+                    <button type="button" class="cursor-style-option" data-cursor-choice="precision" onclick="setAppCursorStyle('precision')">
+                        <span class="cursor-preview cursor-preview-precision"></span>
+                        <span>
+                            <strong>Precision</strong>
+                            <small>Target reticle</small>
+                        </span>
+                    </button>
+                    <button type="button" class="cursor-style-option" data-cursor-choice="spotlight" onclick="setAppCursorStyle('spotlight')">
+                        <span class="cursor-preview cursor-preview-spotlight"></span>
+                        <span>
+                            <strong>Spotlight</strong>
+                            <small>Wide focus ring</small>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="cursor-color-panel" aria-label="Cursor color options">
+                    <span>Cursor Color</span>
+                    <div class="cursor-color-grid">
+                        <button type="button" data-cursor-color="#168f98" style="--cursor-swatch:#168f98" onclick="setAppCursorColor('#168f98')">Teal</button>
+                        <button type="button" data-cursor-color="#e45d48" style="--cursor-swatch:#e45d48" onclick="setAppCursorColor('#e45d48')">Coral</button>
+                        <button type="button" data-cursor-color="#7a8cff" style="--cursor-swatch:#7a8cff" onclick="setAppCursorColor('#7a8cff')">Indigo</button>
+                        <button type="button" data-cursor-color="#f0bd4f" style="--cursor-swatch:#f0bd4f" onclick="setAppCursorColor('#f0bd4f')">Gold</button>
+                    </div>
+                </div>
+            </section>
+
             <section class="profile-scene password-scene">
                 <div class="scene-title">
-                    <span>Scene 04</span>
-                    <h5>Security Retake</h5>
+                    @* Previous wording: "Scene 05" *@
+                    <span>Security</span>
+                    @* Previous wording: "Security Retake" *@
+                    <h5>Change Password</h5>
                 </div>
 
                 <div class="password-panel">
@@ -313,7 +392,10 @@
                                    value="@Model.Email" readonly />
 
                             <button type="button" class="btn btn-info btn-sm"
-                                    onclick="sendPasswordEmailOtp()">Send Secret Code</button>
+                                    onclick="sendPasswordEmailOtp()">
+                                @* Previous wording: "Send Secret Code" *@
+                                Send OTP
+                            </button>
                         </div>
                     </div>
 
@@ -369,7 +451,24 @@
                 </div>
             </section>
 
-            <!-- ================= ACTION ================= -->
+            @if (!isDumAdmin)
+            {
+                <section class="profile-scene delete-account-scene">
+                    <div class="scene-title">
+                        <span>Danger Zone</span>
+                        <h5>Delete Account</h5>
+                    </div>
+
+                    <div class="delete-account-panel">
+                        <div>
+                            <strong>Archive and delete this account</strong>
+                            <p>Your profile and account-linked records will be archived. You can recover within 30 days by logging in again. Archive data is purged after 3 months.</p>
+                        </div>
+                        <button type="button" class="btn btn-danger btn-sm delete-account-open" onclick="openDeleteAccountModal()">Delete Account</button>
+                    </div>
+                </section>
+            }
+
             <div class="profile-actions">
                 <button type="submit"
                         class="btn btn-success btn-sm save-btn"
@@ -377,13 +476,69 @@
                     Release Final Cut
                 </button>
 
-                <a href="/Home/Index" class="btn btn-secondary btn-sm back-btn">Back to Lobby</a>
+                <a href="/Home/ShowTime" class="btn btn-secondary btn-sm back-btn">Back to Lobby</a>
             </div>
                 </div>
             </div>
 
         </form>
         <form id="changePasswordForm" method="post" action="/Profile/ChangePassword"></form>
+        @if (!isDumAdmin)
+        {
+            <form id="deleteAccountForm" method="post" action="/Profile/DeleteAccount">
+                @Html.AntiForgeryToken()
+                <div class="delete-modal" id="deleteAccountModal" hidden>
+                    <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteAccountTitle">
+                        <div class="delete-dialog-head">
+                            <span>Account deletion</span>
+                            <button type="button" class="delete-dialog-close" onclick="closeDeleteAccountModal()" aria-label="Close">×</button>
+                        </div>
+                        <h3 id="deleteAccountTitle">Confirm account deletion</h3>
+                        <p class="delete-dialog-copy">Verify your email OTP, enter your password, and type the confirmation phrase. Recovery is available for 30 days after deletion.</p>
+
+                        <div class="field-block">
+                            <label>Email OTP</label>
+                            <div class="input-group input-group-sm">
+                                <input id="deleteEmailField" class="form-control clean-input" value="@Model.Email" readonly />
+                                <button type="button" class="btn btn-info btn-sm" onclick="sendDeleteAccountOtp()">Send OTP</button>
+                            </div>
+                        </div>
+
+                        <div class="field-block">
+                            <label>Verify OTP</label>
+                            <div class="input-group input-group-sm">
+                                <input id="deleteOtpInput" class="form-control clean-input" placeholder="Enter OTP" />
+                                <button type="button" class="btn btn-success btn-sm" onclick="verifyDeleteAccountOtp()">Verify</button>
+                            </div>
+                            <small id="deleteOtpStatus" class="delete-otp-status">OTP verification required.</small>
+                        </div>
+
+                        <div class="field-block">
+                            <label>Password</label>
+                            <div class="input-group input-group-sm">
+                                <input id="deletePassword" name="password" type="password" class="form-control clean-input" autocomplete="current-password" />
+                                <button type="button" class="btn btn-outline-light" data-password-toggle="deletePassword" title="Show password" onclick="togglePassword('deletePassword', this)"></button>
+                            </div>
+                        </div>
+
+                        <div class="field-block">
+                            <label>Confirmation Phrase</label>
+                            <input id="deleteConfirmationText" name="confirmationText" class="form-control clean-input" placeholder="DELETE MY ACCOUNT" autocomplete="off" />
+                        </div>
+
+                        <div class="field-block">
+                            <label>Reason</label>
+                            <textarea id="deletionReason" name="deletionReason" class="form-control clean-input" rows="3" maxlength="240" placeholder="Optional"></textarea>
+                        </div>
+
+                        <div class="delete-dialog-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteAccountModal()">Cancel</button>
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return validateDeleteAccountForm()">Delete Permanently</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        }
     </div>
 </div>
 
@@ -462,12 +617,20 @@
     color: #8b2f4b;
 }
 .profile-poster {
+    display: grid;
+    place-items: center;
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
     border: 4px solid rgba(255,255,255,0.72);
     border-radius: 8px;
     box-shadow: 0 16px 34px rgba(34,37,47,0.16);
+}
+.profile-poster-initial {
+    background: #f59e0b;
+    color: #22252f;
+    font-size: clamp(4rem, 14vw, 8rem);
+    font-weight: 950;
 }
 .poster-actions {
     display: grid;
@@ -572,8 +735,308 @@ input.clean-input[readonly],
     border-radius: 8px;
     background: color-mix(in srgb, var(--app-card) 86%, var(--app-accent-strong) 14%);
 }
+.cursor-style-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+.cursor-style-option {
+    --cursor-option: var(--app-primary);
+    --cursor-option-soft: color-mix(in srgb, var(--cursor-option) 16%, var(--app-input));
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    min-height: 74px;
+    border: 1px solid color-mix(in srgb, var(--cursor-option) 44%, var(--app-input-border));
+    border-radius: 8px;
+    background:
+        radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--cursor-option) 18%, transparent), transparent 34%),
+        linear-gradient(135deg, var(--cursor-option-soft), var(--app-input));
+    color: var(--app-input-text);
+    padding: 12px;
+    text-align: left;
+    font-weight: 850;
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--cursor-option) 9%, transparent);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.cursor-style-option::after {
+    content: "";
+    position: absolute;
+    right: -18px;
+    bottom: -22px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--cursor-option) 18%, transparent);
+}
+.cursor-style-option:hover {
+    transform: translateY(-2px);
+    border-color: var(--cursor-option);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--cursor-option) 14%, transparent);
+}
+.cursor-style-option[data-cursor-choice="native"] {
+    --cursor-option: #3f4754;
+    --cursor-option-soft: color-mix(in srgb, #3f4754 14%, var(--app-input));
+}
+.cursor-style-option[data-cursor-choice="liquid"] {
+    --cursor-option: #0f9f8f;
+    --cursor-option-soft: color-mix(in srgb, #0f9f8f 18%, var(--app-input));
+}
+.cursor-style-option[data-cursor-choice="precision"] {
+    --cursor-option: #dd3f35;
+    --cursor-option-soft: color-mix(in srgb, #dd3f35 16%, var(--app-input));
+}
+.cursor-style-option[data-cursor-choice="spotlight"] {
+    --cursor-option: #7a5cff;
+    --cursor-option-soft: color-mix(in srgb, #f0bd4f 18%, var(--app-input));
+}
+.cursor-style-option strong,
+.cursor-style-option small,
+.cursor-style-option .cursor-preview {
+    position: relative;
+    z-index: 1;
+}
+.cursor-style-option small {
+    display: block;
+    margin-top: 4px;
+    color: var(--app-muted);
+    font-size: 0.7rem;
+    font-weight: 750;
+    line-height: 1.25;
+}
+.cursor-style-option.active {
+    border-color: var(--cursor-option);
+    background:
+        radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--cursor-option) 26%, transparent), transparent 36%),
+        linear-gradient(135deg, color-mix(in srgb, var(--cursor-option) 22%, var(--app-input)), var(--app-input));
+    box-shadow:
+        0 0 0 0.18rem color-mix(in srgb, var(--cursor-option) 22%, transparent),
+        0 16px 30px color-mix(in srgb, var(--cursor-option) 16%, transparent);
+}
+.cursor-preview {
+    display: block;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--cursor-option) 52%, var(--app-input-border));
+    background: color-mix(in srgb, var(--cursor-option) 8%, var(--app-card));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 16%, transparent);
+}
+.cursor-preview-native {
+    width: 34px;
+    height: 38px;
+    border: 0;
+    border-radius: 0;
+    clip-path: polygon(12% 4%, 88% 62%, 58% 66%, 74% 100%, 58% 100%, 44% 70%, 18% 88%);
+    background: linear-gradient(135deg, #ffffff, var(--cursor-option) 58%, #111827);
+    filter: drop-shadow(0 4px 8px color-mix(in srgb, #000 28%, transparent));
+}
+.cursor-preview-liquid {
+    border-radius: 50%;
+    border-color: color-mix(in srgb, var(--cursor-option) 58%, transparent);
+    background:
+        radial-gradient(circle at 35% 28%, #fff, transparent 30%),
+        radial-gradient(circle at 72% 76%, color-mix(in srgb, var(--cursor-option) 42%, #fff), transparent 18%),
+        var(--cursor-option);
+    box-shadow:
+        0 0 0 9px color-mix(in srgb, var(--cursor-option) 14%, transparent),
+        0 10px 16px color-mix(in srgb, var(--cursor-option) 22%, transparent);
+}
+.cursor-preview-precision {
+    border-radius: 50%;
+    border: 2px solid var(--cursor-option);
+    background:
+        linear-gradient(var(--cursor-option), var(--cursor-option)) center / 2px 100% no-repeat,
+        linear-gradient(90deg, var(--cursor-option), var(--cursor-option)) center / 100% 2px no-repeat,
+        radial-gradient(circle, var(--app-input) 0 18%, transparent 20% 42%, color-mix(in srgb, var(--cursor-option) 16%, transparent) 44%);
+    box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--cursor-option) 10%, transparent);
+}
+.cursor-preview-spotlight {
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--cursor-option) 64%, transparent);
+    background:
+        radial-gradient(circle, #fff 0 13%, transparent 15% 33%, color-mix(in srgb, #f0bd4f 42%, transparent) 35% 57%, color-mix(in srgb, var(--cursor-option) 38%, transparent) 59% 100%);
+    box-shadow:
+        inset 0 0 15px color-mix(in srgb, var(--cursor-option) 28%, transparent),
+        0 0 0 7px color-mix(in srgb, #f0bd4f 12%, transparent);
+}
+.cursor-color-panel {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--app-accent-strong) 28%, var(--app-input-border));
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--app-card) 82%, var(--app-input)), color-mix(in srgb, var(--app-accent-strong) 10%, var(--app-input)));
+}
+.cursor-color-panel > span {
+    color: var(--app-muted);
+    font-size: 0.74rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.cursor-color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+.cursor-color-grid button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    position: relative;
+    min-height: 44px;
+    border: 1px solid color-mix(in srgb, var(--cursor-swatch) 46%, var(--app-input-border));
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--cursor-swatch) 16%, var(--app-input)), var(--app-input));
+    color: var(--app-input-text);
+    font-size: 0.78rem;
+    font-weight: 850;
+    overflow: hidden;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--cursor-swatch) 8%, transparent);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.cursor-color-grid button::before {
+    content: "";
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    border-radius: 50%;
+    background: var(--cursor-swatch);
+    box-shadow:
+        inset 0 0 0 2px color-mix(in srgb, #fff 36%, transparent),
+        0 0 0 3px color-mix(in srgb, var(--cursor-swatch) 24%, transparent);
+}
+.cursor-color-grid button::after {
+    content: "";
+    position: absolute;
+    inset: auto 10px 7px 10px;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--cursor-swatch);
+    opacity: 0.42;
+}
+.cursor-color-grid button:hover {
+    transform: translateY(-1px);
+    border-color: var(--cursor-swatch);
+    box-shadow: 0 12px 22px color-mix(in srgb, var(--cursor-swatch) 14%, transparent);
+}
+.cursor-color-grid button.active {
+    border-color: var(--cursor-swatch);
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--cursor-swatch) 28%, var(--app-input)), var(--app-input));
+    box-shadow:
+        0 0 0 0.16rem color-mix(in srgb, var(--cursor-swatch) 24%, transparent),
+        0 12px 24px color-mix(in srgb, var(--cursor-swatch) 16%, transparent);
+}
 .change-password-form {
     margin-top: 10px;
+}
+.delete-account-scene {
+    border-bottom-color: color-mix(in srgb, #dc3545 24%, #edf0f3);
+}
+.delete-account-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, #dc3545 38%, var(--app-input-border));
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, #dc3545 10%, var(--app-card)), var(--app-input));
+}
+.delete-account-panel strong {
+    display: block;
+    color: #9f1d2d;
+    font-weight: 900;
+}
+.delete-account-panel p {
+    margin: 4px 0 0;
+    color: var(--app-muted);
+    font-size: 0.88rem;
+}
+.delete-account-open {
+    flex: 0 0 auto;
+    font-weight: 850;
+}
+.delete-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1060;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 20, 28, 0.68);
+    backdrop-filter: blur(12px);
+}
+.delete-modal[hidden] {
+    display: none;
+}
+.delete-dialog {
+    width: min(100%, 540px);
+    max-height: min(92vh, 760px);
+    overflow: auto;
+    border: 1px solid color-mix(in srgb, #dc3545 34%, var(--app-input-border));
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    padding: 22px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.36);
+}
+.delete-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.delete-dialog-head span {
+    color: #dc3545;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.delete-dialog-close {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-input);
+    color: var(--app-input-text);
+    font-size: 1.25rem;
+    line-height: 1;
+}
+.delete-dialog h3 {
+    margin: 0 0 8px;
+    font-weight: 900;
+}
+.delete-dialog-copy {
+    margin: 0 0 16px;
+    color: var(--app-muted);
+}
+.delete-otp-status {
+    display: block;
+    margin-top: 6px;
+    color: #dc3545;
+    font-weight: 750;
+}
+.delete-otp-status.verified {
+    color: #198754;
+}
+.delete-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
 }
 .save-btn {
     min-width: 160px;
@@ -585,8 +1048,19 @@ input.clean-input[readonly],
     }
     .profile-grid,
     .field-split,
-    .location-grid {
+    .location-grid,
+    .cursor-style-grid,
+    .cursor-color-grid {
         grid-template-columns: 1fr;
+    }
+    .delete-account-panel,
+    .delete-dialog-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .delete-account-open,
+    .delete-dialog-actions .btn {
+        width: 100%;
     }
     .profile-form,
     .profile-hero {

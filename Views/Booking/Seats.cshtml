@@ -1,7 +1,9 @@
 @model AmarShowsBook.Models.ShowSchedule
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"]="Seat Booking";
+    var canUsePrintTools = AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 
     var title=
     Model.Type=="Movie"
@@ -20,8 +22,34 @@
     $"{Model.Location.Area}, {Model.Location.State}, {Model.Location.Country}";
 
     var seats=
-    ViewBag.Seats
-    as List<AmarShowsBook.Models.ViewModels.SeatVM>;
+ViewBag.Seats
+as List<AmarShowsBook.Models.ViewModels.SeatVM>;
+
+var availableDates=
+ViewBag.AvailableDates
+as List<AmarShowsBook.Models.ShowSchedule>;
+
+var trailerUrl=
+ViewBag.TrailerUrl as string;
+
+var trailerStartSeconds=
+ViewBag.TrailerStartSeconds as int? ?? 0;
+
+var screen=
+ViewBag.Screen as Screen;
+
+var venueInfo=
+ViewBag.Venue as AmarShowsBook.Models.Venue;
+
+var theaterDetails =
+venueInfo!=null
+? $"{venueInfo.VenueName} / {screen?.ScreenName ?? "Screen TBA"} / {venueInfo.Address}, {venueInfo.City}"
+: location;
+
+var selectedShowDay =
+string.IsNullOrWhiteSpace(Model.ShowDay)
+? Model.StartTime.ToString("dddd")
+: Model.ShowDay;
 }
 
 <section class="booking-page">
@@ -38,114 +66,195 @@ Seat Shot
 
 <h1>
 
-@(title??"Untitled Show")
+@(title ?? "Untitled Show")
 
 </h1>
 
 <p>
 
 @Model.Type /
-@Model.StartTime.ToString(
-"dd MMM yyyy, hh:mm tt")
+@selectedShowDay /
+@Model.StartTime.ToString("dd MMM yyyy, hh:mm tt")
 /
-@location
+@theaterDetails
 
 </p>
 
 </div>
 
-<a
-href="/Home/Index?type=@Model.Type"
-class="btn btn-secondary">
+<div class="booking-hero-actions no-print">
+    @if(canUsePrintTools)
+    {
+    <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+    }
+    <a
+    href="/Home/ShowTime?type=@Model.Type"
+    class="btn btn-secondary">
 
-Back To showTime
+    Back To ShowTime
 
-</a>
+    </a>
+</div>
+
+</div>
+
+@{
+    var currentDate =
+    Model.StartTime.Date;
+}
+
+@if(availableDates != null && availableDates.Any())
+{
+<div class="show-dates">
+
+@foreach(var show in
+availableDates
+.GroupBy(x=>x.StartTime.Date)
+.Select(x=>x.First())
+.OrderBy(x=>x.StartTime))
+{
+    bool activeDate =
+    show.StartTime.Date == currentDate;
+
+    var showDay =
+    string.IsNullOrWhiteSpace(show.ShowDay)
+    ? show.StartTime.ToString("ddd")
+    : show.ShowDay;
+
+    showDay = showDay.Length > 3 ? showDay.Substring(0, 3) : showDay;
+
+    <a
+    class="date-chip @(activeDate ? "active":"")"
+    href="/Booking/Seats/@show.Id">
+
+        <span>@showDay</span>
+        <strong>@show.StartTime.ToString("dd MMM")</strong>
+
+    </a>
+}
+
+</div>
+}
+<div class="screen-line @(string.IsNullOrWhiteSpace(trailerUrl) ? "" : "has-trailer")"
+     data-trailer-url="@trailerUrl"
+     data-trailer-start="@trailerStartSeconds">
+
+
+<iframe
+id="seatTrailerFrame"
+title="Show trailer preview"
+allow="autoplay; encrypted-media"
+allowfullscreen>
+</iframe>
 
 </div>
 
 
-<div class="screen-line">
 
-<span>
-
-SCREEN
-
-</span>
-
+<div class="seat-board" aria-label="Seat layout. Screen is at the top and premium seats are at the back.">
+<div class="seat-orientation">
+    <span>Front / Screen</span>
+    <strong>Premium rows are at the back</strong>
 </div>
-
-
-<div class="seat-board">
 
 @if(seats!=null && seats.Any())
 {
-    foreach(var seat in seats)
+    var groupedSeats=
+    seats
+    .GroupBy(x=>x.Row)
+    .OrderBy(x=>x.Key);
+
+    foreach(var rowGroup in groupedSeats)
     {
-        var cssClass="available";
+        var rowCategory =
+            rowGroup
+            .GroupBy(x=>x.Category ?? "")
+            .OrderByDescending(x=>x.Count())
+            .Select(x=>x.Key)
+            .FirstOrDefault() ?? "";
 
-        if(seat.IsBooked)
-        {
-            cssClass="booked";
-        }
+        <div class="seat-row @((rowCategory ?? "").ToLowerInvariant())-row">
 
-        else if(seat.IsLocked)
-        {
-            cssClass="locked";
-        }
+            <div class="row-label">
 
-<button
+                @rowGroup.Key
 
-type="button"
+            </div>
 
-class="seat-btn @cssClass"
+            @{
+                int count=0;
+            }
 
-data-id="@seat.SeatId"
+            @foreach(var seat in rowGroup.OrderBy(x=>Convert.ToInt32(x.Number)))
+            {
+                var cssClass="available";
 
-data-name="@seat.Row@seat.Number"
+                if(seat.IsBooked)
+                {
+                    cssClass="booked";
+                }
+                else if(seat.IsLocked)
+                {
+                    cssClass="locked";
+                }
+                else
+                {
+                    cssClass=(seat.Category ?? "Silver").ToLowerInvariant();
+                }
 
-data-price="@seat.Price"
+                var lockExpiryIso = seat.LockExpiresAt.HasValue
+                    ? seat.LockExpiresAt.Value.ToUniversalTime().ToString("o")
+                    : "";
 
-onclick="toggleSeat(this)"
+                count++;
 
-@(seat.IsBooked || seat.IsLocked ? "disabled":"")
+                <button
+                type="button"
+                class="seat-btn @cssClass"
+                data-id="@seat.SeatId"
+                data-name="@seat.Row@seat.Number"
+                data-price="@seat.Price"
+                data-category="@seat.Category"
+                data-lock-expires="@lockExpiryIso"
+                onclick="toggleSeat(this)"
+                aria-disabled="@(seat.IsBooked||seat.IsLocked?"true":"false")">
 
->
+                    <span class="chair-back" aria-hidden="true"></span>
+                    <span class="chair-arm chair-arm-left" aria-hidden="true"></span>
+                    <span class="chair-arm chair-arm-right" aria-hidden="true"></span>
+                    <span class="chair-cushion" aria-hidden="true"></span>
+                    <span class="chair-base" aria-hidden="true"></span>
 
-@seat.Row@seat.Number
+                    <div class="seat-name">
 
-</button>
+                        @seat.Row@seat.Number
 
-    }
-}
-else
+                    </div>
+
+                    <div class="seat-price">
+
+                        ₹@seat.Price
+
+                    </div>
+
+                    @if(seat.IsLocked)
+                    {
+                        <div class="seat-lock-tooltip">
+                            <span>Locked seat</span>
+                            <strong data-lock-countdown="@lockExpiryIso">Calculating...</strong>
+                            <small>Auto release if payment is not done</small>
+                        </div>
+                    }
+
+                </button>
+
+                @if(count==5 && rowGroup.Count()>5)
 {
-    for(var i=1;i<=100;i++)
-    {
-        var row=
-        (char)('A'+((i-1)/10));
+    <div class="seat-gap"></div>
+}
+            }
 
-        var seatNo=
-        ((i-1)%10)+1;
-
-<button
-
-type="button"
-
-class="seat-btn available"
-
-data-id="@i"
-
-data-name="@row@seatNo"
-
-onclick="toggleSeat(this)"
-
->
-
-@row@seatNo
-
-</button>
-
+        </div>
     }
 }
 
@@ -155,285 +264,947 @@ onclick="toggleSeat(this)"
 
 <div class="legend">
 
+<div class="legend-group">
+<span class="legend-title">Seat Status</span>
 <div class="legend-item">
-
-<div class="legend-box available">
-
+<div class="legend-box available"></div>
+Available seat
 </div>
-
-Available
-
-</div>
-
 
 <div class="legend-item">
-
-<div class="legend-box selected">
-
+<div class="legend-box selected"></div>
+Selected seat
 </div>
-
-Selected
-
-</div>
-
 
 <div class="legend-item">
-
-<div class="legend-box locked">
-
-</div>
-
+<div class="legend-box locked"></div>
 Locked
-
 </div>
-
 
 <div class="legend-item">
-
-<div class="legend-box booked">
-
-</div>
-
+<div class="legend-box booked"></div>
 Booked
-
+</div>
 </div>
 
+<div class="legend-group">
+<span class="legend-title">Seat Category / Price</span>
+<div class="legend-item">
+<div class="legend-box silver"></div>
+Silver available
+</div>
 
 <div class="legend-item">
-
-<div class="legend-box gold">
-
+<div class="legend-box gold"></div>
+Gold available
 </div>
 
-Gold/Premium
-
+<div class="legend-item">
+<div class="legend-box premium"></div>
+Premium available
+</div>
 </div>
 
 </div>
-
-
-
 <div class="booking-summary">
 
-<div>
+    <div class="ticket-receipt">
 
-<span>
+        <div class="ticket-header">
+            CINEMA RECEIPT
+        </div>
 
-Selected Seats
+        <div class="ticket-body">
 
-</span>
+            <div class="receipt-row">
 
-<strong id="selectedSeats">
+                <div class="receipt-title">
+                    Selected Seats
+                </div>
 
-None
+                <div
+                id="selectedSeatsContainer"
+                class="receipt-data">
 
-</strong>
+                </div>
+
+            </div>
+
+
+            <div class="receipt-row">
+
+                <div class="receipt-title">
+                    Seat Price
+                </div>
+
+                <div
+                id="seatPriceContainer"
+                class="receipt-data">
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="receipt-total">
+
+            <span>
+                TOTAL
+            </span>
+
+            <strong id="totalAmount">
+                ₹0
+            </strong>
+
+        </div>
+
+        <div class="ticket-cut-left"></div>
+        <div class="ticket-cut-right"></div>
+
+    </div>
+
+
+    <div class="cinema-side">
+
+        <div class="booking-action-card">
+
+            <div class="booking-action-icon" aria-hidden="true">
+                🎟
+            </div>
+
+            <div class="booking-action-copy">
+                <span>Booking Flow</span>
+                <strong>Choose seats, then continue</strong>
+                <small>Your selected seats and total update on the receipt.</small>
+            </div>
+
+            <div class="booking-flow-steps" aria-hidden="true">
+                <span class="active">1</span>
+                <span>2</span>
+                <span>3</span>
+            </div>
+
+        </div>
+
+
+        <button
+        type="button"
+        class="btn next-btn"
+        onclick="nextStep()">
+
+            Next →
+
+        </button>
+
+    </div>
 
 </div>
-
-
-<button
-type="button"
-class="btn btn-primary"
-onclick="nextStep()">
-
-Next
-
-</button>
-
-
-</div>
-
 </section>
-
-
 
 <style>
 
+:root{
+    --bg:#07090f;
+    --card:#111827;
+    --card2:#0d1118;
+    --red:#ff2d55;
+    --redGlow:#ff2d5580;
+    --green:#1dd75b;
+    --purple:#7d4dff;
+    --gold:#d49b2a;
+    --text:#fff;
+    --muted:#b5b5b5;
+}
+
+body{
+    background:
+    radial-gradient(circle at top,#2a0007 0%,#07090f 45%);
+}
+
 .booking-page{
-
-padding-bottom:40px;
-
+    max-width:1500px;
+    margin:auto;
+    padding:30px;
+    color:white;
 }
 
 
 .booking-hero{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:30px;
+
+    border-radius:25px;
+
+    background:
+    linear-gradient(
+    145deg,
+    rgba(30,30,40,.95),
+    rgba(10,10,15,.95)
+    );
+
+    border:1px solid rgba(255,255,255,.1);
+
+    box-shadow:
+    0 0 35px rgba(255,0,50,.15);
+}
+
+.booking-kicker{
+
+    display:inline-block;
+
+    background:
+    linear-gradient(
+    90deg,
+    #ff2d55,
+    #c9002e
+    );
+
+    padding:10px 20px;
+
+    border-radius:12px;
+
+    font-size:14px;
+
+    font-weight:700;
+}
+
+.booking-hero h1{
+
+    font-size:60px;
+
+    margin:15px 0;
+
+    font-weight:800;
+
+    font-style:italic;
+}
+
+.booking-hero p{
+
+    color:#c2c2c2;
+}
+
+
+
+
+.show-dates{
 
 display:flex;
 
-justify-content:space-between;
+justify-content:center;
 
-align-items:end;
+gap:8px;
 
-gap:20px;
+margin:18px 0 24px;
 
-padding:30px;
-
-border-radius:12px;
-
-background:
-
-linear-gradient(
-135deg,
-rgba(255,242,199,.94),
-rgba(245,178,196,.86),
-rgba(146,229,221,.86)
-);
-
+flex-wrap:wrap;
 }
+
+.date-chip{
+
+display:grid;
+
+gap:4px;
+
+min-width:64px;
+
+background:#111827;
+
+border:1px solid #333;
+
+border-radius:10px;
+
+padding:7px 10px;
+
+text-decoration:none;
+
+color:white;
+
+text-align:center;
+
+transition:.4s;
+}
+
+.date-chip span{
+font-size:.66rem;
+font-weight:800;
+opacity:.78;
+line-height:1;
+}
+
+.date-chip strong{
+font-size:.82rem;
+font-weight:950;
+line-height:1.05;
+}
+
+.date-chip:hover{
+
+transform:translateY(-5px);
+}
+
+.date-chip.active{
+
+background:var(--red);
+
+box-shadow:
+0 0 20px var(--redGlow);
+
+border-color:var(--red);
+}
+
 
 
 
 .screen-line{
 
-max-width:900px;
+margin:60px auto;
 
-margin:30px auto;
+width:80%;
 
-border-top:6px solid #3b82f6;
+min-height:120px;
 
-text-align:center;
+border-top-left-radius:100%;
 
+border-top-right-radius:100%;
+
+border:5px solid rgba(255,50,50,.7);
+
+border-bottom:none;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+background:
+
+linear-gradient(
+180deg,
+rgba(255,40,50,.25),
+transparent
+);
+
+box-shadow:
+
+0 0 40px rgba(255,0,0,.3);
+
+position:relative;
+
+overflow:hidden;
+animation:screenGlow 3.8s ease-in-out infinite;
+}
+
+.screen-line::before{
+content:"";
+position:absolute;
+inset:-28px 8% auto;
+height:90px;
+border-radius:50%;
+background:radial-gradient(ellipse,rgba(255,45,85,.32),transparent 68%);
+filter:blur(16px);
+animation:screenBeam 4.2s ease-in-out infinite;
+pointer-events:none;
 }
 
 .screen-line span{
 
-padding:5px 18px;
+font-size:50px;
 
-background:white;
+font-weight:800;
 
-border-radius:999px;
-
-font-weight:700;
+letter-spacing:8px;
 
 position:relative;
 
-top:-15px;
+z-index:2;
+}
 
+.screen-line iframe{
+display:none;
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+border:0;
+opacity:.42;
+filter:saturate(1.1) contrast(1.08);
+pointer-events:none;
+}
+
+.screen-line.has-trailer{
+height:260px;
+border-radius:28px 28px 90% 90% / 28px 28px 18% 18%;
+border:1px solid rgba(255,255,255,.18);
+background:#05070c;
+box-shadow:0 20px 70px rgba(255,45,85,.22);
+}
+
+.screen-line.has-trailer iframe{
+display:block;
+}
+
+.screen-line.has-trailer::after{
+content:"";
+position:absolute;
+inset:0;
+background:linear-gradient(180deg, rgba(7,9,15,.12), rgba(7,9,15,.72));
+z-index:1;
 }
 
 
 
 .seat-board{
-
-display:grid;
-
-grid-template-columns:
-repeat(10,1fr);
-
-gap:10px;
-
-max-width:900px;
-
-margin:auto;
-
-padding:25px;
-
-background:white;
-
-border-radius:15px;
-
+padding:26px 18px 30px;
+max-width:1200px;
+margin:0 auto;
+overflow-x:auto;
+scrollbar-color:#ff2d55 #111827;
+scrollbar-width:thin;
 }
 
+.seat-orientation{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:14px;
+width:min(860px,100%);
+margin:0 auto 18px;
+padding:10px 16px;
+border:1px solid rgba(255,255,255,.12);
+border-radius:14px;
+background:linear-gradient(90deg,rgba(255,45,85,.18),rgba(255,255,255,.04));
+color:#f8fafc;
+font-size:13px;
+font-weight:800;
+animation:fadeSlideDown .45s ease both;
+}
+
+.seat-orientation span,
+.seat-orientation strong{
+display:block;
+white-space:nowrap;
+}
+
+.seat-orientation span{
+color:#ffb3c3;
+text-transform:uppercase;
+letter-spacing:.08em;
+font-size:11px;
+}
+
+.seat-row{
+
+display:grid;
+grid-template-columns:34px repeat(5,58px) 48px repeat(5,58px);
+
+justify-content:center;
+
+align-items:center;
+
+gap:9px;
+
+margin-bottom:11px;
+min-width:760px;
+padding:6px 10px;
+border-radius:14px;
+transition:background .2s ease, box-shadow .2s ease;
+animation:seatRowIn .52s ease both;
+}
+
+.seat-row:nth-of-type(2){animation-delay:.04s;}
+.seat-row:nth-of-type(3){animation-delay:.08s;}
+.seat-row:nth-of-type(4){animation-delay:.12s;}
+.seat-row:nth-of-type(5){animation-delay:.16s;}
+.seat-row:nth-of-type(6){animation-delay:.2s;}
+.seat-row:nth-of-type(7){animation-delay:.24s;}
+.seat-row:nth-of-type(8){animation-delay:.28s;}
+.seat-row:nth-of-type(9){animation-delay:.32s;}
+.seat-row:nth-of-type(10){animation-delay:.36s;}
+
+.seat-row.premium-row{
+background:linear-gradient(90deg,rgba(255,217,92,.12),rgba(255,217,92,.04));
+box-shadow:inset 0 0 0 1px rgba(255,217,92,.12);
+}
+
+.seat-row.gold-row{
+background:linear-gradient(90deg,rgba(244,163,58,.08),transparent);
+}
+
+.seat-row.silver-row{
+background:linear-gradient(90deg,rgba(255,255,255,.04),transparent);
+}
+
+.row-label{
+
+width:30px;
+
+color:#ff3d3d;
+
+font-size:20px;
+
+font-weight:bold;
+text-align:center;
+}
+
+.seat-gap{
+
+width:48px;
+height:1px;
+}
 
 
 .seat-btn{
 
-height:45px;
+width:58px;
+height:70px;
 
-border:none;
+position:relative;
 
-border-radius:8px;
-
-font-weight:700;
-
-transition:.3s;
+border:0;
 
 cursor:pointer;
 
+border-radius:18px 18px 12px 12px;
+
+display:flex;
+
+flex-direction:column;
+
+justify-content:center;
+
+align-items:center;
+
+isolation:isolate;
+
+overflow:visible;
+
+background:transparent!important;
+
+perspective:460px;
+
+transition:transform .28s ease, filter .28s ease;
+
+transform-style:preserve-3d;
+
+font-weight:700;
+
+box-shadow:none;
+animation:chairSettle .5s ease both;
+
+}
+
+
+.seat-btn::after{
+
+content:"";
+
+position:absolute;
+
+left:8px;
+right:8px;
+bottom:-7px;
+
+height:12px;
+
+background:rgba(0,0,0,.35);
+
+border-radius:999px;
+
+filter:blur(5px);
+
+z-index:-1;
+}
+
+.chair-back,
+.chair-cushion,
+.chair-arm,
+.chair-base{
+position:absolute;
+display:block;
+pointer-events:none;
+}
+
+.chair-back{
+left:7px;
+right:7px;
+top:3px;
+height:40px;
+border-radius:16px 16px 9px 9px;
+background:var(--seat-back);
+box-shadow:
+inset 0 5px 8px rgba(255,255,255,.34),
+inset 0 -11px 14px rgba(0,0,0,.22),
+0 8px 12px rgba(0,0,0,.38);
+transform:rotateX(8deg) translateZ(6px);
+z-index:1;
+}
+
+.chair-back::before{
+content:"";
+position:absolute;
+left:8px;
+right:8px;
+top:8px;
+height:10px;
+border-radius:999px;
+background:rgba(255,255,255,.22);
+}
+
+.chair-cushion{
+left:9px;
+right:9px;
+bottom:13px;
+height:26px;
+border-radius:10px 10px 14px 14px;
+background:var(--seat-cushion);
+box-shadow:
+inset 0 4px 7px rgba(255,255,255,.28),
+inset 0 -8px 12px rgba(0,0,0,.24),
+0 8px 12px rgba(0,0,0,.35);
+transform:rotateX(58deg) translateY(7px);
+transform-origin:top center;
+z-index:3;
+}
+
+.chair-arm{
+top:30px;
+width:9px;
+height:31px;
+border-radius:8px 8px 11px 11px;
+background:var(--seat-side);
+box-shadow:
+inset 0 3px 4px rgba(255,255,255,.22),
+0 6px 9px rgba(0,0,0,.38);
+z-index:4;
+}
+
+.chair-arm-left{
+left:3px;
+transform:skewY(-8deg);
+}
+
+.chair-arm-right{
+right:3px;
+transform:skewY(8deg);
+}
+
+.chair-base{
+left:17px;
+right:17px;
+bottom:2px;
+height:11px;
+border-radius:3px 3px 8px 8px;
+background:linear-gradient(180deg,rgba(20,20,24,.8),rgba(0,0,0,.92));
+box-shadow:0 5px 10px rgba(0,0,0,.42);
+z-index:2;
 }
 
 
 
 .seat-btn:hover{
 
-transform:scale(1.05);
+transform:
 
+translateY(-7px)
+rotateX(7deg)
+scale(1.07);
+
+filter:brightness(1.08) saturate(1.08);
+}
+
+.seat-btn:active{
+transform:translateY(-2px) scale(.96);
 }
 
 
 
-.available{
 
-background:white;
+.available,
+.silver{
+--seat-back:linear-gradient(180deg,#ffffff,#d8dde7 58%,#aab3c2);
+--seat-cushion:linear-gradient(180deg,#f8fafc,#cbd5e1);
+--seat-side:linear-gradient(180deg,#e5e7eb,#94a3b8);
+color:black;
+}
 
-border:1px solid #ddd;
-
+.silver{
+--seat-back:linear-gradient(180deg,#ffffff,#d8dde7 58%,#aab3c2);
+--seat-cushion:linear-gradient(180deg,#f8fafc,#cbd5e1);
+--seat-side:linear-gradient(180deg,#e5e7eb,#94a3b8);
 }
 
 
 
 .selected{
-
-background:#22c55e!important;
-
-color:white;
-
+--seat-back:linear-gradient(180deg,#7cff9f,#20d655 58%,#0f8d36);
+--seat-cushion:linear-gradient(180deg,#55ff88,#10b943);
+--seat-side:linear-gradient(180deg,#33ff77,#078b31);
+color:black!important;
+filter:drop-shadow(0 0 12px rgba(51,255,119,.62));
 }
 
 
 
 .booked{
-
-background:#ef4444;
-
-color:white;
-
-opacity:.6;
-
+--seat-back:linear-gradient(180deg,#ff8a8a,#e11d48 58%,#8f0a20);
+--seat-cushion:linear-gradient(180deg,#ff5a5a,#b80023);
+--seat-side:linear-gradient(180deg,#ef4444,#7f1d1d);
 cursor:not-allowed;
-
+filter:saturate(.72) brightness(.82);
 }
 
 
 
 .locked{
-
-background:#f59e0b;
-
-color:white;
-
-opacity:.7;
-
+--seat-back:linear-gradient(180deg,#c4b5fd,#8b5cf6 58%,#5b21b6);
+--seat-cushion:linear-gradient(180deg,#a78bfa,#6d28d9);
+--seat-side:linear-gradient(180deg,#8b5cf6,#4c1d95);
 cursor:not-allowed;
-
 }
 
 
 
 .gold{
-
-background:#facc15;
-
+--seat-back:linear-gradient(180deg,#ffd08a,#f59e0b 58%,#b45309);
+--seat-cushion:linear-gradient(180deg,#fbbf24,#c66a14);
+--seat-side:linear-gradient(180deg,#f59e0b,#92400e);
+color:black;
+filter:drop-shadow(0 0 8px rgba(246,173,85,.24));
 }
 
+
+.premium{
+--seat-back:linear-gradient(180deg,#fff3a8,#facc15 52%,#b7791f);
+--seat-cushion:linear-gradient(180deg,#ffe88a,#d49b2a 62%,#9c650d);
+--seat-side:linear-gradient(180deg,#facc15,#a16207);
+color:#14120a;
+filter:drop-shadow(0 0 12px rgba(255,215,0,.42));
+}
+
+.seat-btn.selected{
+--seat-back:linear-gradient(180deg,#7cff9f,#20d655 58%,#0f8d36);
+--seat-cushion:linear-gradient(180deg,#55ff88,#10b943);
+--seat-side:linear-gradient(180deg,#33ff77,#078b31);
+color:black!important;
+filter:drop-shadow(0 0 14px rgba(51,255,119,.7)) saturate(1.08);
+animation:selectedChairPulse 1.2s ease-in-out infinite;
+}
+
+
+
+
+.seat-name{
+
+font-size:12px;
+
+font-weight:800;
+
+z-index:6;
+position:relative;
+margin-top:2px;
+padding:1px 4px;
+border-radius:999px;
+background:rgba(255,255,255,.72);
+color:#111827;
+box-shadow:0 1px 3px rgba(0,0,0,.18);
+}
+
+.seat-price{
+
+font-size:9px;
+
+margin-top:2px;
+
+opacity:.92;
+
+z-index:6;
+position:relative;
+padding:1px 4px;
+border-radius:999px;
+background:rgba(0,0,0,.42);
+color:#fff;
+}
+
+.seat-lock-tooltip{
+position:absolute;
+left:50%;
+bottom:calc(100% + 12px);
+width:168px;
+padding:10px 12px;
+border:1px solid rgba(167,139,250,.36);
+border-radius:14px;
+background:
+radial-gradient(circle at 18% 15%,rgba(167,139,250,.24),transparent 38%),
+linear-gradient(135deg,#1e1635,#111827);
+color:#fff;
+box-shadow:0 14px 32px rgba(0,0,0,.34),0 0 18px rgba(139,92,246,.24);
+opacity:0;
+pointer-events:none;
+transform:translateX(-50%) translateY(8px) scale(.96);
+transition:.22s ease;
+z-index:30;
+text-align:center;
+}
+
+.seat-lock-tooltip::after{
+content:"";
+position:absolute;
+left:50%;
+bottom:-7px;
+width:14px;
+height:14px;
+background:#111827;
+border-right:1px solid rgba(167,139,250,.3);
+border-bottom:1px solid rgba(167,139,250,.3);
+transform:translateX(-50%) rotate(45deg);
+}
+
+.seat-lock-tooltip span{
+display:block;
+font-size:10px;
+font-weight:950;
+letter-spacing:.08em;
+text-transform:uppercase;
+color:#c4b5fd;
+}
+
+.seat-lock-tooltip strong{
+display:block;
+margin-top:4px;
+font-size:20px;
+font-weight:950;
+font-variant-numeric:tabular-nums;
+color:#facc15;
+text-shadow:0 0 14px rgba(250,204,21,.28);
+}
+
+.seat-lock-tooltip small{
+display:block;
+margin-top:3px;
+font-size:10px;
+font-weight:800;
+line-height:1.25;
+color:#dbeafe;
+}
+
+.seat-btn.locked:hover .seat-lock-tooltip,
+.seat-btn.locked:focus-visible .seat-lock-tooltip{
+opacity:1;
+transform:translateX(-50%) translateY(0) scale(1);
+}
+
+.seat-btn[aria-disabled="true"]{
+cursor:not-allowed;
+}
+
+.seat-btn[aria-disabled="true"]:active{
+transform:translateY(-7px) rotateX(7deg) scale(1.07);
+}
+
+
+
+
+.seat-btn .arm-left,
+.seat-btn .arm-right{
+
+display:none;
+}
+
+
+
+@@media(max-width:768px){
+
+.booking-hero,
+.booking-summary{
+flex-direction:column;
+gap:20px;
+}
+
+.seat-btn{
+width:52px;
+height:60px;
+}
+
+.chair-back{
+left:6px;
+right:6px;
+height:34px;
+}
+
+.chair-cushion{
+left:8px;
+right:8px;
+height:22px;
+}
+
+.chair-arm{
+height:27px;
+top:27px;
+width:8px;
+}
+
+.seat-gap{
+width:34px;
+}
+
+.booking-hero h1{
+font-size:34px;
+}
+
+.screen-line span{
+font-size:28px;
+}
+
+.receipt-pill{
+font-size:11px;
+padding:6px 10px;
+}
+
+}
 
 
 .legend{
 
-display:flex;
-
+display:grid;
+grid-template-columns:repeat(2,minmax(0,auto));
 justify-content:center;
+gap:16px;
 
-flex-wrap:wrap;
+margin:40px 0;
 
-gap:25px;
+padding:16px;
 
-margin:20px auto;
+border-radius:18px;
 
+background:#0d1118;
 }
 
+.legend-group{
+display:flex;
+flex-wrap:wrap;
+align-items:center;
+gap:12px;
+padding:10px 14px;
+border:1px solid rgba(255,255,255,.1);
+border-radius:14px;
+background:rgba(255,255,255,.04);
+}
 
+.legend-title{
+width:100%;
+color:#ffb3c3;
+font-size:11px;
+font-weight:900;
+letter-spacing:.1em;
+text-transform:uppercase;
+}
 
 .legend-item{
 
@@ -441,23 +1212,269 @@ display:flex;
 
 align-items:center;
 
-gap:10px;
-
+gap:8px;
+font-size:13px;
+font-weight:800;
 }
-
-
 
 .legend-box{
 
-width:20px;
+width:25px;
 
-height:20px;
+height:25px;
 
-border-radius:4px;
+border-radius:8px;
+box-shadow:
+inset 0 2px 4px rgba(255,255,255,.28),
+0 6px 12px rgba(0,0,0,.32);
+}
 
+.legend-box.available{
+background:
+linear-gradient(180deg,#f8fafc,#cbd5e1);
+border:2px solid #38bdf8;
+box-shadow:
+0 0 0 3px rgba(56,189,248,.14),
+inset 0 2px 4px rgba(255,255,255,.28),
+0 6px 12px rgba(0,0,0,.32);
+}
+
+.legend-box.selected{
+background:linear-gradient(180deg,#33ff77,#11bb44);
+}
+
+.legend-box.locked{
+background:linear-gradient(180deg,#9f7aea,#6d28d9);
+}
+
+.legend-box.booked{
+background:linear-gradient(180deg,#ff5a5a,#c30000);
+}
+
+.legend-box.silver{
+background:linear-gradient(180deg,#ffffff,#d8dde7 58%,#aab3c2);
+}
+
+.legend-box.gold{
+background:linear-gradient(180deg,#f6ad55,#c66a14);
+}
+
+.legend-box.premium{
+background:linear-gradient(180deg,#fff3a8,#facc15 52%,#b7791f);
 }
 
 
+.cinema-side{
+
+display:flex;
+
+flex-direction:column;
+
+gap:25px;
+
+width:280px;
+}
+
+
+
+.booking-action-card{
+min-height:220px;
+display:grid;
+align-content:center;
+gap:16px;
+padding:22px;
+border:1px solid rgba(255,255,255,.12);
+border-radius:20px;
+background:
+radial-gradient(circle at 20% 14%,rgba(255,45,85,.2),transparent 36%),
+linear-gradient(145deg,#0f1016,#1b1d25);
+box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+
+.booking-action-icon{
+display:grid;
+place-items:center;
+width:54px;
+height:54px;
+border-radius:16px;
+background:linear-gradient(145deg,#ff2d55,#7d4dff);
+font-size:28px;
+box-shadow:
+inset 0 1px 0 rgba(255,255,255,.28),
+0 14px 28px rgba(255,45,85,.2);
+}
+
+.booking-action-copy{
+display:grid;
+gap:5px;
+}
+
+.booking-action-copy span{
+color:#ffb3c3;
+font-size:11px;
+font-weight:900;
+letter-spacing:.12em;
+text-transform:uppercase;
+}
+
+.booking-action-copy strong{
+color:#fff;
+font-size:20px;
+font-weight:900;
+line-height:1.16;
+}
+
+.booking-action-copy small{
+color:#cbd5e1;
+font-size:12px;
+font-weight:750;
+line-height:1.35;
+}
+
+.booking-flow-steps{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:8px;
+}
+
+.booking-flow-steps span{
+display:grid;
+place-items:center;
+height:30px;
+border:1px solid rgba(255,255,255,.14);
+border-radius:999px;
+background:rgba(255,255,255,.05);
+color:#cbd5e1;
+font-size:12px;
+font-weight:900;
+}
+
+.booking-flow-steps span.active{
+background:#ff2d55;
+border-color:#ff2d55;
+color:#fff;
+box-shadow:0 0 18px rgba(255,45,85,.34);
+}
+
+.booking-page.page-leaving{
+animation:bookingPageLeave .26s ease both;
+}
+
+@@keyframes bookingPageLeave{
+to{
+opacity:.42;
+transform:translateY(8px);
+filter:blur(1px);
+}
+}
+
+
+
+.next-btn:hover{
+
+transform:
+translateY(-5px);
+
+box-shadow:
+0 15px 35px rgba(255,0,60,.6);
+}
+
+
+@@media(max-width:768px){
+
+.legend{
+grid-template-columns:1fr;
+}
+
+.booking-summary{
+
+flex-direction:column;
+align-items:center;
+}
+
+.cinema-side{
+
+width:100%;
+}
+
+}
+
+.next-btn{
+
+width:100%;
+
+height:50px;
+
+font-size:17px;
+
+font-weight:800;
+
+border-radius:14px;
+
+background:
+
+linear-gradient(
+90deg,
+#ff2d55,
+#d10035
+);
+
+color:white;
+
+box-shadow:
+0 8px 22px rgba(255,0,70,.32);
+
+transition:.35s;
+}
+
+
+.next-btn:hover{
+
+transform:
+translateY(-5px)
+scale(1.02);
+
+box-shadow:
+0 12px 30px rgba(255,0,70,.48);
+}
+
+.next-btn.loading,
+.next-btn:disabled{
+cursor:progress;
+opacity:.86;
+transform:none;
+}
+
+.next-btn.loading::after{
+content:"";
+display:inline-block;
+width:14px;
+height:14px;
+margin-left:10px;
+border:2px solid rgba(255,255,255,.46);
+border-top-color:#fff;
+border-radius:50%;
+vertical-align:-2px;
+animation:nextButtonSpin .7s linear infinite;
+}
+
+@@keyframes nextButtonSpin{
+to{
+transform:rotate(360deg);
+}
+}
+
+
+@@media(max-width:768px){
+
+.next-btn{
+
+width:100%;
+font-size:16px;
+height:50px;
+}
+
+}
 
 .booking-summary{
 
@@ -467,222 +1484,721 @@ justify-content:space-between;
 
 align-items:center;
 
-margin:25px auto;
+gap:30px;
 
-max-width:900px;
+margin-top:50px;
+}
 
-padding:20px;
 
-border-radius:15px;
+.ticket-receipt{
 
-background:white;
+width:fit-content;
+min-width:520px;
+max-width:95%;
+background:#f8f6f0;
 
+border-radius:20px;
+
+overflow:hidden;
+
+position:relative;
+
+color:black;
+
+box-shadow:
+0 15px 30px rgba(0,0,0,.25);
+}
+
+
+.ticket-header{
+
+padding:14px;
+
+background:
+linear-gradient(
+90deg,
+#ff2d55,
+#d10035
+);
+
+color:white;
+
+font-size:18px;
+
+font-weight:800;
+
+letter-spacing:4px;
+
+text-align:center;
+}
+
+
+.ticket-body{
+
+padding:25px;
+}
+
+
+.receipt-row{
+
+display:flex;
+
+align-items:center;
+
+min-height:70px;
+
+border-bottom:
+1px dashed #d4d4d4;
+}
+
+
+.receipt-title{
+
+width:170px;
+
+flex-shrink:0;
+
+font-size:16px;
+
+font-weight:700;
+
+color:#555;
+}
+
+
+.receipt-data{
+
+display:flex;
+
+align-items:center;
+
+width:max-content;
+}
+
+
+.receipt-col{
+
+min-width:90px;
+
+padding:0 15px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+font-size:18px;
+
+font-weight:700;
+
+position:relative;
+}
+
+
+.receipt-col:not(:first-child)::before{
+
+content:"";
+
+position:absolute;
+
+left:0;
+
+top:50%;
+
+transform:translateY(-50%);
+
+height:45px;
+
+border-left:2px dotted #bbb;
+}
+
+
+.receipt-total{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:20px 25px;
+
+font-size:26px;
+
+font-weight:800;
+
+border-top:
+3px dashed #999;
+}
+
+.receipt-total strong{
+
+color:#ff2d55;
+
+font-size:38px;
+}
+
+.receipt-data.receipt-bump,
+.receipt-total.receipt-bump{
+animation:receiptBump .34s ease;
+}
+
+@@keyframes screenGlow{
+0%,100%{
+box-shadow:0 0 40px rgba(255,0,0,.3);
+}
+50%{
+box-shadow:0 0 62px rgba(255,45,85,.48),0 0 110px rgba(255,45,85,.14);
+}
+}
+
+@@keyframes screenBeam{
+0%,100%{
+opacity:.48;
+transform:scaleX(.92);
+}
+50%{
+opacity:.86;
+transform:scaleX(1.08);
+}
+}
+
+@@keyframes fadeSlideDown{
+from{
+opacity:0;
+transform:translateY(-10px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+@@keyframes seatRowIn{
+from{
+opacity:0;
+transform:translateY(18px) scale(.98);
+}
+to{
+opacity:1;
+transform:translateY(0) scale(1);
+}
+}
+
+@@keyframes chairSettle{
+from{
+opacity:0;
+transform:translateY(16px) rotateX(18deg) scale(.92);
+}
+to{
+opacity:1;
+transform:translateY(0) rotateX(0) scale(1);
+}
+}
+
+@@keyframes selectedChairPulse{
+0%,100%{
+filter:drop-shadow(0 0 12px rgba(51,255,119,.62)) saturate(1.08);
+}
+50%{
+filter:drop-shadow(0 0 22px rgba(51,255,119,.9)) saturate(1.16) brightness(1.06);
+}
+}
+
+@@keyframes receiptBump{
+0%{
+transform:scale(.98);
+opacity:.72;
+}
+60%{
+transform:scale(1.025);
+opacity:1;
+}
+100%{
+transform:scale(1);
+}
+}
+
+@@media (prefers-reduced-motion: reduce){
+.screen-line,
+.screen-line::before,
+.seat-orientation,
+.seat-row,
+.seat-btn,
+.seat-btn.selected,
+.receipt-data.receipt-bump,
+.receipt-total.receipt-bump,
+.booking-page.page-leaving,
+.next-btn.loading::after{
+animation:none!important;
+transition:none!important;
+}
 }
 
 
 
-@@media(max-width:768px)
-{
+.ticket-cut-left,
+.ticket-cut-right{
 
-.seat-board{
+position:absolute;
 
-grid-template-columns:
-repeat(5,1fr);
+bottom:55px;
+
+width:30px;
+height:30px;
+
+background:#07090f;
+
+border-radius:50%;
+}
+
+.ticket-cut-left{
+
+left:-15px;
+}
+
+.ticket-cut-right{
+
+right:-15px;
+}
+
+@@media(max-width:768px){
+
+.ticket-receipt{
+
+width:100%;
+}
+
+.receipt-title{
+
+width:120px;
+
+font-size:13px;
+}
+
+.receipt-col{
+
+min-width:70px;
+
+font-size:14px;
+}
 
 }
 
-.booking-summary{
+@@media(max-width:768px){
+
+.receipt-row{
 
 flex-direction:column;
+}
 
-gap:20px;
+.receipt-label{
 
+width:100%;
+padding-bottom:15px;
+}
+
+.receipt-columns{
+
+overflow-x:auto;
+}
+
+.receipt-col{
+
+min-width:90px;
 }
 
 }
-
 </style>
-
-
-
 
 <script>
 
-const maxSeatLimit=
+function getYoutubeId(url)
+{
+    if(!url)
+    {
+        return "";
+    }
 
-@(User.IsInRole("Admin")
-?999
-:6);
+    try
+    {
+        const parsedUrl = new URL(url);
+
+        if(parsedUrl.hostname.includes("youtu.be"))
+        {
+            return parsedUrl.pathname.substring(1);
+        }
+
+        if(parsedUrl.pathname.includes("/embed/"))
+        {
+            return parsedUrl.pathname.split("/embed/")[1].split("/")[0];
+        }
+
+        return parsedUrl.searchParams.get("v") || "";
+    }
+    catch
+    {
+        return "";
+    }
+}
+
+function formatSeatLockTime(ms)
+{
+    const totalSeconds=Math.max(0,Math.ceil(ms/1000));
+    const minutes=Math.floor(totalSeconds/60);
+    const seconds=totalSeconds%60;
+    return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+}
+
+let seatLockReleaseRequested=false;
+
+async function releaseExpiredLocksAndRefresh()
+{
+    if(seatLockReleaseRequested)
+    {
+        return;
+    }
+
+    seatLockReleaseRequested=true;
+
+    try
+    {
+        await fetch("/Booking/ReleaseExpiredSeatLocksNow?scheduleId=@Model.Id",
+        {
+            method:"POST"
+        });
+    }
+    catch
+    {
+    }
+
+    window.location.reload();
+}
+
+function updateSeatLockCountdowns()
+{
+    const now=Date.now();
+
+    document.querySelectorAll("[data-lock-countdown]").forEach(timer=>{
+        const expiryText=timer.dataset.lockCountdown || "";
+        const expiryTime=Date.parse(expiryText);
+
+        if(Number.isNaN(expiryTime))
+        {
+            timer.textContent="Release soon";
+            return;
+        }
+
+        const remaining=expiryTime-now;
+
+        if(remaining<=0)
+        {
+            timer.textContent="Releasing...";
+            releaseExpiredLocksAndRefresh();
+            return;
+        }
+
+        timer.textContent=formatSeatLockTime(remaining);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    updateSeatLockCountdowns();
+    setInterval(updateSeatLockCountdowns,1000);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const screen = document.querySelector(".screen-line.has-trailer");
+    const frame = document.getElementById("seatTrailerFrame");
+
+    if(!screen || !frame)
+    {
+        return;
+    }
+
+    const videoId = getYoutubeId(screen.dataset.trailerUrl);
+
+    if(!videoId)
+    {
+        screen.classList.remove("has-trailer");
+        return;
+    }
+
+    const start = parseInt(screen.dataset.trailerStart || "0", 10);
+    frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&start=${Math.max(0,start)}`;
+});
+
+const maxSeatLimit=
+@(User.IsInRole("Admin") ? 999 : 6);
 
 
 
 function toggleSeat(button)
 {
+    if(
+        button.classList.contains("booked")
+        ||
+        button.classList.contains("locked")
+    )
+    {
+        return;
+    }
 
-if(
-button.classList.contains(
-"booked")
-||
-button.classList.contains(
-"locked")
-)
-{
-return;
+    let selected=
+
+    document.querySelectorAll(
+    ".seat-btn.selected"
+    );
+
+
+    if(
+        !button.classList.contains("selected")
+        &&
+        selected.length>=maxSeatLimit
+    )
+    {
+        showCinemaPopup(
+        `Maximum ${maxSeatLimit} seats allowed`,
+        "error"
+        );
+
+        return;
+    }
+
+    button.classList.toggle(
+    "selected"
+    );
+
+    updateSeatDisplay();
 }
-
-
-let selected=
-
-document.querySelectorAll(
-".seat-btn.selected"
-);
-
-
-if(
-!button.classList.contains(
-"selected"
-)
-&&
-selected.length>=
-maxSeatLimit
-)
-{
-showCinemaPopup(
-`Maximum ${maxSeatLimit} seats allowed`,
-"error"
-);
-
-return;
-}
-
-
-button.classList.toggle(
-"selected"
-);
-
-
-updateSeatDisplay();
-
-}
-
-
 
 function updateSeatDisplay()
 {
-
-let seats=
-
+let selected=
 Array.from(
-
 document.querySelectorAll(
 ".seat-btn.selected"
-)
+));
 
-)
+let seatsHTML="";
+let pricesHTML="";
 
-.map(
+let total=0;
 
-x=>x.dataset.name
+selected.forEach(x=>{
 
+let seat=
+x.dataset.name;
+
+let price=
+parseFloat(
+x.dataset.price||0
 );
+
+total+=price;
+
+
+seatsHTML+=
+`
+<div class="receipt-col">
+${seat}
+</div>
+`;
+
+
+pricesHTML+=
+`
+<div class="receipt-col">
+₹${price}
+</div>
+`;
+
+});
 
 
 document.getElementById(
-"selectedSeats"
-)
+"selectedSeatsContainer"
+).innerHTML=
+seatsHTML;
 
-.innerText=
 
-seats.length
-?
-seats.join(", ")
-:
-"None";
+document.getElementById(
+"seatPriceContainer"
+).innerHTML=
+pricesHTML;
 
+
+document.getElementById(
+"totalAmount"
+).innerText=
+"₹"+total;
+
+animateReceiptUpdate();
 }
 
+function animateReceiptUpdate()
+{
+    [
+        document.getElementById("selectedSeatsContainer"),
+        document.getElementById("seatPriceContainer"),
+        document.querySelector(".receipt-total")
+    ]
+    .filter(Boolean)
+    .forEach(element=>{
+        element.classList.remove("receipt-bump");
+        void element.offsetWidth;
+        element.classList.add("receipt-bump");
+    });
+}
 
+function startPageTransition(nextUrl)
+{
+    const prefersReducedMotion=
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 
+    if(prefersReducedMotion)
+    {
+        window.location=nextUrl;
+        return;
+    }
+
+    document.querySelector(".booking-page")?.classList.add("page-leaving");
+
+    setTimeout(()=>{
+        window.location=nextUrl;
+    },260);
+}
 
 function nextStep()
 {
+    let selectedSeats=
 
-let seatIds=
-
-Array.from(
-document.querySelectorAll(
-".seat-btn.selected"
-)
-)
-
-.map(
-x=>x.dataset.id
-);
+    Array.from(
+    document.querySelectorAll(
+    ".seat-btn.selected"
+    ));
 
 
-if(!seatIds.length)
-{
-showCinemaPopup(
-"Please select seats",
-"error"
-);
+    let seatIds=
 
-return;
-}
+    selectedSeats.map(
+    x=>x.dataset.id
+    );
 
 
-
-fetch(
-"/Booking/LockSeats",
-{
-
-method:"POST",
-
-headers:
-{
-"Content-Type":
-"application/json"
-},
-
-body:
-JSON.stringify(
-{
-scheduleId:
-@Model.Id,
-
-seatIds:
-seatIds
-})
-
-})
-
-.then(
-x=>x.json()
-)
-
-.then(
-result=>
-{
-    if(result.success)
+    if(!seatIds.length)
     {
         showCinemaPopup(
-        "Seats Locked",
-        "success"
-        );
-
-        window.location=
-        "/Booking/Details?id="
-        +result.bookingId;
-    }
-    else
-    {
-        showCinemaPopup(
-        result.message,
+        "Please select seats",
         "error"
         );
-    }
-});
 
+        return;
+    }
+
+
+    let total=
+
+    selectedSeats.reduce(
+    (sum,x)=>
+
+    sum+
+
+    parseFloat(
+    x.dataset.price||0
+    ),
+
+    0
+    );
+
+    const nextButton=
+    document.querySelector(".next-btn");
+
+    if(nextButton)
+    {
+        nextButton.disabled=true;
+        nextButton.classList.add("loading");
+        nextButton.dataset.originalText=nextButton.textContent.trim();
+        nextButton.textContent="Locking seats";
+    }
+
+    fetch(
+    "/Booking/LockSeats",
+    {
+
+        method:"POST",
+
+        headers:
+        {
+            "Content-Type":
+            "application/json"
+        },
+
+        body:
+        JSON.stringify(
+        {
+            scheduleId:@Model.Id,
+
+            seatIds:seatIds,
+
+            totalAmount:total
+        })
+
+    })
+
+    .then(
+    x=>x.json()
+    )
+
+    .then(
+    result=>
+    {
+        if(result.success)
+        {
+            startPageTransition(
+            "/Booking/Details?id=" + result.bookingId
+            );
+        }
+        else
+        {
+            resetNextButton();
+
+            showCinemaPopup(
+            result.message,
+            "error"
+            );
+        }
+    })
+
+    .catch(
+    error=>
+    {
+        console.log(error);
+
+        resetNextButton();
+
+        showCinemaPopup(
+        "Something went wrong",
+        "error"
+        );
+    });
+
+}
+
+function resetNextButton()
+{
+    const nextButton=
+    document.querySelector(".next-btn");
+
+    if(!nextButton)
+    {
+        return;
+    }
+
+    nextButton.disabled=false;
+    nextButton.classList.remove("loading");
+    nextButton.textContent=nextButton.dataset.originalText || "Next →";
 }
 
 </script>

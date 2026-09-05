@@ -26,9 +26,6 @@
 
 <section class="admin-page">
 
-    <!-- ===================================================== -->
-    <!-- PAGE HEADER -->
-    <!-- ===================================================== -->
 
     <div class="admin-page-header">
 
@@ -57,9 +54,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- STATS -->
-    <!-- ===================================================== -->
 
     <div class="stats-grid">
 
@@ -80,9 +74,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- TABLE -->
-    <!-- ===================================================== -->
 
     <div class="table-wrapper">
 
@@ -147,9 +138,9 @@
                 {
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-filter-status="@($"{item.TransactionStatus}|{item.BookingStatus}")"
+                            data-filter-method="@item.PaymentMethod">
 
-                            <!-- ROW NUMBER -->
 
                             <td>
 
@@ -159,7 +150,6 @@
 
                             </td>
 
-                            <!-- TRANSACTION -->
 
                             <td>
 
@@ -177,7 +167,6 @@
 
                             </td>
 
-                            <!-- USER -->
 
                             <td>
 
@@ -195,7 +184,6 @@
 
                             </td>
 
-                            <!-- AMOUNT -->
 
                             <td>
 
@@ -212,7 +200,6 @@
 
                             </td>
 
-                            <!-- PAYMENT -->
 
                             <td>
 
@@ -230,7 +217,6 @@
 
                             </td>
 
-                            <!-- BOOKING -->
 
                             <td>
 
@@ -248,7 +234,6 @@
 
                             </td>
 
-                            <!-- STATUS -->
 
                             <td>
 
@@ -265,6 +250,14 @@
                                             ? "FAILED"
                                             : item.TransactionStatus)
                                     </span>
+                                    <span class="app-info app-info-left">
+                                        <button type="button" class="app-info-btn" aria-label="Show transaction status details">i</button>
+                                        <span class="app-info-popover" role="tooltip">
+                                            <b>Status</b> @(string.IsNullOrWhiteSpace(item.TransactionStatus) ? "FAILED" : item.TransactionStatus)<br />
+                                            <b>Reason</b> @(string.IsNullOrWhiteSpace(item.FailureReason) ? "Payment is not marked successful yet." : item.FailureReason)<br />
+                                            <b>Gateway</b> @(string.IsNullOrWhiteSpace(item.GatewayName) ? "NA" : item.GatewayName)
+                                        </span>
+                                    </span>
                                 }
 
                                 @if (!string.IsNullOrWhiteSpace(item.FailureReason))
@@ -276,23 +269,21 @@
 
                             </td>
 
-                            <!-- CREATED -->
 
                             <td>
 
                                 <div class="created-date">
                                     @item.BookingCreatedAt
-                                        .ToString("dd MMM yyyy")
+                                       
                                 </div>
 
                                 <div class="sub-text">
                                     @item.BookingCreatedAt
-                                        .ToString("hh:mm tt")
+                                      
                                 </div>
 
                             </td>
 
-                            <!-- ACTION -->
 
                             <td>
 
@@ -324,27 +315,16 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- PAGINATION -->
-    <!-- ===================================================== -->
 
-    <div class="pagination-area">
-
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a href="/Admin/Transactions?page=@i"
-               class="page-btn @(i == currentPage ? "active" : "")">
-                @i
-            </a>
-        }
-
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Transactions"
+    })
 
 </section>
 
-<!-- ===================================================== -->
-<!-- PAGE CSS -->
-<!-- ===================================================== -->
 
 <style>
 
@@ -491,38 +471,6 @@
 
     .view-btn:hover {
         background: #2563eb;
-    }
-
-    .pagination-area {
-        margin-top: 24px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .page-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        background: white;
-        color: #111827;
-        border: 1px solid #d1d5db;
-        transition: 0.2s;
-    }
-
-    .page-btn:hover {
-        background: #111827;
-        color: white;
-    }
-
-    .page-btn.active {
-        background: #111827;
-        color: white;
-        border-color: #111827;
     }
 
     .empty-state {

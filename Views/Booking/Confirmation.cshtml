@@ -1,0 +1,929 @@
+@model BookingDraft
+@using System.Net
+@inject AmarShowsBook.Services.RbacService RbacService
+
+@{
+    var canUsePrintTools = AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+    var schedule = ViewBag.Schedule;
+    var user = ViewBag.User as AmarShowsBook.Models.User;
+    var seatCount = Model.SeatNumbers.Split(',').Length;
+    var seatPrice = Model.TotalAmount / seatCount;
+    var ticketUrl = ViewBag.TicketUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}/Booking/Ticket/{Model.Id}";
+    var confirmedBookingId = ViewBag.ConfirmedBookingId as long?;
+    var isTicketDownloadDisabled = ViewBag.IsTicketDownloadDisabled as bool? ?? false;
+    var title = schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Show";
+    var venue = schedule?.Location == null ? "Venue to be announced" : $"{schedule.Location.Area}, {schedule.Location.State}";
+    string? posterUrl = Convert.ToString(schedule?.Movie?.PosterUrl
+        ?? schedule?.StandupShow?.PosterUrl
+        ?? schedule?.LiveStream?.PosterUrl);
+    string? imageList = Convert.ToString(schedule?.Movie?.Images
+        ?? schedule?.StandupShow?.Images
+        ?? schedule?.LiveStream?.Images);
+
+    if (string.IsNullOrWhiteSpace(posterUrl) && !string.IsNullOrWhiteSpace(imageList))
+    {
+        posterUrl = imageList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+    }
+
+    posterUrl = string.IsNullOrWhiteSpace(posterUrl)
+        ? "/images/default1.jpg"
+        : posterUrl;
+}
+
+<style>
+
+:root{
+--primary:#ff2d55;
+--bg:#f4f6ff;
+--muted:#6b7280;
+}
+
+body{
+
+margin:0;
+padding:20px;
+
+font-family:Segoe UI,sans-serif;
+
+background:
+linear-gradient(
+135deg,
+#ececf8,
+#f8f8ff
+);
+
+overflow:auto;
+
+}
+
+
+
+.ticket-wrapper{
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+min-height:90vh;
+padding:16px 0 36px;
+}
+
+
+
+.ticket{
+
+width:950px;
+
+display:grid;
+
+grid-template-columns:
+2fr 1fr;
+
+background:white;
+
+border-radius:30px;
+
+overflow:hidden;
+
+position:relative;
+
+box-shadow:
+0 20px 50px rgba(0,0,0,.1);
+
+animation:
+floatTicket 4s infinite ease-in-out;
+}
+
+
+
+.ticket::before,
+.ticket::after{
+
+content:"";
+
+position:absolute;
+
+width:50px;
+height:50px;
+
+border-radius:50%;
+
+background:var(--bg);
+
+top:50%;
+
+transform:
+translateY(-50%);
+}
+
+.ticket::before{
+
+left:-25px;
+}
+
+.ticket::after{
+
+right:-25px;
+}
+
+
+
+
+.left{
+
+padding:25px 30px;
+
+position:relative;
+}
+
+
+
+.header{
+
+padding:18px;
+
+text-align:center;
+
+background:
+linear-gradient(
+135deg,
+#ff2d55,
+#d10045
+);
+
+color:white;
+
+font-size:26px;
+
+font-weight:900;
+
+letter-spacing:5px;
+
+border-radius:20px;
+
+margin-bottom:25px;
+}
+
+
+
+.movie-section{
+
+display:flex;
+
+gap:20px;
+}
+
+
+.poster{
+
+width:180px;
+height:180px;
+
+border-radius:20px;
+
+object-fit:cover;
+
+aspect-ratio:1/1;
+
+box-shadow:
+0 10px 20px rgba(0,0,0,.15);
+
+transition:.4s;
+
+}
+
+.poster:hover{
+
+transform:
+scale(1.05);
+
+}
+
+
+.movie-info h1{
+
+margin:0;
+
+font-size:36px;
+
+font-weight:900;
+}
+
+.movie-info p{
+
+margin-top:10px;
+
+font-size:16px;
+
+color:var(--muted);
+}
+
+
+
+.ticket-line{
+
+margin:25px 0;
+
+border-top:
+3px dashed #ddd;
+}
+
+
+
+.data-row{
+
+display:flex;
+
+justify-content:space-between;
+
+padding:14px 0;
+}
+
+.label{
+
+font-size:18px;
+
+color:#777;
+
+font-weight:700;
+}
+
+.value{
+
+font-size:20px;
+
+font-weight:900;
+}
+
+
+
+
+.bottom{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+gap:18px;
+
+margin-top:25px;
+}
+
+.total{
+
+font-size:45px;
+
+font-weight:900;
+
+color:var(--primary);
+}
+
+
+
+
+.download-btn{
+
+border:none;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+flex:0 0 auto;
+
+min-height:44px;
+min-width:132px;
+padding:12px 16px;
+
+border-radius:14px;
+
+font-size:14px;
+
+font-weight:800;
+
+cursor:pointer;
+
+color:white;
+text-decoration:none;
+
+background:
+linear-gradient(
+135deg,
+#ff2d55,
+#ff005d
+);
+
+transition:.4s;
+}
+
+.ticket-action-row{
+display:flex;
+justify-content:flex-end;
+align-items:center;
+gap:10px;
+flex:1 1 auto;
+flex-wrap:nowrap;
+min-width:0;
+}
+
+.my-bookings-btn{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+flex:0 0 auto;
+border:1px solid #d7dbe4;
+min-height:44px;
+min-width:132px;
+padding:12px 16px;
+border-radius:14px;
+font-size:14px;
+font-weight:800;
+text-decoration:none;
+color:#20212a;
+background:#fff;
+transition:.4s;
+}
+
+.home-btn{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+flex:0 0 auto;
+border:0;
+min-height:44px;
+min-width:132px;
+padding:12px 16px;
+border-radius:14px;
+font-size:14px;
+font-weight:800;
+text-decoration:none;
+color:white;
+background:linear-gradient(135deg,#2563eb,#06b6d4);
+box-shadow:0 10px 24px rgba(37,99,235,.18);
+transition:.4s;
+}
+
+.my-bookings-btn:hover{
+transform:translateY(-4px);
+box-shadow:0 10px 25px rgba(0,0,0,.12);
+text-decoration:none;
+}
+
+.home-btn:hover{
+transform:translateY(-4px);
+box-shadow:0 10px 25px rgba(37,99,235,.24);
+text-decoration:none;
+color:white;
+}
+
+.download-btn:hover{
+
+transform:
+translateY(-4px);
+
+box-shadow:
+0 10px 25px rgba(255,0,90,.25);
+text-decoration:none;
+}
+
+.download-btn.disabled-download,
+.download-btn:disabled{
+background:#9ca3af;
+box-shadow:none;
+cursor:not-allowed;
+opacity:.74;
+}
+
+.download-btn.disabled-download:hover,
+.download-btn:disabled:hover{
+transform:none;
+box-shadow:none;
+}
+
+
+
+
+.right{
+
+padding:25px;
+
+background:#fafafa;
+
+position:relative;
+
+}
+
+
+
+.right::before{
+
+content:"";
+
+position:absolute;
+
+left:0;
+top:0;
+
+height:100%;
+
+border-left:
+3px dashed #ddd;
+}
+
+
+
+.right::after{
+
+content:"";
+
+position:absolute;
+
+left:-25px;
+top:50%;
+
+width:50px;
+height:50px;
+
+background:var(--bg);
+
+border-radius:50%;
+
+transform:
+translateY(-50%);
+}
+
+
+
+
+.info-card{
+
+display:flex;
+
+gap:12px;
+
+padding:12px;
+
+margin-bottom:15px;
+
+background:white;
+
+border-radius:15px;
+
+box-shadow:
+0 5px 10px rgba(0,0,0,.05);
+}
+
+
+.icon{
+
+width:45px;
+height:45px;
+
+display:flex;
+
+justify-content:center;
+align-items:center;
+
+border-radius:50%;
+
+background:
+linear-gradient(
+135deg,
+#ff2d55,
+#ff005d
+);
+
+font-size:20px;
+
+color:white;
+}
+
+.side-label{
+
+font-size:12px;
+
+color:#888;
+}
+
+.side-value{
+
+font-size:15px;
+
+font-weight:800;
+}
+
+
+
+.qr{
+
+margin-top:20px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+flex:1;
+}
+
+
+.qr img{
+
+width:220px;
+height:220px;
+
+padding:18px;
+
+background:white;
+
+border-radius:22px;
+
+object-fit:contain;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,.12);
+
+transition:.4s;
+
+animation:
+qrPulse 3s infinite;
+}
+
+
+.qr img:hover{
+
+transform:
+scale(1.05);
+}
+
+
+@@keyframes qrPulse{
+
+50%{
+
+transform:
+translateY(-5px);
+}
+
+}
+
+
+
+@@keyframes floatTicket{
+
+50%{
+
+transform:
+translateY(-8px);
+
+}
+
+}
+
+
+
+@@media print{
+
+body{
+background:white;
+}
+
+.download-btn{
+
+display:none;
+}
+
+.my-bookings-btn{
+display:none;
+}
+
+.home-btn{
+display:none;
+}
+
+}
+
+
+
+@@media(max-width:900px){
+
+body{
+
+overflow:auto;
+}
+
+.ticket{
+
+grid-template-columns:1fr;
+}
+
+.right::before{
+
+display:none;
+}
+
+.movie-section{
+
+flex-direction:column;
+
+align-items:center;
+
+text-align:center;
+}
+
+.bottom{
+
+flex-direction:column;
+
+gap:20px;
+}
+
+.ticket-action-row{
+justify-content:center;
+flex-wrap:nowrap;
+width:100%;
+overflow-x:auto;
+padding-bottom:4px;
+}
+
+}
+
+</style>
+
+
+<div class="ticket-wrapper">
+
+<div class="ticket">
+
+<div class="left">
+
+<div class="header">
+
+🎟 TICKET BOOKED
+
+</div>
+
+
+<div class="movie-section">
+
+<img
+class="poster"
+src="@posterUrl"
+alt="@title poster"
+/>
+
+<div class="movie-info">
+
+<h1>
+
+@title
+
+</h1>
+
+<p>
+📍 @venue
+</p>
+
+<p>
+📅 @(schedule?.StartTime.ToString("dd MMM yyyy") ?? "TBA")
+</p>
+
+<p>
+🕒 @(schedule?.StartTime.ToString("hh:mm tt") ?? "TBA")
+</p>
+
+</div>
+
+</div>
+
+
+<div class="ticket-line"></div>
+
+
+<div class="data-row">
+
+<div class="label">
+
+💺 Seats
+
+</div>
+
+<div class="value">
+
+@Model.SeatNumbers
+
+</div>
+
+</div>
+
+
+<div class="data-row">
+
+<div class="label">
+
+💰 Seat Price
+
+</div>
+
+<div class="value">
+
+₹@seatPrice.ToString("0.00")
+
+</div>
+
+</div>
+
+
+<div class="bottom">
+
+<div>
+
+<div class="label">
+
+TOTAL
+
+</div>
+
+<div class="total">
+
+₹@Model.TotalAmount.ToString("0.00")
+
+</div>
+
+</div>
+
+<div class="ticket-action-row no-print">
+
+@if(canUsePrintTools)
+{
+    @if(isTicketDownloadDisabled)
+    {
+<button
+class="download-btn disabled-download"
+type="button"
+disabled
+title="Download is unavailable for expired or checked-out tickets">
+
+⬇ Download Ticket
+
+</button>
+    }
+    else if(confirmedBookingId.HasValue)
+    {
+<a
+class="download-btn"
+href="/Booking/DownloadTicket?confirmedBookingId=@confirmedBookingId.Value"
+download>
+
+⬇ Download Ticket
+
+</a>
+    }
+    else
+    {
+<button
+class="download-btn"
+onclick="window.print()">
+
+⬇ Download Ticket
+
+</button>
+    }
+}
+
+<a
+class="my-bookings-btn"
+href="/Booking/MyBookings">
+
+My Bookings
+
+</a>
+
+<a
+class="home-btn"
+href="/Home/ShowTime">
+
+Home
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="right">
+
+<div class="info-card">
+
+<div class="icon">
+🆔
+</div>
+
+<div>
+
+<div class="side-label">
+Booking Id
+</div>
+
+<div class="side-value">
+#@Model.Id
+</div>
+
+</div>
+
+</div>
+
+
+<div class="info-card">
+
+<div class="icon">
+📧
+</div>
+
+<div>
+
+<div class="side-label">
+Email
+</div>
+
+<div class="side-value">
+@(user?.Email ?? ViewBag.Email ?? "Not Available")
+</div>
+
+</div>
+
+</div>
+
+
+<div class="info-card">
+
+<div class="icon">
+📱
+</div>
+
+<div>
+
+<div class="side-label">
+Phone
+</div>
+
+<div class="side-value">
+@(user?.Mobile ?? ViewBag.Phone ?? "Not Available")
+</div>
+
+</div>
+
+</div>
+
+
+<div class="info-card">
+
+<div class="icon">
+📅
+</div>
+
+<div>
+
+<div class="side-label">
+Booking Date
+</div>
+
+<div class="side-value">
+@DateTime.Now.ToString("dd MMM yyyy")
+</div>
+
+</div>
+
+</div>
+
+
+<div class="qr">
+
+<img
+src="/Booking/CreateQR?text=@WebUtility.UrlEncode(ticketUrl)"
+/>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    const canUsePrintTools = @canUsePrintTools.ToString().ToLowerInvariant();
+    if (canUsePrintTools && params.get("print") === "1") {
+        window.print();
+    }
+});
+</script>
+
+</div>

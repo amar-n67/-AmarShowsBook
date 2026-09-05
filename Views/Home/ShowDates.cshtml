@@ -1,0 +1,102 @@
+@model List<AmarShowsBook.Models.ViewModels.HomeShowViewModel>
+
+@{
+    ViewData["Title"] = "Available Dates";
+}
+
+@if(Model == null || !Model.Any())
+{
+    <div class="empty-slate">
+
+        <h2>No schedules available</h2>
+
+        <p>No dates found for this show.</p>
+
+    </div>
+}
+else
+{
+    <section class="show-dates-page">
+
+        <h2 class="show-title">
+
+            @Model.First().Title
+
+        </h2>
+
+        <div class="date-list">
+
+            @foreach(var date in Model
+                .GroupBy(x => x.StartTime.Date)
+                .OrderBy(x => x.Key))
+            {
+                <a
+                class="date-card"
+                href="/Home/ShowTimes?showId=@date.First().ShowId&date=@date.Key.ToString("yyyy-MM-dd")">
+
+                    @date.Key.ToString("dd MMM")
+
+                </a>
+            }
+
+        </div>
+
+    </section>
+}
+<style>
+
+.show-dates-page{
+
+padding:30px;
+
+}
+
+.show-title{
+
+margin-bottom:30px;
+font-size:2rem;
+font-weight:700;
+
+}
+
+.date-list{
+
+display:flex;
+gap:15px;
+flex-wrap:wrap;
+
+}
+
+.date-card{
+
+padding:20px 30px;
+
+border-radius:12px;
+
+background:#1f2937;
+color:white;
+
+text-decoration:none;
+
+font-weight:700;
+
+transition:.3s;
+
+}
+
+.date-card:hover{
+
+transform:translateY(-5px);
+
+background:#ff4757;
+
+}
+
+.empty-slate{
+
+text-align:center;
+padding:50px;
+
+}
+
+</style>

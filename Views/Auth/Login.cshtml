@@ -5,15 +5,20 @@
 <section class="auth-stage">
     <div class="auth-frame">
         <div class="auth-copy">
-            <span class="auth-kicker">Shot 01 / Entry Gate</span>
-            <h1>showTime</h1>
-            <p>Take your mark, verify the script, and open the next scene.</p>
+            @* Previous wording: "Shot 01 / Entry Gate" *@
+            <span class="auth-kicker">Account Access</span>
+            <img class="auth-logo" src="~/images/brand/showtime-login-logo.png" alt="showTime" asp-append-version="true" />
+            @* Previous wording: "Take your mark, verify the script, and open the next scene." *@
+            <p>Sign in securely to continue to your account.</p>
+            <small class="auth-version">Version <span data-current-version></span></small>
         </div>
 
         <div class="auth-card">
             <div class="auth-slate">
-                <span>Rolling</span>
-                <span>Login Take</span>
+                @* Previous wording: "Rolling" *@
+                <span>Secure</span>
+                @* Previous wording: "Login Take" *@
+                <span>Login</span>
             </div>
 
             <form method="post" novalidate onsubmit="return validateLoginForm()">
@@ -45,6 +50,33 @@
             </button>
         </div>
     </div>
+
+    @if (ViewBag.RecoverArchiveId != null)
+    {
+        <div class="recovery-modal">
+            <div class="recovery-dialog" role="dialog" aria-modal="true" aria-labelledby="recoverAccountTitle">
+                <span class="recovery-kicker">Deleted Account</span>
+                <h2 id="recoverAccountTitle">Recover this account?</h2>
+                <p>
+                    This account was deleted, but it is still inside the 30 day recovery window.
+                    Recover now to restore the archived account data.
+                </p>
+                <div class="recovery-meta">
+                    <span>@ViewBag.RecoverEmail</span>
+                    <strong>Available until @ViewBag.RecoverUntil</strong>
+                </div>
+                <form method="post" action="/Auth/RecoverDeletedAccount">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="archiveId" value="@ViewBag.RecoverArchiveId" />
+                    <input type="hidden" name="recoveryChoice" value="recover" />
+                    <div class="recovery-actions">
+                        <a href="/Auth/Login" class="btn btn-secondary btn-sm">Cancel</a>
+                        <button type="submit" class="btn btn-success btn-sm">Recover Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
 </section>
 
 <style>
@@ -75,17 +107,30 @@
         repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
     box-shadow: 0 24px 70px rgba(35, 31, 32, 0.24);
 }
-.auth-copy h1 {
-    margin: 8px 0 8px;
-    font-size: clamp(3rem, 7vw, 6rem);
-    font-weight: 900;
-    color: #231f20;
+.auth-logo {
+    display: block;
+    width: min(390px, 84%);
+    max-height: 260px;
+    margin: 12px 0 12px;
+    object-fit: contain;
+    object-position: left center;
+    filter: drop-shadow(0 12px 22px rgba(35, 31, 32, 0.24));
 }
 .auth-copy p {
     max-width: 520px;
     margin: 0;
     color: #34303a;
     font-size: 1.08rem;
+}
+.auth-version {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 14px;
+    padding: 5px 10px;
+    border: 1px solid rgba(35,31,32,0.18);
+    border-radius: 999px;
+    color: #34303a;
+    font-weight: 900;
 }
 .auth-kicker,
 .auth-slate {
@@ -134,6 +179,63 @@
     width: calc(100% - 44px) !important;
     font-weight: 850;
 }
+.recovery-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 20, 28, 0.66);
+    backdrop-filter: blur(12px);
+}
+.recovery-dialog {
+    width: min(100%, 460px);
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 70%, #ffffff 30%);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    padding: 24px;
+    box-shadow: 0 28px 80px rgba(0,0,0,0.32);
+}
+.recovery-kicker {
+    display: inline-flex;
+    margin-bottom: 8px;
+    color: #dc3545;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.recovery-dialog h2 {
+    margin: 0 0 10px;
+    font-weight: 900;
+}
+.recovery-dialog p {
+    margin: 0;
+    color: var(--app-muted);
+}
+.recovery-meta {
+    display: grid;
+    gap: 4px;
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-input);
+}
+.recovery-meta span {
+    font-weight: 850;
+}
+.recovery-meta strong {
+    color: #198754;
+    font-size: 0.86rem;
+}
+.recovery-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
 @@media (max-width: 840px) {
     .auth-frame {
         grid-template-columns: 1fr;
@@ -141,13 +243,25 @@
     .auth-copy {
         min-height: 260px;
     }
+    .auth-logo {
+        width: min(290px, 92%);
+        max-height: 180px;
+    }
 }
 </style>
 
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("[data-current-version]").forEach(item => {
+                item.textContent = window.currentAppVersion || "1.0.0";
+            });
+
             const error = "@ViewBag.Error";
+            const success = "@TempData["Success"]";
+            if (success) {
+                showCinemaPopup(success, "success");
+            }
             if (error) {
                 showCinemaPopup(error, "error");
             }

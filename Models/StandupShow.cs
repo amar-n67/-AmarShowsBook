@@ -8,5 +8,9 @@ namespace AmarShowsBook.Models
         public string Comedian { get; set; }
 
         public int Duration { get; set; }
+        public string? Description { get; set; }
+        public string? PosterUrl { get; set; }
+        public string? Images { get; set; }
+        public string? TrailerUrl { get; set; }
     }
 }

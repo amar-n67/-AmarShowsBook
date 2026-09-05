@@ -1,0 +1,380 @@
+@model BookingDraft
+@inject AmarShowsBook.Services.RbacService RbacService
+
+@{
+var canUsePrintTools = AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+var schedule=ViewBag.Schedule;
+var user=ViewBag.User as AmarShowsBook.Models.User;
+var summary=ViewBag.BookingSummary as AmarShowsBook.Models.VwBookingCompleteDetails;
+var transaction=ViewBag.Transaction as AmarShowsBook.Models.Transaction;
+var tickets=ViewBag.Tickets as List<AmarShowsBook.Models.Ticket> ?? new List<AmarShowsBook.Models.Ticket>();
+var screen=ViewBag.Screen as Screen;
+var venueInfo=ViewBag.Venue as AmarShowsBook.Models.Venue;
+var bookingRef=ViewBag.BookingRef as string ?? $"#{Model.Id}";
+var title = schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Show";
+var venue = venueInfo!=null
+    ? $"{venueInfo.VenueName}, {venueInfo.Address}, {venueInfo.City}, {venueInfo.State}"
+    : schedule?.Location?.Area ?? "Venue to be announced";
+var amount = summary?.PayableAmount ?? summary?.TotalAmount ?? Model.TotalAmount;
+var status = summary?.BookingStatus ?? Model.Status;
+string? posterUrl = Convert.ToString(schedule?.Movie?.PosterUrl
+    ?? schedule?.StandupShow?.PosterUrl
+    ?? schedule?.LiveStream?.PosterUrl);
+string? imageList = Convert.ToString(schedule?.Movie?.Images
+    ?? schedule?.StandupShow?.Images
+    ?? schedule?.LiveStream?.Images);
+
+if (string.IsNullOrWhiteSpace(posterUrl) && !string.IsNullOrWhiteSpace(imageList))
+{
+    posterUrl = imageList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => x.Trim())
+        .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+}
+
+posterUrl = string.IsNullOrWhiteSpace(posterUrl)
+    ? "/images/default1.jpg"
+    : posterUrl;
+}
+
+<style>
+
+.mobile-ticket-page{
+display:flex;
+justify-content:center;
+align-items:flex-start;
+padding:24px 12px 48px;
+background:var(--app-bg);
+color:var(--app-text);
+}
+
+
+.ticket{
+
+width:100%;
+max-width:420px;
+
+background:var(--app-card);
+color:var(--app-card-text);
+
+border-radius:8px;
+border:1px solid var(--app-input-border);
+
+overflow:hidden;
+
+box-shadow:
+0 15px 35px rgba(0,0,0,.1);
+
+animation:
+slideUp .6s;
+}
+
+
+.header{
+
+padding:18px;
+
+text-align:center;
+
+font-size:24px;
+
+font-weight:900;
+
+color:white;
+
+background:
+var(--app-primary);
+}
+
+
+.content{
+
+padding:25px;
+}
+
+
+.ticket-stub{
+border:1px dashed var(--app-input-border);
+border-radius:8px;
+padding:18px;
+background:color-mix(in srgb, var(--app-card) 86%, var(--app-primary));
+}
+
+.ticket-poster{
+width:100%;
+aspect-ratio:16/10;
+border-radius:8px;
+object-fit:cover;
+border:1px solid var(--app-input-border);
+box-shadow:0 10px 26px rgba(0,0,0,.14);
+}
+
+
+.title{
+
+font-size:28px;
+
+font-weight:900;
+
+margin-top:20px;
+}
+
+
+.row{
+
+display:flex;
+
+justify-content:space-between;
+gap:16px;
+
+padding:14px 0;
+
+border-bottom:
+1px dashed #eee;
+}
+
+.row span:last-child{
+text-align:right;
+font-weight:800;
+overflow-wrap:anywhere;
+}
+
+.row span:first-child{
+color:var(--app-muted);
+font-weight:800;
+white-space:nowrap;
+}
+
+
+.total{
+
+font-size:35px;
+
+font-weight:900;
+
+color:var(--app-primary);
+
+text-align:center;
+
+margin-top:25px;
+}
+
+.ticket-actions{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+margin-top:22px;
+}
+
+.ticket-action{
+border:none;
+border-radius:8px;
+padding:13px 16px;
+text-align:center;
+text-decoration:none;
+font-size:15px;
+font-weight:900;
+cursor:pointer;
+}
+
+.ticket-action.primary{
+background:var(--app-primary);
+color:#fff;
+}
+
+.ticket-action.secondary{
+background:var(--app-input-disabled);
+color:var(--app-input-disabled-text);
+}
+
+@@media print{
+.ticket-actions{
+display:none;
+}
+body{
+background:white;
+}
+}
+
+
+@@keyframes slideUp{
+
+from{
+
+opacity:0;
+
+transform:
+translateY(30px);
+}
+
+to{
+
+opacity:1;
+
+transform:
+translateY(0);
+}
+
+}
+
+</style>
+
+
+<div class="mobile-ticket-page">
+
+<div class="ticket">
+
+<div class="header">
+
+🎟 TICKET BOOKED
+
+</div>
+
+<div class="content">
+
+<img class="ticket-poster" src="@posterUrl" alt="@title poster" />
+
+<div class="ticket-stub">
+<div class="row">
+<span>Status</span>
+<span>@status</span>
+</div>
+<div class="row">
+<span>Show Type</span>
+<span>@(summary?.ShowType ?? schedule?.Type ?? "Show")</span>
+</div>
+<div class="row">
+<span>Screen</span>
+<span>@(screen?.ScreenName ?? "Screen TBA")</span>
+</div>
+</div>
+
+<div class="title">
+
+@title
+
+</div>
+
+
+<div class="row">
+
+<span>Booking ID</span>
+
+<span>@bookingRef</span>
+
+</div>
+
+<div class="row">
+
+<span>Email</span>
+
+<span>@(user?.Email ?? "Not Available")</span>
+
+</div>
+
+<div class="row">
+
+<span>Phone</span>
+
+<span>@(user?.Mobile ?? "Not Available")</span>
+
+</div>
+
+
+<div class="row">
+
+<span>Seats</span>
+
+<span>@Model.SeatNumbers</span>
+
+</div>
+
+
+<div class="row">
+
+<span>Date</span>
+
+<span>
+@(schedule?.StartTime.ToString("dd MMM yyyy") ?? "TBA")
+</span>
+
+</div>
+
+
+<div class="row">
+
+<span>Time</span>
+
+<span>
+@(schedule?.StartTime.ToString("hh:mm tt") ?? "TBA")
+</span>
+
+</div>
+
+
+<div class="row">
+
+<span>Venue</span>
+
+<span>
+@venue
+</span>
+
+</div>
+
+<div class="row">
+
+<span>Transaction</span>
+
+<span>@(transaction?.TransactionRef ?? summary?.TransactionRef ?? "N/A")</span>
+
+</div>
+
+<div class="row">
+
+<span>Payment</span>
+
+<span>@(transaction?.PaymentMethod ?? summary?.PaymentMethod ?? "N/A")</span>
+
+</div>
+
+@if(tickets.Any())
+{
+<div class="row">
+
+<span>Tickets</span>
+
+<span>@string.Join(", ", tickets.Select(x=>x.TicketNumber))</span>
+
+</div>
+}
+
+
+<div class="total">
+
+₹@amount
+
+</div>
+
+<div class="ticket-actions">
+@if(canUsePrintTools)
+{
+<button class="ticket-action primary" type="button" onclick="window.print()">Download</button>
+}
+<a class="ticket-action secondary" href="/Booking/MyBookings">My Bookings</a>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    const canUsePrintTools = @canUsePrintTools.ToString().ToLowerInvariant();
+    if (canUsePrintTools && params.get("print") === "1") {
+        window.print();
+    }
+});
+</script>

@@ -1,3 +1,4 @@
+@inject AmarShowsBook.Services.RbacService RbacService
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,60 +6,431 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <script>
+        (function () {
+            // Admin pages reuse the same saved theme and cursor choices as the public site.
+            const savedTheme = localStorage.getItem("showTimeTheme") || "cinema";
+            const savedCursor = localStorage.getItem("showTimeCursor") || "liquid";
+            const savedCursorColor = localStorage.getItem("showTimeCursorColor");
+            document.documentElement.dataset.theme = savedTheme;
+            document.documentElement.dataset.cursorChoice = savedCursor;
+            if (savedCursorColor) {
+                document.documentElement.style.setProperty("--app-cursor-color", savedCursorColor);
+            }
+        })();
+    </script>
+
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 
     <link rel="stylesheet"
-          href="~/css/admin/admin-dashboard.css" />
+          href="~/css/admin/admin-dashboard.css"
+          asp-append-version="true" />
+
+    <style>
+        @@media (pointer: fine) {
+            html.app-custom-cursor,
+            html.app-custom-cursor body,
+            html.app-custom-cursor a,
+            html.app-custom-cursor button,
+            html.app-custom-cursor input,
+            html.app-custom-cursor select,
+            html.app-custom-cursor textarea,
+            html.app-custom-cursor [role="button"] {
+                cursor: none !important;
+            }
+
+            .liquid-cursor,
+            .liquid-cursor-trail {
+                position: fixed;
+                left: 0;
+                top: 0;
+                pointer-events: none;
+                z-index: 2147483647;
+                border-radius: 999px;
+                transform: translate3d(-50%, -50%, 0);
+                will-change: transform, width, height, opacity;
+            }
+
+            .liquid-cursor {
+                width: 10px;
+                height: 10px;
+                border: 1px solid rgba(255, 255, 255, 0.78);
+                background:
+                    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.95), transparent 36%),
+                    color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 72%, var(--admin-rose));
+                box-shadow:
+                    0 0 0 1px color-mix(in srgb, var(--admin-ink) 10%, transparent),
+                    0 0 18px color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 42%, transparent);
+                backdrop-filter: blur(4px) saturate(130%);
+                transition: width 0.14s ease, height 0.14s ease, opacity 0.18s ease, background 0.14s ease;
+            }
+
+            .liquid-cursor-trail {
+                width: 34px;
+                height: 34px;
+                border: 1px solid color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 46%, transparent);
+                background: color-mix(in srgb, var(--admin-gold) 10%, transparent);
+                box-shadow: 0 0 24px color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 22%, transparent);
+                backdrop-filter: blur(2px);
+                opacity: 0.76;
+                transition: width 0.16s ease, height 0.16s ease, opacity 0.2s ease, border-color 0.16s ease;
+            }
+
+            html.app-liquid-cursor.cursor-action .liquid-cursor {
+                width: 8px;
+                height: 8px;
+                background:
+                    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.95), transparent 36%),
+                    var(--admin-gold);
+            }
+
+            html.app-liquid-cursor.cursor-action .liquid-cursor-trail {
+                width: 44px;
+                height: 44px;
+                border-color: color-mix(in srgb, var(--admin-gold) 62%, transparent);
+                opacity: 0.84;
+            }
+
+            html.app-liquid-cursor .liquid-cursor {
+                width: 14px;
+                height: 14px;
+                border-radius: 60% 42% 58% 46%;
+                animation: adminCursorLiquidPulse 1.7s ease-in-out infinite;
+            }
+
+            html.app-liquid-cursor .liquid-cursor-trail {
+                width: 38px;
+                height: 38px;
+                border-radius: 42% 58% 46% 62%;
+                background: radial-gradient(circle, color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 16%, transparent), transparent 68%);
+            }
+
+            html.app-liquid-cursor.cursor-hidden .liquid-cursor,
+            html.app-liquid-cursor.cursor-hidden .liquid-cursor-trail,
+            html.app-precision-cursor.cursor-hidden .liquid-cursor,
+            html.app-precision-cursor.cursor-hidden .liquid-cursor-trail,
+            html.app-spotlight-cursor.cursor-hidden .liquid-cursor,
+            html.app-spotlight-cursor.cursor-hidden .liquid-cursor-trail {
+                opacity: 0;
+            }
+
+            html.app-precision-cursor .liquid-cursor {
+                width: 22px;
+                height: 22px;
+                border: 0;
+                border-radius: 2px;
+                background:
+                    linear-gradient(var(--app-cursor-color, var(--admin-rose)), var(--app-cursor-color, var(--admin-rose))) center / 2px 22px no-repeat,
+                    linear-gradient(90deg, var(--app-cursor-color, var(--admin-rose)), var(--app-cursor-color, var(--admin-rose))) center / 22px 2px no-repeat;
+                box-shadow: none;
+                backdrop-filter: none;
+            }
+
+            html.app-precision-cursor .liquid-cursor-trail {
+                width: 34px;
+                height: 34px;
+                border: 2px dashed var(--app-cursor-color, var(--admin-rose));
+                border-radius: 50%;
+                background: transparent;
+                box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--app-cursor-color, var(--admin-rose)) 8%, transparent);
+                opacity: 0.88;
+                backdrop-filter: none;
+            }
+
+            html.app-precision-cursor.cursor-action .liquid-cursor-trail {
+                width: 42px;
+                height: 42px;
+                border-style: solid;
+            }
+
+            html.app-spotlight-cursor .liquid-cursor {
+                width: 5px;
+                height: 5px;
+                border: 0;
+                background: var(--app-cursor-color, var(--admin-gold));
+                box-shadow: 0 0 12px color-mix(in srgb, var(--app-cursor-color, var(--admin-gold)) 52%, transparent);
+                backdrop-filter: none;
+            }
+
+            html.app-spotlight-cursor .liquid-cursor-trail {
+                width: 84px;
+                height: 84px;
+                border: 2px solid color-mix(in srgb, var(--app-cursor-color, var(--admin-gold)) 58%, transparent);
+                background:
+                    radial-gradient(circle, transparent 0 30%, color-mix(in srgb, var(--app-cursor-color, var(--admin-gold)) 14%, transparent) 32% 100%);
+                box-shadow:
+                    inset 0 0 22px color-mix(in srgb, var(--app-cursor-color, var(--admin-gold)) 28%, transparent),
+                    0 0 34px color-mix(in srgb, var(--app-cursor-color, var(--admin-gold)) 22%, transparent);
+                opacity: 0.72;
+                backdrop-filter: blur(1px);
+            }
+
+            html.app-spotlight-cursor.cursor-action .liquid-cursor-trail {
+                width: 104px;
+                height: 104px;
+                opacity: 0.82;
+            }
+
+            @@keyframes adminCursorLiquidPulse {
+                0%, 100% {
+                    border-radius: 60% 42% 58% 46%;
+                }
+                50% {
+                    border-radius: 42% 62% 44% 58%;
+                }
+            }
+        }
+    </style>
 </head>
 
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var userIdText = Context.Session.GetString("UserId");
+    var adminDisplayName = Context.Session.GetString("UserName") ?? Context.Session.GetString("UserEmail") ?? "User";
+    var normalizedAdminDisplayName = string.IsNullOrWhiteSpace(adminDisplayName)
+        ? "User"
+        : adminDisplayName.Trim();
+    var supportWhatsAppText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
+    var supportWhatsAppUrl = $"https://wa.me/919651698863?text={Uri.EscapeDataString(supportWhatsAppText)}";
+    var supportEmailSubject = "showTime Support Request";
+    var supportEmailText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
+    var supportEmailUrl = $"mailto:support@showtime.com?subject={Uri.EscapeDataString(supportEmailSubject)}&body={Uri.EscapeDataString(supportEmailText)}";
+    var hasUserId = int.TryParse(userIdText, out var currentUserId);
+    var isDashboardOnlyAdmin = hasUserId &&
+        RbacService.HasAnyActiveRole(currentUserId, "DUM_ADMIN") &&
+        !RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER");
+    var dumAdminAllowedNavActions = new[]
+    {
+        "Dashboard",
+        "Users",
+        "Bookings",
+        "Security",
+        "Transactions",
+        "Refunds",
+        "CouponUsage",
+        "Wallets",
+        "Notifications",
+        "ActivityLogs",
+        "Versions"
+    };
+    Func<string, string, bool> canShowAdminNav = (module, action) =>
+        hasUserId && (isDashboardOnlyAdmin || RbacService.HasPermission(currentUserId, module, action));
+    Func<string, bool> canShowAdminAction = action =>
+    {
+        if (!hasUserId)
+        {
+            return false;
+        }
+
+        if (isDashboardOnlyAdmin)
+        {
+            return dumAdminAllowedNavActions.Contains(action);
+        }
+
+        if (action == "Dashboard")
+        {
+            return RbacService.CanOpenAdminDashboard(currentUserId);
+        }
+
+        if (action == "Roles" || action == "ManageShows")
+        {
+            return RbacService.CanAccessSuperAdminArea(currentUserId);
+        }
+
+        return true;
+    };
+    var adminNavItems = new[]
+    {
+        new { Action = "Dashboard", Label = "Dashboard", Url = "/Admin/Dashboard", Module = "ADMIN", Permission = "VIEW" },
+        new { Action = "Users", Label = "Users", Url = "/Admin/Users", Module = "USER", Permission = "VIEW" },
+        new { Action = "UserAccess", Label = "User Access", Url = "/Admin/UserAccess", Module = "USER", Permission = "GRANT_ACCESS" },
+        new { Action = "Roles", Label = "Roles", Url = "/Admin/Roles", Module = "ROLE", Permission = "VIEW" },
+        new { Action = "ManageShows", Label = "Manage Shows", Url = "/Admin/ManageShows", Module = "SHOW", Permission = "VIEW" },
+        new { Action = "ContentManager", Label = "Data Manager", Url = "/Admin/ContentManager", Module = "SHOW", Permission = "VIEW" },
+        new { Action = "Bookings", Label = "Bookings", Url = "/Admin/Bookings", Module = "BOOKING", Permission = "VIEW" },
+        new { Action = "Security", Label = "Security", Url = "/Admin/Security", Module = "SCANNER", Permission = "VIEW" },
+        new { Action = "Transactions", Label = "Transactions", Url = "/Admin/Transactions", Module = "PAYMENT", Permission = "VIEW" },
+        new { Action = "Refunds", Label = "Refunds", Url = "/Admin/Refunds", Module = "REFUND", Permission = "VIEW" },
+        new { Action = "CouponUsage", Label = "Coupon Used", Url = "/Admin/CouponUsage", Module = "COUPON", Permission = "VIEW" },
+        new { Action = "Wallets", Label = "Wallets", Url = "/Admin/Wallets", Module = "WALLET", Permission = "VIEW" },
+        new { Action = "Notifications", Label = "Notifications", Url = "/Admin/Notifications", Module = "NOTIFICATION", Permission = "VIEW" },
+        new { Action = "ActivityLogs", Label = "Activity Logs", Url = "/Admin/ActivityLogs", Module = "ADMIN", Permission = "VIEW" },
+        new { Action = "Versions", Label = "Versions", Url = "/Admin/Versions", Module = "ADMIN", Permission = "VIEW" }
+    };
+    var showAdminFilters = new[]
+    {
+        "Users","UserAccess","Roles","Bookings","Security",
+        "Transactions","Wallets","Notifications","ActivityLogs","Versions","ContentManager"
+    }.Contains(currentAction);
+    var adminStatusOptions = currentAction switch
+    {
+        "Users" => new[] { "ACTIVE", "DISABLED", "NORMAL", "DELETED" },
+        "UserAccess" => new[] { "ACTIVE", "DISABLED" },
+        "Roles" => new[] { "ACTIVE", "INACTIVE" },
+        "Bookings" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
+        "Security" => new[] { "VALID", "INVALID", "DUPLICATE", "USED", "ISSUE", "CLEAR" },
+        "Transactions" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
+        "Wallets" => new[] { "ACTIVE", "DISABLED", "BLOCKED" },
+        "Notifications" => new[] { "SUCCESS", "SENT", "DELIVERED", "READ", "PENDING", "PROCESSING", "FAILED", "FAILURE", "ERROR", "CANCELLED", "REJECTED", "ISSUE" },
+        "ActivityLogs" => new[] { "SUCCESS", "FAILED", "ERROR", "PENDING" },
+        "Versions" => new[] { "CURRENT", "PREVIOUS" },
+        _ => Array.Empty<string>()
+    };
+    var adminMethodLabel = currentAction switch
+    {
+        "Transactions" => "Payment Method",
+        "Security" => "Gate / Device",
+        "Notifications" => "Source",
+        "Bookings" or "ContentManager" => "Show Type",
+        _ => string.Empty
+    };
+    var adminMethodOptions = currentAction switch
+    {
+        "Transactions" => new[] { "UPI", "CARD", "NETBANKING", "WALLET", "QR" },
+        "Security" => new[] { "GATE", "SCANNER", "DEVICE", "UNKNOWN" },
+        "Notifications" => new[] { "REFUND", "BOOKING", "PAYMENT", "NOTIFICATION", "SECURITY", "AUTH", "ADMIN", "LOG", "EMAIL", "SMS", "PUSH", "IN_APP", "WHATSAPP" },
+        "Bookings" or "ContentManager" => new[] { "MOVIE", "STANDUP", "LIVE" },
+        _ => Array.Empty<string>()
+    };
+    var adminPriorityOptions = currentAction switch
+    {
+        "Notifications" => new[] { "HIGH", "MEDIUM", "LOW", "NORMAL" },
+        "Security" => new[] { "HIGH", "NORMAL" },
+        _ => Array.Empty<string>()
+    };
+    var canUsePrintTools =
+        AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+    var canUseProtectedCapture =
+        hasUserId &&
+        RbacService.HasAnyActiveRole(currentUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
+    var canEditSupportDetails =
+        hasUserId &&
+        RbacService.CanOpenAdminDashboard(currentUserId);
+
+    var adminNotificationCount =
+        ViewData["AdminNotificationCount"] is int notificationCount
+            ? notificationCount
+            : 0;
 }
 
-<body>
+<body data-capture-allowed="@canUseProtectedCapture.ToString().ToLowerInvariant()">
+
+<div class="capture-protection-overlay no-print" data-capture-protection-overlay aria-hidden="true">
+    <div>
+        <strong>Protected Screen</strong>
+        <span>Recording, screenshots, search shortcuts, and print are allowed only for Admin and Super Admin.</span>
+    </div>
+</div>
+
+<div class="print-page-header" aria-hidden="true">
+    <div class="print-page-header-inner">
+        <div class="print-page-brand">
+            <img src="@Url.Content("~/images/brand/showtime-login-logo.png")" alt="" />
+            <div>
+                <strong>showTime</strong>
+                <span>showTime Admin</span>
+            </div>
+        </div>
+        <div>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</div>
+    </div>
+</div>
+<div class="print-page-watermark" aria-hidden="true">
+    <img src="@Url.Content("~/images/brand/showtime-login-logo.png")" alt="" />
+</div>
+<div class="print-page-footer" aria-hidden="true">
+    <div class="print-page-footer-inner">
+        <span>showTime</span>
+        <span>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</span>
+    </div>
+</div>
 
 <div class="admin-wrapper" id="adminShell">
 
-    <!-- Human Comment: Shared readable admin navigation with a hide/show top button. -->
     <aside class="admin-sidebar" id="adminSidebar">
 
-        <div class="admin-logo">
-            <span class="admin-logo-mark">AS</span>
-            <span>AmarShowsBook</span>
+        <div class="admin-logo no-print">
+            <img class="admin-logo-image" src="~/images/brand/showtime-login-logo.png" alt="" asp-append-version="true" />
+            <span class="admin-logo-text">showTimeBook</span>
         </div>
 
         <nav class="admin-nav" aria-label="Admin navigation">
 
-            <a class="@(currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">Dashboard</a>
-            <a class="@(currentAction == "Users" ? "active" : "")" href="/Admin/Users">Users</a>
-            <a class="@(currentAction == "UserAccess" ? "active" : "")" href="/Admin/UserAccess">User Access</a>
-            <a class="@(currentAction == "Roles" ? "active" : "")" href="/Admin/Roles">Roles</a>
-            <a class="@(currentAction == "Permissions" ? "active" : "")" href="/Admin/Permissions">Permissions</a>
-            <a class="@(currentAction == "Bookings" ? "active" : "")" href="/Admin/Bookings">Bookings</a>
-            <a class="@(currentAction == "Transactions" ? "active" : "")" href="/Admin/Transactions">Transactions</a>
-            <a class="@(currentAction == "Refunds" ? "active" : "")" href="/Admin/Refunds">Refunds</a>
-            <a class="@(currentAction == "Wallets" ? "active" : "")" href="/Admin/Wallets">Wallets</a>
-            <a class="@(currentAction == "Notifications" ? "active" : "")" href="/Admin/Notifications">Notifications</a>
-            <a class="@(currentAction == "ActivityLogs" ? "active" : "")" href="/Admin/ActivityLogs">Activity Logs</a>
+            @foreach (var item in adminNavItems.Where(x => canShowAdminNav(x.Module, x.Permission) && canShowAdminAction(x.Action)))
+            {
+                var isActive = currentAction == item.Action ||
+                    (item.Action == "Transactions" && currentAction == "TransactionDetails") ||
+                    (item.Action == "Refunds" && currentAction == "RefundDetails");
+
+                if (item.Action == "Versions" && canEditSupportDetails)
+                {
+                    <button type="button" class="admin-nav-button" onclick="openAdminSupportDetails()">
+                        <span class="admin-nav-label">Support Details</span>
+                    </button>
+                }
+
+                <a class="@(isActive ? "active" : "")" href="@item.Url">
+                    <span class="admin-nav-label">@item.Label</span>
+                    @if (item.Action == "Notifications" && adminNotificationCount > 0)
+                    {
+                        <span class="admin-nav-count" title="Pending admin notifications">
+                            @adminNotificationCount
+                        </span>
+                    }
+                </a>
+            }
 
         </nav>
 
     </aside>
 
+    <button class="admin-sidebar-toggle no-print"
+            type="button"
+            id="adminNavToggle"
+            aria-controls="adminSidebar"
+            aria-expanded="true"
+            title="Hide Sidebar">
+        <span class="admin-sidebar-toggle-icon" aria-hidden="true">&lsaquo;</span>
+    </button>
+
     <main class="admin-main">
 
         <header class="admin-topbar">
-            <button class="admin-icon-btn"
+
+            <button class="admin-icon-btn no-print"
                     type="button"
-                    id="adminNavToggle"
-                    aria-controls="adminSidebar"
-                    aria-expanded="true"
-                    title="Hide or show navigation">
-                ☰ Menu
+                    onclick="adminBack()">
+                Back
             </button>
 
-            <!-- Human Comment: Shared admin search filters visible tables and dashboard cards on the current page. -->
+            @if (canUsePrintTools)
+            {
+                <button class="admin-icon-btn no-print"
+                        type="button"
+                        onclick="window.print()">
+                    Print
+                </button>
+            }
+
+            @if (canUsePrintTools)
+            {
+                <button class="admin-icon-btn no-print"
+                        type="button"
+                        id="adminExportButton"
+                        data-admin-export
+                        data-admin-export-url="@(ViewData["AdminExportUrl"] as string ?? "")"
+                        title="Export visible admin data">
+                    Export
+                </button>
+            }
+
+            <div class="admin-theme-switcher no-print" aria-label="Theme selector">
+                <button type="button" data-admin-theme="system" onclick="setAdminTheme('system')">System</button>
+                <button type="button" data-admin-theme="dark" onclick="setAdminTheme('dark')">Dark</button>
+                <button type="button" data-admin-theme="white" onclick="setAdminTheme('white')">White</button>
+                <button type="button" data-admin-theme="cinema" onclick="setAdminTheme('cinema')">Cinema</button>
+            </div>
+
             <form class="admin-search" role="search" onsubmit="return false;">
                 <label for="adminPageSearch" class="visually-hidden">Search this page</label>
                 <span aria-hidden="true">⌕</span>
@@ -73,14 +445,1407 @@
             </form>
         </header>
 
+        @if(showAdminFilters)
+        {
+            <section class="admin-detail-panel admin-filter-panel no-print"
+                     id="adminContextFilter"
+                     data-page-filter
+                     data-page-filter-target=".admin-table tbody tr, table tbody tr, .access-card, [data-admin-searchable]">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <input type="text"
+                               class="form-control rounded-pill"
+                               data-page-filter-search
+                               placeholder="Search records">
+                    </div>
+                    @if(adminStatusOptions.Any())
+                    {
+                    <div class="col-md-2">
+                        <select class="form-select rounded-pill" data-page-filter-status>
+                            <option value="">All Status</option>
+                            @foreach(var option in adminStatusOptions)
+                            {
+                                <option value="@option">@option</option>
+                            }
+                        </select>
+                    </div>
+                    }
+                    @if(adminMethodOptions.Any())
+                    {
+                    <div class="col-md-2">
+                        <select class="form-select rounded-pill" data-page-filter-method>
+                            <option value="">All @adminMethodLabel</option>
+                            @foreach(var option in adminMethodOptions)
+                            {
+                                <option value="@option">@option</option>
+                            }
+                        </select>
+                    </div>
+                    }
+                    @if(adminPriorityOptions.Any())
+                    {
+                    <div class="col-md-2">
+                        <select class="form-select rounded-pill filter-priority-select" data-page-filter-priority>
+                            <option value="">All Color / Priority</option>
+                            @foreach(var option in adminPriorityOptions)
+                            {
+                                <option value="@option">@option</option>
+                            }
+                        </select>
+                    </div>
+                    }
+                    <div class="col-md-2">
+                        <select class="form-select rounded-pill" data-page-filter-sort>
+                            <option value="">Default Sort</option>
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="priority">Priority First</option>
+                            <option value="status">Status A-Z</option>
+                            <option value="source">Source A-Z</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button"
+                                class="btn btn-outline-dark rounded-pill w-100"
+                                data-page-filter-reset>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </section>
+        }
+
         @RenderBody()
+
+        <style>
+            .admin-main .table-wrapper table.admin-table thead th,
+            .admin-main table.admin-table thead th,
+            .admin-main .table thead th {
+                background:
+                    linear-gradient(180deg, var(--admin-panel-strong, #ffffff), rgba(248, 250, 252, 0.96)) !important;
+                color: var(--admin-ink, #111827) !important;
+                border-bottom: 3px solid var(--admin-gold, #d9a441) !important;
+                box-shadow:
+                    inset 0 -1px 0 var(--admin-line, rgba(17, 24, 39, 0.16)) !important;
+                text-shadow: none !important;
+            }
+
+            html[data-theme="dark"] .admin-main .table-wrapper table.admin-table thead th,
+            html[data-theme="dark"] .admin-main table.admin-table thead th,
+            html[data-theme="dark"] .admin-main .table thead th {
+                background:
+                    linear-gradient(180deg, #111827, #20293a) !important;
+                color: #f8fafc !important;
+                border-bottom-color: var(--admin-gold, #e3b75a) !important;
+            }
+
+            .admin-pagination-panel {
+                margin-top: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 12px;
+                flex-wrap: wrap;
+                padding: 16px;
+                background: var(--admin-panel, #ffffff);
+                border: 1px solid var(--admin-line, #e5e7eb);
+                border-radius: 8px;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            }
+
+            .admin-page-status {
+                display: flex;
+                align-items: baseline;
+                gap: 6px;
+                color: var(--admin-muted, #4b5563);
+                font-size: 14px;
+                white-space: nowrap;
+                margin-right: auto;
+            }
+
+            .admin-page-status strong {
+                color: var(--admin-ink, #111827);
+                font-size: 22px;
+            }
+
+            .admin-pagination-controls {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .admin-page-nav-btn,
+            .admin-page-search-form button {
+                min-width: 92px;
+                height: 40px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+                background: var(--admin-ink, #111827);
+                color: #ffffff;
+                border: 1px solid var(--admin-ink, #111827);
+                font-size: 14px;
+                font-weight: 700;
+                transition: 0.2s;
+                cursor: pointer;
+            }
+
+            .admin-page-nav-btn:hover,
+            .admin-page-search-form button:hover {
+                background: #374151;
+                border-color: #374151;
+                color: #ffffff;
+            }
+
+            .admin-page-nav-btn.disabled {
+                background: #f3f4f6;
+                color: #9ca3af;
+                border-color: #e5e7eb;
+                cursor: not-allowed;
+            }
+
+            .admin-page-search-form {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                border: 0;
+            }
+
+            .admin-page-search-form input {
+                width: 118px;
+                height: 40px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                color: var(--admin-ink, #111827);
+                background: var(--admin-panel, #ffffff);
+                font-size: 15px;
+                font-weight: 700;
+                padding: 0 12px;
+            }
+
+            .admin-page-search-form input:focus {
+                outline: 2px solid #93c5fd;
+                outline-offset: 1px;
+            }
+
+            .admin-confirm-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 99999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
+                background: rgba(15, 23, 42, 0.5);
+                backdrop-filter: blur(7px);
+            }
+
+            .admin-confirm-backdrop.is-open {
+                display: flex;
+            }
+
+            .admin-confirm-dialog {
+                width: min(420px, 100%);
+                border: 1px solid color-mix(in srgb, var(--admin-gold, #f2bd2d) 48%, var(--admin-line, #d1d5db));
+                border-radius: 8px;
+                background: var(--admin-panel, #ffffff);
+                color: var(--admin-ink, #111827);
+                box-shadow: 0 28px 70px rgba(15, 23, 42, 0.28);
+                overflow: hidden;
+            }
+
+            .admin-confirm-dialog header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 16px 18px 10px;
+            }
+
+            .admin-confirm-mark {
+                width: 34px;
+                height: 34px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                background: linear-gradient(135deg, var(--admin-rose, #c94f68), var(--admin-gold, #f2bd2d));
+                color: #ffffff;
+                font-weight: 950;
+            }
+
+            .admin-confirm-dialog h2 {
+                margin: 0;
+                font-size: 1.08rem;
+                font-weight: 950;
+            }
+
+            .admin-confirm-dialog p {
+                margin: 0;
+                padding: 0 18px 16px;
+                color: var(--admin-muted, #526071);
+                font-size: 0.92rem;
+                line-height: 1.5;
+            }
+
+            .admin-confirm-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                padding: 14px 18px 18px;
+                background: var(--admin-panel-strong, #f8fafc);
+            }
+
+            .admin-confirm-actions button {
+                min-height: 38px;
+                padding: 8px 14px;
+                border: 1px solid var(--admin-line, #d1d5db);
+                border-radius: 999px;
+                font-weight: 900;
+            }
+
+            .admin-confirm-cancel {
+                background: var(--admin-panel, #ffffff);
+                color: var(--admin-ink, #111827);
+            }
+
+            .admin-confirm-ok {
+                border-color: color-mix(in srgb, var(--admin-rose, #c94f68) 58%, var(--admin-line, #d1d5db));
+                background: linear-gradient(135deg, var(--admin-rose, #c94f68), #dc2626);
+                color: #ffffff;
+            }
+
+            @@media(max-width: 768px) {
+                .admin-pagination-panel,
+                .admin-page-search-form {
+                    align-items: stretch;
+                    flex-direction: column;
+                    width: 100%;
+                }
+
+                .admin-page-status {
+                    margin-right: 0;
+                }
+
+                .admin-pagination-controls {
+                    align-items: stretch;
+                    flex-direction: column;
+                    width: 100%;
+                }
+
+                .admin-page-nav-btn,
+                .admin-page-search-form button,
+                .admin-page-search-form input {
+                    width: 100%;
+                }
+            }
+        </style>
 
     </main>
 
 </div>
 
-<script src="~/js/admin/admin-dashboard.js"></script>
+<div class="admin-confirm-backdrop no-print" id="adminConfirmLogout" role="dialog" aria-modal="true" aria-labelledby="adminConfirmLogoutTitle">
+    <div class="admin-confirm-dialog">
+        <header>
+            <span class="admin-confirm-mark">⏻</span>
+            <h2 id="adminConfirmLogoutTitle">Confirm Logout</h2>
+        </header>
+        <p>Are you sure you want to log out?</p>
+        <div class="admin-confirm-actions">
+            <button class="admin-confirm-cancel" type="button" data-admin-logout-cancel>Stay Logged In</button>
+            <button class="admin-confirm-ok" type="button" data-admin-logout-ok>Logout</button>
+        </div>
+    </div>
+</div>
+
+<div class="admin-amaro-widget no-print" data-amaro-widget>
+    <button class="admin-amaro-launcher"
+            type="button"
+            data-amaro-toggle
+            aria-expanded="false"
+            aria-controls="adminAmaroPanel">
+        <span>A</span>
+        <strong>Amaro</strong>
+    </button>
+    <section id="adminAmaroPanel"
+             class="admin-amaro-panel"
+             aria-label="Amaro role assistant"
+             hidden>
+        <div class="admin-amaro-header">
+            <div>
+                <span>Amaro</span>
+                <strong data-amaro-greeting>Ask me for admin summaries, search, exports, print, and role-allowed actions.</strong>
+            </div>
+            <button type="button" data-amaro-close aria-label="Close Amaro">×</button>
+        </div>
+        <div class="admin-amaro-deck" data-amaro-command-deck>
+            <button type="button" data-amaro-prompt="admin summary">Summary</button>
+            <button type="button" data-amaro-prompt="search admin records">Search</button>
+            <button type="button" data-amaro-prompt="print this page">Print</button>
+            <button type="button" data-amaro-prompt="go back">Back</button>
+            @if (canUsePrintTools)
+            {
+                <button type="button" data-amaro-prompt="export this page">Export</button>
+            }
+            <button type="button" data-amaro-prompt="what can I do">Access</button>
+            <button type="button" data-amaro-prompt="contact support"><span class="action-icon-inline" aria-hidden="true"><svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span>Help</button>
+        </div>
+        <div class="admin-amaro-options" data-amaro-options></div>
+        <div class="admin-amaro-thread" data-amaro-thread>
+            <div class="admin-amaro-message admin-amaro-message-bot">
+                I follow your RBAC role. Ask for refunds, users, bookings, security, wallet, notifications, coupons, support, versions, shows, or developer tools.
+            </div>
+        </div>
+        <form class="admin-amaro-form" data-amaro-form>
+            @Html.AntiForgeryToken()
+            <input data-amaro-input
+                   type="text"
+                   maxlength="300"
+                   placeholder="Ask Amaro to summarize, search, open, print, export, or guide actions"
+                   autocomplete="off" />
+            <button type="submit">Send</button>
+        </form>
+    </section>
+</div>
+
+<script src="~/js/admin/admin-dashboard.js" asp-append-version="true"></script>
+<script>
+window.openAdminSupportDetails = function () {
+    if (typeof window.openSupportDetailsModal === "function") {
+        window.openSupportDetailsModal();
+        return;
+    }
+
+    window.location.href = "/Admin/Dashboard#supportDetails";
+};
+
+if (window.location.pathname.toLowerCase() === "/admin/dashboard" &&
+    window.location.hash.toLowerCase() === "#supportdetails" &&
+    typeof window.openSupportDetailsModal === "function") {
+    window.openSupportDetailsModal();
+}
+
+window.showCaptureProtection = window.showCaptureProtection || function (message) {
+    const overlay = document.querySelector("[data-capture-protection-overlay]");
+    if (!overlay) {
+        return;
+    }
+
+    const detail = overlay.querySelector("span");
+    if (detail && message) {
+        detail.textContent = message;
+    }
+
+    overlay.classList.add("is-visible");
+    clearTimeout(window.__captureProtectionTimer);
+    window.__captureProtectionTimer = setTimeout(() => {
+        overlay.classList.remove("is-visible");
+    }, 1800);
+};
+
+(function () {
+    const canCapture = document.body?.dataset.captureAllowed === "true";
+    if (canCapture) {
+        return;
+    }
+
+    const protectedMessage = "Recording, screenshots, search shortcuts, and print are allowed only for Admin and Super Admin.";
+    const nativePrint = window.print;
+
+    window.print = function () {
+        window.showCaptureProtection("Print is allowed only for Admin and Super Admin.");
+        return false;
+    };
+
+    window.__showTimeNativePrint = nativePrint;
+
+    if (navigator.mediaDevices?.getDisplayMedia) {
+        navigator.mediaDevices.getDisplayMedia = function () {
+            window.showCaptureProtection(protectedMessage);
+            return Promise.reject(new DOMException("Screen capture is restricted.", "NotAllowedError"));
+        };
+    }
+
+    document.addEventListener("keydown", function (event) {
+        const key = String(event.key || "").toLowerCase();
+        const code = String(event.code || "").toLowerCase();
+        const hasModifier = event.ctrlKey || event.metaKey;
+        const isBlockedShortcut =
+            (hasModifier && ["p", "s", "f", "u"].includes(key)) ||
+            (event.ctrlKey && event.shiftKey && ["i", "j", "c", "s"].includes(key)) ||
+            (event.metaKey && event.altKey && ["i", "j", "c"].includes(key)) ||
+            key === "f12" ||
+            key === "printscreen" ||
+            code === "printscreen" ||
+            (event.metaKey && event.shiftKey && ["3", "4", "5"].includes(key));
+
+        if (!isBlockedShortcut) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        window.showCaptureProtection(protectedMessage);
+    }, true);
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+        window.showCaptureProtection(protectedMessage);
+    }, true);
+
+    window.addEventListener("beforeprint", function (event) {
+        event.preventDefault?.();
+        window.showCaptureProtection("Print is allowed only for Admin and Super Admin.");
+    });
+})();
+</script>
+<script>
+(function () {
+    let committedTheme = localStorage.getItem("showTimeTheme") || "cinema";
+
+    function markAdminTheme(choice) {
+        document.querySelectorAll("[data-admin-theme]").forEach(button => {
+            button.classList.toggle("active", button.dataset.adminTheme === choice);
+        });
+    }
+
+    function previewAdminTheme(choice) {
+        const theme = choice || committedTheme || "cinema";
+        document.documentElement.dataset.theme = theme;
+    }
+
+    function restoreAdminThemePreview() {
+        previewAdminTheme(committedTheme);
+        markAdminTheme(committedTheme);
+    }
+
+    window.setAdminTheme = function (choice) {
+        const theme = choice || "cinema";
+        committedTheme = theme;
+        localStorage.setItem("showTimeTheme", theme);
+        localStorage.setItem("showTimeThemeVersion", "3");
+        document.documentElement.dataset.theme = theme;
+        markAdminTheme(theme);
+    };
+
+    window.adminBack = function () {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        window.location.href = "/Admin/Dashboard";
+    };
+
+    window.confirmLogout = function () {
+        const popup = document.getElementById("adminConfirmLogout");
+        if (!popup) {
+            return confirm("Are you sure you want to logout?");
+        }
+
+        popup.classList.add("is-open");
+        return false;
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const saved = localStorage.getItem("showTimeTheme") || "cinema";
+        committedTheme = saved;
+        window.setAdminTheme(saved);
+
+        document.querySelectorAll("[data-admin-theme]").forEach(button => {
+            const choice = button.dataset.adminTheme;
+            button.addEventListener("mouseenter", () => previewAdminTheme(choice));
+            button.addEventListener("focus", () => previewAdminTheme(choice));
+            button.addEventListener("mouseleave", restoreAdminThemePreview);
+            button.addEventListener("blur", restoreAdminThemePreview);
+        });
+
+        const popup = document.getElementById("adminConfirmLogout");
+        const ok = document.querySelector("[data-admin-logout-ok]");
+        const cancel = document.querySelector("[data-admin-logout-cancel]");
+
+        ok?.addEventListener("click", function () {
+            window.location.href = "/Auth/Logout";
+        });
+
+        cancel?.addEventListener("click", function () {
+            popup?.classList.remove("is-open");
+        });
+
+        popup?.addEventListener("click", function (event) {
+            if (event.target === popup) {
+                popup.classList.remove("is-open");
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                popup?.classList.remove("is-open");
+            }
+        });
+    });
+})();
+</script>
+<script>
+window.contactIconSvg = window.contactIconSvg || function (type) {
+    if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+    if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
+    return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".alert-danger").forEach(function (alert) {
+        if (alert.querySelector(".alert-support-menu")) return;
+
+        const supportMenu = document.createElement("span");
+        supportMenu.className = "alert-support-menu";
+
+        const supportLabel = document.createElement("button");
+        supportLabel.type = "button";
+        supportLabel.className = "alert-support-link";
+        supportLabel.title = "Help";
+        supportLabel.setAttribute("aria-haspopup", "true");
+        supportLabel.setAttribute("aria-expanded", "false");
+
+        const supportIcon = document.createElement("span");
+        supportIcon.className = "alert-support-icon";
+        supportIcon.innerHTML = window.contactIconSvg("call");
+
+        const supportText = document.createElement("span");
+        supportText.className = "alert-support-label";
+        supportText.textContent = "Help";
+
+        supportLabel.appendChild(supportIcon);
+        supportLabel.appendChild(supportText);
+
+        const supportOptions = document.createElement("span");
+        supportOptions.className = "alert-support-options";
+        supportOptions.setAttribute("role", "menu");
+        supportOptions.setAttribute("aria-label", "Help options");
+
+        const callLink = document.createElement("a");
+        callLink.href = "tel:+919651698863";
+        callLink.innerHTML = window.contactIconSvg("call") + "Call Us";
+        callLink.setAttribute("role", "menuitem");
+
+        const emailLink = document.createElement("a");
+        emailLink.href = "@supportEmailUrl";
+        emailLink.innerHTML = window.contactIconSvg("mail") + "Email Us";
+        emailLink.setAttribute("role", "menuitem");
+
+        const whatsappLink = document.createElement("a");
+        whatsappLink.href = "@supportWhatsAppUrl";
+        whatsappLink.target = "_blank";
+        whatsappLink.rel = "noopener";
+        whatsappLink.innerHTML = window.contactIconSvg("whatsapp") + "WhatsApp Us";
+        whatsappLink.setAttribute("role", "menuitem");
+
+        supportOptions.appendChild(callLink);
+        supportOptions.appendChild(emailLink);
+        supportOptions.appendChild(whatsappLink);
+        supportMenu.appendChild(supportLabel);
+        supportMenu.appendChild(supportOptions);
+        alert.appendChild(supportMenu);
+    });
+});
+</script>
+<script>
+(function () {
+    // Admin assistant can trigger local export only when the current role can see the export button.
+    const widget = document.querySelector("[data-amaro-widget]");
+    if (!widget) return;
+
+    const toggle = widget.querySelector("[data-amaro-toggle]");
+    const close = widget.querySelector("[data-amaro-close]");
+    const panel = widget.querySelector("#adminAmaroPanel");
+    const form = widget.querySelector("[data-amaro-form]");
+    const input = widget.querySelector("[data-amaro-input]");
+    const thread = widget.querySelector("[data-amaro-thread]");
+    const options = widget.querySelector("[data-amaro-options]");
+    const greeting = widget.querySelector("[data-amaro-greeting]");
+    const commandDeck = widget.querySelector("[data-amaro-command-deck]");
+    const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
+    const submitButton = form.querySelector("button[type='submit']");
+    const canCapture = document.body?.dataset.captureAllowed === "true";
+
+    function addMessage(text, kind) {
+        const bubble = document.createElement("div");
+        bubble.className = "admin-amaro-message admin-amaro-message-" + kind;
+        bubble.textContent = text;
+        thread.appendChild(bubble);
+        thread.scrollTop = thread.scrollHeight;
+        return bubble;
+    }
+
+    function findPageSearchInput() {
+        return document.querySelector("#adminPageSearch") ||
+            document.querySelector("[data-page-filter-search]") ||
+            document.querySelector("input[type='search']") ||
+            Array.from(document.querySelectorAll("input[type='text']")).find(field =>
+                /search|filter|find/i.test(field.placeholder || field.name || field.id || ""));
+    }
+
+    function applyPageSearch(term) {
+        const searchInput = findPageSearchInput();
+        if (!searchInput) {
+            addMessage("I could not find a search box on this page.", "bot");
+            return true;
+        }
+
+        searchInput.focus();
+        searchInput.value = term || "";
+        ["input", "keyup", "change"].forEach(type => {
+            searchInput.dispatchEvent(new Event(type, { bubbles: true }));
+        });
+
+        addMessage(term ? `Searching this page for "${term}".` : "Search box is ready. Type what you want to find.", "bot");
+        return true;
+    }
+
+    function directCommandFor(text) {
+        const clean = String(text || "").trim();
+        const lower = clean.toLowerCase();
+        const markers = [
+            "search this page for ",
+            "search page for ",
+            "filter this page for ",
+            "find on this page ",
+            "search current page for ",
+            "page search "
+        ];
+
+        if (lower === "back" || lower === "go back" || lower.includes("previous page")) return "go-back";
+        if (lower === "print" || lower === "print page" || lower === "print this page" || lower.includes("print current page")) return "print-page";
+        if (lower === "clear search" || lower === "clear page search" || lower === "clear this page search") return "clear-page-search";
+        if (lower === "search this page" || lower === "search page" || lower === "filter this page") return "page-search:";
+        if (lower.includes("export dashboard") || lower.includes("dashboard export")) return "export-dashboard";
+        if (lower === "export" || lower === "export this page") return "admin-export";
+        if (lower === "close" || lower === "close bot" || lower === "hide bot" || lower === "hide amaro") return "close-bot";
+        if (lower === "top" || lower === "go top" || lower === "scroll top") return "scroll-top";
+        if (lower === "bottom" || lower === "go bottom" || lower === "scroll bottom") return "scroll-bottom";
+        if (lower === "reload" || lower === "refresh" || lower === "refresh page") return "reload-page";
+        if (lower === "home" || lower === "open home" || lower === "go home") return "open:/Home/ShowTime";
+        if (lower === "wallet" || lower === "open wallet" || lower === "my wallet") return "open:/Wallet/MyWallet";
+        if (lower === "transactions" || lower === "transaction" || lower === "my transactions") return "open:/Transaction/History";
+        if (lower === "bookings" || lower === "my bookings" || lower === "tickets" || lower === "my tickets") return "open:/Booking/MyBookings";
+        if (lower === "profile" || lower === "my profile" || lower === "open profile") return "open:/Profile/MyProfile";
+        if (lower === "admin" || lower === "dashboard" || lower === "admin dashboard") return "open:/Admin/Dashboard";
+        if (lower === "users" || lower === "admin users") return "open:/Admin/Users";
+        if (lower === "roles" || lower === "permissions") return "open:/Admin/Roles";
+        if (lower === "refunds" || lower === "admin refunds") return "open:/Admin/Refunds";
+        if (lower === "security" || lower === "scanner") return "open:/Admin/Security";
+        if (lower === "notifications") return "open:/Admin/Notifications";
+        if (lower === "coupons" || lower === "coupon usage") return "open:/Admin/CouponUsage";
+        if (lower === "activity" || lower === "activity logs") return "open:/Admin/ActivityLogs";
+        if (lower === "versions") return "open:/Admin/Versions";
+        if (lower === "theme dark" || lower === "dark") return "theme:dark";
+        if (lower === "theme white" || lower === "white") return "theme:white";
+        if (lower === "theme cinema" || lower === "cinema") return "theme:cinema";
+        if (lower === "theme system" || lower === "system theme") return "theme:system";
+        if (lower === "cursor native" || lower === "native cursor") return "cursor:native";
+        if (lower === "cursor liquid" || lower === "liquid cursor") return "cursor:liquid";
+        if (lower === "cursor precision" || lower === "precision cursor") return "cursor:precision";
+        if (lower === "cursor spotlight" || lower === "spotlight cursor") return "cursor:spotlight";
+
+        for (const marker of markers) {
+            const index = lower.indexOf(marker);
+            if (index >= 0) {
+                return "page-search:" + clean.slice(index + marker.length).trim();
+            }
+        }
+
+        return "";
+    }
+
+    function runCommand(command, label) {
+        const value = String(command || "");
+
+        if (value === "theme-options") {
+            renderOptions([
+                { label: "Cinema Theme", command: "theme:cinema" },
+                { label: "Dark Theme", command: "theme:dark" },
+                { label: "White Theme", command: "theme:white" },
+                { label: "System Theme", command: "theme:system" }
+            ]);
+            addMessage("Choose a theme option.", "bot");
+            return true;
+        }
+
+        if (value === "cursor-options") {
+            renderOptions([
+                { label: "Native Cursor", command: "cursor:native" },
+                { label: "Liquid Cursor", command: "cursor:liquid" },
+                { label: "Precision Cursor", command: "cursor:precision" },
+                { label: "Spotlight Cursor", command: "cursor:spotlight" }
+            ]);
+            addMessage("Choose a cursor style.", "bot");
+            return true;
+        }
+
+        if (value === "show-suggestions") {
+            renderOptions([
+                { label: "Upcoming Shows", url: "/Home/ShowTime" },
+                { label: "Movies", command: "filter-type:Movie" },
+                { label: "Standup", command: "filter-type:Standup" },
+                { label: "Live Streams", command: "filter-type:Live" },
+                { label: "Today Shows", command: "ask:today shows" }
+            ]);
+            addMessage("Choose how you want to explore shows.", "bot");
+            return true;
+        }
+
+        if (value === "support-options") {
+            renderOptions([
+                { label: "Call Us", url: "tel:+919651698863" },
+                { label: "Write Us", url: "mailto:support@showtime.com" },
+                { label: "WhatsApp Us", url: "@supportWhatsAppUrl" },
+                { label: "Admin Dashboard", url: "/Admin/Dashboard" },
+                { label: "My Bookings", url: "/Booking/MyBookings" }
+            ]);
+            addMessage("Choose Call Us, Write Us, or WhatsApp Us for support. Share the booking, transaction, or refund reference when possible.", "bot");
+            return true;
+        }
+
+        if (value === "admin-export") {
+            const exportButton = document.querySelector("[data-admin-export]");
+            if (exportButton) {
+                exportButton.click();
+                addMessage((label || "Export") + " is being generated. Your download will start shortly.", "bot");
+            } else {
+                addMessage("Open an admin table page first, then I can export its visible rows.", "bot");
+            }
+            return true;
+        }
+
+        if (value === "export-dashboard") {
+            addMessage("Dashboard Excel export is being generated. Your download will start shortly.", "bot");
+            window.location.href = "/Admin/ExportDashboard";
+            return true;
+        }
+
+        if (value === "print-page") {
+            if (!canCapture) {
+                window.showCaptureProtection?.("Print is allowed only for Admin and Super Admin.");
+                addMessage("Print is blocked for your role.", "bot");
+                return true;
+            }
+            addMessage("Opening the print dialog for this page.", "bot");
+            setTimeout(() => window.print(), 80);
+            return true;
+        }
+
+        if (value === "go-back") {
+            addMessage("Taking you back.", "bot");
+            setTimeout(() => {
+                if (window.adminBack) {
+                    window.adminBack();
+                } else if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = "/Admin/Dashboard";
+                }
+            }, 80);
+            return true;
+        }
+
+        if (value.startsWith("page-search:")) {
+            return applyPageSearch(value.slice("page-search:".length).trim());
+        }
+
+        if (value === "clear-page-search") {
+            return applyPageSearch("");
+        }
+
+        if (value === "close-bot") {
+            panel.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+            return true;
+        }
+
+        if (value === "scroll-top") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            addMessage("Moved to the top of the page.", "bot");
+            return true;
+        }
+
+        if (value === "scroll-bottom") {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+            addMessage("Moved to the bottom of the page.", "bot");
+            return true;
+        }
+
+        if (value === "reload-page") {
+            addMessage("Refreshing this page.", "bot");
+            setTimeout(() => window.location.reload(), 120);
+            return true;
+        }
+
+        if (value.startsWith("open:")) {
+            const url = value.slice(5);
+            if (url.startsWith("/")) {
+                addMessage("Opening " + (label || "that page") + ".", "bot");
+                window.location.href = url;
+                return true;
+            }
+        }
+
+        if (value.startsWith("ask:")) {
+            sendMessage(value.slice(4));
+            return true;
+        }
+
+        if (value.startsWith("theme:")) {
+            const theme = value.split(":")[1] || "cinema";
+            if (window.setAdminTheme) {
+                window.setAdminTheme(theme);
+            } else if (window.setAppTheme) {
+                window.setAppTheme(theme);
+            }
+            addMessage((label || "Theme") + " applied.", "bot");
+            return true;
+        }
+
+        if (value.startsWith("cursor:")) {
+            const cursor = value.split(":")[1] || "native";
+            window.setAppCursorStyle?.(cursor);
+            addMessage((label || "Cursor") + " applied across the app.", "bot");
+            return true;
+        }
+
+        if (value.startsWith("filter-type:")) {
+            const showType = value.split(":")[1] || "Movie";
+            window.location.href = "/Home/ShowTime?type=" + encodeURIComponent(showType);
+            return true;
+        }
+
+        return false;
+    }
+
+    function normalizeOption(item) {
+        const option = typeof item === "string"
+            ? { label: item, url: "", command: "" }
+            : { label: item.label || item.url || "", url: item.url || "", command: item.command || "" };
+        const label = String(option.label || "").trim();
+        const key = label.toLowerCase();
+
+        if (!option.command && !option.url) {
+            if (key === "login") option.url = "/Auth/Login";
+            if (key === "signup") option.url = "/Auth/Signup";
+            if (key.includes("today") || key.includes("browse") || key === "book a show" || key === "book shows") option.url = "/Home/ShowTime";
+            if (key === "movies" || key === "movie") option.command = "filter-type:Movie";
+            if (key === "standup") option.command = "filter-type:Standup";
+            if (key.includes("live")) option.command = "filter-type:Live";
+            if (key.includes("seat")) option.command = "show-suggestions";
+            if (key.includes("theme")) option.command = "theme-options";
+            if (key.includes("cursor")) option.command = "cursor-options";
+            if (key.includes("support") || key.includes("contact")) option.command = "support-options";
+            if (key.includes("export dashboard") || key.includes("dashboard export")) option.command = "export-dashboard";
+            else if (key.includes("export")) option.command = "admin-export";
+            if (key.includes("print")) option.command = "print-page";
+            if (key === "back" || key.includes("go back")) option.command = "go-back";
+            if (key.includes("search this page")) option.command = "page-search:";
+            if (key.includes("clear search")) option.command = "clear-page-search";
+            if (key === "home") option.command = "open:/Home/ShowTime";
+            if (key === "admin dashboard") option.command = "open:/Admin/Dashboard";
+            if (key.includes("admin summary")) option.command = "ask:admin summary";
+            if (key.includes("search admin")) option.command = "ask:search admin records";
+            if (key.includes("booking") && key.includes("my")) option.url = "/Booking/MyBookings";
+            if (key === "wallet") option.url = "/Wallet/MyWallet";
+            if (key.includes("transaction")) option.url = "/Transaction/History";
+            if (key === "profile") option.url = "/Profile/MyProfile";
+        }
+
+        return { label, url: option.url || "", command: option.command || "" };
+    }
+
+    function renderOptions(items) {
+        options.innerHTML = "";
+        items.slice(0, 6).forEach(item => {
+            const option = normalizeOption(item);
+
+            if (!option.label) return;
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = option.label;
+            button.addEventListener("click", () => {
+                if (option.command && runCommand(option.command, option.label)) {
+                    return;
+                }
+
+                if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:") || option.url.startsWith("https://wa.me/"))) {
+                    window.location.href = option.url;
+                    return;
+                }
+
+                sendMessage(option.label);
+            });
+            options.appendChild(button);
+        });
+    }
+
+    function sendMessage(text) {
+        const clean = (text || "").trim();
+        if (!clean) return;
+
+        addMessage(clean, "user");
+        input.value = "";
+
+        const directCommand = directCommandFor(clean);
+        if (directCommand) {
+            options.innerHTML = "";
+            if (runCommand(directCommand, clean)) {
+                return;
+            }
+        }
+
+        const thinking = addMessage("Thinking...", "bot");
+        input.disabled = true;
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Wait";
+        }
+
+        fetch("/Amaro/Ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "RequestVerificationToken": token
+            },
+            body: JSON.stringify({ message: clean })
+        })
+        .then(response => response.json())
+        .then(data => {
+            thinking.remove();
+            addMessage(data.message || "I could not find details for that yet.", "bot");
+            renderOptions(data.options || []);
+        })
+        .catch(() => {
+            thinking.remove();
+            addMessage("I could not reach Amaro right now. Please try again.", "bot");
+        })
+        .finally(() => {
+            input.disabled = false;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Send";
+            }
+            input.focus();
+        });
+    }
+
+    function loadMenu() {
+        fetch("/Amaro/Menu")
+            .then(response => response.json())
+            .then(data => {
+                if (data.greeting && greeting) {
+                    greeting.textContent = data.greeting;
+                }
+                renderOptions(data.options || []);
+            })
+            .catch(() => renderOptions([
+                "Admin Summary",
+                "Search Records",
+                ...(@canUsePrintTools.ToString().ToLowerInvariant() ? ["Export This Page"] : [])
+            ]));
+    }
+
+    commandDeck?.querySelectorAll("[data-amaro-prompt]").forEach(button => {
+        button.addEventListener("click", function () {
+            sendMessage(button.dataset.amaroPrompt || button.textContent);
+        });
+    });
+
+    toggle?.addEventListener("click", function () {
+        const isOpen = panel.hidden;
+        panel.hidden = !isOpen;
+        toggle.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) {
+            loadMenu();
+            setTimeout(() => input.focus(), 60);
+        }
+    });
+
+    close?.addEventListener("click", function () {
+        panel.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+    });
+
+    form?.addEventListener("submit", function (event) {
+        event.preventDefault();
+        sendMessage(input.value);
+    });
+})();
+</script>
+<script>
+(function () {
+    const finePointer = window.matchMedia("(pointer: fine)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    if (!finePointer.matches || reducedMotion.matches) {
+        return;
+    }
+
+    const root = document.documentElement;
+    const cursor = document.createElement("span");
+    const trail = document.createElement("span");
+    const cursorClasses = ["app-custom-cursor", "app-liquid-cursor", "app-precision-cursor", "app-spotlight-cursor"];
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
+    let trailX = cursorX;
+    let trailY = cursorY;
+    let rafId = 0;
+    let isReady = false;
+
+    cursor.className = "liquid-cursor";
+    trail.className = "liquid-cursor-trail";
+    cursor.setAttribute("aria-hidden", "true");
+    trail.setAttribute("aria-hidden", "true");
+
+    function applyLiveCursorColor(color) {
+        const cursorColor = color || getComputedStyle(root).getPropertyValue("--app-cursor-color").trim();
+        cursor.style.setProperty("--app-cursor-color", cursorColor);
+        trail.style.setProperty("--app-cursor-color", cursorColor);
+    }
+
+    function applyCursorStyle(choice) {
+        const cursorChoice = choice || localStorage.getItem("showTimeCursor") || "liquid";
+        const savedColor = localStorage.getItem("showTimeCursorColor");
+
+        root.dataset.cursorChoice = cursorChoice;
+        root.classList.remove(...cursorClasses);
+
+        if (savedColor) {
+            root.style.setProperty("--app-cursor-color", savedColor);
+        } else {
+            root.style.removeProperty("--app-cursor-color");
+        }
+        applyLiveCursorColor(savedColor);
+
+        if (cursorChoice !== "native") {
+            root.classList.add("app-custom-cursor", "app-" + cursorChoice + "-cursor");
+        }
+
+        if (cursorChoice === "native") {
+            cursor.style.display = "none";
+            trail.style.display = "none";
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = 0;
+            }
+            return;
+        }
+
+        cursor.style.display = "";
+        trail.style.display = "";
+        if (isReady && !rafId) {
+            rafId = requestAnimationFrame(renderCursor);
+        }
+    }
+
+    window.setAppCursorStyle = function (choice) {
+        const cursorChoice = choice || "native";
+        localStorage.setItem("showTimeCursor", cursorChoice);
+        applyCursorStyle(cursorChoice);
+    };
+
+    window.setAppCursorColor = function (color) {
+        const cursorColor = color || "";
+        if (cursorColor) {
+            localStorage.setItem("showTimeCursorColor", cursorColor);
+            root.style.setProperty("--app-cursor-color", cursorColor);
+        } else {
+            localStorage.removeItem("showTimeCursorColor");
+            root.style.removeProperty("--app-cursor-color");
+        }
+
+        applyLiveCursorColor(cursorColor);
+
+        if (!localStorage.getItem("showTimeCursor") && cursorColor) {
+            window.setAppCursorStyle("liquid");
+        }
+    };
+
+    function setActionState(event) {
+        const action = event.target.closest("a,button,input,select,textarea,label,[role='button'],.dashboard-card,.admin-nav a,.admin-icon-btn");
+        root.classList.toggle("cursor-action", Boolean(action));
+    }
+
+    function moveCursor(event) {
+        cursorX = event.clientX;
+        cursorY = event.clientY;
+        root.classList.remove("cursor-hidden");
+        setActionState(event);
+
+        if (!rafId) {
+            rafId = requestAnimationFrame(renderCursor);
+        }
+    }
+
+    function renderCursor() {
+        trailX += (cursorX - trailX) * 0.18;
+        trailY += (cursorY - trailY) * 0.18;
+
+        cursor.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0) translate(-50%, -50%)`;
+        trail.style.transform = `translate3d(${trailX}px, ${trailY}px, 0) translate(-50%, -50%)`;
+        rafId = requestAnimationFrame(renderCursor);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.body.appendChild(trail);
+        document.body.appendChild(cursor);
+        root.classList.add("cursor-hidden");
+        isReady = true;
+        window.setAppCursorColor(localStorage.getItem("showTimeCursorColor") || "");
+        applyCursorStyle(localStorage.getItem("showTimeCursor") || "liquid");
+    });
+
+    document.addEventListener("mousemove", moveCursor, { passive: true });
+    document.addEventListener("mouseleave", function () {
+        root.classList.add("cursor-hidden");
+    });
+})();
+</script>
+<script>
+(function () {
+    function contactIconSvg(type) {
+        if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+        if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
+        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
+    }
+
+    const iconMap = new Map([
+        ["help", contactIconSvg("call")],
+        ["email us", contactIconSvg("mail")],
+        ["write us", contactIconSvg("mail")],
+        ["whatsapp us", contactIconSvg("whatsapp")],
+        ["call us", contactIconSvg("call")],
+        ["summary", "📊"],
+        ["admin summary", "📊"],
+        ["search", "🔎"],
+        ["search records", "🔎"],
+        ["export", "⬇"],
+        ["export this page", "⬇"],
+        ["access", "🔐"],
+        ["open", "→"],
+        ["view", "👁"],
+        ["view details", "👁"],
+        ["save", "✓"],
+        ["save device", "✓"],
+        ["save changes", "✓"],
+        ["update", "✓"],
+        ["edit", "✎"],
+        ["delete", "🗑"],
+        ["cancel", "×"],
+        ["close", "×"],
+        ["reset", "↺"],
+        ["print", "🖨"],
+        ["download", "⬇"],
+        ["insert", "+"],
+        ["insert news", "+"],
+        ["add validation", "+"],
+        ["grant", "+"],
+        ["remove", "−"],
+        ["reactivate", "↺"],
+        ["suspend", "⏸"],
+        ["back to dashboard", "←"],
+        ["back to transactions", "←"],
+        ["logout", "⏻"],
+        ["my profile", "👤"],
+        ["developer profile", "🧩"]
+    ]);
+
+    function normalizedText(element) {
+        return Array.from(element.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE)
+            .map(node => node.textContent || "")
+            .join(" ")
+            .trim()
+            .replace(/\s+/g, " ")
+            .replace(/^←\s*/, "")
+            .toLowerCase();
+    }
+
+    function iconFor(label) {
+        if (iconMap.has(label)) return iconMap.get(label);
+        if (label.startsWith("back ")) return "←";
+        if (label.startsWith("save ")) return "✓";
+        if (label.startsWith("delete ")) return "🗑";
+        if (label.startsWith("download ")) return "⬇";
+        if (label.startsWith("view ")) return "👁";
+        return null;
+    }
+
+    function shouldSkip(element) {
+        const rawText = (element.textContent || "").trim();
+        return /^[←→↺✓✎×+\-−⏸⏻🖨⬇🔎🔐👁👤🧩📊]/u.test(rawText) ||
+            element.querySelector(".action-icon-inline,.contact-svg-icon,.alert-support-icon,.dashboard-profile-action-icon,.admin-nav-icon,.admin-icon-btn-icon") ||
+            element.closest(".alert-support-link,.dashboard-profile-action,.admin-nav a");
+    }
+
+    function iconify(root) {
+        const elements = root.matches?.("a, button")
+            ? [root, ...root.querySelectorAll("a, button")]
+            : [...root.querySelectorAll("a, button")];
+        elements.forEach(element => {
+            if (shouldSkip(element)) return;
+            const label = normalizedText(element);
+            if (!label) return;
+            const icon = iconFor(label);
+            if (!icon) return;
+
+            const iconSpan = document.createElement("span");
+            iconSpan.className = "action-icon-inline";
+            iconSpan.setAttribute("aria-hidden", "true");
+            if (icon.startsWith("<svg")) {
+                iconSpan.innerHTML = icon;
+            } else {
+                iconSpan.textContent = icon;
+            }
+            element.prepend(iconSpan);
+            element.classList.add("action-iconified");
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        iconify(document);
+        new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType !== Node.ELEMENT_NODE) return;
+                    iconify(node);
+                });
+            });
+        }).observe(document.body, { childList: true, subtree: true });
+    });
+})();
+</script>
 @await RenderSectionAsync("Scripts", required: false)
+
+<style>
+.admin-sidebar-toggle {
+    position: fixed !important;
+    left: calc(var(--admin-sidebar-width) - 14px) !important;
+    top: 50% !important;
+    z-index: 2147483000 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    margin: 0 !important;
+    border: 1px solid rgba(148, 163, 184, 0.32) !important;
+    border-radius: 0 14px 14px 0 !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #334155 !important;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16) !important;
+    transform: translateY(-50%) !important;
+}
+
+.admin-sidebar-toggle-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 1.55rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+}
+
+.admin-sidebar-toggle:hover,
+.admin-sidebar-toggle:focus-visible {
+    background: var(--admin-rose) !important;
+    border-color: var(--admin-rose) !important;
+    color: #fff !important;
+    transform: translateY(-50%) translateX(2px) !important;
+    outline: none !important;
+}
+
+.admin-wrapper.nav-collapsed .admin-sidebar-toggle {
+    left: 0 !important;
+}
+
+@@media (max-width: 820px) {
+    .admin-sidebar-toggle {
+        left: 0 !important;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-sidebar-toggle {
+        left: calc(min(82vw, 300px) - 14px) !important;
+    }
+}
+
+button:not(.admin-sidebar-toggle):not(:disabled):not(.disabled):not([aria-disabled="true"]),
+a.btn:not(.disabled):not([aria-disabled="true"]),
+a[class*="btn"]:not(.disabled):not([aria-disabled="true"]),
+a[role="button"]:not(.disabled):not([aria-disabled="true"]),
+label[class*="btn"]:not(.disabled):not([aria-disabled="true"]),
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+summary {
+    transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease !important;
+}
+
+button:not(.admin-sidebar-toggle):not(:disabled):not(.disabled):not([aria-disabled="true"]):hover,
+button:not(.admin-sidebar-toggle):not(:disabled):not(.disabled):not([aria-disabled="true"]):focus-visible,
+a.btn:not(.disabled):not([aria-disabled="true"]):hover,
+a.btn:not(.disabled):not([aria-disabled="true"]):focus-visible,
+a[class*="btn"]:not(.disabled):not([aria-disabled="true"]):hover,
+a[class*="btn"]:not(.disabled):not([aria-disabled="true"]):focus-visible,
+a[role="button"]:not(.disabled):not([aria-disabled="true"]):hover,
+a[role="button"]:not(.disabled):not([aria-disabled="true"]):focus-visible,
+label[class*="btn"]:not(.disabled):not([aria-disabled="true"]):hover,
+label[class*="btn"]:not(.disabled):not([aria-disabled="true"]):focus-visible,
+input[type="button"]:not(:disabled):hover,
+input[type="button"]:not(:disabled):focus-visible,
+input[type="submit"]:not(:disabled):hover,
+input[type="submit"]:not(:disabled):focus-visible {
+    transform: translateY(-2px) !important;
+    background: var(--admin-rose) !important;
+    border-color: var(--admin-rose) !important;
+    color: #fff !important;
+    filter: brightness(1.04) saturate(1.08) !important;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22) !important;
+    text-decoration: none !important;
+    outline: none !important;
+}
+
+body .admin-page button.btn:not(:disabled):not(.disabled):hover,
+body .admin-page button.btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page a.btn:not(.disabled):hover,
+body .admin-page a.btn:not(.disabled):focus-visible,
+body .admin-page .content-actions .btn:not(:disabled):not(.disabled):hover,
+body .admin-page .content-actions .btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page .content-form .btn:not(:disabled):not(.disabled):hover,
+body .admin-page .content-form .btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page .version-actions .btn:not(:disabled):not(.disabled):hover,
+body .admin-page .version-actions .btn:not(:disabled):not(.disabled):focus-visible,
+body .admin-page .content-tabs a:hover,
+body .admin-page .content-tabs a:focus-visible,
+body .admin-page .wallet-history-panel summary:hover,
+body .admin-page .wallet-history-panel summary:focus-visible {
+    transform: translateY(-2px) !important;
+    background: var(--admin-rose) !important;
+    border-color: var(--admin-rose) !important;
+    color: #fff !important;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22) !important;
+    filter: brightness(1.04) saturate(1.08) !important;
+    outline: none !important;
+}
+</style>
 
 </body>
 </html>

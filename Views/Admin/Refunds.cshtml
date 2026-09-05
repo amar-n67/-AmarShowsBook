@@ -1,9 +1,11 @@
 
 @model IEnumerable<AmarShowsBook.Models.Admin.VwRefundSummary>
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refund Management";
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
     var totalRefunds = Model.Count();
     var successRefunds = Model.Count(x => x.RefundStatus == "SUCCESS");
     var pendingRefunds = Model.Count(x => x.RefundStatus == "PENDING");
@@ -45,9 +47,6 @@
         </div>
     }
 
-    <!-- ===================================================== -->
-    <!-- PAGE HEADER -->
-    <!-- ===================================================== -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold mb-1 text-dark">
@@ -66,7 +65,9 @@
 
             </a>
 
-            <a
+            @if (canUsePrintTools)
+            {
+                <a
     asp-action="ExportRefunds"
     class="btn btn-dark rounded-pill px-4">
 
@@ -74,11 +75,9 @@
     Export
 
 </a>
+            }
         </div>
     </div>
-    <!-- ===================================================== -->
-    <!-- SUMMARY CARDS -->
-    <!-- ===================================================== -->
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -157,9 +156,6 @@
             </div>
         </div>
     </div>
-    <!-- ===================================================== -->
-    <!-- HUMAN COMMENT: ANALYTICAL STRUCTURE -->
-    <!-- ===================================================== -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -191,9 +187,6 @@
             </div>
         </div>
     </div>
-    <!-- ===================================================== -->
-    <!-- TOTAL REFUND AMOUNT -->
-    <!-- ===================================================== -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body d-flex justify-content-between align-items-center">
             <div>
@@ -209,9 +202,6 @@
             </div>
         </div>
     </div>
-    <!-- ===================================================== -->
-    <!-- FILTERS -->
-    <!-- ===================================================== -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
             <div class="row g-3 align-items-center">
@@ -271,9 +261,6 @@
             </div>
         </div>
     </div>
-    <!-- ===================================================== -->
-    <!-- REFUND TABLE -->
-    <!-- ===================================================== -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="table-responsive">
             <table class="table align-middle mb-0 refund-auto-table" id="refundTable">
@@ -295,7 +282,14 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        var refundDetailReason = !string.IsNullOrWhiteSpace(item.FailureReason)
+                            ? item.FailureReason
+                            : !string.IsNullOrWhiteSpace(item.RefundReason)
+                                ? item.RefundReason
+                                : "No refund reason recorded.";
+
+                        <tr data-refund-status="@item.RefundStatus"
+                            data-refund-method="@item.RefundMethod">
                             <td class="fw-semibold text-dark">
                                 @item.RefundRef
                             </td>
@@ -335,6 +329,17 @@
                                         FAILED
                                     </span>
                                 }
+                                @if (!string.Equals(item.RefundStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="app-info app-info-left">
+                                        <button type="button" class="app-info-btn" aria-label="Show refund status details">i</button>
+                                        <span class="app-info-popover" role="tooltip">
+                                            <b>Status</b> @(string.IsNullOrWhiteSpace(item.RefundStatus) ? "NA" : item.RefundStatus)<br />
+                                            <b>Reason</b> @refundDetailReason<br />
+                                            <b>Requested</b> @(item.RequestedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                                        </span>
+                                    </span>
+                                }
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
@@ -342,10 +347,10 @@
                                 </span>
                             </td>
                             <td>
-                                @item.RequestedAt?.ToString("dd MMM yyyy")
+                                @item.RequestedAt?
                                 <br />
                                 <span class="small text-muted">
-                                    @item.RequestedAt?.ToString("hh:mm tt")
+                                    @item.RequestedAt?
                                 </span>
                             </td>
                             <td>
@@ -358,7 +363,15 @@
     else if (item.RefundStatus == "REJECTED")
     {
         <span class="badge bg-danger px-3 py-2">
-            ❌ Rejected by Admin
+            Rejected - Ticket Active
+        </span>
+        <span class="app-info app-info-left">
+            <button type="button" class="app-info-btn" aria-label="Show rejected refund details">i</button>
+            <span class="app-info-popover" role="tooltip">
+                <b>Status</b> Rejected<br />
+                <b>Reason</b> @(string.IsNullOrWhiteSpace(item.RefundReason) ? "Ticket remains active or request was rejected by admin." : item.RefundReason)<br />
+                <b>Requested</b> @(item.RequestedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+            </span>
         </span>
     }
     else if (item.RefundStatus == "RETRY")
@@ -393,7 +406,6 @@
                 class="btn-group shadow-sm"
                 role="group">
 
-                <!-- APPROVE -->
 
                 <form
                     asp-action="ApproveRefund"
@@ -415,7 +427,6 @@
 
                 </form>
 
-                <!-- REJECT -->
 
                 <form
                     asp-action="RejectRefund"
@@ -428,7 +439,8 @@
 
                     <button
                         type="submit"
-                        class="btn btn-sm btn-danger px-3">
+                        class="btn btn-sm btn-danger px-3"
+                        title="Reject cancellation request and keep ticket active">
 
                         <i class="bi bi-x-lg me-1"></i>
                         Reject
@@ -468,16 +480,7 @@
             <div
                 class="d-flex align-items-center justify-content-center">
 
-                <div
-                    class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                    style="
-                        width: 34px;
-                        height: 34px;
-                    ">
-
-                    <i class="bi bi-check-lg"></i>
-
-                </div>
+                <span class="text-success fw-bold fs-4" title="Approved">✓</span>
 
             </div>
         }
@@ -487,16 +490,7 @@
             <div
                 class="d-flex align-items-center justify-content-center">
 
-                <div
-                    class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                    style="
-                        width: 34px;
-                        height: 34px;
-                    ">
-
-                    <i class="bi bi-x-lg"></i>
-
-                </div>
+                <span class="text-danger fw-bold fs-4" title="Rejected - ticket active">✕</span>
 
             </div>
         }
@@ -510,20 +504,13 @@
             </table>
         </div>
     </div>
-    <!-- Human Comment: Refunds show 50 rows per page and keep all columns auto-sized. -->
-    <div class="pagination-area">
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a class="page-btn @(i == currentPage ? "active" : "")"
-               href="/Admin/Refunds?page=@i">
-                @i
-            </a>
-        }
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Refunds"
+    })
 </div>
-<!-- ===================================================== -->
-<!-- FILTER SCRIPT -->
-<!-- ===================================================== -->
 <script>
     const searchInput = document.getElementById('refundSearch');
     const statusFilter = document.getElementById('statusFilter');
@@ -532,15 +519,17 @@
     statusFilter.addEventListener('change', filterTable);
     methodFilter.addEventListener('change', filterTable);
     function filterTable() {
-        const search = searchInput.value.toLowerCase();
-        const status = statusFilter.value.toLowerCase();
-        const method = methodFilter.value.toLowerCase();
+        const search = searchInput.value.trim().toLowerCase();
+        const status = statusFilter.value.trim().toLowerCase();
+        const method = methodFilter.value.trim().toLowerCase();
         const rows = document.querySelectorAll('#refundTable tbody tr');
         rows.forEach(row => {
             const text = row.innerText.toLowerCase();
-            const matchesSearch = text.includes(search);
-            const matchesStatus = !status || text.includes(status);
-            const matchesMethod = !method || text.includes(method);
+            const rowStatus = (row.dataset.refundStatus || '').trim().toLowerCase();
+            const rowMethod = (row.dataset.refundMethod || '').trim().toLowerCase();
+            const matchesSearch = !search || text.includes(search);
+            const matchesStatus = !status || rowStatus === status;
+            const matchesMethod = !method || rowMethod === method;
             row.style.display =
                 matchesSearch && matchesStatus && matchesMethod
                     ? ''
@@ -556,7 +545,6 @@
 </script>
 
 <style>
-    /* Human Comment: Let refund columns grow naturally instead of forcing cramped fixed widths. */
     .refund-auto-table {
         table-layout: auto;
         width: max-content;

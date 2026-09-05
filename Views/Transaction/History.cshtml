@@ -1,11 +1,13 @@
 @model List<AmarShowsBook.Models.VwBookingTransactionSummary>
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"] = "Transaction History";
     var totalAmount = Model.Sum(x => x.TransactionAmount);
     var successCount = Model.Count(x => x.TransactionStatus == "SUCCESS");
     var pendingCount = Model.Count(x => x.CompletedAt == null);
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 }
 
 <section class="transaction-page">
@@ -13,7 +15,15 @@
         <div>
             <span class="transaction-kicker">Payment Ledger</span>
             <h1>My Transactions</h1>
-            <p>Every ticket payment, gateway result, and completed show payment in one polished reel.</p>
+            @* Previous wording: "Every ticket payment, gateway result, and completed show payment in one polished reel." *@
+            <p>Review every ticket payment, gateway result, and completed show payment in one place.</p>
+        </div>
+        <div class="transaction-actions no-print">
+            @if(canUsePrintTools)
+            {
+            <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+            }
+            <a class="btn btn-secondary" href="/Home/ShowTime">Back</a>
         </div>
     </div>
 
@@ -53,13 +63,15 @@
                         <th>Status</th>
                         <th>Gateway</th>
                         <th>Completed</th>
+                        <th class="no-print">Action</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-filter-status="@item.TransactionStatus"
+                            data-filter-method="@item.PaymentMethod">
                             <td>
                                 <strong>@item.BookingRef</strong>
                             </td>
@@ -75,7 +87,17 @@
                                 }
                                 else
                                 {
-                                    <span class="transaction-badge failed">FAILED</span>
+                                    <span class="transaction-badge failed">
+                                        @(string.IsNullOrWhiteSpace(item.TransactionStatus) ? "FAILED" : item.TransactionStatus)
+                                    </span>
+                                    <span class="app-info app-info-left">
+                                        <button type="button" class="app-info-btn" aria-label="Show transaction status details">i</button>
+                                        <span class="app-info-popover" role="tooltip">
+                                            <b>Status</b> @(string.IsNullOrWhiteSpace(item.TransactionStatus) ? "FAILED" : item.TransactionStatus)<br />
+                                            <b>Reason</b> @(string.IsNullOrWhiteSpace(item.FailureReason) ? "Payment is not marked successful yet." : item.FailureReason)<br />
+                                            <b>When</b> @(item.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                                        </span>
+                                    </span>
                                 }
                             </td>
                             <td>
@@ -87,6 +109,16 @@
                             </td>
                             <td>
                                 @(item.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                            </td>
+                            <td class="no-print">
+                                @if (item.TransactionId.HasValue)
+                                {
+                                    <a class="transaction-view-btn" href="/Transaction/Details/@item.TransactionId.Value">View</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">NA</span>
+                                }
                             </td>
                         </tr>
                     }
@@ -102,6 +134,10 @@
 }
 
 .transaction-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
     min-height: 220px;
     padding: 32px;
     border-radius: 8px;
@@ -111,6 +147,13 @@
         repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
     color: #231f20;
     box-shadow: 0 22px 64px rgba(35,31,32,0.22);
+}
+
+.transaction-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .transaction-kicker,
@@ -174,7 +217,7 @@
 
 .transaction-table {
     margin: 0;
-    min-width: 860px;
+    min-width: 980px;
 }
 
 .transaction-table th {
@@ -219,6 +262,19 @@
     background: var(--app-danger);
 }
 
+.transaction-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    border-radius: 8px;
+    padding: 6px 12px;
+    background: var(--app-primary);
+    color: #fff !important;
+    text-decoration: none;
+    font-weight: 850;
+}
+
 .transaction-failure {
     display: block;
     margin-top: 4px;
@@ -243,11 +299,140 @@
 
 @@media (max-width: 760px) {
     .transaction-hero {
+        align-items: flex-start;
+        flex-direction: column;
         padding: 24px;
     }
 
     .transaction-stats {
         grid-template-columns: 1fr;
+    }
+}
+
+@@media print {
+    @@page {
+        size: A4 landscape;
+        margin: 8mm;
+    }
+
+    .transaction-actions,
+    .transaction-table th.no-print,
+    .transaction-table td.no-print,
+    .transaction-table th:last-child,
+    .transaction-table td:last-child {
+        display: none !important;
+    }
+
+    .transaction-page {
+        padding-bottom: 0 !important;
+    }
+
+    .transaction-hero {
+        min-height: 0 !important;
+        padding: 12px 14px !important;
+        margin-bottom: 8px !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+
+    .transaction-hero h1 {
+        margin: 4px 0 !important;
+        font-size: 18pt !important;
+        line-height: 1.1 !important;
+    }
+
+    .transaction-hero p {
+        font-size: 8.5pt !important;
+    }
+
+    .transaction-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .transaction-stat {
+        padding: 8px !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+
+    .transaction-stat strong {
+        font-size: 11pt !important;
+    }
+
+    .transaction-table-wrap {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    .transaction-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        font-size: 7pt !important;
+        line-height: 1.18 !important;
+    }
+
+    .transaction-table th,
+    .transaction-table td,
+    .transaction-table td * {
+        max-width: 100% !important;
+        padding: 4px 5px !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+        text-overflow: clip !important;
+    }
+
+    .transaction-table th:nth-child(1),
+    .transaction-table td:nth-child(1) {
+        width: 15% !important;
+    }
+
+    .transaction-table th:nth-child(2),
+    .transaction-table td:nth-child(2) {
+        width: 22% !important;
+    }
+
+    .transaction-table th:nth-child(3),
+    .transaction-table td:nth-child(3),
+    .transaction-table th:nth-child(4),
+    .transaction-table td:nth-child(4),
+    .transaction-table th:nth-child(5),
+    .transaction-table td:nth-child(5) {
+        width: 10% !important;
+    }
+
+    .transaction-table th:nth-child(6),
+    .transaction-table td:nth-child(6) {
+        width: 18% !important;
+    }
+
+    .transaction-table th:nth-child(7),
+    .transaction-table td:nth-child(7) {
+        width: 15% !important;
+    }
+
+    .transaction-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .transaction-badge {
+        min-height: 0 !important;
+        padding: 2px 4px !important;
+        border-radius: 4px !important;
+        font-size: 6.5pt !important;
+    }
+
+    .transaction-failure {
+        margin-top: 2px !important;
+        font-size: 6.5pt !important;
     }
 }
 </style>

@@ -1,0 +1,219 @@
+@model AmarShowsBook.Models.VwBookingTransactionSummary
+@using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
+
+@{
+    ViewData["Title"] = "Transaction Details";
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+}
+
+<section class="transaction-detail-page">
+    <div class="transaction-detail-hero">
+        <div class="transaction-detail-main">
+            <span class="transaction-detail-kicker">Payment Detail</span>
+            <h1>@(string.IsNullOrWhiteSpace(Model.TransactionRef) ? "Transaction" : Model.TransactionRef)</h1>
+            <p>@Model.ShowTitle / @Model.BookingRef</p>
+        </div>
+        <div class="transaction-detail-actions no-print">
+            <span class="transaction-detail-number">Txn #@(Model.TransactionId?.ToString() ?? "NA")</span>
+            @if(canUsePrintTools)
+            {
+            <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+            }
+            <a class="btn btn-secondary" href="/Transaction/History">Back</a>
+        </div>
+    </div>
+
+    <div class="transaction-detail-grid">
+        <div class="transaction-detail-panel">
+            <h2>Payment</h2>
+            <dl>
+                <dt>Amount</dt>
+                <dd>@CurrencyFormatter.FormatRupees(Model.TransactionAmount)</dd>
+                <dt>Status</dt>
+                <dd>
+                    @(string.IsNullOrWhiteSpace(Model.TransactionStatus) ? "NA" : Model.TransactionStatus)
+                    @if (!string.Equals(Model.TransactionStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase)
+                        || !string.IsNullOrWhiteSpace(Model.FailureReason)
+                        || Model.CompletedAt == null)
+                    {
+                        <span class="app-info app-info-left">
+                            <button type="button" class="app-info-btn" aria-label="Show transaction status details">i</button>
+                            <span class="app-info-popover" role="tooltip">
+                                <b>Status</b> @(string.IsNullOrWhiteSpace(Model.TransactionStatus) ? "NA" : Model.TransactionStatus)<br />
+                                <b>Reason</b> @(string.IsNullOrWhiteSpace(Model.FailureReason) ? "Payment is not marked successful yet." : Model.FailureReason)<br />
+                                <b>When</b> @(Model.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                            </span>
+                        </span>
+                    }
+                </dd>
+                <dt>Method</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.PaymentMethod) ? "NA" : Model.PaymentMethod)</dd>
+                <dt>Gateway</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.GatewayName) ? "NA" : Model.GatewayName)</dd>
+                <dt>Completed</dt>
+                <dd>@(Model.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")</dd>
+            </dl>
+        </div>
+
+        <div class="transaction-detail-panel">
+            <h2>Booking</h2>
+            <dl>
+                <dt>Booking Ref</dt>
+                <dd>@Model.BookingRef</dd>
+                <dt>Show</dt>
+                <dd>@Model.ShowTitle</dd>
+                <dt>Type</dt>
+                <dd>@Model.ShowType</dd>
+                <dt>Booking Status</dt>
+                <dd>@Model.BookingStatus</dd>
+                <dt>Booked At</dt>
+                <dd>@Model.BookingCreatedAt.ToString("dd MMM yyyy hh:mm tt")</dd>
+            </dl>
+        </div>
+
+        <div class="transaction-detail-panel">
+            <h2>User</h2>
+            <dl>
+                <dt>Name</dt>
+                <dd>@Model.UserName</dd>
+                <dt>Email</dt>
+                <dd>@Model.UserEmail</dd>
+                <dt>Failure Reason</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.FailureReason) ? "NA" : Model.FailureReason)</dd>
+            </dl>
+        </div>
+    </div>
+</section>
+
+<style>
+.transaction-detail-page {
+    padding-bottom: 42px;
+}
+
+.transaction-detail-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 220px;
+    padding: 32px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    background:
+        linear-gradient(135deg, rgba(255,242,199,0.94), rgba(245,178,196,0.86), rgba(146,229,221,0.86)),
+        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
+    color: #231f20;
+    box-shadow: 0 22px 64px rgba(35,31,32,0.22);
+}
+
+.transaction-detail-kicker {
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+}
+
+.transaction-detail-main {
+    min-width: 0;
+}
+
+.transaction-detail-hero h1 {
+    margin: 8px 0;
+    color: #231f20;
+    font-size: clamp(1.45rem, 4vw, 4.4rem);
+    font-weight: 900;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.transaction-detail-hero p {
+    margin: 0;
+    color: #34303a;
+    font-weight: 800;
+}
+
+.transaction-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.transaction-detail-number {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 6px 12px;
+    border: 1px solid rgba(35,31,32,0.18);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.54);
+    color: #231f20;
+    font-weight: 900;
+}
+
+.transaction-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.transaction-detail-panel {
+    padding: 20px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.13);
+}
+
+.transaction-detail-panel h2 {
+    margin: 0 0 14px;
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.transaction-detail-panel dl {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.transaction-detail-panel dt {
+    color: var(--app-muted);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.transaction-detail-panel dd {
+    margin: -6px 0 0;
+    font-weight: 850;
+    word-break: break-word;
+}
+
+@@media (max-width: 900px) {
+    .transaction-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@@media (max-width: 760px) {
+    .transaction-detail-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 24px;
+    }
+
+    .transaction-detail-actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+}
+</style>

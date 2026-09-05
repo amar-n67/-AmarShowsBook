@@ -1,36 +1,48 @@
 using Microsoft.EntityFrameworkCore;
-
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.Admin;
 using AmarShowsBook.Models.ViewModels;
 
 namespace AmarShowsBook.Data
 {
+    // One EF context maps both writable tables and read-only SQL views used by public pages, admin reports, RBAC, and Amaro.
     public class ApplicationDbContext : DbContext
     {
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
 
         public ApplicationDbContext(
             DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
+        public DbSet<DeveloperVM> DeveloperProfiles { get; set; }
+    public DbSet<HomeShowViewModel> HomeShows { get; set; }
         public DbSet<BookingDraft> BookingDrafts { get; set; }
+        public DbSet<PaymentSession> PaymentSessions { get; set; }
+
+        public DbSet<Booking> Bookings { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<BookingItem> BookingItems { get; set; }
+        public DbSet<BookingSeat> BookingSeats { get; set; }
+        public DbSet<Ticket> Tickets { get; set; }
 
 public DbSet<BookingTransaction> BookingTransactions { get; set; }
+
+public DbSet<PaymentMethodDetail> PaymentMethodDetails { get; set; }
 
 public DbSet<SeatLock> SeatLocks { get; set; }
 
 public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<RefundActionLog> RefundActionLogs { get; set; }
+        public DbSet<TicketValidationLog> TicketValidationLogs { get; set; }
+        public DbSet<ScannerDevice> ScannerDevices { get; set; }
+        public DbSet<ApplicationVersion> ApplicationVersions { get; set; }
 
         public DbSet<Refund> Refunds { get; set; }
 
         public DbSet<User> Users { get; set; }
         public DbSet<ScreenSeat> ScreenSeats { get; set; }
-
+        public DbSet<Screen> Screens { get; set; }
+        public DbSet<Venue> Venues { get; set; }
         public DbSet<DeletedUser> DeletedUsers { get; set; }
 
         public DbSet<ActivityLog> ActivityLogs { get; set; }
@@ -40,6 +52,10 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<StandupShow> StandupShows { get; set; }
 
         public DbSet<LiveStream> LiveStreams { get; set; }
+
+        public DbSet<NewsChannel> NewsChannels { get; set; }
+
+        public DbSet<NewsBroadcastSlot> NewsBroadcastSlots { get; set; }
 
         public DbSet<Location> Locations { get; set; }
 
@@ -52,21 +68,19 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<District> Districts { get; set; }
 
         public DbSet<Region> Regions { get; set; }
+        
 
-        // =====================================================
-        // USER ROLE ACCESS TABLES
-        // =====================================================
-
+        // RBAC tables define the four roles, their permissions, and the menu links each role can see.
         public DbSet<UserRoleMapping> UserRoleMappings { get; set; }
 
         public DbSet<Role> Roles { get; set; }
 
         public DbSet<Permission> Permissions { get; set; }
+        public DbSet<ApplicationModule> ApplicationModules { get; set; }
+        public DbSet<ApplicationMenu> ApplicationMenus { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
 
-        // =====================================================
-        // ADMIN SQL VIEW TABLES
-        // =====================================================
-
+        // These views are rebuilt by startup/admin helpers and should be treated as read-only query models.
         public DbSet<VwEnterpriseActivityLog>
             VwEnterpriseActivityLogs { get; set; }
 
@@ -81,6 +95,9 @@ public DbSet<DummyCard> DummyCards { get; set; }
 
         public DbSet<VwWalletSummary>
             VwWalletSummaries { get; set; }
+
+        public DbSet<WalletStatusHistory>
+            WalletStatusHistories { get; set; }
 
         public DbSet<VwNotificationCenter>
             VwNotificationCenters { get; set; }
@@ -100,135 +117,490 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<VwAdminUserManagement>
             VwAdminUserManagement { get; set; }
 
-        // =====================================================
-        // ADMIN TRANSACTION VIEW
-        // =====================================================
+        public DbSet<VwCouponUsage>
+            VwCouponUsages { get; set; }
+
 
         public DbSet<AdminTransactionViewModel>
             AdminTransactions { get; set; }
-            
-
-        // =====================================================
-        // MODEL CONFIGURATION
-        // =====================================================
+    
 
         protected override void OnModelCreating(
-            ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
+ModelBuilder modelBuilder)
+{
+ base.OnModelCreating(modelBuilder);
 
+    modelBuilder.Entity<DeveloperVM>(entity =>
+
+    {
+
+        entity.HasNoKey();
+
+        entity.ToView(
+
+        "vwDeveloperProfile"
+
+        );
+
+    });
     modelBuilder.Entity<BookingDraft>()
-
         .ToTable("booking_drafts");
 
     modelBuilder.Entity<BookingTransaction>()
-
         .ToTable("booking_transactions");
 
+    modelBuilder.Entity<PaymentMethodDetail>()
+        .ToTable("payment_method_details");
+
     modelBuilder.Entity<DummyCard>()
-
         .ToTable("dummy_cards");
-            base.OnModelCreating(modelBuilder);
 
-            // =====================================================
-            // ACTIVITY LOG TABLE
-            // =====================================================
-            base.OnModelCreating(modelBuilder);
+modelBuilder.Entity<Refund>(entity =>
+{
+    entity.ToTable("refunds");
 
-    modelBuilder.Entity<Refund>().ToTable("refunds");
-            modelBuilder.Entity<ActivityLog>()
-                .ToTable("activity_logs");
+    entity.Property(x=>x.requested_at)
+        .HasColumnType("timestamp without time zone");
 
-            // =====================================================
-            // ENTERPRISE ACTIVITY LOG VIEW
-            // =====================================================
+    entity.Property(x=>x.processed_at)
+        .HasColumnType("timestamp without time zone");
 
-            modelBuilder.Entity<VwEnterpriseActivityLog>()
-                .HasNoKey()
-                .ToView("vw_enterprise_activity_logs");
+    entity.Property(x=>x.created_at)
+        .HasColumnType("timestamp without time zone");
 
-            // =====================================================
-            // ADMIN TRANSACTION VIEW
-            // =====================================================
+    entity.Property(x=>x.updated_at)
+        .HasColumnType("timestamp without time zone");
 
-            modelBuilder.Entity<AdminTransactionViewModel>()
-                .HasNoKey()
-                .ToView("vw_admin_transaction_complete");
+    entity.Property(x=>x.approved_at)
+        .HasColumnType("timestamp without time zone");
 
-            // =====================================================
-            // SHOW SCHEDULE RELATIONSHIPS
-            // =====================================================
+    entity.Property(x=>x.rejected_at)
+        .HasColumnType("timestamp without time zone");
 
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(x => x.Movie)
-                .WithMany()
-                .HasForeignKey(x => x.MovieId)
-                .OnDelete(DeleteBehavior.Restrict);
+    entity.Property(x=>x.retried_at)
+        .HasColumnType("timestamp without time zone");
+});
 
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(x => x.StandupShow)
-                .WithMany()
-                .HasForeignKey(x => x.StandupShowId)
-                .OnDelete(DeleteBehavior.Restrict);
+    modelBuilder.Entity<ActivityLog>()
+    .ToTable("activity_logs");
 
-            modelBuilder.Entity<ShowSchedule>()
-                .HasOne(x => x.LiveStream)
-                .WithMany()
-                .HasForeignKey(x => x.LiveStreamId)
-                .OnDelete(DeleteBehavior.Restrict);
+    modelBuilder.Entity<ActivityLog>()
+        .Property(x => x.CreatedAt)
+        .HasColumnType("timestamp without time zone");
 
-            // =====================================================
-            // ADMIN SQL VIEW MAPPINGS
-            // =====================================================
+    modelBuilder.Entity<RefundActionLog>(entity =>
+    {
+        entity.ToTable("refund_action_logs");
 
-            modelBuilder.Entity<VwBookingCompleteDetails>()
-                .HasNoKey()
-                .ToView("vw_booking_complete_details");
+        entity.Property(x => x.action_time)
+            .HasColumnType("timestamp without time zone");
 
-            modelBuilder.Entity<VwBookingTransactionSummary>()
-                .HasNoKey()
-                .ToView("vw_booking_transaction_summary");
+        entity.Property(x => x.created_at)
+            .HasColumnType("timestamp without time zone");
+    });
 
-            modelBuilder.Entity<VwRefundSummary>()
-                .HasNoKey()
-                .ToView("vw_refund_summary");
-
-            modelBuilder.Entity<VwWalletSummary>()
-                .HasNoKey()
-                .ToView("vw_wallet_summary");
-
-            modelBuilder.Entity<VwNotificationCenter>()
-                .HasNoKey()
-                .ToView("vw_notification_center");
-
-            modelBuilder.Entity<VwInvoiceSummary>()
-                .HasNoKey()
-                .ToView("vw_invoice_summary");
-
-            modelBuilder.Entity<VwTicketValidationSummary>()
-                .HasNoKey()
-                .ToView("vw_ticket_validation_summary");
-
-            modelBuilder.Entity<VwUserAccessMatrix>()
-                .HasNoKey()
-                .ToView("vw_user_access_matrix");
-
-            modelBuilder.Entity<VwUserApplicationMenu>()
-                .HasNoKey()
-                .ToView("vw_user_application_menus");
-
-            modelBuilder.Entity<VwAdminUserManagement>()
-                .HasNoKey()
-                .ToView("vw_admin_user_management");
-                 base.OnModelCreating(modelBuilder);
-
-    modelBuilder.Entity<ScreenSeat>()
-
-        .ToTable("screen_seats");
+    modelBuilder.Entity<ApplicationVersion>()
+        .ToTable("application_versions");
 
     modelBuilder.Entity<SeatLock>()
-
         .ToTable("seat_locks");
-        }
+
+modelBuilder.Entity<Booking>(entity =>
+{
+    entity.ToTable("bookings");
+
+    entity.Property(x=>x.BookedAt)
+        .HasColumnType("timestamp without time zone");
+
+    entity.Property(x=>x.ConfirmedAt)
+        .HasColumnType("timestamp without time zone");
+
+    entity.Property(x=>x.CreatedAt)
+        .HasColumnType("timestamp without time zone");
+
+    entity.Property(x=>x.UpdatedAt)
+        .HasColumnType("timestamp without time zone");
+
+    entity.Property(x=>x.CancelledAt)
+        .HasColumnType("timestamp without time zone");
+
+    entity.Property(x=>x.WalletAmountUsed)
+        .HasColumnName("wallet_amount_used");
+});
+
+    modelBuilder.Entity<Venue>(entity =>
+    {
+        entity.ToTable("venues");
+        entity.HasKey(x=>x.Id);
+    });
+
+    modelBuilder.Entity<Transaction>(entity =>
+    {
+        entity.ToTable("transactions");
+
+        entity.Property(x=>x.InitiatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.CompletedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+    });
+
+    modelBuilder.Entity<BookingItem>(entity =>
+    {
+        entity.ToTable("booking_items");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+    });
+
+    modelBuilder.Entity<BookingSeat>(entity =>
+    {
+        entity.ToTable("booking_seats");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+    });
+
+    modelBuilder.Entity<Ticket>(entity =>
+    {
+        entity.ToTable("tickets");
+
+        entity.Property(x=>x.IssuedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.UpdatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.QrGeneratedAt)
+            .HasColumnType("timestamp without time zone");
+    });
+
+
+
+
+    modelBuilder.Entity<Screen>(entity =>
+    {
+        entity.ToTable("screens");
+
+        entity.HasKey(x=>x.Id);
+
+        entity.Property(x=>x.Id)
+            .HasColumnName("id");
+
+        entity.Property(x=>x.VenueId)
+            .HasColumnName("venue_id");
+
+        entity.Property(x=>x.ScreenCode)
+            .HasColumnName("screen_code");
+
+        entity.Property(x=>x.ScreenName)
+            .HasColumnName("screen_name");
+
+        entity.Property(x=>x.TotalSeats)
+            .HasColumnName("total_seats");
+
+        entity.Property(x=>x.ScreenType)
+            .HasColumnName("screen_type");
+
+        entity.Property(x=>x.AudioSystem)
+            .HasColumnName("audio_system");
+
+        entity.Property(x=>x.IsActive)
+            .HasColumnName("is_active");
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnName("created_at");
+
+        entity.Property(x=>x.UpdatedAt)
+            .HasColumnName("updated_at");
+    });
+
+    modelBuilder.Entity<ApplicationModule>(entity =>
+    {
+        entity.ToTable("application_modules");
+        entity.HasKey(x=>x.Id);
+    });
+
+    modelBuilder.Entity<ApplicationMenu>(entity =>
+    {
+        entity.ToTable("application_menus");
+        entity.HasKey(x=>x.Id);
+    });
+
+    modelBuilder.Entity<RolePermission>(entity =>
+    {
+        entity.ToTable("role_permissions");
+        entity.HasKey(x=>x.Id);
+    });
+
+
+
+
+    modelBuilder.Entity<ScreenSeat>(entity =>
+    {
+        entity.ToTable("screen_seats");
+
+        entity.HasKey(x=>x.Id);
+
+        entity.Property(x=>x.Id)
+            .HasColumnName("id");
+
+        entity.Property(x=>x.ScreenId)
+            .HasColumnName("screen_id");
+
+        entity.Property(x=>x.ScheduleId)
+            .HasColumnName("ScheduleId");
+
+        entity.Property(x=>x.SeatRow)
+            .HasColumnName("seat_row");
+
+        entity.Property(x=>x.SeatNumber)
+            .HasColumnName("seat_number");
+
+        entity.Property(x=>x.SeatCategory)
+            .HasColumnName("seat_category");
+
+        entity.Property(x=>x.SeatPrice)
+            .HasColumnName("seat_price");
+
+        entity.Property(x=>x.IsActive)
+            .HasColumnName("is_active");
+
+        entity.HasOne(x=>x.Screen)
+            .WithMany()
+            .HasForeignKey(x=>x.ScreenId);
+
+            
+    });
+
+
+
+
+    modelBuilder.Entity<ShowSchedule>()
+        .ToTable("ShowSchedules");
+
+    modelBuilder.Entity<Movie>(entity =>
+    {
+        entity.ToTable("Movies");
+        entity.Property(x=>x.Description).HasColumnName("Description");
+        entity.Property(x=>x.PosterUrl).HasColumnName("PosterUrl");
+        entity.Property(x=>x.Images).HasColumnName("Images");
+        entity.Property(x=>x.TrailerUrl).HasColumnName("TrailerUrl");
+        entity.Property(x=>x.ImdbRating).HasColumnName("ImdbRating");
+    });
+
+    modelBuilder.Entity<StandupShow>(entity =>
+    {
+        entity.ToTable("StandupShows");
+        entity.Property(x=>x.Description).HasColumnName("Description");
+        entity.Property(x=>x.PosterUrl).HasColumnName("PosterUrl");
+        entity.Property(x=>x.Images).HasColumnName("Images");
+        entity.Property(x=>x.TrailerUrl).HasColumnName("TrailerUrl");
+    });
+
+    modelBuilder.Entity<LiveStream>(entity =>
+    {
+        entity.ToTable("LiveStreams");
+        entity.Property(x=>x.Description).HasColumnName("Description");
+        entity.Property(x=>x.PosterUrl).HasColumnName("PosterUrl");
+        entity.Property(x=>x.Images).HasColumnName("Images");
+        entity.Property(x=>x.TrailerUrl).HasColumnName("TrailerUrl");
+    });
+
+    modelBuilder.Entity<NewsChannel>(entity =>
+    {
+        entity.ToTable("news_channels");
+        entity.HasKey(x=>x.Id);
+        entity.HasIndex(x=>x.ChannelCode).IsUnique();
+    });
+
+    modelBuilder.Entity<NewsBroadcastSlot>(entity =>
+    {
+        entity.ToTable("news_broadcast_slots");
+        entity.HasKey(x=>x.Id);
+        entity.HasOne(x=>x.Channel)
+            .WithMany()
+            .HasForeignKey(x=>x.ChannelId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    modelBuilder.Entity<ShowSchedule>()
+        .Property(x=>x.ScreenId)
+        .HasColumnName("screen_id");
+
+    modelBuilder.Entity<ShowSchedule>()
+        .Property(x=>x.ShowDay)
+        .HasColumnName("ShowDay")
+        .HasMaxLength(20);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.Movie)
+        .WithMany()
+        .HasForeignKey(x=>x.MovieId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.StandupShow)
+        .WithMany()
+        .HasForeignKey(x=>x.StandupShowId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.LiveStream)
+        .WithMany()
+        .HasForeignKey(x=>x.LiveStreamId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.Location)
+        .WithMany()
+        .HasForeignKey(x=>x.LocationId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<ShowSchedule>()
+        .HasOne(x=>x.Screen)
+        .WithMany()
+        .HasForeignKey(x=>x.ScreenId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+
+
+
+    modelBuilder.Entity<HomeShowViewModel>(entity =>
+    {
+        entity.HasNoKey();
+
+        entity.ToView(
+        "vw_home_show_listing");
+
+        entity.Property(x=>x.ScheduleId)
+            .HasColumnName("schedule_id");
+
+        entity.Property(x=>x.ShowType)
+            .HasColumnName("show_type");
+
+        entity.Property(x=>x.ShowId)
+            .HasColumnName("show_id");
+
+        entity.Property(x=>x.Title)
+            .HasColumnName("title");
+
+        entity.Property(x=>x.Description)
+            .HasColumnName("Description");
+
+        entity.Property(x=>x.PosterUrl)
+            .HasColumnName("PosterUrl");
+
+        entity.Property(x=>x.Images)
+            .HasColumnName("Images");
+
+        entity.Property(x=>x.TrailerUrl)
+            .HasColumnName("TrailerUrl");
+
+        entity.Property(x=>x.StartTime)
+            .HasColumnName("start_time");
+
+        entity.Property(x=>x.EndTime)
+            .HasColumnName("end_time");
+
+        entity.Property(x=>x.Location)
+            .HasColumnName("location");
+
+        entity.Property(x=>x.State)
+            .HasColumnName("state");
+
+        entity.Property(x=>x.Country)
+            .HasColumnName("country");
+
+        entity.Ignore(x=>x.TheaterDetails);
+        entity.Property(x=>x.Director).HasColumnName("director");
+        entity.Property(x=>x.Cast).HasColumnName("cast");
+        entity.Property(x=>x.ImdbRating).HasColumnName("imdb_rating");
+        entity.Property(x=>x.VenueName).HasColumnName("venue_name");
+        entity.Property(x=>x.ScreenName).HasColumnName("screen_name");
+    });
+
+
+    modelBuilder.Entity<VwEnterpriseActivityLog>()
+        .HasNoKey()
+        .ToView(
+        "vw_enterprise_activity_logs");
+
+    modelBuilder.Entity<AdminTransactionViewModel>()
+        .HasNoKey()
+        .ToView(
+        "vw_admin_transaction_complete");
+
+    modelBuilder.Entity<VwBookingCompleteDetails>()
+        .HasNoKey()
+        .ToView(
+        "vw_booking_complete_details");
+
+    modelBuilder.Entity<VwBookingTransactionSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_booking_transaction_summary");
+
+    modelBuilder.Entity<VwRefundSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_refund_summary");
+
+    modelBuilder.Entity<VwWalletSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_wallet_summary");
+
+    modelBuilder.Entity<VwNotificationCenter>()
+        .HasNoKey()
+        .ToView(
+        "vw_notification_center");
+
+    modelBuilder.Entity<VwInvoiceSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_invoice_summary");
+
+    modelBuilder.Entity<VwTicketValidationSummary>()
+        .HasNoKey()
+        .ToView(
+        "vw_ticket_validation_summary");
+
+    modelBuilder.Entity<VwUserAccessMatrix>()
+        .HasNoKey()
+        .ToView(
+        "vw_user_access_matrix");
+
+    modelBuilder.Entity<VwUserApplicationMenu>()
+        .HasNoKey()
+        .ToView(
+        "vw_user_application_menus");
+
+    modelBuilder.Entity<VwAdminUserManagement>()
+        .HasNoKey()
+        .ToView(
+        "vw_admin_user_management");
+
+    modelBuilder.Entity<VwCouponUsage>()
+        .HasNoKey()
+        .ToView(
+        "vw_coupon_usage_admin");
+
+
+
+    base.OnModelCreating(
+    modelBuilder);
+}
+
     }
+    
 }

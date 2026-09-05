@@ -1,29 +1,25 @@
-using AmarShowsBook.Services; // Added for activity logging
-using Npgsql;                 // Added for PostgreSQL exception handling
+using AmarShowsBook.Services;
+using Npgsql;
 using System.Diagnostics;
+using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AmarShowsBook.Data;
 using AmarShowsBook.Models;
 using AmarShowsBook.Models.ViewModels;
-using System.Globalization;
 
 namespace AmarShowsBook.Controllers
 {
     public class HomeController : Controller
     {
+        private static readonly SemaphoreSlim HomeShowListingViewLock = new(1, 1);
+        private static bool _homeShowListingViewReady;
+
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
-        private readonly IActivityLogger _activityLogger; //Added for logging activities
+        private readonly IActivityLogger _activityLogger;
 
-        // ====================== commented out old constructor ======================
-        // ✅ Inject BOTH logger + DB context
-        // public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
-        // {
-        //     _logger = logger;
-        //     _context = context;
-        // }
-        // ====================== Updated constructor to include activity logger ======================
         public HomeController(
         ILogger<HomeController> logger,
         ApplicationDbContext context,
@@ -33,80 +29,108 @@ namespace AmarShowsBook.Controllers
             _context = context;
             _activityLogger = activityLogger;
         }
-        // ====================== End of updated constructor ======================
 
-        //=================== commented out old Index action ======================
-        // ================= HOME =================
-
-        // public IActionResult Index(string type = "Movie")
-        // {
-        //     // 🔐 Protect page (only logged in users)
-        //     if (HttpContext.Session.GetString("UserEmail") == null)
-        //     {
-        //         return RedirectToAction("Login", "Auth");
-        //     }
-
-        //     // 📦 Fetch schedules based on type
-        //     var schedules = _context.ShowSchedules
-        //         .Include(s => s.Movie)
-        //         .Include(s => s.StandupShow)
-        //         .Include(s => s.LiveStream)
-        //         .Include(s => s.Location)
-        //         .Where(s => s.Type == type)
-        //         .OrderBy(s => s.StartTime)
-        //         .ToList();
-
-        //     var vm = new HomeViewModel
-        //     {
-        //         Schedules = schedules
-        //     };
-
-        //     return View(vm);
-        // }
-        // ====================== Updated Index action to log activity ======================
-public async Task<IActionResult> Index(string type = "Movie")
-{
-    try
-    {
-        if (HttpContext.Session.GetString("UserEmail") == null)
+        public IActionResult Index(string type = "All")
         {
-            await _activityLogger.LogAsync(
-                action: "UNAUTHORIZED_ACCESS",
-                module: "HOME",
-                entityType: "PAGE",
-                description: "Unauthorized access to home page",
-                status: "FAILURE",
-                isError: 4
-            );
-
-            return RedirectToAction("Login", "Auth");
+            return RedirectToAction(nameof(ShowTime), new { type });
         }
 
-        var userEmail = HttpContext.Session.GetString("UserEmail");
-
-        var user = _context.Users
-            .FirstOrDefault(u => u.Email == userEmail);
-
-        var schedules = _context.ShowSchedules
-            .Include(s => s.Movie)
-            .Include(s => s.StandupShow)
-            .Include(s => s.LiveStream)
-            .Include(s => s.Location)
-            .Where(s => s.Type == type)
-            .OrderBy(s => s.StartTime)
-            .ToList();
-
-        var vm = new HomeViewModel
+        // The public landing page is the showTime feed: it reads the SQL view, enriches venue text, then logs the visit.
+        public async Task<IActionResult> ShowTime(string type = "All")
         {
-            Schedules = schedules
-        };
+            try
+            {
+                var userEmail = HttpContext.Session.GetString("UserEmail");
+
+                var user = string.IsNullOrWhiteSpace(userEmail)
+                    ? null
+                    : _context.Users.FirstOrDefault(u => u.Email == userEmail);
+
+                await EnsureHomeShowListingView();
+
+                var selectedType = string.Equals(type, "All", StringComparison.OrdinalIgnoreCase) ? "" : type;
+
+                var homeShowsQuery = _context.HomeShows
+                    .Where(x => x.StartTime >= DateTime.UtcNow);
+
+                if (!string.IsNullOrWhiteSpace(selectedType))
+                {
+                    homeShowsQuery = homeShowsQuery.Where(x => x.ShowType == selectedType);
+                }
+
+                var schedules = await homeShowsQuery
+                    .OrderBy(x => x.StartTime)
+                    .Select(x => new HomeShowViewModel
+                    {
+                        ScheduleId = x.ScheduleId,
+                        ShowId = x.ShowId,
+                        ShowType = x.ShowType,
+                        Title = x.Title,
+                        Description = x.Description,
+                        PosterUrl = x.PosterUrl,
+                        Images = x.Images,
+                        TrailerUrl = x.TrailerUrl,
+                        StartTime = x.StartTime,
+                        EndTime = x.EndTime,
+                        Location = x.Location,
+                        State = x.State,
+                        Country = x.Country,
+                        Director = x.Director,
+                        Cast = x.Cast,
+                        ImdbRating = x.ImdbRating,
+                        VenueName = x.VenueName,
+                        ScreenName = x.ScreenName
+                    })
+                    .ToListAsync();
+
+var vm = new HomeViewModel
+{
+    HomeShows = schedules
+};
+
+var scheduleIds = schedules.Select(x => x.ScheduleId).ToList();
+var theaterLookup = await
+(
+    from schedule in _context.ShowSchedules.AsNoTracking()
+    join screen in _context.Screens.AsNoTracking()
+        on schedule.ScreenId equals screen.Id into screenGroup
+    from screen in screenGroup.DefaultIfEmpty()
+    join venue in _context.Venues.AsNoTracking()
+        on screen.VenueId equals venue.Id into venueGroup
+    from venue in venueGroup.DefaultIfEmpty()
+    where scheduleIds.Contains(schedule.Id)
+    select new
+    {
+        schedule.Id,
+        TheaterDetails = venue == null
+            ? null
+            : string.Join(" / ", new[] { venue.VenueName, screen.ScreenName, venue.Address, venue.City }
+                .Where(value => !string.IsNullOrWhiteSpace(value)))
+    }
+).ToDictionaryAsync(x => x.Id, x => x.TheaterDetails);
+
+foreach (var show in schedules)
+{
+    if (theaterLookup.TryGetValue(show.ScheduleId, out var theaterDetails))
+    {
+        show.TheaterDetails = theaterDetails;
+    }
+
+    if (!string.IsNullOrWhiteSpace(show.VenueName) || !string.IsNullOrWhiteSpace(show.ScreenName))
+    {
+        show.TheaterDetails = string.Join(" / ", new[] { show.VenueName, show.ScreenName, show.TheaterDetails }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+}
 
         await _activityLogger.LogAsync(
             userId: user?.Id,
             action: "VIEW_HOME",
             module: "HOME",
             entityType: "SHOW_SCHEDULE",
-            description: $"Viewed {type} schedules",
+            description: string.IsNullOrWhiteSpace(userEmail)
+                ? $"Guest viewed {type} schedules"
+                : $"Viewed {type} schedules",
             status: "SUCCESS",
             isError: 0,
             metadata: new
@@ -116,7 +140,7 @@ public async Task<IActionResult> Index(string type = "Movie")
             }
         );
 
-        return View(vm);
+        return View("Index", vm);
     }
     catch (PostgresException ex)
     {
@@ -153,15 +177,315 @@ public async Task<IActionResult> Index(string type = "Movie")
         throw;
     }
 }
-// ====================== End of updated Index action ======================
-        // ================= PRIVACY =================
+        public async Task<IActionResult> News()
+        {
+            var todayStartUtc = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Local).ToUniversalTime();
+            var decemberEndUtc = DateTime.SpecifyKind(new DateTime(2027, 1, 1), DateTimeKind.Local).ToUniversalTime();
+
+            var channels = await _context.NewsChannels
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.ChannelName)
+                .ToListAsync();
+
+            var slots = await _context.NewsBroadcastSlots
+                .AsNoTracking()
+                .Include(x => x.Channel)
+                .Where(x => x.StartsAt >= todayStartUtc && x.StartsAt < decemberEndUtc)
+                .OrderBy(x => x.StartsAt)
+                .ToListAsync();
+
+            var model = new NewsViewModel
+            {
+                Channels = channels,
+                Slots = slots,
+                Languages = channels
+                    .Select(x => x.Language)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                Categories = channels
+                    .Select(x => x.Category)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                Countries = channels
+                    .Select(x => x.Country)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                States = channels
+                    .Select(x => x.State)
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && !x.Equals("All", StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList(),
+                Cities = channels
+                    .Select(x => x.City)
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && !x.Equals("All", StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList()
+            };
+
+            await _activityLogger.LogAsync(
+                action: "VIEW_NEWS",
+                module: "HOME",
+                entityType: "NEWS_CHANNEL",
+                description: "Viewed news channels",
+                status: "SUCCESS",
+                isError: 0,
+                metadata: new
+                {
+                    ChannelCount = channels.Count,
+                    SlotCount = slots.Count
+                });
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ResolveNewsLive(long? channelId, string? liveUrl)
+        {
+            if (channelId.HasValue)
+            {
+                liveUrl = await _context.NewsChannels
+                    .AsNoTracking()
+                    .Where(channel => channel.Id == channelId.Value && channel.IsActive)
+                    .Select(channel => channel.LiveUrl)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (string.IsNullOrWhiteSpace(liveUrl))
+            {
+                return BadRequest(new { success = false, message = "Live feed is missing." });
+            }
+
+            if (!Uri.TryCreate(liveUrl, UriKind.Absolute, out var uri))
+            {
+                return BadRequest(new { success = false, message = "Live feed is not valid." });
+            }
+
+            var host = uri.Host.Replace("www.", "", StringComparison.OrdinalIgnoreCase).ToLowerInvariant();
+            var isYouTube = host is "youtube.com" or "youtu.be" or "m.youtube.com" or "youtube-nocookie.com";
+
+            if (!isYouTube)
+            {
+                return Json(new
+                {
+                    success = true,
+                    playerUrl = uri.ToString(),
+                    playerType = IsNativeLiveStream(uri) ? "native" : "frame"
+                });
+            }
+
+            var directVideoId = GetYouTubeVideoId(uri);
+            if (!string.IsNullOrWhiteSpace(directVideoId))
+            {
+                return Json(new
+                {
+                    success = true,
+                    playerUrl = BuildYouTubeEmbedUrl(directVideoId),
+                    playerType = "frame"
+                });
+            }
+
+            var resolveUrl = BuildYouTubeLiveResolveUrl(uri);
+            try
+            {
+                using var http = new HttpClient();
+                http.Timeout = TimeSpan.FromSeconds(12);
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 showTime/1.0");
+                http.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-IN,en;q=0.9");
+
+                var html = await http.GetStringAsync(resolveUrl);
+                var videoId = ResolveYouTubeLiveVideoId(html);
+
+                if (string.IsNullOrWhiteSpace(videoId))
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Live feed is not available for this channel right now."
+                    });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    playerUrl = BuildYouTubeEmbedUrl(videoId),
+                    playerType = "frame"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not resolve live feed for channel {ChannelId}", channelId);
+                return Json(new
+                {
+                    success = false,
+                    message = "Could not load the live stream right now."
+                });
+            }
+        }
+
+        private static bool IsNativeLiveStream(Uri uri)
+        {
+            var path = uri.AbsolutePath.ToLowerInvariant();
+            return path.EndsWith(".m3u8", StringComparison.Ordinal)
+                || path.EndsWith(".mp4", StringComparison.Ordinal)
+                || path.EndsWith(".webm", StringComparison.Ordinal)
+                || path.EndsWith(".ogg", StringComparison.Ordinal);
+        }
+
+        private static string BuildYouTubeLiveResolveUrl(Uri uri)
+        {
+            var path = uri.AbsolutePath.TrimEnd('/');
+            if (path.EndsWith("/live", StringComparison.OrdinalIgnoreCase))
+            {
+                return uri.ToString();
+            }
+
+            if (uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+            {
+                return uri.ToString();
+            }
+
+            return $"https://www.youtube.com{path}/live";
+        }
+
+        private static string BuildYouTubeEmbedUrl(string videoId)
+        {
+            return $"https://www.youtube-nocookie.com/embed/{WebUtility.UrlEncode(videoId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&controls=0&fs=0&disablekb=1&enablejsapi=1";
+        }
+
+        private static string? GetYouTubeVideoId(Uri uri)
+        {
+            if (uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+            {
+                return uri.AbsolutePath.Trim('/').Split('/').FirstOrDefault();
+            }
+
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("v", out var videoId))
+            {
+                return videoId.FirstOrDefault();
+            }
+
+            var embedMatch = Regex.Match(uri.AbsolutePath, @"/embed/([^/?]+)", RegexOptions.IgnoreCase);
+            return embedMatch.Success ? embedMatch.Groups[1].Value : null;
+        }
+
+        private static string? ResolveYouTubeLiveVideoId(string html)
+        {
+            var embedMatch = Regex.Match(html, @"youtube\.com/embed/([A-Za-z0-9_-]{6,})", RegexOptions.IgnoreCase);
+            if (embedMatch.Success)
+            {
+                return embedMatch.Groups[1].Value;
+            }
+
+            var watchEndpointMatch = Regex.Match(html, @"""watchEndpoint""\s*:\s*\{\s*""videoId""\s*:\s*""([A-Za-z0-9_-]{6,})""", RegexOptions.IgnoreCase);
+            if (watchEndpointMatch.Success)
+            {
+                return watchEndpointMatch.Groups[1].Value;
+            }
+
+            var videoIdMatch = Regex.Match(html, @"""videoId""\s*:\s*""([A-Za-z0-9_-]{6,})""", RegexOptions.IgnoreCase);
+            return videoIdMatch.Success ? videoIdMatch.Groups[1].Value : null;
+        }
+
+        private async Task EnsureHomeShowListingView()
+        {
+            if (_homeShowListingViewReady)
+            {
+                return;
+            }
+
+            await HomeShowListingViewLock.WaitAsync();
+            try
+            {
+                if (_homeShowListingViewReady)
+                {
+                    return;
+                }
+
+            // This keeps older local databases compatible before the home page queries the listing view.
+            await _context.Database.ExecuteSqlRawAsync(@"
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""Movies"" ADD COLUMN IF NOT EXISTS ""ImdbRating"" numeric(3,1);
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""StandupShows"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Description"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""PosterUrl"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""Images"" text;
+ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
+ALTER TABLE public.""ShowSchedules"" ADD COLUMN IF NOT EXISTS ""ShowDay"" varchar(20);
+
+UPDATE public.""ShowSchedules""
+SET ""ShowDay"" = trim(to_char(""StartTime"", 'Day'))
+WHERE ""ShowDay"" IS NULL OR trim(""ShowDay"") = '';
+
+CREATE OR REPLACE VIEW public.vw_home_show_listing AS
+SELECT
+    s.""Id"" AS schedule_id,
+    CASE
+        WHEN s.""MovieId"" IS NOT NULL THEN 'Movie'
+        WHEN s.""StandupShowId"" IS NOT NULL THEN 'Standup'
+        WHEN s.""LiveStreamId"" IS NOT NULL THEN 'Live'
+        ELSE COALESCE(NULLIF(s.""Type"", ''), 'Movie')
+    END AS show_type,
+    COALESCE(s.""MovieId"", s.""StandupShowId"", s.""LiveStreamId"", 0) AS show_id,
+    COALESCE(m.""Title"", st.""Title"", ls.""Title"", 'Untitled Show') AS title,
+    COALESCE(m.""Description"", st.""Description"", ls.""Description"",
+        CASE
+            WHEN m.""Id"" IS NOT NULL THEN concat_ws(' | ', NULLIF(m.""Director"", ''), NULLIF(m.""Producer"", ''), NULLIF(m.""Cast"", ''))
+            WHEN st.""Id"" IS NOT NULL THEN 'Comedian: ' || st.""Comedian""
+            WHEN ls.""Id"" IS NOT NULL THEN 'Host: ' || ls.""Host""
+            ELSE ''
+        END) AS ""Description"",
+    COALESCE(m.""PosterUrl"", st.""PosterUrl"", ls.""PosterUrl"") AS ""PosterUrl"",
+    COALESCE(m.""Images"", st.""Images"", ls.""Images"") AS ""Images"",
+    COALESCE(m.""TrailerUrl"", st.""TrailerUrl"", ls.""TrailerUrl"") AS ""TrailerUrl"",
+    COALESCE(m.""Director"", st.""Comedian"", ls.""Host"") AS director,
+    m.""Cast"" AS cast,
+    m.""ImdbRating"" AS imdb_rating,
+    v.venue_name,
+    sc.screen_name,
+    s.""StartTime"" AS start_time,
+    s.""EndTime"" AS end_time,
+    COALESCE(l.""Area"", '') AS location,
+    COALESCE(l.""State"", '') AS state,
+    COALESCE(l.""Country"", '') AS country
+FROM public.""ShowSchedules"" s
+LEFT JOIN public.""Movies"" m ON s.""MovieId"" = m.""Id""
+LEFT JOIN public.""StandupShows"" st ON s.""StandupShowId"" = st.""Id""
+LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id""
+LEFT JOIN public.""Locations"" l ON s.""LocationId"" = l.""Id""
+LEFT JOIN public.screens sc ON s.screen_id = sc.id
+LEFT JOIN public.venues v ON sc.venue_id = v.id;
+");
+                _homeShowListingViewReady = true;
+            }
+            finally
+            {
+                HomeShowListingViewLock.Release();
+            }
+        }
+
 
         public IActionResult Privacy()
         {
             return View();
         }
 
-        // ================= ERROR =================
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
@@ -176,33 +500,27 @@ public async Task<IActionResult> Index(string type = "Movie")
         {
             try
             {
-                // Human Comment:
-                // Return all country names, while preserving local DB ids for countries
-                // that have state/region data in the application.
                 var dataCountries = await _context.Countries
                     .AsNoTracking()
-                    .OrderBy(c => c.Name)
-                    .Select(c => new { id = c.Id, name = c.Name })
+                    .Select(c => new { id = (int?)c.Id, name = c.Name })
                     .ToListAsync();
 
-                var countriesByName = dataCountries
+                var locationCountries = await _context.Locations
+                    .AsNoTracking()
+                    .Where(l => l.Country != null && l.Country.Trim() != "")
+                    .Select(l => new { id = (int?)null, name = l.Country })
+                    .ToListAsync();
+
+                var countries = dataCountries
+                    .Concat(locationCountries)
+                    .Where(c => !string.IsNullOrWhiteSpace(c.name))
                     .GroupBy(c => c.name.Trim(), StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(g => g.Key, g => (int?)g.First().id, StringComparer.OrdinalIgnoreCase);
-
-                var cultureCountries = CultureInfo
-                    .GetCultures(CultureTypes.SpecificCultures)
-                    .Select(c => new RegionInfo(c.Name).EnglishName)
-                    .Where(name => !string.IsNullOrWhiteSpace(name))
-                    .Distinct(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var countryName in cultureCountries)
-                {
-                    countriesByName.TryAdd(countryName.Trim(), null);
-                }
-
-                var countries = countriesByName
-                    .OrderBy(c => c.Key)
-                    .Select(c => new { id = c.Value, name = c.Key })
+                    .Select(g => new
+                    {
+                        id = g.FirstOrDefault(x => x.id.HasValue)?.id,
+                        name = g.Key
+                    })
+                    .OrderBy(c => c.name)
                     .ToList();
 
                 return Json(countries);
@@ -213,45 +531,102 @@ public async Task<IActionResult> Index(string type = "Movie")
                 return StatusCode(500, new { message = "Failed to load countries." });
             }
         }
+public async Task<IActionResult> ShowDates(
+int id,
+string type)
+{
+    var dates = await _context.HomeShows
+        .Where(x =>
+            x.ShowId == id &&
+            x.ShowType == type)
+        .OrderBy(x=>x.StartTime)
+        .ToListAsync();
 
+    return View(dates);
+}
         [HttpGet]
-        public async Task<IActionResult> GetStates(int countryId)
+        public async Task<IActionResult> GetStates(int? countryId, string? countryName)
         {
             try
             {
-                var states = await _context.States
+                var stateRows = countryId.HasValue
+                    ? await _context.States
                     .AsNoTracking()
-                    .Where(s => s.CountryId == countryId)
-                    .OrderBy(s => s.Name)
-                    .Select(s => new { id = s.Id, name = s.Name })
+                    .Where(s => s.CountryId == countryId.Value)
+                    .Select(s => new { id = (int?)s.Id, name = s.Name })
+                    .ToListAsync()
+                    : new List<object>().Select(_ => new { id = (int?)null, name = string.Empty }).ToList();
+
+                var locationStates = await _context.Locations
+                    .AsNoTracking()
+                    .Where(l =>
+                        l.State != null &&
+                        l.State.Trim() != "" &&
+                        (string.IsNullOrWhiteSpace(countryName) || l.Country.ToLower() == countryName.ToLower()))
+                    .Select(l => new { id = (int?)null, name = l.State })
                     .ToListAsync();
+
+                var states = stateRows
+                    .Concat(locationStates)
+                    .Where(s => !string.IsNullOrWhiteSpace(s.name))
+                    .GroupBy(s => s.name.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g => new
+                    {
+                        id = g.FirstOrDefault(x => x.id.HasValue)?.id,
+                        name = g.Key
+                    })
+                    .OrderBy(s => s.name)
+                    .ToList();
 
                 return Json(states);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load states for country {CountryId}.", countryId);
+                _logger.LogError(ex, "Failed to load states for country {CountryId} / {CountryName}.", countryId, countryName);
                 return StatusCode(500, new { message = "Failed to load states." });
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDistricts(int stateId)
+        public async Task<IActionResult> GetDistricts(int? stateId, string? stateName, string? countryName)
         {
             try
             {
-                var districts = await _context.Districts
+                var districtRows = stateId.HasValue
+                    ? await _context.Districts
                     .AsNoTracking()
-                    .Where(d => d.StateId == stateId)
-                    .OrderBy(d => d.Name)
-                    .Select(d => new { id = d.Id, name = d.Name })
+                    .Where(d => d.StateId == stateId.Value)
+                    .Select(d => new { id = (int?)d.Id, name = d.Name })
+                    .ToListAsync()
+                    : new List<object>().Select(_ => new { id = (int?)null, name = string.Empty }).ToList();
+
+                var locationRegions = await _context.Locations
+                    .AsNoTracking()
+                    .Where(l =>
+                        l.Area != null &&
+                        l.Area.Trim() != "" &&
+                        (string.IsNullOrWhiteSpace(countryName) || l.Country.ToLower() == countryName.ToLower()) &&
+                        (string.IsNullOrWhiteSpace(stateName) || l.State.ToLower() == stateName.ToLower()))
+                    .Select(l => new { id = (int?)null, name = l.Area })
                     .ToListAsync();
+
+                var districts = districtRows
+                    .Concat(locationRegions)
+                    .Where(d => !string.IsNullOrWhiteSpace(d.name))
+                    .GroupBy(d => d.name.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g => new
+                    {
+                        id = g.FirstOrDefault(x => x.id.HasValue)?.id,
+                        name = g.Key
+                    })
+                    .OrderBy(d => d.name)
+                    .ToList();
 
                 return Json(districts);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load districts for state {StateId}.", stateId);
+                _logger.LogError(ex, "Failed to load districts for state {StateId} / {StateName}.", stateId, stateName);
                 return StatusCode(500, new { message = "Failed to load regions." });
             }
         }

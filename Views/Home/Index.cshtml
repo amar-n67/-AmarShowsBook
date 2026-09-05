@@ -1,393 +1,3910 @@
 ﻿@model AmarShowsBook.Models.ViewModels.HomeViewModel
 
+
 @{
     ViewData["Title"] = "showTime";
     var selectedType = Context.Request.Query["type"].ToString();
     if (string.IsNullOrWhiteSpace(selectedType))
     {
-        selectedType = "Movie";
+        selectedType = "All";
     }
+    var selectedTypeLabel = string.Equals(selectedType, "All", StringComparison.OrdinalIgnoreCase) ? "All" : selectedType;
     var userName = Context.Session.GetString("UserName") ?? "Artist";
     var userLanguage = Context.Session.GetString("UserLanguage") ?? "English";
     var userGenre = Context.Session.GetString("UserGenre") ?? "Dramatic";
+    var isLoggedIn = Context.Session.GetString("UserEmail") != null;
+    var platformMode = string.Equals(selectedType, "OTT", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase);
+    var platformTitle = string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase)
+        ? "Music platforms"
+        : "OTT platforms";
+    var platformSubtitle = string.Equals(selectedType, "Music", StringComparison.OrdinalIgnoreCase)
+        ? "Stream playlists, albums, podcasts, and live audio from popular services."
+        : "Explore movies, series, originals, sports, and family entertainment from top services.";
+    var ottPlatforms = new[]
+    {
+        new { Name = "Netflix", Tagline = "Series, films, docs", Accent = "#e50914", Initials = "N" },
+        new { Name = "Prime Video", Tagline = "Cinema, sport, originals", Accent = "#00a8e1", Initials = "PV" },
+        new { Name = "Disney+ Hotstar", Tagline = "Family, fantasy, sport", Accent = "#1f80e0", Initials = "D+" },
+        new { Name = "JioCinema", Tagline = "Indian originals, live events", Accent = "#d9008d", Initials = "JC" },
+        new { Name = "Sony LIV", Tagline = "Shows, sport, premium TV", Accent = "#673ab7", Initials = "SL" },
+        new { Name = "ZEE5", Tagline = "Regional stories, serials", Accent = "#8230c6", Initials = "Z5" },
+        new { Name = "YouTube", Tagline = "Creators, rentals, streams", Accent = "#ff0033", Initials = "YT" },
+        new { Name = "Aha", Tagline = "Telugu and Tamil picks", Accent = "#ff6b00", Initials = "AH" }
+    };
+    var ottTitles = new[]
+    {
+        new { Platform = "Netflix", Title = "Red Notice", Type = "Movie", Rating = "7.8", Duration = "1h 58m", Year = "2026", Language = "English", Quality = "4K", Progress = "64", Description = "A slick action chase across museums, vaults, and rival thieves.", Accent = "#e50914", Initials = "RN", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Netflix", Title = "Delhi Crime Files", Type = "Series", Rating = "8.6", Duration = "7 episodes", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "38", Description = "A tight investigative drama following a citywide case.", Accent = "#e50914", Initials = "DC", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Prime Video", Title = "The Family Man", Type = "Series", Rating = "8.9", Duration = "10 episodes", Year = "2026", Language = "Hindi", Quality = "4K", Progress = "76", Description = "High-stakes espionage with sharp humor and family pressure.", Accent = "#00a8e1", Initials = "FM", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Prime Video", Title = "Citadel India", Type = "Series", Rating = "8.1", Duration = "6 episodes", Year = "2026", Language = "Hindi", Quality = "4K", Progress = "22", Description = "A covert network story with action, secrets, and betrayal.", Accent = "#00a8e1", Initials = "CI", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Disney+ Hotstar", Title = "Loki: Time Spiral", Type = "Series", Rating = "8.4", Duration = "6 episodes", Year = "2026", Language = "English", Quality = "4K", Progress = "51", Description = "A playful multiverse ride through impossible timelines.", Accent = "#1f80e0", Initials = "LK", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Disney+ Hotstar", Title = "Cricket Prime Live", Type = "Sports", Rating = "9.0", Duration = "Live", Year = "2026", Language = "Multi", Quality = "HD", Progress = "12", Description = "Match center, highlights, commentary, and live moments.", Accent = "#1f80e0", Initials = "CP", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "JioCinema", Title = "Asur Returns", Type = "Series", Rating = "8.5", Duration = "8 episodes", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "46", Description = "Mythology and cybercrime collide in a dark thriller.", Accent = "#d9008d", Initials = "AR", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Sony LIV", Title = "Scam: Market Line", Type = "Series", Rating = "8.7", Duration = "9 episodes", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "58", Description = "A tense financial drama built around ambition and fraud.", Accent = "#673ab7", Initials = "SM", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "ZEE5", Title = "Silence: Case Notes", Type = "Movie", Rating = "7.6", Duration = "2h 6m", Year = "2026", Language = "Hindi", Quality = "HD", Progress = "31", Description = "A procedural mystery built on quiet clues and pressure.", Accent = "#8230c6", Initials = "SC", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "YouTube", Title = "Creator Premiere Live", Type = "Live", Rating = "8.0", Duration = "Live", Year = "2026", Language = "Multi", Quality = "HD", Progress = "5", Description = "Creator premieres, behind-the-scenes cuts, and fan chat moments.", Accent = "#ff0033", Initials = "YT", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+        new { Platform = "Aha", Title = "Telugu Comedy Nights", Type = "Standup", Rating = "8.2", Duration = "1h 24m", Year = "2026", Language = "Telugu", Quality = "HD", Progress = "43", Description = "A fast, crowd-first special packed with local punchlines.", Accent = "#ff6b00", Initials = "TC", Video = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" }
+    };
+    var musicPlatforms = new[]
+    {
+        new { Name = "Spotify", Description = "Playlists, albums, podcasts, audiobooks, and discovery mixes.", Url = "https://open.spotify.com", Accent = "#1db954", Initials = "SP" },
+        new { Name = "Apple Music", Description = "Lossless music, curated radio, music videos, and artist pages.", Url = "https://music.apple.com", Accent = "#fa233b", Initials = "AM" },
+        new { Name = "YouTube Music", Description = "Official tracks, videos, live performances, and personalized mixes.", Url = "https://music.youtube.com", Accent = "#ff0033", Initials = "YM" },
+        new { Name = "Amazon Music", Description = "Songs, podcasts, stations, playlists, and Prime music access.", Url = "https://music.amazon.com", Accent = "#00a8e1", Initials = "AZ" },
+        new { Name = "JioSaavn", Description = "Bollywood, indie, regional songs, podcasts, and radio.", Url = "https://www.jiosaavn.com", Accent = "#2bc5b4", Initials = "JS" },
+        new { Name = "Gaana", Description = "Hindi, regional, devotional, radio, and mood-based playlists.", Url = "https://gaana.com", Accent = "#e72c30", Initials = "GA" },
+        new { Name = "SoundCloud", Description = "Independent artists, DJ sets, remixes, podcasts, and community audio.", Url = "https://soundcloud.com", Accent = "#ff5500", Initials = "SC" },
+        new { Name = "Tidal", Description = "HiFi audio, editorial playlists, videos, and artist-first releases.", Url = "https://tidal.com", Accent = "#111111", Initials = "TD" }
+    };
 }
 
 <section class="showtime-page">
     <div class="showtime-hero">
         <div>
-            <span class="showtime-kicker">Now Rolling</span>
-            <h1>showTime</h1>
-            <p>@userName, your @userLanguage track and @userGenre mood are on the board.</p>
+            <span class="showtime-kicker">NOW SHOWING</span>
+            <h1 class="showtime-title">showTime</h1>
+            <p>@userName, find a show near you.</p>
         </div>
-        <div class="showtime-ticket">
-            <span>@userLanguage</span>
-            <strong>@userGenre</strong>
+        <div class="showtime-summary">
+            <span>Available Shows</span>
+            <strong>@Model.HomeShows.Count</strong>
+            <small>@selectedTypeLabel</small>
         </div>
     </div>
 
-    <div class="showtime-controls">
+<div class="showtime-controls @(platformMode ? "platform-mode" : "")">
+    <div class="location-field">
+        <label for="showTypeFilter">Show type</label>
+        <select id="showTypeFilter" class="form-control" onchange="changeShowType(this.value)">
+            <option value="All" selected="@(selectedTypeLabel == "All" ? "selected" : null)">All</option>
+            <option value="Movie" selected="@(selectedType == "Movie" ? "selected" : null)">Movie</option>
+            <option value="Live" selected="@(selectedType == "Live" ? "selected" : null)">Live</option>
+            <option value="Standup" selected="@(selectedType == "Standup" ? "selected" : null)">Standup</option>
+            <option value="News" selected="@(selectedType == "News" ? "selected" : null)">News</option>
+            <option value="OTT" selected="@(selectedType == "OTT" ? "selected" : null)">OTT's</option>
+            <option value="Music" selected="@(selectedType == "Music" ? "selected" : null)">Music</option>
+        </select>
+    </div>
+    <div class="location-picker">
+        <label>Location</label>
+        <button type="button" class="location-choice-btn" id="locationSummaryButton" onclick="toggleLocationChooser()" aria-expanded="false" title="All locations">
+            <span class="location-choice-symbol" aria-hidden="true">⌖</span>
+            <span class="location-choice-text">All locations</span>
+            <span class="location-toggle-symbol" aria-hidden="true">⌄</span>
+        </button>
+    </div>
+    <div class="location-field compact-filter-field">
+        <label for="ratingFilter">Rating <span aria-hidden="true">★</span></label>
+        <select id="ratingFilter" class="form-control" onchange="applyLocationFilter()">
+            <option value="">Any</option>
+        </select>
+    </div>
+    <div class="location-field compact-filter-field">
+        <label for="dateFilter">Available Dates</label>
+        <input id="dateFilter" class="form-control" type="date" onchange="applyLocationFilter()" />
+    </div>
+    <div class="location-field compact-filter-field">
+        <label for="sortShows">Sort</label>
+        <select id="sortShows" class="form-control" onchange="applyLocationFilter()">
+            <option value="upcoming">Upcoming first</option>
+            <option value="today">Today first</option>
+            <option value="rating">Highest rating</option>
+            <option value="time">Earliest time</option>
+            <option value="title">Name A-Z</option>
+            <option value="location">Location A-Z</option>
+            <option value="type">Show type</option>
+        </select>
+    </div>
+    <div class="location-field compact-filter-field filter-clear-field">
+        <label>&nbsp;</label>
+        <button type="button"
+                class="showtime-clear-btn"
+                data-no-action-icon="true"
+                onclick="clearAllShowtimeFilters()">
+            <span class="showtime-clear-icon" aria-hidden="true">×</span>
+            <span>Clear</span>
+        </button>
+    </div>
+    <div class="location-panel" id="locationPanel" hidden>
         <div class="location-strip">
-            <div>
-                <label>Country</label>
-                <select id="country" class="form-control" onchange="loadStates()">
-                    <option value="">Loading countries...</option>
+            <div class="location-field">
+                <label for="country">Country</label>
+                <select id="country" class="form-control" onchange="clearCurrentLocationFilter(); loadStates().then(applyLocationFilter)">
+                    <option value="">All Countries</option>
                 </select>
             </div>
-
-            <div>
-                <label>State</label>
-                <select id="state" class="form-control" onchange="loadDistricts()">
-                    <option value="">Select State</option>
+            <div class="location-field">
+                <label for="state">State</label>
+                <select id="state" class="form-control" onchange="clearCurrentLocationFilter(); loadDistricts().then(applyLocationFilter)">
+                    <option value="">All States</option>
                 </select>
             </div>
-
-            <div>
-                <label>Region</label>
-                <select id="district" class="form-control">
-                    <option value="">Select Region</option>
+            <div class="location-field">
+                <label for="district">Region</label>
+                <select id="district" class="form-control" onchange="clearCurrentLocationFilter(); applyLocationFilter()">
+                    <option value="">All Regions</option>
                 </select>
+            </div>
+            <div class="location-actions">
+                <button type="button" class="location-current-btn" onclick="detectCurrentLocation()">Current</button>
+                <button type="button" class="location-reset-btn" onclick="resetLocationFilter()">Reset</button>
             </div>
         </div>
-
-        <nav class="showtime-tabs" aria-label="Show category">
-            <a href="/Home/Index?type=Movie" class="@(selectedType == "Movie" ? "active" : "")">Movies</a>
-            <a href="/Home/Index?type=Standup" class="@(selectedType == "Standup" ? "active" : "")">Standup</a>
-            <a href="/Home/Index?type=Live" class="@(selectedType == "Live" ? "active" : "")">Live</a>
-        </nav>
     </div>
+    <p class="location-status" id="locationStatus" aria-live="polite"></p>
+</div>
 
+    @if (string.Equals(selectedType, "OTT", StringComparison.OrdinalIgnoreCase))
+    {
+        var featuredOtt = ottTitles.First();
+        <section class="ott-studio" aria-label="OTT streaming">
+            <aside class="ott-rail" aria-label="OTT platforms">
+                <button type="button" class="ott-platform-pill active" data-platform="All" style="--platform-accent:var(--app-primary)">
+                    <span class="ott-platform-mark" aria-hidden="true">All</span>
+                    <span>All OTT's</span>
+                </button>
+                @foreach (var platform in ottPlatforms)
+                {
+                    <button type="button" class="ott-platform-pill" data-platform="@platform.Name" style="--platform-accent:@platform.Accent">
+                        <span class="ott-platform-mark" aria-hidden="true">@platform.Initials</span>
+                        <span>
+                            <strong>@platform.Name</strong>
+                            <small>@platform.Tagline</small>
+                        </span>
+                    </button>
+                }
+            </aside>
+
+            <div class="ott-main">
+                <section class="ott-player-shell" style="--ott-accent:@featuredOtt.Accent" aria-label="OTT video player">
+                    <div class="ott-video-frame">
+                        <video id="ottVideoPlayer" preload="metadata" playsinline poster="">
+                            <source src="@featuredOtt.Video" type="video/mp4" />
+                        </video>
+                        <div class="ott-video-fallback" id="ottVideoFallback">
+                            <span id="ottPlayerInitials">@featuredOtt.Initials</span>
+                        </div>
+                        <div class="ott-player-gradient" aria-hidden="true"></div>
+                        <button type="button" class="ott-big-play" id="ottBigPlay" title="Play" aria-label="Play">▶</button>
+                        <div class="ott-player-topline">
+                            <span id="ottPlayerPlatform">@featuredOtt.Platform</span>
+                            <span id="ottPlayerQuality">@featuredOtt.Quality</span>
+                        </div>
+                        <div class="ott-player-info">
+                            <p id="ottPlayerType">@featuredOtt.Type</p>
+                            <h2 id="ottPlayerTitle">@featuredOtt.Title</h2>
+                            <div class="ott-meta-row">
+                                <span id="ottPlayerRating">@featuredOtt.Rating</span>
+                                <span id="ottPlayerYear">@featuredOtt.Year</span>
+                                <span id="ottPlayerDuration">@featuredOtt.Duration</span>
+                                <span id="ottPlayerLanguage">@featuredOtt.Language</span>
+                            </div>
+                            <p id="ottPlayerDescription">@featuredOtt.Description</p>
+                        </div>
+                        <div class="ott-controls">
+                            <div class="ott-progress-row">
+                                <span id="ottCurrentTime">0:00</span>
+                                <input type="range" id="ottProgress" min="0" max="100" value="0" aria-label="Playback progress" />
+                                <span id="ottDuration">0:00</span>
+                            </div>
+                            <div class="ott-control-row">
+                                <button type="button" id="ottPlayPause" title="Play" aria-label="Play">▶</button>
+                                <button type="button" id="ottMute" title="Mute" aria-label="Mute">🔊</button>
+                                <input type="range" id="ottVolume" min="0" max="1" step="0.05" value="0.8" aria-label="Volume" />
+                                <select id="ottSpeed" aria-label="Playback speed">
+                                    <option value="0.75">0.75x</option>
+                                    <option value="1" selected>1x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                </select>
+                                <button type="button" id="ottNext" title="Next" aria-label="Next">›</button>
+                                <button type="button" id="ottFullscreen" title="Fullscreen" aria-label="Fullscreen">⛶</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="ott-section-head">
+                    <div>
+                        <span>OTT's</span>
+                        <h2>Streaming inside showTime</h2>
+                    </div>
+                    <div class="ott-search-wrap">
+                        <label for="ottSearch">Search</label>
+                        <input id="ottSearch" type="search" placeholder="Movie, series, sport..." autocomplete="off" />
+                    </div>
+                </div>
+
+                <section class="ott-catalog" aria-label="OTT catalog">
+                    @foreach (var title in ottTitles)
+                    {
+                        <button type="button"
+                                class="ott-title-card"
+                                data-platform="@title.Platform"
+                                data-title="@title.Title"
+                                data-type="@title.Type"
+                                data-rating="@title.Rating"
+                                data-duration="@title.Duration"
+                                data-year="@title.Year"
+                                data-language="@title.Language"
+                                data-quality="@title.Quality"
+                                data-description="@title.Description"
+                                data-accent="@title.Accent"
+                                data-initials="@title.Initials"
+                                data-progress="@title.Progress"
+                                data-video="@title.Video"
+                                style="--ott-card-accent:@title.Accent">
+                            <span class="ott-poster" aria-hidden="true">
+                                <strong>@title.Initials</strong>
+                            </span>
+                            <span class="ott-title-copy">
+                                <span>@title.Platform</span>
+                                <strong>@title.Title</strong>
+                                <small>@title.Type · @title.Duration · @title.Language</small>
+                                <i><b style="width:@title.Progress%"></b></i>
+                            </span>
+                        </button>
+                    }
+                </section>
+            </div>
+        </section>
+    }
+    else if (platformMode)
+    {
+        <section class="platform-board" aria-labelledby="platformBoardTitle">
+            <div class="platform-board-head">
+                <div>
+                    <span>@selectedType</span>
+                    <h2 id="platformBoardTitle">@platformTitle</h2>
+                    <p>@platformSubtitle</p>
+                </div>
+            </div>
+            <div class="platform-grid">
+                @foreach (var platform in musicPlatforms)
+                {
+                    <a class="platform-card" href="@platform.Url" target="_blank" rel="noopener noreferrer" style="--platform-accent:@platform.Accent">
+                        <span class="platform-mark" aria-hidden="true">@platform.Initials</span>
+                        <span class="platform-copy">
+                            <strong>@platform.Name</strong>
+                            <small>@platform.Description</small>
+                        </span>
+                        <span class="platform-open" aria-hidden="true">↗</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
     <div class="schedule-board">
-        @if (!Model.Schedules.Any())
+        @if (!Model.HomeShows.Any())
         {
             <div class="empty-slate">
-                <span>No Shot Scheduled</span>
-                <h2>The reel is quiet for this category.</h2>
-                <p>Try another tab or schedule a new show when the next scene is ready.</p>
+                <span>No shows</span>
+                <h2>No shows found.</h2>
+                <p>Try another type or location.</p>
             </div>
         }
         else
         {
-            @foreach (var item in Model.Schedules)
-            {
-                var title = item.Type == "Movie" ? item.Movie?.Title :
-                            item.Type == "Standup" ? item.StandupShow?.Title :
-                            item.LiveStream?.Title;
-                var showRegion = item.Location == null
-                    ? "Region to be announced"
-                    : $"{item.Location.Area}, {item.Location.State}, {item.Location.Country}";
+@foreach (var item in Model.HomeShows
+.Where(x => x.ScheduleId > 0)
+.GroupBy(x => x.ShowId)
+.Select(x => x.First()))
+{
+    var showRegion =
+    string.IsNullOrWhiteSpace(item.TheaterDetails)
+    ? $"{item.Location}, {item.State}, {item.Country}"
+    : item.TheaterDetails;
+    var showLocation = string.Join(", ", new[] { item.Location, item.State, item.Country }
+        .Where(value => !string.IsNullOrWhiteSpace(value)));
+    var hasTrailer = !string.IsNullOrWhiteSpace(item.TrailerUrl);
 
-                <article class="show-card">
-                    <div class="show-card-top">
-                        <span>@item.Type</span>
-                        <strong>@item.StartTime.ToString("hh:mm tt")</strong>
-                    </div>
-                    <h2>@(title ?? "Untitled Show")</h2>
-                    <p>Camera opens at @item.StartTime.ToString("dd MMM yyyy, hh:mm tt")</p>
-                    <p class="show-region">@showRegion</p>
-                    <a class="btn btn-primary" href="/Booking/Seats/@item.Id">Book The Seat</a>
-                </article>
+<article class="show-card"
+data-location="@showLocation"
+data-country="@item.Country"
+data-state="@item.State"
+data-region="@item.Location"
+data-show-type="@item.ShowType"
+data-title="@item.Title"
+data-director="@item.Director"
+data-rating="@(item.ImdbRating?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+data-date="@item.StartTime.ToString("yyyy-MM-dd")"
+data-date-label="@item.StartTime.ToString("dd MMM yyyy")"
+data-start="@item.StartTime.ToString("O")"
+data-time="@item.StartTime.TimeOfDay.TotalMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+  <div class="card-body">
+
+        <h2 class="movie-title">
+
+            @(item.Title ?? "Untitled Show")
+
+        </h2>
+
+
+        <div class="image-strip">
+
+            <img class="swap-image active"
+                 src="@(string.IsNullOrEmpty(item.PosterUrl)
+                 ? "/images/default1.jpg"
+                 : item.PosterUrl)" />
+
+            @if(!string.IsNullOrEmpty(item.Images))
+            {
+                @foreach(var img in item.Images.Split(
+                ',',
+                StringSplitOptions.RemoveEmptyEntries))
+                {
+                    <img class="swap-image"
+                         src="@img.Trim()" />
+                }
             }
+
+        </div>
+
+<div class="movie-details">
+
+    <div class="detail-row">
+
+        <span>Date:
+            @item.StartTime.ToString("dd MMM yyyy")
+        </span>
+
+        <span>Time:
+            @item.StartTime.ToString("hh:mm tt")
+        </span>
+
+    </div>
+
+    <div class="detail-row">
+        <span>Director/Host: @(string.IsNullOrWhiteSpace(item.Director) ? "NA" : item.Director)</span>
+        <span class="imdb-rating" title="IMDB rating">@(item.ImdbRating?.ToString("0.0") ?? "NA")</span>
+    </div>
+
+    <div class="venue-row">
+        Cast: @(string.IsNullOrWhiteSpace(item.Cast) ? "NA" : item.Cast)
+    </div>
+
+    <div class="venue-row">
+
+        Venue: @showRegion
+
+    </div>
+
+    <div class="venue-row">
+
+        Location: @(string.IsNullOrWhiteSpace(showLocation) ? "Location TBA" : showLocation)
+
+    </div>
+
+</div>
+
+
+<div class="card-actions">
+<a
+class="btn trailer-btn @(hasTrailer ? "" : "trailer-unavailable")"
+data-url="@item.TrailerUrl"
+href="#"
+onclick="event.preventDefault();event.stopPropagation();">
+
+<span class="action-icon" aria-hidden="true">▶</span>
+<span>Trailer</span>
+</a>
+
+<a
+class="btn btn-primary"
+href="/Booking/Seats/@item.ScheduleId"
+title="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")"
+aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
+
+<span class="action-icon" aria-hidden="true">🎟</span>
+<span>@(isLoggedIn ? "Book" : "Login")</span>
+</a>
+
+</div>
+
+    </div>
+
+</article>
+
+}
         }
     </div>
+    }
+    <div class="empty-slate filter-empty-state" id="filterEmptyState" hidden>
+        <span>No shows</span>
+        <h2 id="filterEmptyTitle">No shows available.</h2>
+        <p id="filterEmptyMessage">Try another location or filter.</p>
+        <button type="button" class="empty-state-link" id="showNearbyLink" onclick="showNearbyShows()" hidden>Show nearby</button>
+    </div>
+    <div id="trailerModal" class="trailer-modal">
+
+    <div class="trailer-container">
+
+        <button
+        class="close-trailer"
+        onclick="closeTrailer()">
+
+        ✕
+
+        </button>
+
+        <iframe
+        id="trailerFrame"
+        allowfullscreen
+        allow="autoplay">
+        </iframe>
+
+    </div>
+
+</div>
 </section>
 
 <style>
-.showtime-page {
-    padding-bottom: 44px;
-}
-.showtime-hero {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    align-items: flex-end;
-    min-height: 260px;
-    padding: 34px;
-    border-radius: 8px;
-    background:
-        linear-gradient(135deg, rgba(255, 242, 199, 0.94), rgba(245, 178, 196, 0.86), rgba(146, 229, 221, 0.86)),
-        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
-    color: #231f20;
-    box-shadow: 0 22px 64px rgba(35,31,32,0.22);
-}
-.showtime-kicker,
-.showtime-ticket span,
-.show-card-top span,
-.empty-slate span {
-    text-transform: uppercase;
-    font-size: 0.74rem;
-    font-weight: 850;
-    letter-spacing: 0.08em;
-}
-.showtime-hero h1 {
-    margin: 8px 0;
-    color: #231f20;
-    font-size: clamp(3rem, 8vw, 6.5rem);
-    font-weight: 900;
-}
-.showtime-hero p {
-    margin: 0;
-    max-width: 620px;
-    color: #34303a;
-    font-size: 1.08rem;
-}
-.showtime-ticket {
-    min-width: 180px;
-    padding: 14px;
-    border: 1px dashed rgba(35,31,32,0.44);
-    border-radius: 8px;
-    text-align: right;
-    background: rgba(255,255,255,0.38);
-}
-.showtime-ticket strong {
-    display: block;
-    color: #231f20;
-    font-size: 1.2rem;
-}
-.showtime-controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 16px;
-    align-items: end;
-    margin: 24px 0;
-}
-.location-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    padding: 16px;
-    border: 1px solid var(--app-input-border);
-    border-radius: 8px;
-    background: var(--app-card);
-    color: var(--app-card-text);
-}
-.location-strip label {
-    margin-bottom: 6px;
-    font-weight: 800;
-}
-.showtime-tabs {
-    display: inline-flex;
-    gap: 6px;
-    padding: 6px;
-    border: 1px solid var(--app-input-border);
-    border-radius: 999px;
-    background: var(--app-card);
-}
-.showtime-tabs a {
-    min-width: 90px;
-    padding: 9px 14px;
-    border-radius: 999px;
-    color: var(--app-text);
-    text-align: center;
-    text-decoration: none;
-    font-weight: 850;
-}
-.showtime-tabs a.active {
-    background: var(--app-primary);
-    color: #fff;
-}
-.schedule-board {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-}
-.show-card,
-.empty-slate {
-    border: 1px solid var(--app-input-border);
-    border-radius: 8px;
-    background: var(--app-card);
-    color: var(--app-card-text);
-    box-shadow: 0 14px 34px rgba(0,0,0,0.13);
-}
-.show-card {
-    display: grid;
-    gap: 12px;
-    padding: 18px;
-}
-.show-card-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    color: var(--app-muted);
-}
-.show-card h2 {
-    min-height: 58px;
-    margin: 0;
-    color: inherit;
-    font-size: 1.22rem;
-    font-weight: 900;
-}
-.show-card p {
-    margin: 0;
-    color: var(--app-muted);
-}
-.show-region {
-    min-height: 42px;
-    font-weight: 750;
-}
-.show-card .btn {
-    align-self: end;
-    font-weight: 850;
-}
-.empty-slate {
-    grid-column: 1 / -1;
-    padding: 34px;
-    text-align: center;
-}
-.empty-slate h2 {
-    margin: 8px 0;
-    color: inherit;
-}
-.empty-slate p {
-    margin: 0;
-    color: var(--app-muted);
-}
-@@media (max-width: 980px) {
-    .showtime-controls,
-    .schedule-board {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .show-card {
+        cursor: pointer;
     }
-    .showtime-tabs {
-        grid-column: 1 / -1;
-        justify-content: center;
-    }
-}
-@@media (max-width: 760px) {
-    .showtime-hero,
-    .showtime-controls,
-    .location-strip,
-    .schedule-board {
-        grid-template-columns: 1fr;
-    }
-    .showtime-hero {
-        padding: 24px;
-    }
-    .showtime-ticket {
+    
+    .trailer-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
-        text-align: left;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
     }
+    
+    .trailer-container {
+        width: 90%;
+        max-width: 1000px;
+        height: 80vh;
+        position: relative;
+        z-index: 9999;
+    }
+    
+    .trailer-container iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 15px;
+    }
+    
+    .close-trailer {
+        position: absolute;
+        top: -50px;
+        right: 0;
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: 50%;
+        background: #ff4757;
+        color: white;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 10000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .showtime-page {
+        padding-bottom: 44px;
+    }
+    
+    .showtime-hero {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+        min-height: 130px;
+        padding: 24px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        background:
+            repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px),
+            linear-gradient(135deg, rgba(255,242,199,0.94), rgba(245,178,196,0.86), rgba(146,229,221,0.86));
+        color: #231f20;
+        box-shadow: 0 22px 64px rgba(35,31,32,0.22);
+    }
+
+    .showtime-hero::before {
+        content: none;
+    }
+
+    .showtime-hero::after {
+        content: none;
+    }
+
+    .showtime-hero > div {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-spotlight,
+    .hero-film-grain,
+    .hero-curtain,
+    .hero-camera-flash {
+        display: none;
+    }
+    
+    .showtime-kicker,
+    .showtime-ticket span,
+    .show-card-top span,
+    .empty-slate span {
+        text-transform: uppercase;
+        font-size: 0.74rem;
+        font-weight: 850;
+        letter-spacing: 0.08em;
+    }
+
+    .showtime-kicker {
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .showtime-hero h1 {
+        margin: 0 0 6px;
+        color: #231f20;
+        font-size: clamp(2rem, 5vw, 3.8rem);
+        font-weight: 900;
+    }
+
+    .showtime-title {
+        position: relative;
+        display: inline-flex;
+        align-items: baseline;
+        line-height: 0.92;
+        text-transform: none;
+        text-shadow: none;
+    }
+
+    .showtime-hero p {
+        position: relative;
+        margin: 0;
+        max-width: 620px;
+        color: #34303a;
+        font-size: 1.05rem;
+    }
+
+    .showtime-summary {
+        min-width: 190px;
+        padding: 14px;
+        border: 1px dashed rgba(35,31,32,0.44);
+        border-radius: 8px;
+        background: rgba(255,255,255,0.38);
+        text-align: right;
+    }
+
+    .showtime-summary span,
+    .showtime-summary small {
+        display: block;
+        color: #34303a;
+        font-weight: 850;
+    }
+
+    .showtime-summary strong {
+        display: block;
+        color: #231f20;
+        font-size: 1.7rem;
+        font-weight: 950;
+        line-height: 1.1;
+    }
+
+    .showtime-ticket {
+        min-width: 180px;
+        padding: 14px;
+        border: 1px dashed color-mix(in srgb, var(--app-nav-text) 42%, transparent);
+        border-radius: 8px;
+        text-align: right;
+        background: color-mix(in srgb, var(--app-card) 28%, transparent);
+    }
+    
+    .showtime-ticket strong {
+        display: block;
+        color: inherit;
+        font-size: 1.2rem;
+    }
+    
+    .showtime-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
+        gap: 12px;
+        align-items: stretch;
+        margin: 24px 0;
+    }
+    
+    .location-panel {
+        min-width: 0;
+        padding: 16px 20px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: var(--app-card);
+        color: var(--app-card-text);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
+    }
+    
+    .location-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: end;
+    }
+    
+    .location-field {
+        flex: 1;
+        min-width: 150px;
+        max-width: none;
+    }
+    
+    .location-field label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--app-muted);
+    }
+    
+    .location-field select {
+        width: 100%;
+        min-height: 36px;
+        border-radius: 10px;
+        padding: 0 10px;
+        font-size: 0.85rem;
+        border: 1px solid var(--app-input-border);
+        background: var(--app-bg);
+        color: var(--app-text);
+    }
+    
+    .location-actions {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 8px;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .location-reset-btn {
+        min-height: 36px;
+        padding: 0 14px;
+        border-radius: 10px;
+        border: 1px solid var(--app-input-border);
+        font-weight: 800;
+        white-space: nowrap;
+        font-size: 0.85rem;
+    }
+    
+    .location-reset-btn {
+        background: transparent;
+        color: var(--app-card-text);
+    }
+    
     .showtime-tabs {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 10px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: var(--app-card);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
+    }
+    
+    .showtime-tabs a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        min-height: 76px;
+        padding: 12px;
+        border: 1px solid color-mix(in srgb, var(--app-input-border) 72%, transparent);
+        border-radius: 8px;
+        color: var(--app-text);
+        text-align: left;
+        text-decoration: none;
+        font-weight: 850;
+        font-size: 0.9rem;
+        background: color-mix(in srgb, var(--app-bg) 42%, var(--app-card));
+    }
+
+    .showtime-tabs a:hover {
+        border-color: var(--app-primary);
+        transform: translateY(-2px);
+    }
+
+    .showtime-tabs .tab-icon {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+        font-size: 1.15rem;
+    }
+
+    .showtime-tabs strong,
+    .showtime-tabs small {
+        display: block;
+        line-height: 1.2;
+    }
+
+    .showtime-tabs small {
+        margin-top: 3px;
+        color: var(--app-muted);
+        font-size: 0.72rem;
+        font-weight: 750;
+    }
+    
+    .showtime-tabs a.active {
+        background: var(--app-primary);
+        color: #fff;
+        border-color: var(--app-primary);
+        box-shadow: 0 10px 24px color-mix(in srgb, var(--app-primary) 24%, transparent);
+    }
+
+    .showtime-tabs a.active .tab-icon {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    .showtime-tabs a.active small {
+        color: rgba(255, 255, 255, 0.82);
+    }
+    
+    .schedule-board {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        align-items: stretch;
+    }
+    
+    .show-card,
+    .empty-slate {
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: var(--app-card);
+        color: var(--app-card-text);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13);
+    }
+    
+    .show-card {
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        min-height: 100%;
+        position: relative;
+    }
+    
+    .show-card .card-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        height: 100%;
+    }
+    
+    .show-card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--app-muted);
+    }
+    
+    .show-card h2 {
+        min-height: 58px;
+        margin: 0;
+        color: inherit;
+        font-size: 1.22rem;
+        font-weight: 900;
+    }
+    
+    .show-card p {
+        margin: 0;
+        color: var(--app-muted);
+    }
+    
+    .show-region {
+        min-height: 42px;
+        font-weight: 750;
+    }
+    
+    .show-card .btn {
+        align-self: end;
+        font-weight: 850;
+    }
+    
+    .empty-slate {
+        grid-column: 1 / -1;
+        padding: 34px;
+        text-align: center;
+    }
+    
+    .empty-slate h2 {
+        margin: 8px 0;
+        color: inherit;
+    }
+    
+    .empty-slate p {
+        margin: 0;
+        color: var(--app-muted);
+    }
+
+    .ott-studio {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+    }
+
+    .ott-rail {
+        position: sticky;
+        top: 82px;
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: var(--app-card);
+        color: var(--app-card-text);
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+
+    .ott-platform-pill {
+        --platform-accent: var(--app-primary);
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        min-height: 58px;
+        padding: 8px;
+        border: 1px solid color-mix(in srgb, var(--platform-accent) 20%, var(--app-input-border));
+        border-radius: 8px;
+        background: #fff;
+        color: var(--app-input-text);
+        text-align: left;
+        cursor: pointer;
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .ott-platform-pill:hover,
+    .ott-platform-pill:focus-visible,
+    .ott-platform-pill.active {
+        transform: translateY(-1px);
+        border-color: var(--platform-accent);
+        background: color-mix(in srgb, var(--platform-accent) 10%, #fff);
+        outline: none;
+    }
+
+    .ott-platform-mark {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: var(--platform-accent);
+        color: #fff;
+        font-size: 0.74rem;
+        font-weight: 950;
+        letter-spacing: 0;
+    }
+
+    .ott-platform-pill span:last-child {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    .ott-platform-pill strong,
+    .ott-platform-pill small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ott-platform-pill small {
+        color: var(--app-muted);
+        font-size: 0.66rem;
+        font-weight: 750;
+    }
+
+    .ott-main {
+        min-width: 0;
+        display: grid;
+        gap: 14px;
+    }
+
+    .ott-player-shell {
+        --ott-accent: var(--app-primary);
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--ott-accent) 26%, var(--app-input-border));
+        border-radius: 8px;
+        background: #050505;
+        color: #fff;
+        box-shadow: 0 18px 38px rgba(15,23,42,.18);
+    }
+
+    .ott-video-frame {
+        position: relative;
+        min-height: 420px;
+        aspect-ratio: 16 / 9;
+        background:
+            radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--ott-accent) 38%, transparent), transparent 30%),
+            linear-gradient(135deg, #111, #050505 62%, color-mix(in srgb, var(--ott-accent) 18%, #090909));
+    }
+
+    .ott-video-frame video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.78;
+    }
+
+    .ott-video-fallback {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+    }
+
+    .ott-video-fallback span {
+        display: grid;
+        place-items: center;
+        width: clamp(90px, 14vw, 150px);
+        aspect-ratio: 1;
+        border: 1px solid rgba(255,255,255,.24);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--ott-accent) 84%, #111);
+        color: #fff;
+        font-size: clamp(1.9rem, 5vw, 4rem);
+        font-weight: 950;
+        box-shadow: 0 22px 54px rgba(0,0,0,.42);
+    }
+
+    .ott-player-gradient {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(180deg, rgba(0,0,0,.58), transparent 28%),
+            linear-gradient(0deg, rgba(0,0,0,.86), transparent 52%),
+            linear-gradient(90deg, rgba(0,0,0,.58), transparent 46%);
+    }
+
+    .ott-big-play {
+        position: absolute;
+        inset: 50% auto auto 50%;
+        transform: translate(-50%, -50%);
+        display: grid;
+        place-items: center;
+        width: 76px;
+        height: 76px;
+        border: 1px solid rgba(255,255,255,.38);
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--ott-accent) 82%, rgba(0,0,0,.68));
+        color: #fff;
+        font-size: 1.6rem;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 18px 46px rgba(0,0,0,.34);
+    }
+
+    .ott-video-frame.is-playing .ott-big-play {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .ott-player-topline {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        font-size: 0.72rem;
+        font-weight: 950;
+        text-transform: uppercase;
+    }
+
+    .ott-player-topline span {
+        min-height: 26px;
+        padding: 6px 9px;
+        border: 1px solid rgba(255,255,255,.24);
+        border-radius: 8px;
+        background: rgba(0,0,0,.34);
+        backdrop-filter: blur(14px);
+    }
+
+    .ott-player-info {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 86px;
+        max-width: min(680px, calc(100% - 36px));
+    }
+
+    .ott-player-info p,
+    .ott-player-info h2 {
+        margin: 0;
+    }
+
+    .ott-player-info > p:first-child {
+        color: color-mix(in srgb, var(--ott-accent) 78%, #fff);
+        font-size: 0.74rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .ott-player-info h2 {
+        margin-top: 4px;
+        font-size: clamp(1.45rem, 3vw, 2.4rem);
+        font-weight: 950;
+        line-height: 1.08;
+    }
+
+    .ott-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 10px 0;
+    }
+
+    .ott-meta-row span {
+        min-height: 25px;
+        padding: 5px 8px;
+        border-radius: 8px;
+        background: rgba(255,255,255,.14);
+        color: rgba(255,255,255,.88);
+        font-size: 0.74rem;
+        font-weight: 850;
+    }
+
+    .ott-player-info > p:last-child {
+        max-width: 620px;
+        color: rgba(255,255,255,.82);
+        font-size: 0.88rem;
+        line-height: 1.45;
+    }
+
+    .ott-controls {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 12px;
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: 8px;
+        background: rgba(0,0,0,.46);
+        backdrop-filter: blur(18px);
+    }
+
+    .ott-progress-row,
+    .ott-control-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+    }
+
+    .ott-progress-row span {
+        flex: 0 0 42px;
+        color: rgba(255,255,255,.78);
+        font-size: 0.72rem;
+        font-weight: 850;
+        text-align: center;
+    }
+
+    .ott-controls input[type="range"] {
+        min-width: 0;
+        accent-color: var(--ott-accent);
+    }
+
+    .ott-progress-row input {
+        flex: 1;
+    }
+
+    .ott-control-row button,
+    .ott-control-row select {
+        min-width: 38px;
+        height: 34px;
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 8px;
+        background: rgba(255,255,255,.12);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 900;
+    }
+
+    .ott-control-row button {
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+    }
+
+    .ott-control-row select {
+        padding: 0 6px;
+    }
+
+    .ott-control-row button:hover,
+    .ott-control-row button:focus-visible,
+    .ott-control-row select:focus-visible {
+        border-color: var(--ott-accent);
+        outline: none;
+    }
+
+    .ott-control-row #ottVolume {
+        width: 120px;
+    }
+
+    .ott-section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: end;
+        padding: 14px 16px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: var(--app-card);
+        color: var(--app-card-text);
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+
+    .ott-section-head span,
+    .ott-search-wrap label {
+        display: block;
+        color: var(--app-primary);
+        font-size: 0.64rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .ott-section-head h2 {
+        margin: 3px 0 0;
+        color: inherit;
+        font-size: 1.15rem;
+        font-weight: 950;
+    }
+
+    .ott-search-wrap {
+        flex: 0 1 260px;
+        display: grid;
+        gap: 4px;
+    }
+
+    .ott-search-wrap input {
+        width: 100%;
+        min-height: 36px;
+        padding: 0 11px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--app-input-text);
+        font-size: 0.82rem;
+        font-weight: 750;
+    }
+
+    .ott-catalog {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 12px;
+    }
+
+    .ott-title-card {
+        --ott-card-accent: var(--app-primary);
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 11px;
+        min-height: 126px;
+        padding: 10px;
+        border: 1px solid color-mix(in srgb, var(--ott-card-accent) 24%, var(--app-input-border));
+        border-radius: 8px;
+        background: #fff;
+        color: var(--app-input-text);
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 0 10px 22px rgba(15,23,42,.08);
+        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .ott-title-card:hover,
+    .ott-title-card:focus-visible,
+    .ott-title-card.active {
+        transform: translateY(-2px);
+        border-color: var(--ott-card-accent);
+        box-shadow: 0 14px 30px rgba(15,23,42,.13);
+        outline: none;
+    }
+
+    .ott-poster {
+        display: grid;
+        place-items: center;
+        width: 72px;
+        min-height: 106px;
+        border-radius: 8px;
+        background:
+            linear-gradient(160deg, color-mix(in srgb, var(--ott-card-accent) 86%, #111), #101010),
+            repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 2px, transparent 2px 10px);
+        color: #fff;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
+    }
+
+    .ott-poster strong {
+        font-size: 1.1rem;
+        font-weight: 950;
+    }
+
+    .ott-title-copy {
+        min-width: 0;
+        display: grid;
+        align-content: center;
+        gap: 5px;
+    }
+
+    .ott-title-copy span {
+        color: var(--ott-card-accent);
+        font-size: 0.64rem;
+        font-weight: 950;
+        text-transform: uppercase;
+    }
+
+    .ott-title-copy strong {
+        color: inherit;
+        font-size: 0.94rem;
+        font-weight: 950;
+        line-height: 1.18;
+        overflow-wrap: anywhere;
+    }
+
+    .ott-title-copy small {
+        color: var(--app-muted);
+        font-size: 0.72rem;
+        font-weight: 750;
+        line-height: 1.3;
+    }
+
+    .ott-title-copy i {
+        display: block;
+        width: 100%;
+        height: 5px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--app-input-border) 80%, transparent);
+    }
+
+    .ott-title-copy i b {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--ott-card-accent);
+    }
+
+    .platform-board {
+        display: grid;
+        gap: 14px;
+        margin-top: 8px;
+    }
+
+    .platform-board-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding: 18px;
+        border: 1px solid var(--app-input-border);
+        border-radius: 8px;
+        background:
+            linear-gradient(135deg, color-mix(in srgb, var(--app-card) 84%, #fff 16%), var(--app-card)),
+            radial-gradient(circle at 90% 20%, color-mix(in srgb, var(--app-primary) 16%, transparent), transparent 34%);
+        color: var(--app-card-text);
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+    }
+
+    .platform-board-head span {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--app-primary);
+        font-size: 0.68rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .platform-board-head h2 {
+        margin: 0 0 5px;
+        color: inherit;
+        font-size: 1.35rem;
+        font-weight: 950;
+        line-height: 1.15;
+    }
+
+    .platform-board-head p {
+        margin: 0;
+        max-width: 680px;
+        color: var(--app-muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    .platform-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 14px;
+        align-items: stretch;
+    }
+
+    .platform-card {
+        --platform-accent: var(--app-primary);
+        position: relative;
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) 28px;
+        gap: 12px;
+        align-items: center;
+        min-height: 112px;
+        padding: 16px;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--platform-accent) 24%, var(--app-input-border));
+        border-radius: 8px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72)),
+            linear-gradient(135deg, color-mix(in srgb, var(--platform-accent) 18%, transparent), transparent 46%);
+        color: var(--app-card-text);
+        text-decoration: none;
+        box-shadow: 0 12px 26px rgba(15,23,42,.1);
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .platform-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: var(--platform-accent);
+    }
+
+    .platform-card:hover,
+    .platform-card:focus-visible {
+        transform: translateY(-3px);
+        border-color: var(--platform-accent);
+        box-shadow: 0 16px 34px rgba(15,23,42,.14);
+        outline: none;
+    }
+
+    .platform-mark {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: var(--platform-accent);
+        color: #fff;
+        font-size: 0.92rem;
+        font-weight: 950;
+        letter-spacing: 0;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 8px 18px color-mix(in srgb, var(--platform-accent) 28%, transparent);
+    }
+
+    .platform-copy {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
+    }
+
+    .platform-copy strong {
+        color: inherit;
+        font-size: 1rem;
+        font-weight: 950;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    .platform-copy small {
+        color: var(--app-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+
+    .platform-open {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--platform-accent) 12%, #fff);
+        color: var(--platform-accent);
+        font-weight: 950;
+        line-height: 1;
+    }
+    
+    .movie-title {
+        font-size: 1.6rem;
+        font-weight: 800;
+        margin-bottom: 18px;
+    }
+    
+    .image-strip {
+        height: 0;
+        padding-bottom: 100%;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        background: var(--app-input-border);
+    }
+    
+    .swap-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transform: scale(1.1);
+        transition: opacity 1s ease, transform 6s ease;
+        border-radius: 8px;
+    }
+    
+    .swap-image.active {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    .movie-details {
+        margin: 15px 0;
+        font-size: 0.92rem;
+        flex: 1;
+        position: relative;
+    }
+    
+    .imdb-rating {
+        position: absolute;
+        top: -60px;
+        right: 0;
+        background: linear-gradient(135deg, #f5c518, #ddb700);
+        color: #000;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 12px rgba(245, 197, 24, 0.4);
+        z-index: 10;
+    }
+    
+    .imdb-rating::before {
+        content: "⭐ ";
+    }
+    
+    .detail-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--app-input-border);
+    }
+    
+    .detail-row span {
+        font-weight: 500;
+        color: var(--app-muted);
+        word-break: break-word;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+    
+    .detail-row span:first-child {
+        flex: 1 1 auto;
+        min-width: 50%;
+    }
+    
+    .detail-row span:last-child {
+        flex: 0 0 auto;
+        text-align: right;
+    }
+    
+    .venue-row {
+        display: block;
+        width: 100%;
+        padding: 4px 0;
+        word-break: break-word;
+        white-space: normal;
+        overflow-wrap: break-word;
+        line-height: 1.4;
+        color: var(--app-muted);
+    }
+    
+    .venue-row:first-letter {
+        text-transform: uppercase;
+    }
+    
+    .card-actions {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        margin-top: 15px;
+        margin-top: auto;
+    }
+    
+    .card-actions .btn {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    
+    .trailer-btn {
+        background: var(--app-input-disabled);
+        border: 1px solid var(--app-input-border);
+        color: var(--app-input-text);
+    }
+
+    .trailer-unavailable {
+        opacity: 0.82;
+    }
+    
+    .btn-primary {
+        background: var(--app-primary);
+        border-color: var(--app-primary);
+        color: white;
+    }
+    
+    .card-actions .btn:hover {
+        transform: translateY(-3px);
+    }
+    
+    .show-card {
+        padding: 20px;
+        overflow: hidden;
+        border-radius: 8px;
+        backdrop-filter: blur(20px);
+        transition: 0.4s;
+    }
+    
+    .show-card:hover {
+        transform: translateY(-10px) scale(1.02);
+    }
+    
+    .top-profile-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-end;
+    }
+    
+    .profile-btn,
+    .exit-btn {
+        padding: 12px 22px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        transition: 0.3s;
+        width: 150px;
+        text-align: center;
+    }
+    
+    .profile-btn {
+        background: #2f80ed;
+        color: white;
+    }
+    
+    .exit-btn {
+        background: #ff4757;
+        color: white;
+    }
+    
+    .profile-btn:hover,
+    .exit-btn:hover {
+        transform: translateY(-3px);
+    }
+    
+.location-panel-heading,
+.show-type-heading {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.location-panel-heading span,
+.show-type-heading span {
+    color: var(--app-muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.location-panel-heading strong {
+    color: var(--app-card-text);
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+
+.showtime-controls {
+    display: grid;
+    grid-template-columns: minmax(90px, .78fr) minmax(150px, 1.3fr) minmax(82px, .62fr) minmax(116px, .8fr) minmax(116px, .86fr) minmax(64px, auto);
+    gap: 8px;
+    align-items: end;
+    margin: 10px 0 16px;
+    padding: 8px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    box-shadow: 0 10px 24px rgba(15,23,42,.08);
+}
+
+.showtime-controls.platform-mode {
+    grid-template-columns: minmax(220px, 360px);
+    max-width: 380px;
+}
+
+.showtime-controls.platform-mode .location-picker,
+.showtime-controls.platform-mode .compact-filter-field,
+.showtime-controls.platform-mode .location-panel,
+.showtime-controls.platform-mode .location-status {
+    display: none;
+}
+
+.location-panel,
+.show-type-panel,
+.location-picker {
+    min-width: 0;
+    display: grid;
+    align-items: stretch;
+    border: 0;
+    background: transparent;
+}
+
+.location-panel[hidden] {
+    display: none;
+}
+
+.location-panel {
+    grid-column: 1 / -1;
+    padding-top: 4px;
+}
+
+.location-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(104px, 1fr)) minmax(140px, auto);
+    gap: 6px;
+    align-items: center;
+}
+
+.location-field {
+    min-width: 0;
+    max-width: none;
+    position: relative;
+    display: grid;
+    gap: 3px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.location-field label,
+.location-picker label {
+    margin: 0;
+    color: var(--app-muted);
+    font-size: 0.58rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+    .location-field select,
+    .location-field input,
+    .location-choice-btn,
+    .location-current-btn,
+    .location-reset-btn,
+    .showtime-clear-btn {
+        min-height: 34px;
+        height: 34px;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+
+.location-field select,
+.location-field input,
+.location-choice-btn {
+    width: 100%;
+    appearance: none;
+    padding: 0 26px 0 9px;
+    font-size: 0.78rem;
+    background: #fff;
+    color: var(--app-input-text);
+    font-weight: 700;
+    border: 1px solid var(--app-input-border);
+    box-shadow: none;
+}
+
+.location-choice-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    padding-right: 9px;
+    text-align: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.location-choice-symbol,
+.location-toggle-symbol {
+    flex: 0 0 auto;
+    color: var(--app-primary);
+    font-size: 0.9rem;
+    font-weight: 950;
+    line-height: 1;
+}
+
+.location-choice-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.location-toggle-symbol {
+    margin-left: auto;
+}
+
+.location-field:not(.location-actions):not(.filter-clear-field)::after {
+    content: "⌄";
+    position: absolute;
+    right: 15px;
+    bottom: 13px;
+    color: var(--app-primary);
+    font-size: 1rem;
+    font-weight: 950;
+    pointer-events: none;
+}
+
+.location-field select:focus {
+    border-color: var(--app-primary);
+    outline: 0;
+    box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--app-primary) 18%, transparent);
+}
+
+.location-field.is-filter-active label,
+.location-picker.is-filter-active label {
+    color: var(--app-primary);
+}
+
+.location-field.is-filter-active select,
+.location-field.is-filter-active input,
+.location-picker.is-filter-active .location-choice-btn {
+    background: #fff6d8 !important;
+    background-color: #fff6d8 !important;
+    border-color: #d99a00 !important;
+    color: var(--app-input-text);
+    box-shadow: 0 0 0 2px rgba(217, 154, 0, 0.16), inset 0 0 0 1px rgba(217, 154, 0, 0.12) !important;
+}
+
+.location-actions {
+    align-self: end;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-content: start;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+    .location-current-btn,
+    .location-reset-btn,
+    .showtime-clear-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--app-input-border);
+        min-width: 0;
+        padding: 0 10px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        white-space: nowrap;
+        line-height: 1;
+        overflow: hidden;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+    }
+
+    .location-current-btn .action-icon-inline,
+    .location-reset-btn .action-icon-inline,
+    .empty-state-link .action-icon-inline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        min-width: 16px;
+        height: 16px;
+        margin: 0;
+        font-size: 0.84rem;
+        line-height: 1;
+    }
+
+.location-current-btn {
+    background: #fff;
+    color: var(--app-primary);
+    border-color: color-mix(in srgb, var(--app-primary) 32%, var(--app-input-border));
+}
+
+.location-reset-btn {
+    background: color-mix(in srgb, var(--app-input) 78%, transparent);
+    color: var(--app-input-text);
+}
+
+.filter-clear-field {
+    flex: 0 0 auto;
+    min-width: 64px;
+}
+
+.filter-clear-field::after {
+    content: none !important;
+    display: none !important;
+}
+
+    .showtime-clear-btn {
+        width: 100%;
+        background: #fff;
+        color: var(--app-primary);
+        border-color: color-mix(in srgb, var(--app-primary) 30%, var(--app-input-border));
+        gap: 5px;
+    }
+
+    .showtime-clear-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        flex: 0 0 16px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--app-primary) 12%, transparent);
+        font-size: 0.86rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .showtime-controls button.action-iconified,
+    .empty-state-link.action-iconified {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+.location-current-btn:hover,
+.location-current-btn:focus-visible,
+.location-reset-btn:hover,
+.showtime-clear-btn:hover,
+.showtime-clear-btn:focus-visible {
+    transform: translateY(-1px);
+    border-color: var(--app-primary);
+}
+
+.location-current-btn:hover,
+.location-current-btn:focus-visible {
+    background: var(--app-primary);
+    color: #fff;
+    outline: none;
+}
+
+.showtime-clear-btn:hover,
+.showtime-clear-btn:focus-visible {
+    background: var(--app-primary);
+    color: #fff;
+    outline: none;
+}
+
+.location-status {
+    grid-column: 1 / -1;
+    min-height: 0;
+    margin: -2px 0 0;
+    color: var(--app-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.empty-state-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    margin-top: 6px;
+    padding: 0 14px;
+    border: 1px solid var(--app-primary);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--app-primary);
+    font-size: 0.82rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.empty-state-link:hover,
+.empty-state-link:focus-visible {
+    background: var(--app-primary);
+    color: #fff;
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.showtime-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0;
+    align-self: stretch;
+    align-items: stretch;
+    width: 100%;
+    border: 0;
+    background: transparent;
+}
+
+.showtime-tabs a {
+    --type-color: var(--app-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 34px;
+    padding: 7px 8px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--app-input-text);
+    text-align: center;
+    text-decoration: none;
+    box-shadow: none;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.showtime-tabs strong {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.78rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-weight: 900;
+}
+
+.showtime-tabs small {
+    display: none;
+    margin-top: 3px;
+    color: var(--app-muted);
+    font-size: 0.66rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.showtime-tabs a.active {
+    background: var(--app-primary);
+    border-color: var(--app-primary);
+    color: #fff;
+    box-shadow: none;
+}
+
+.showtime-tabs a:hover {
+    transform: translateY(-1px);
+    border-color: var(--app-primary);
+}
+
+.show-card {
+    cursor: default;
+}
+
+.show-card:hover {
+    transform: translateY(-4px);
+}
+
+    .card-actions .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        border-radius: 8px;
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        line-height: 1;
+        padding-inline: 10px;
+    }
+
+    .card-actions .btn > span:last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .action-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
+        border-radius: 6px;
+        background: rgba(255,255,255,.2);
+        line-height: 1;
+        font-size: 0.88rem;
+    }
+
+.trailer-btn:hover span:last-child,
+.btn-primary:hover span:last-child,
+.trailer-btn:focus-visible span:last-child,
+.btn-primary:focus-visible span:last-child {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+@@media (max-width: 980px) {
+    .showtime-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ott-studio {
+        grid-template-columns: 1fr;
+    }
+
+    .ott-rail {
+        position: static;
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+        overflow-x: auto;
+    }
+
+    .location-panel,
+    .show-type-panel {
+        grid-template-rows: auto auto;
+    }
+
+    .location-panel-heading,
+    .show-type-heading {
+        margin-bottom: 6px;
+    }
+
+    .location-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .showtime-tabs {
         width: 100%;
     }
+
+    .location-actions {
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: 1fr 1fr;
+        justify-content: stretch;
+    }
+}
+
+@@media (max-width: 760px) {
+    .showtime-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 24px;
+    }
+
+    .ott-video-frame {
+        min-height: 360px;
+    }
+
+    .ott-player-info {
+        bottom: 104px;
+    }
+
+    .ott-section-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ott-search-wrap {
+        flex-basis: auto;
+    }
+
+    .showtime-ticket,
+    .showtime-summary {
+        width: 100%;
+        text-align: left;
+    }
+
+    .detail-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .detail-row span {
+        width: 100%;
+        text-align: left !important;
+    }
+}
+
+@@media (max-width: 560px) {
+    .showtime-controls {
+        padding: 8px;
+    }
+
+    .showtime-controls,
+    .location-strip,
+    .showtime-tabs {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .location-actions {
+        grid-template-columns: 1fr;
+    }
+
     .showtime-tabs a {
-        min-width: 0;
+        min-height: 44px;
+        justify-content: center;
+        padding: 10px 12px;
+        text-align: center;
+    }
+
+    .showtime-tabs .tab-icon,
+    .card-actions .action-icon {
+        display: none;
+    }
+
+    .showtime-tabs strong {
+        white-space: normal;
+    }
+
+    .showtime-tabs small {
+        display: none;
+    }
+
+    .showtime-hero {
+        min-height: auto;
+        padding: 18px;
+    }
+
+    .showtime-hero h1 {
+        font-size: 2.45rem;
+    }
+
+    .schedule-board {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .ott-rail {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+
+    .ott-video-frame {
+        min-height: 430px;
+        aspect-ratio: auto;
+    }
+
+    .ott-player-info {
+        left: 12px;
+        right: 12px;
+        bottom: 146px;
+        max-width: calc(100% - 24px);
+    }
+
+    .ott-player-info > p:last-child {
+        display: none;
+    }
+
+    .ott-controls {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+    }
+
+    .ott-progress-row,
+    .ott-control-row {
+        gap: 6px;
+    }
+
+    .ott-control-row {
+        flex-wrap: wrap;
+    }
+
+    .ott-control-row #ottVolume {
+        flex: 1 1 110px;
+    }
+
+    .ott-catalog {
+        grid-template-columns: 1fr;
+    }
+
+    .platform-board-head {
+        padding: 14px;
+    }
+
+    .platform-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .platform-card {
+        grid-template-columns: 42px minmax(0, 1fr) 28px;
+        min-height: 102px;
+        padding: 14px;
+    }
+
+    .platform-mark {
+        width: 42px;
+        height: 42px;
+        font-size: 0.82rem;
+    }
+
+    .show-card {
+        padding: 14px;
+    }
+
+    .movie-title {
+        min-height: 0;
+        font-size: 1.18rem;
+    }
+
+    .card-actions {
+        gap: 8px;
+    }
+
+    .card-actions .btn {
+        min-height: 44px;
+        padding: 9px 8px;
+        font-size: 0.82rem;
     }
 }
 </style>
 
 <script>
-function showLocationError(message) {
-    if (typeof showCinemaPopup === "function") {
-        showCinemaPopup(message, "error");
+const showtimeFilterStorageKey="showtimeFilters";
+const showtimeLaunchStorageKey="showtimeCurrentLocationInitialized";
+const showtimeResetAfterNewsStorageKey="showtimeResetAfterNews";
+let locationDisplayOverride="";
+let currentLocationFilter=null;
+let isRestoringShowtimeFilters=false;
+const isPlatformMode=@(platformMode.ToString().ToLowerInvariant());
+const isOttMode=@(string.Equals(selectedType, "OTT", StringComparison.OrdinalIgnoreCase).ToString().ToLowerInvariant());
+
+function formatOttTime(seconds)
+{
+    if(!Number.isFinite(seconds) || seconds<0)
+    {
+        return "0:00";
+    }
+
+    const totalSeconds=Math.floor(seconds);
+    const minutes=Math.floor(totalSeconds/60);
+    const remainingSeconds=totalSeconds%60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2,"0")}`;
+}
+
+function setupOttExperience()
+{
+    if(!isOttMode)
+    {
+        return;
+    }
+
+    const shell=document.querySelector(".ott-player-shell");
+    const frame=document.querySelector(".ott-video-frame");
+    const video=document.getElementById("ottVideoPlayer");
+    const source=video?.querySelector("source");
+    const bigPlay=document.getElementById("ottBigPlay");
+    const playPause=document.getElementById("ottPlayPause");
+    const muteButton=document.getElementById("ottMute");
+    const progress=document.getElementById("ottProgress");
+    const volume=document.getElementById("ottVolume");
+    const speed=document.getElementById("ottSpeed");
+    const nextButton=document.getElementById("ottNext");
+    const fullscreenButton=document.getElementById("ottFullscreen");
+    const currentTime=document.getElementById("ottCurrentTime");
+    const duration=document.getElementById("ottDuration");
+    const search=document.getElementById("ottSearch");
+    const cards=Array.from(document.querySelectorAll(".ott-title-card"));
+    const platformButtons=Array.from(document.querySelectorAll(".ott-platform-pill"));
+    let currentIndex=0;
+    let selectedPlatform="All";
+
+    if(!shell || !frame || !video || !source || !cards.length)
+    {
+        return;
+    }
+
+    const setText=(id,value)=>{
+        const element=document.getElementById(id);
+        if(element)
+        {
+            element.textContent=value || "";
+        }
+    };
+
+    const syncPlaybackButtons=()=>{
+        const isPlaying=!video.paused && !video.ended;
+        frame.classList.toggle("is-playing",isPlaying);
+        if(bigPlay)
+        {
+            bigPlay.textContent=isPlaying ? "Ⅱ" : "▶";
+            bigPlay.title=isPlaying ? "Pause" : "Play";
+            bigPlay.setAttribute("aria-label",isPlaying ? "Pause" : "Play");
+        }
+        if(playPause)
+        {
+            playPause.textContent=isPlaying ? "Ⅱ" : "▶";
+            playPause.title=isPlaying ? "Pause" : "Play";
+            playPause.setAttribute("aria-label",isPlaying ? "Pause" : "Play");
+        }
+    };
+
+    const updateMuteButton=()=>{
+        if(muteButton)
+        {
+            muteButton.textContent=video.muted || video.volume===0 ? "🔇" : "🔊";
+            muteButton.title=video.muted || video.volume===0 ? "Unmute" : "Mute";
+            muteButton.setAttribute("aria-label",muteButton.title);
+        }
+    };
+
+    const updateVisibleCards=()=>{
+        const query=(search?.value || "").trim().toLowerCase();
+        cards.forEach(card=>{
+            const matchesPlatform=selectedPlatform==="All" || card.dataset.platform===selectedPlatform;
+            const searchBlob=[
+                card.dataset.platform,
+                card.dataset.title,
+                card.dataset.type,
+                card.dataset.language,
+                card.dataset.description
+            ].join(" ").toLowerCase();
+            const matchesSearch=!query || searchBlob.includes(query);
+            card.hidden=!(matchesPlatform && matchesSearch);
+        });
+    };
+
+    const loadCard=(card,shouldPlay)=>{
+        currentIndex=cards.indexOf(card);
+        cards.forEach(item=>item.classList.toggle("active",item===card));
+        const accent=card.dataset.accent || "var(--app-primary)";
+        shell.style.setProperty("--ott-accent",accent);
+        source.src=card.dataset.video || source.src;
+        video.load();
+        video.volume=Number(volume?.value || 0.8);
+        video.playbackRate=Number(speed?.value || 1);
+        setText("ottPlayerInitials",card.dataset.initials);
+        setText("ottPlayerPlatform",card.dataset.platform);
+        setText("ottPlayerQuality",card.dataset.quality);
+        setText("ottPlayerType",card.dataset.type);
+        setText("ottPlayerTitle",card.dataset.title);
+        setText("ottPlayerRating",`${card.dataset.rating || "NA"} ★`);
+        setText("ottPlayerYear",card.dataset.year);
+        setText("ottPlayerDuration",card.dataset.duration);
+        setText("ottPlayerLanguage",card.dataset.language);
+        setText("ottPlayerDescription",card.dataset.description);
+        if(progress)
+        {
+            progress.value="0";
+        }
+        if(currentTime)
+        {
+            currentTime.textContent="0:00";
+        }
+        syncPlaybackButtons();
+
+        if(shouldPlay)
+        {
+            video.play().catch(()=>syncPlaybackButtons());
+        }
+    };
+
+    const togglePlay=()=>{
+        if(video.paused || video.ended)
+        {
+            video.play().catch(()=>syncPlaybackButtons());
+        }
+        else
+        {
+            video.pause();
+        }
+    };
+
+    const playNext=()=>{
+        const visibleCards=cards.filter(card=>!card.hidden);
+        if(!visibleCards.length)
+        {
+            return;
+        }
+        const activeCard=cards[currentIndex] || visibleCards[0];
+        const visibleIndex=visibleCards.indexOf(activeCard);
+        const nextCard=visibleCards[(visibleIndex+1+visibleCards.length)%visibleCards.length];
+        loadCard(nextCard,true);
+    };
+
+    platformButtons.forEach(button=>{
+        button.addEventListener("click",()=>{
+            selectedPlatform=button.dataset.platform || "All";
+            platformButtons.forEach(item=>item.classList.toggle("active",item===button));
+            updateVisibleCards();
+            const firstVisible=cards.find(card=>!card.hidden);
+            if(firstVisible)
+            {
+                loadCard(firstVisible,false);
+            }
+        });
+    });
+
+    cards.forEach(card=>{
+        card.addEventListener("click",()=>loadCard(card,true));
+    });
+
+    search?.addEventListener("input",()=>{
+        updateVisibleCards();
+        const activeCard=cards[currentIndex];
+        if(activeCard?.hidden)
+        {
+            const firstVisible=cards.find(card=>!card.hidden);
+            if(firstVisible)
+            {
+                loadCard(firstVisible,false);
+            }
+        }
+    });
+
+    bigPlay?.addEventListener("click",togglePlay);
+    playPause?.addEventListener("click",togglePlay);
+    video.addEventListener("click",togglePlay);
+    video.addEventListener("play",syncPlaybackButtons);
+    video.addEventListener("pause",syncPlaybackButtons);
+    video.addEventListener("ended",playNext);
+    video.addEventListener("loadedmetadata",()=>{
+        if(duration)
+        {
+            duration.textContent=formatOttTime(video.duration);
+        }
+    });
+    video.addEventListener("timeupdate",()=>{
+        if(currentTime)
+        {
+            currentTime.textContent=formatOttTime(video.currentTime);
+        }
+        if(progress && Number.isFinite(video.duration) && video.duration>0)
+        {
+            progress.value=((video.currentTime/video.duration)*100).toString();
+        }
+    });
+
+    progress?.addEventListener("input",()=>{
+        if(Number.isFinite(video.duration) && video.duration>0)
+        {
+            video.currentTime=(Number(progress.value)/100)*video.duration;
+        }
+    });
+
+    volume?.addEventListener("input",()=>{
+        video.volume=Number(volume.value);
+        video.muted=video.volume===0;
+        updateMuteButton();
+    });
+
+    muteButton?.addEventListener("click",()=>{
+        video.muted=!video.muted;
+        updateMuteButton();
+    });
+
+    speed?.addEventListener("change",()=>{
+        video.playbackRate=Number(speed.value || 1);
+    });
+
+    nextButton?.addEventListener("click",playNext);
+    fullscreenButton?.addEventListener("click",()=>{
+        if(document.fullscreenElement)
+        {
+            document.exitFullscreen?.();
+            return;
+        }
+        frame.requestFullscreen?.();
+    });
+
+    loadCard(cards[0],false);
+    updateVisibleCards();
+    updateMuteButton();
+}
+
+function closeTrailer()
+{
+    document
+    .getElementById("trailerFrame")
+    .src="";
+
+    document
+    .getElementById("trailerModal")
+    .style.display="none";
+}
+
+function showLocationError(message)
+{
+    if(typeof showCinemaPopup==="function")
+    {
+        showCinemaPopup(
+        message,
+        "error"
+        );
         return;
     }
 
     alert(message);
 }
 
-function setSelectOptions(selectId, options, placeholder, selectedName) {
-    const select = document.getElementById(selectId);
-    select.innerHTML = `<option value="">${placeholder}</option>`;
+function setLocationStatus(message)
+{
+    const status=document.getElementById("locationStatus");
+    if(status)
+    {
+        status.textContent=message || "";
+    }
+}
 
-    options.forEach(item => {
-        const option = document.createElement("option");
-        const optionName = item.name || item;
+function clearCurrentLocationFilter()
+{
+    locationDisplayOverride="";
+    currentLocationFilter=null;
+}
 
-        option.value = optionName;
-        option.dataset.id = item.id || "";
-        option.dataset.hasData = item.id ? "true" : "false";
-        option.dataset.name = optionName;
-        option.textContent = item.name || item;
+function changeShowType(type)
+{
+    const selectedType=type || "All";
+    const showTypeSelect=document.getElementById("showTypeFilter");
+    if(showTypeSelect)
+    {
+        showTypeSelect.value=selectedType;
+    }
+    saveShowtimeFilters();
+    if(selectedType.toLowerCase()==="news")
+    {
+        window.location.href="/Home/News";
+        return;
+    }
+    window.location.href="/Home/ShowTime?type=" + encodeURIComponent(selectedType);
+}
 
-        if (selectedName && optionName.toLowerCase() === selectedName.toLowerCase()) {
-            option.selected = true;
+function toggleLocationChooser()
+{
+    const panel=document.getElementById("locationPanel");
+    if(panel)
+    {
+        panel.hidden=!panel.hidden;
+        const button=document.getElementById("locationSummaryButton");
+        if(button)
+        {
+            button.setAttribute("aria-expanded",(!panel.hidden).toString());
+            const symbol=button.querySelector(".location-toggle-symbol");
+            if(symbol)
+            {
+                symbol.textContent=panel.hidden ? "⌄" : "⌃";
+            }
+        }
+    }
+}
+
+function getSelectedLocationName()
+{
+    if(locationDisplayOverride)
+    {
+        return locationDisplayOverride;
+    }
+
+    const district=document.getElementById("district")?.value || "";
+    const state=document.getElementById("state")?.value || "";
+    const country=document.getElementById("country")?.value || "";
+    return [district,state,country].filter(Boolean).join(", ") || "All locations";
+}
+
+function updateLocationSummary()
+{
+    const locationName=getSelectedLocationName();
+    const button=document.getElementById("locationSummaryButton");
+    if(button)
+    {
+        const text=button.querySelector(".location-choice-text");
+        if(text)
+        {
+            text.textContent=locationName;
+        }
+        else
+        {
+            button.textContent=locationName;
+        }
+        button.title=locationName;
+    }
+
+    const prefix=locationDisplayOverride ? "Using current location" : "Using";
+    setLocationStatus(locationName==="All locations" ? "Using all locations" : `${prefix} ${locationName}`);
+    updateFilterFieldStyles();
+}
+
+function toggleFilterActive(controlId,isActive)
+{
+    const control=document.getElementById(controlId);
+    const field=control?.closest(".location-field,.location-picker");
+    if(field)
+    {
+        field.classList.toggle("is-filter-active",Boolean(isActive));
+    }
+}
+
+function updateFilterFieldStyles()
+{
+    toggleFilterActive("showTypeFilter",(document.getElementById("showTypeFilter")?.value || "All") !== "All");
+    toggleFilterActive("locationSummaryButton",getSelectedLocationName() !== "All locations");
+    toggleFilterActive("country",Boolean(document.getElementById("country")?.value));
+    toggleFilterActive("state",Boolean(document.getElementById("state")?.value));
+    toggleFilterActive("district",Boolean(document.getElementById("district")?.value));
+    toggleFilterActive("ratingFilter",Boolean(document.getElementById("ratingFilter")?.value));
+    toggleFilterActive("dateFilter",Boolean(document.getElementById("dateFilter")?.value));
+    toggleFilterActive("sortShows",(document.getElementById("sortShows")?.value || "upcoming") !== "upcoming");
+}
+
+function hasVisibleShows()
+{
+    return Array.from(document.querySelectorAll(".show-card")).some(card=>!card.hidden);
+}
+
+function getShowtimeFilterState()
+{
+    return {
+        type:document.getElementById("showTypeFilter")?.value || "All",
+        country:document.getElementById("country")?.value || "",
+        state:document.getElementById("state")?.value || "",
+        district:document.getElementById("district")?.value || "",
+        rating:document.getElementById("ratingFilter")?.value || "",
+        date:document.getElementById("dateFilter")?.value || "",
+        sort:document.getElementById("sortShows")?.value || "upcoming",
+        locationDisplayOverride,
+        currentLocationFilter
+    };
+}
+
+function saveShowtimeFilters()
+{
+    if(isRestoringShowtimeFilters)
+    {
+        return;
+    }
+
+    try
+    {
+        const state=getShowtimeFilterState();
+        const hasMeaningfulFilter=Boolean(
+            state.country ||
+            (state.type && state.type!=="All") ||
+            state.state ||
+            state.district ||
+            state.rating ||
+            state.date ||
+            (state.sort && state.sort!=="upcoming") ||
+            state.locationDisplayOverride ||
+            state.currentLocationFilter
+        );
+
+        if(hasMeaningfulFilter)
+        {
+            localStorage.setItem(showtimeFilterStorageKey,JSON.stringify(state));
+        }
+        else
+        {
+            localStorage.removeItem(showtimeFilterStorageKey);
+        }
+    }
+    catch
+    {
+    }
+}
+
+function getSavedShowtimeFilters()
+{
+    try
+    {
+        const saved=JSON.parse(localStorage.getItem(showtimeFilterStorageKey) || "{}");
+        return saved && typeof saved==="object" ? saved : {};
+    }
+    catch
+    {
+        return {};
+    }
+}
+
+function clearSavedShowtimeFilters()
+{
+    try
+    {
+        localStorage.removeItem(showtimeFilterStorageKey);
+    }
+    catch
+    {
+    }
+}
+
+function showTrailerSoon()
+{
+    if(typeof showCinemaPopup==="function")
+    {
+        showCinemaPopup(
+        "Trailer coming soon.",
+        "info"
+        );
+        return;
+    }
+
+    alert("Trailer coming soon.");
+}
+
+function getYouTubeVideoId(url)
+{
+    if(!url || url==="#")
+    {
+        return "";
+    }
+
+    try
+    {
+        const parsedUrl = new URL(url);
+        const host = parsedUrl.hostname.toLowerCase();
+
+        if(host.includes("youtu.be"))
+        {
+            return parsedUrl.pathname.split("/").filter(Boolean)[0] || "";
         }
 
-        select.appendChild(option);
+        if(parsedUrl.pathname.includes("/embed/"))
+        {
+            return parsedUrl.pathname.split("/embed/")[1]?.split("/")[0] || "";
+        }
+
+        if(parsedUrl.pathname.includes("/shorts/"))
+        {
+            return parsedUrl.pathname.split("/shorts/")[1]?.split("/")[0] || "";
+        }
+
+        return parsedUrl.searchParams.get("v") || "";
+    }
+    catch
+    {
+        return "";
+    }
+}
+
+function setSelectOptions(
+selectId,
+options,
+placeholder,
+selectedName
+)
+{
+    const select=
+    document.getElementById(
+    selectId
+    );
+
+    if(!select)
+    {
+        return;
+    }
+
+    select.innerHTML=
+    `<option value="">
+    ${placeholder}
+    </option>`;
+
+    options.forEach(item=>{
+
+        const option=
+        document.createElement(
+        "option"
+        );
+
+        const optionName=
+        item.name || item;
+
+        option.value=optionName;
+
+        option.dataset.id=
+        item.id || "";
+
+        option.dataset.hasData=
+        item.id
+        ?
+        "true"
+        :
+        "false";
+
+        option.dataset.name=
+        optionName;
+
+        option.textContent=
+        optionName;
+
+        if(
+        selectedName &&
+        optionName
+        .toLowerCase()
+        ===
+        selectedName
+        .toLowerCase()
+        )
+        {
+            option.selected=true;
+        }
+
+        select.appendChild(
+        option
+        );
+
     });
 }
 
-async function loadCountries() {
-    try {
-        const response = await fetch("/Home/GetCountries");
+function setSimpleOptions(selectId,items,placeholder)
+{
+    const select=document.getElementById(selectId);
+    if(!select)
+    {
+        return;
+    }
 
-        if (!response.ok) {
-            throw new Error("Country request failed");
+    const currentValue=select.value;
+    select.innerHTML=`<option value="">${placeholder}</option>`;
+
+    items.forEach(item=>{
+        const option=document.createElement("option");
+        option.value=item.value;
+        option.textContent=item.label;
+        select.appendChild(option);
+    });
+
+    if(Array.from(select.options).some(option=>option.value===currentValue))
+    {
+        select.value=currentValue;
+    }
+}
+
+function populateDynamicFilters()
+{
+    const cards=Array.from(document.querySelectorAll(".show-card"));
+
+    const ratings=[...new Set(cards
+    .map(card=>card.dataset.rating)
+    .filter(Boolean))]
+    .sort((a,b)=>Number(b)-Number(a))
+    .map(value=>({value,label:value}));
+
+    setSimpleOptions("ratingFilter",ratings,"Any");
+
+    const dateInput=document.getElementById("dateFilter");
+    const dates=cards
+    .map(card=>card.dataset.date)
+    .filter(Boolean)
+    .sort();
+
+    if(dateInput && dates.length)
+    {
+        dateInput.min=dates[0];
+        dateInput.max=dates[dates.length-1];
+    }
+}
+
+function setControlValue(controlId,value)
+{
+    const control=document.getElementById(controlId);
+    if(control && value !== undefined && value !== null)
+    {
+        control.value=value;
+    }
+}
+
+async function restoreSavedShowtimeFilters()
+{
+    const saved=getSavedShowtimeFilters();
+    const hasSavedFilter=Boolean(
+        saved.country ||
+        (saved.type && saved.type!=="All") ||
+        saved.state ||
+        saved.district ||
+        saved.rating ||
+        saved.date ||
+        (saved.sort && saved.sort!=="upcoming") ||
+        saved.locationDisplayOverride ||
+        saved.currentLocationFilter
+    );
+
+    if(!hasSavedFilter)
+    {
+        return false;
+    }
+
+    isRestoringShowtimeFilters=true;
+    try
+    {
+        await loadCountries(saved.country || "");
+        if(saved.country)
+        {
+            selectBestLocationOption("country",[saved.country]);
+            await loadStates(saved.state || "");
         }
 
-        const countries = await response.json();
-        const india = countries.find(country => country.name && country.name.toLowerCase() === "india");
-        const selectedCountryName = india ? india.name : "";
+        if(saved.state)
+        {
+            selectBestLocationOption("state",[saved.state]);
+            await loadDistricts(saved.district || "");
+        }
 
-        setSelectOptions("country", countries, "Select Country", selectedCountryName);
+        if(saved.district)
+        {
+            selectBestLocationOption("district",[saved.district]);
+        }
 
-        if (india && india.id) {
+        setControlValue("ratingFilter",saved.rating || "");
+        setControlValue("dateFilter",saved.date || "");
+        setControlValue("sortShows",saved.sort || "upcoming");
+        setControlValue("showTypeFilter",saved.type || "All");
+        locationDisplayOverride=saved.locationDisplayOverride || "";
+        currentLocationFilter=saved.currentLocationFilter || null;
+    }
+    finally
+    {
+        isRestoringShowtimeFilters=false;
+    }
+
+    applyLocationFilter();
+    return true;
+}
+
+
+function normalizeLocationText(value)
+{
+    return (value || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function selectBestLocationOption(selectId,candidates)
+{
+    const select=document.getElementById(selectId);
+    if(!select)
+    {
+        return "";
+    }
+
+    const normalizedCandidates=(Array.isArray(candidates) ? candidates : [candidates])
+    .map(normalizeLocationText)
+    .filter(Boolean);
+
+    if(!normalizedCandidates.length)
+    {
+        return "";
+    }
+
+    const options=Array.from(select.options);
+    const match=options.find(option=>{
+        const optionText=normalizeLocationText(option.dataset.name || option.value || option.textContent);
+        return optionText && normalizedCandidates.some(candidate=>
+            optionText===candidate ||
+            optionText.includes(candidate) ||
+            candidate.includes(optionText)
+        );
+    });
+
+    if(match)
+    {
+        select.value=match.value;
+        return match.value;
+    }
+
+    return "";
+}
+
+function setCurrentRegionOption(region)
+{
+    const select=document.getElementById("district");
+    const regionName=(region || "").trim();
+    if(!select || !regionName)
+    {
+        return "";
+    }
+
+    const normalizedRegion=normalizeLocationText(regionName);
+    Array.from(select.options).forEach(option=>{
+        const optionName=normalizeLocationText(option.dataset.name || option.value || option.textContent);
+        if(optionName===normalizedRegion)
+        {
+            option.remove();
+        }
+    });
+
+    const option=document.createElement("option");
+    option.value=regionName;
+    option.dataset.id="";
+    option.dataset.hasData="false";
+    option.dataset.name=regionName;
+    option.dataset.currentLocation="true";
+    option.textContent=regionName;
+    option.selected=true;
+
+    select.insertBefore(option,select.firstChild);
+    return regionName;
+}
+
+function selectAllOption(select)
+{
+    if(!select)
+    {
+        return;
+    }
+
+    if(Array.from(select.options).some(option=>option.value===""))
+    {
+        select.value="";
+        return;
+    }
+
+    select.selectedIndex=0;
+}
+
+async function loadCountries(selectedName)
+{
+    try
+    {
+        const response=
+        await fetch(
+        "/Home/GetCountries"
+        );
+
+        if(!response.ok)
+        {
+            throw new Error(
+            "Country request failed"
+            );
+        }
+
+        const countries=
+        await response.json();
+
+        const currentCountry=document.getElementById("country")?.value || "";
+        const selectedCountryName=selectedName || currentCountry || "";
+
+        setSelectOptions(
+        "country",
+        countries,
+        "All Countries",
+        selectedCountryName
+        );
+
+        if(selectedCountryName)
+        {
             await loadStates();
         }
-    } catch {
-        setSelectOptions("country", [], "Select Country");
-        setSelectOptions("state", [], "Select State");
-        setSelectOptions("district", [], "Select Region");
-        showLocationError("Could not load countries. Please try again.");
+        else
+        {
+            setSelectOptions(
+            "state",
+            [],
+            "All States"
+            );
+
+            setSelectOptions(
+            "district",
+            [],
+            "All Regions"
+            );
+        }
+
+    }
+    catch
+    {
+        setSelectOptions(
+        "country",
+        [],
+        "All Countries"
+        );
+
+        setSelectOptions(
+        "state",
+        [],
+        "All States"
+        );
+
+        setSelectOptions(
+        "district",
+        [],
+        "All Regions"
+        );
+
+        showLocationError(
+        "Could not load countries."
+        );
     }
 }
 
-async function loadStates() {
-    const countrySelect = document.getElementById("country");
-    const selectedCountry = countrySelect.options[countrySelect.selectedIndex];
-    const countryId = selectedCountry ? selectedCountry.dataset.id : "";
 
-    setSelectOptions("district", [], "Select Region");
 
-    if (!countryId) {
-        setSelectOptions("state", [], selectedCountry && selectedCountry.value ? "No states available" : "Select State");
+async function loadStates(selectedName)
+{
+    const countrySelect=
+    document.getElementById(
+    "country"
+    );
+
+    const selectedCountry=
+    countrySelect.options[
+    countrySelect.selectedIndex
+    ];
+
+    const countryId=
+    selectedCountry
+    ?
+    selectedCountry.dataset.id
+    :
+    "";
+
+    const countryName=countrySelect.value || "";
+
+    setSelectOptions(
+    "district",
+    [],
+    "All Regions"
+    );
+
+    if(!countryId && !countryName)
+    {
+        setSelectOptions(
+        "state",
+        [],
+        "All States"
+        );
+
         return;
     }
 
-    setSelectOptions("state", [], "Loading states...");
+    try
+    {
+        const response=
+        await fetch(
+        `/Home/GetStates?countryId=${encodeURIComponent(countryId)}&countryName=${encodeURIComponent(countryName)}`
+        );
 
-    try {
-        const response = await fetch(`/Home/GetStates?countryId=${encodeURIComponent(countryId)}`);
+        const states=
+        await response.json();
 
-        if (!response.ok) {
-            throw new Error("State request failed");
-        }
-
-        const states = await response.json();
-        setSelectOptions("state", states, states.length ? "Select State" : "No states available");
-    } catch {
-        setSelectOptions("state", [], "Select State");
-        showLocationError("Could not load states. Please try again.");
+        setSelectOptions(
+        "state",
+        states,
+        "All States",
+        selectedName
+        );
+        updateLocationSummary();
+    }
+    catch
+    {
+        showLocationError(
+        "Could not load states."
+        );
     }
 }
 
-async function loadDistricts() {
-    const stateSelect = document.getElementById("state");
-    const selectedState = stateSelect.options[stateSelect.selectedIndex];
-    const stateId = selectedState ? selectedState.dataset.id : "";
 
-    if (!stateId) {
-        setSelectOptions("district", [], "Select Region");
+
+async function loadDistricts(selectedName)
+{
+    const stateSelect=
+    document.getElementById(
+    "state"
+    );
+
+    const selectedState=
+    stateSelect.options[
+    stateSelect.selectedIndex
+    ];
+
+    const stateId=
+    selectedState
+    ?
+    selectedState.dataset.id
+    :
+    "";
+
+    const stateName=stateSelect.value || "";
+    const countryName=document.getElementById("country")?.value || "";
+
+    if(!stateId && !stateName)
+    {
+        setSelectOptions(
+        "district",
+        [],
+        "All Regions"
+        );
+
         return;
     }
 
-    setSelectOptions("district", [], "Loading regions...");
+    try
+    {
+        const response=
+        await fetch(
+        `/Home/GetDistricts?stateId=${encodeURIComponent(stateId)}&stateName=${encodeURIComponent(stateName)}&countryName=${encodeURIComponent(countryName)}`
+        );
 
-    try {
-        const response = await fetch(`/Home/GetDistricts?stateId=${encodeURIComponent(stateId)}`);
+        const districts=
+        await response.json();
 
-        if (!response.ok) {
-            throw new Error("Region request failed");
-        }
-
-        const districts = await response.json();
-        setSelectOptions("district", districts, districts.length ? "Select Region" : "No regions available");
-    } catch {
-        setSelectOptions("district", [], "Select Region");
-        showLocationError("Could not load regions. Please try again.");
+        setSelectOptions(
+        "district",
+        districts,
+        "All Regions",
+        selectedName
+        );
+        updateLocationSummary();
+    }
+    catch
+    {
+        showLocationError(
+        "Could not load regions."
+        );
     }
 }
 
-document.addEventListener("DOMContentLoaded", loadCountries);
+async function detectCurrentLocation(isAuto)
+{
+    if(!navigator.geolocation)
+    {
+        if(!isAuto)
+        {
+            showLocationError("Current location is not supported in this browser.");
+        }
+        return;
+    }
+
+    try
+    {
+        setLocationStatus("Detecting your current location...");
+
+        const position=await new Promise((resolve,reject)=>{
+            navigator.geolocation.getCurrentPosition(resolve,reject,{
+                enableHighAccuracy:false,
+                timeout:9000,
+                maximumAge:300000
+            });
+        });
+
+        const latitude=position.coords.latitude;
+        const longitude=position.coords.longitude;
+
+        const response=await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&zoom=12&addressdetails=1`
+        );
+
+        if(!response.ok)
+        {
+            throw new Error("Location lookup failed");
+        }
+
+        const result=await response.json();
+        const address=result.address || {};
+        const country=address.country || "";
+        const state=address.state || address.province || address.region || "";
+        const regionCandidates=[
+            address.neighbourhood,
+            address.suburb,
+            address.city_district,
+            address.quarter,
+            address.county,
+            address.city,
+            address.town,
+            address.village,
+            address.municipality,
+            address.state_district
+        ].filter(Boolean);
+        const region=regionCandidates[0] || "";
+
+        if(!country && !state && !region)
+        {
+            throw new Error("Location details unavailable");
+        }
+
+        await loadCountries(country);
+        selectBestLocationOption("country",[country]);
+        await loadStates(state);
+        selectBestLocationOption("state",[state]);
+        await loadDistricts(region);
+        const matchedRegion=selectBestLocationOption("district",regionCandidates);
+        if(region)
+        {
+            setCurrentRegionOption(region);
+        }
+
+        const detected=[region,state,country].filter(Boolean).join(", ");
+        locationDisplayOverride=detected;
+        currentLocationFilter={
+            country,
+            state,
+            region,
+            regionCandidates,
+            hasMatchedRegion: Boolean(matchedRegion)
+        };
+        applyLocationFilter();
+        updateLocationSummary();
+    }
+    catch
+    {
+        setLocationStatus("");
+        if(!isAuto)
+        {
+            showLocationError("Could not detect your current location. Please choose it manually.");
+        }
+    }
+}
+
+function applyLocationFilter()
+{
+    const country=
+    document.getElementById("country")?.value.toLowerCase() || "";
+
+    const state=
+    document.getElementById("state")?.value.toLowerCase() || "";
+
+    const district=
+    document.getElementById("district")?.value.toLowerCase() || "";
+
+    const ratingValue=
+    document.getElementById("ratingFilter")?.value || "";
+
+    const dateValue=
+    document.getElementById("dateFilter")?.value || "";
+
+    const typeValue=
+    document.getElementById("showTypeFilter")?.value || "All";
+
+    document.querySelectorAll(".show-card").forEach(card=>{
+        const cardCountry=(card.dataset.country || "").toLowerCase();
+        const cardState=(card.dataset.state || "").toLowerCase();
+        const cardRegion=(card.dataset.region || "").toLowerCase();
+        const cardLocation=(card.dataset.location || card.innerText || "").toLowerCase();
+        const cardRating=card.dataset.rating || "";
+        const cardDate=card.dataset.date || "";
+        const cardType=card.dataset.showType || "";
+        let matchesCountry=!country || cardCountry===country || cardLocation.includes(country);
+        let matchesState=!state || cardState===state || cardLocation.includes(state);
+        let matchesDistrict=!district || cardRegion===district || cardLocation.includes(district);
+
+        if(currentLocationFilter && currentLocationFilter.region)
+        {
+            const currentRegion=normalizeLocationText(currentLocationFilter.region);
+            const currentCandidates=(currentLocationFilter.regionCandidates || [])
+                .map(normalizeLocationText)
+                .filter(Boolean);
+            const normalizedCardRegion=normalizeLocationText(card.dataset.region || "");
+            const normalizedCardLocation=normalizeLocationText(card.dataset.location || card.innerText || "");
+            const matchesCurrentRegion=currentCandidates.some(candidate=>
+                normalizedCardRegion===candidate ||
+                normalizedCardLocation.includes(candidate)
+            ) || normalizedCardRegion===currentRegion || normalizedCardLocation.includes(currentRegion);
+
+            matchesCountry=!currentLocationFilter.country || cardCountry===currentLocationFilter.country.toLowerCase() || cardLocation.includes(currentLocationFilter.country.toLowerCase());
+            matchesState=!currentLocationFilter.state || cardState===currentLocationFilter.state.toLowerCase() || cardLocation.includes(currentLocationFilter.state.toLowerCase());
+            matchesDistrict=matchesCurrentRegion;
+        }
+
+        const matchesRating=!ratingValue || cardRating===ratingValue;
+        const matchesDate=!dateValue || cardDate===dateValue;
+        const matchesType=typeValue==="All" || cardType===typeValue;
+        card.hidden=!(matchesCountry && matchesState && matchesDistrict && matchesRating && matchesDate && matchesType);
+    });
+
+    updateLocationSummary();
+    updateFilterEmptyState();
+    sortShows();
+    saveShowtimeFilters();
+}
+
+function updateFilterEmptyState()
+{
+    const cards=Array.from(document.querySelectorAll(".show-card"));
+    const emptyState=document.getElementById("filterEmptyState");
+    const emptyTitle=document.getElementById("filterEmptyTitle");
+    const emptyMessage=document.getElementById("filterEmptyMessage");
+    const nearbyLink=document.getElementById("showNearbyLink");
+    if(!emptyState)
+    {
+        return;
+    }
+
+    const hasVisibleCard=cards.some(card=>!card.hidden);
+    emptyState.hidden=hasVisibleCard || !cards.length;
+    const hasLocation=getSelectedLocationName() !== "All locations";
+
+    if(nearbyLink)
+    {
+        nearbyLink.hidden=!hasLocation || hasVisibleCard || !cards.length;
+    }
+
+    if(emptyTitle)
+    {
+        emptyTitle.textContent=hasLocation ? "No shows available at your location." : "No shows available.";
+    }
+
+    if(emptyMessage)
+    {
+        const locationName=getSelectedLocationName();
+        const rating=document.getElementById("ratingFilter")?.value || "";
+        const date=document.getElementById("dateFilter")?.value || "";
+        const filterText=[
+            rating ? `rating ${rating}` : "",
+            date ? date : ""
+        ].filter(Boolean).join(", ");
+        const locationText=locationName !== "All locations" ? ` at ${locationName}` : "";
+        const selectedFilterText=filterText ? ` for ${filterText}` : "";
+
+        emptyMessage.textContent=`No shows available${locationText}${selectedFilterText}.`;
+    }
+}
+
+async function setLocationToFirstVisibleShowRegion()
+{
+    const card=Array.from(document.querySelectorAll(".show-card")).find(item=>!item.hidden);
+    if(!card)
+    {
+        return "";
+    }
+
+    const country=card.dataset.country || "";
+    const state=card.dataset.state || "";
+    const region=card.dataset.region || "";
+
+    clearCurrentLocationFilter();
+
+    if(country)
+    {
+        await loadCountries(country);
+        selectBestLocationOption("country",[country]);
+    }
+
+    if(state)
+    {
+        await loadStates(state);
+        selectBestLocationOption("state",[state]);
+    }
+
+    if(region)
+    {
+        await loadDistricts(region);
+        selectBestLocationOption("district",[region]);
+    }
+
+    applyLocationFilter();
+    return getSelectedLocationName();
+}
+
+async function showNearbyShows()
+{
+    const districtSelect=document.getElementById("district");
+    const stateSelect=document.getElementById("state");
+    const countrySelect=document.getElementById("country");
+
+    const hadCurrentLocation=Boolean(currentLocationFilter);
+    clearCurrentLocationFilter();
+
+    if(hadCurrentLocation)
+    {
+        selectAllOption(districtSelect);
+        applyLocationFilter();
+        if(hasVisibleShows())
+        {
+            await setLocationToFirstVisibleShowRegion();
+            setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
+            return;
+        }
+    }
+
+    if(districtSelect?.value)
+    {
+        selectAllOption(districtSelect);
+        applyLocationFilter();
+        if(hasVisibleShows())
+        {
+            await setLocationToFirstVisibleShowRegion();
+            setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
+            return;
+        }
+    }
+
+    if(stateSelect?.value)
+    {
+        selectAllOption(stateSelect);
+        setSelectOptions("district",[],"All Regions");
+        applyLocationFilter();
+        if(hasVisibleShows())
+        {
+            await setLocationToFirstVisibleShowRegion();
+            setLocationStatus(`Showing nearby shows in ${getSelectedLocationName()}`);
+            return;
+        }
+    }
+
+    if(countrySelect?.value)
+    {
+        selectAllOption(countrySelect);
+        setSelectOptions("state",[],"All States");
+        setSelectOptions("district",[],"All Regions");
+    }
+
+    applyLocationFilter();
+
+    if(hasVisibleShows())
+    {
+        await setLocationToFirstVisibleShowRegion();
+    }
+
+    const relaxedLocation=getSelectedLocationName();
+    setLocationStatus(relaxedLocation==="All locations"
+        ? "Showing all available shows"
+        : `Showing nearby shows in ${relaxedLocation}`);
+}
+
+function sortShows()
+{
+    const board=document.querySelector(".schedule-board");
+    if(!board)
+    {
+        return;
+    }
+
+    const sortValue=document.getElementById("sortShows")?.value || "upcoming";
+    const cards=Array.from(board.querySelectorAll(".show-card"));
+
+    const readText=(card,key)=>(card.dataset[key] || "").toLowerCase();
+    const readDate=card=>{
+        const time=Date.parse(card.dataset.start || "");
+        return Number.isNaN(time) ? 0 : time;
+    };
+    const readNumber=(card,key)=>Number(card.dataset[key] || 0);
+
+    cards.sort((a,b)=>{
+        if(sortValue==="rating")
+        {
+            return readNumber(b,"rating") - readNumber(a,"rating") || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="today")
+        {
+            const today=new Date();
+            today.setHours(0,0,0,0);
+            const todayTime=today.getTime();
+            const aGap=Math.abs(new Date(readDate(a)).setHours(0,0,0,0) - todayTime);
+            const bGap=Math.abs(new Date(readDate(b)).setHours(0,0,0,0) - todayTime);
+            return aGap - bGap || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="time")
+        {
+            return readNumber(a,"time") - readNumber(b,"time") || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="title")
+        {
+            return readText(a,"title").localeCompare(readText(b,"title")) || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="location")
+        {
+            return readText(a,"location").localeCompare(readText(b,"location")) || readDate(a) - readDate(b);
+        }
+
+        if(sortValue==="type")
+        {
+            return readText(a,"showType").localeCompare(readText(b,"showType")) || readDate(a) - readDate(b);
+        }
+
+        return readDate(a) - readDate(b);
+    });
+
+    cards.forEach(card=>board.appendChild(card));
+}
+
+function resetLocationFilter()
+{
+    clearSavedShowtimeFilters();
+
+    ["country","state","district"].forEach(id=>{
+        const select=document.getElementById(id);
+        if(select)
+        {
+            selectAllOption(select);
+        }
+    });
+
+    clearCurrentLocationFilter();
+
+    ["ratingFilter","dateFilter","sortShows"].forEach(id=>{
+        const field=document.getElementById(id);
+        if(field)
+        {
+            field.value="";
+        }
+    });
+
+    const sortSelect=document.getElementById("sortShows");
+    if(sortSelect)
+    {
+        sortSelect.value="upcoming";
+    }
+
+    document.querySelectorAll(".show-card").forEach(card=>{
+        card.hidden=false;
+    });
+
+    loadCountries();
+    updateLocationSummary();
+    updateFilterEmptyState();
+    sortShows();
+}
+
+async function clearAllShowtimeFilters()
+{
+    clearSavedShowtimeFilters();
+
+    const showTypeSelect=document.getElementById("showTypeFilter");
+    if(showTypeSelect)
+    {
+        showTypeSelect.value="All";
+    }
+
+    const currentType=new URLSearchParams(window.location.search).get("type") || "All";
+    if(currentType !== "All")
+    {
+        window.location.href="/Home/ShowTime";
+        return;
+    }
+
+    ["ratingFilter","dateFilter"].forEach(id=>{
+        const field=document.getElementById(id);
+        if(field)
+        {
+            field.value="";
+        }
+    });
+
+    const sortSelect=document.getElementById("sortShows");
+    if(sortSelect)
+    {
+        sortSelect.value="upcoming";
+    }
+
+    ["country","state","district"].forEach(id=>{
+        const select=document.getElementById(id);
+        if(select)
+        {
+            selectAllOption(select);
+        }
+    });
+
+    clearCurrentLocationFilter();
+    await loadCountries();
+    await detectCurrentLocation(true);
+
+    if(!currentLocationFilter)
+    {
+        applyLocationFilter();
+    }
+}
+
+
+
+document.addEventListener(
+"DOMContentLoaded",
+async ()=>{
+
+if(isPlatformMode)
+{
+setupOttExperience();
+return;
+}
+
+await loadCountries();
+populateDynamicFilters();
+setupOttExperience();
+let shouldUseCurrentLocationOnly=true;
+let shouldResetAfterNews=false;
+try
+{
+shouldResetAfterNews=sessionStorage.getItem(showtimeResetAfterNewsStorageKey)==="true";
+if(shouldResetAfterNews)
+{
+sessionStorage.removeItem(showtimeResetAfterNewsStorageKey);
+sessionStorage.removeItem(showtimeLaunchStorageKey);
+clearSavedShowtimeFilters();
+}
+shouldUseCurrentLocationOnly=sessionStorage.getItem(showtimeLaunchStorageKey)!=="true";
+sessionStorage.setItem(showtimeLaunchStorageKey,"true");
+}
+catch
+{
+}
+
+if(shouldUseCurrentLocationOnly)
+{
+clearSavedShowtimeFilters();
+}
+
+const restoredFilters=shouldUseCurrentLocationOnly ? false : await restoreSavedShowtimeFilters();
+if(!restoredFilters)
+{
+await detectCurrentLocation(true);
+if(!currentLocationFilter)
+{
+updateLocationSummary();
+applyLocationFilter();
+}
+
+}
+
+
+
+document
+.querySelectorAll(
+".image-strip"
+)
+.forEach(slider=>{
+
+const images=
+slider.querySelectorAll(
+".swap-image"
+);
+
+if(
+images.length<=1
+)
+return;
+
+let current=0;
+
+setInterval(()=>{
+
+images[current]
+.classList.remove(
+"active"
+);
+
+current=
+(
+current+1
+)
+%
+images.length;
+
+images[current]
+.classList.add(
+"active"
+);
+
+},3000);
+
+});
+
+
+
+document
+.querySelectorAll(
+".trailer-btn"
+)
+.forEach(button=>{
+
+button.addEventListener(
+"click",
+(event)=>{
+
+event.preventDefault();
+
+event.stopPropagation();
+
+let url=
+button.dataset.url;
+
+let videoId=getYouTubeVideoId(url);
+
+if(videoId)
+{
+document
+.getElementById(
+"trailerFrame"
+)
+.src=
+`https://www.youtube.com/embed/${videoId}?autoplay=1`;
+
+document
+.getElementById(
+"trailerModal"
+)
+.style.display=
+"flex";
+}
+else
+{
+showTrailerSoon();
+}
+
+});
+
+});
+
+
+
+document
+.getElementById(
+"trailerModal"
+)
+.addEventListener(
+"click",
+function(e){
+
+if(
+e.target.id===
+"trailerModal"
+)
+{
+closeTrailer();
+}
+
+});
+
+});
+
 </script>

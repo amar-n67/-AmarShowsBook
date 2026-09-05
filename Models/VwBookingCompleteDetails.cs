@@ -9,10 +9,6 @@ public class VwBookingCompleteDetails
     [Column("booking_id")]
     public long BookingId { get; set; }
 
-    // =====================================================
-    // HUMAN COMMENT:
-    // PostgreSQL column booked_at mapped to C# PascalCase
-    // =====================================================
 
     [Column("booked_at")]
     public DateTime BookedAt { get; set; }
@@ -35,14 +31,44 @@ public class VwBookingCompleteDetails
     [Column("start_time")]
     public DateTime StartTime { get; set; }
 
+    [Column("total_tickets")]
+    public int TotalTickets { get; set; }
+
     [Column("total_amount")]
     public decimal TotalAmount { get; set; }
+
+    [Column("tax_amount")]
+    public decimal? TaxAmount { get; set; }
+
+    [Column("discount_amount")]
+    public decimal? DiscountAmount { get; set; }
+
+    [Column("payable_amount")]
+    public decimal? PayableAmount { get; set; }
+
+    [Column("transaction_ref")]
+    public string? TransactionRef { get; set; } = string.Empty;
 
     [Column("payment_status")]
     public string? PaymentStatus { get; set; } = string.Empty;
 
     [Column("payment_method")]
     public string? PaymentMethod { get; set; } = string.Empty;
+
+    [Column("gateway_name")]
+    public string? GatewayName { get; set; } = string.Empty;
+
+    [Column("transaction_status")]
+    public string? TransactionStatus { get; set; } = string.Empty;
+
+    [Column("confirmed_at")]
+    public DateTime? ConfirmedAt { get; set; }
+
+    [Column("cancelled_at")]
+    public DateTime? CancelledAt { get; set; }
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; }
 
     [Column("user_id")]
     public long UserId { get; set; }

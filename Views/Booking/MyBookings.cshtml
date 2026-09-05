@@ -1,19 +1,74 @@
 @model List<AmarShowsBook.Models.VwBookingCompleteDetails>
 @using AmarShowsBook.Helpers
+@using AmarShowsBook.Models
+@using System.Net
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"] = "My Bookings";
-    var totalSpend = Model.Sum(x => x.TotalAmount);
-    var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" || x.PaymentStatus == "SUCCESS");
+    var totalSpend = Model.Sum(x => x.PayableAmount ?? x.TotalAmount);
+    var confirmedCount = Model.Count(x => x.BookingStatus == "CONFIRMED" && x.CancelledAt == null);
+    var appTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+    var nowInstant = DateTimeOffset.UtcNow;
+    var publicBaseUrl = ViewBag.PublicBaseUrl as string ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var bookingVenues = ViewBag.BookingVenues as Dictionary<long,string> ?? new Dictionary<long,string>();
+    var bookingScreens = ViewBag.BookingScreens as Dictionary<long,string> ?? new Dictionary<long,string>();
+    var refundLookup = ViewBag.RefundLookup as Dictionary<long,Refund> ?? new Dictionary<long,Refund>();
+    var bookingWalletAmounts = ViewBag.BookingWalletAmounts as Dictionary<long,decimal> ?? new Dictionary<long,decimal>();
+    var checkedOutBookingIds = ViewBag.CheckedOutBookingIds as HashSet<long> ?? new HashSet<long>();
+    var expiredBookingIds = ViewBag.ExpiredBookingIds as HashSet<long> ?? new HashSet<long>();
+    var bookingCategoryLookup = ViewBag.BookingCategoryLookup as Dictionary<long,string> ?? new Dictionary<long,string>();
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
+    DateTimeOffset ToBookingInstant(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => new DateTimeOffset(value, TimeSpan.Zero),
+            DateTimeKind.Local => new DateTimeOffset(value.ToUniversalTime(), TimeSpan.Zero),
+            _ => new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(value, appTimeZone), TimeSpan.Zero)
+        };
+    }
+
+    DateTime ToBookingLocal(DateTime value)
+    {
+        return TimeZoneInfo.ConvertTime(ToBookingInstant(value), appTimeZone).DateTime;
+    }
+
+    var sortedBookings = Model
+        .OrderBy(x => ToBookingInstant(x.StartTime))
+        .ThenByDescending(x => x.BookedAt)
+        .ToList();
+    var bookingSections = new[]
+    {
+        new { Key = "booked", Title = "Booked / Confirmed", Note = "Active tickets sorted by show time." },
+        new { Key = "expired", Title = "Expired / Checked Out", Note = "Past shows and tickets already checked in." },
+        new { Key = "cancelled", Title = "Cancelled", Note = "Cancelled tickets and their refund status." }
+    };
+    var bookingCategoryCounts = sortedBookings
+        .GroupBy(item =>
+        {
+            return bookingCategoryLookup.TryGetValue(item.BookingId, out var foundCategory)
+                ? foundCategory
+                : "booked";
+        })
+        .ToDictionary(group => group.Key, group => group.Count());
 }
 
-<section class="my-bookings-page">
+@if(TempData["Success"]!=null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if(TempData["Error"]!=null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
+<section id="booking-page-top" class="my-bookings-page">
     <div class="booking-header">
         <div>
-            <span class="booking-kicker">Booking History</span>
+            <span class="booking-kicker">Ticket History</span>
             <h1>My Bookings</h1>
-            <p>Your booked shows, payment status, and ticket references are arranged like a clean show reel.</p>
+            <p>Your confirmed, expired, checked-out, and cancelled tickets in one place.</p>
         </div>
         <div class="booking-summary">
             <span>Total Spend</span>
@@ -22,55 +77,268 @@
         </div>
     </div>
 
+    <div class="booking-refund-rule no-print">
+        <strong>Cancellation refund rule</strong>
+        <span>2 hours or more before show time: full refund.</span>
+        <span>45 minutes to 2 hours before show time: 50% refund.</span>
+        <span>Inside 45 minutes: cancellation closed, no refund.</span>
+    </div>
+
     @if (!Model.Any())
     {
-        <div class="empty-booking">
+        <div class="empty-booking" data-admin-searchable>
             <h2>No bookings found</h2>
-            <p>You have not booked any shows yet.</p>
+            <p>You do not have any upcoming booked shows.</p>
         </div>
     }
     else
     {
-        <div class="booking-grid">
+        <div class="booking-filter-anchor"></div>
 
-            @foreach (var booking in Model)
+        <div class="booking-category-tabs no-print" aria-label="Booking categories">
+            @foreach (var category in bookingSections)
             {
-                <article class="booking-card">
+                var count = bookingCategoryCounts.TryGetValue(category.Key, out var foundCount)
+                    ? foundCount
+                    : 0;
 
+                <a class="booking-category-tab booking-category-tab-@category.Key @(category.Key == "booked" ? "active" : "")"
+                   data-booking-tab="@category.Key"
+                   href="#booking-category-@category.Key">
+                    <span>@category.Title</span>
+                    <strong>@count</strong>
+                </a>
+            }
+        </div>
+
+        <div class="booking-section-list">
+        @foreach (var category in bookingSections)
+        {
+            var sectionBookings = sortedBookings
+                .Where(item =>
+                {
+                    var itemSection = bookingCategoryLookup.TryGetValue(item.BookingId, out var foundCategory)
+                        ? foundCategory
+                        : "booked";
+
+                    return itemSection==category.Key;
+                })
+                .ToList();
+
+            <section id="booking-category-@category.Key"
+                     class="booking-category booking-category-@category.Key"
+                     data-booking-category="@category.Key"
+                     hidden="@(category.Key != "booked")">
+                <div class="booking-category-head">
+                    <div>
+                        <h2>@category.Title</h2>
+                        <p>@category.Note</p>
+                    </div>
+                    <strong>@sectionBookings.Count</strong>
+                </div>
+
+                @if (!sectionBookings.Any())
+                {
+                    <div class="booking-category-empty" data-category-empty="@category.Key">No tickets in this category.</div>
+                }
+                else
+                {
+                <div class="booking-grid">
+            @foreach (var booking in sectionBookings)
+            {
+                var bookingStartInstant = ToBookingInstant(booking.StartTime);
+                var bookingStartLocal = ToBookingLocal(booking.StartTime);
+                var isExpired = expiredBookingIds.Contains(booking.BookingId);
+                var isCancelled = booking.BookingStatus == "CANCELLED" || booking.CancelledAt != null;
+                var isCheckedOut = checkedOutBookingIds.Contains(booking.BookingId);
+                var minutesUntilShow = (bookingStartInstant - nowInstant).TotalMinutes;
+                var cancellationClosed = minutesUntilShow < 45;
+                var refundRate = cancellationClosed ? 0m : minutesUntilShow >= 120 ? 1m : 0.5m;
+                var refundRuleLabel = cancellationClosed
+                    ? "Cancellation closed"
+                    : refundRate == 1m
+                        ? "Full refund available"
+                        : "50% refund available";
+                var walletAmountUsed = bookingWalletAmounts.TryGetValue(booking.BookingId, out var foundWalletAmount)
+                    ? foundWalletAmount
+                    : 0m;
+                var estimatedSourceRefund = Math.Round(Math.Max(0, booking.PayableAmount ?? booking.TotalAmount) * refundRate, 2, MidpointRounding.AwayFromZero);
+                var estimatedWalletRefund = Math.Round(Math.Max(0, walletAmountUsed) * refundRate, 2, MidpointRounding.AwayFromZero);
+                var estimatedRefundTotal = estimatedSourceRefund + estimatedWalletRefund;
+                var statusClass = isCancelled ? "cancelled" : booking.IsError == 1 ? "failed" : isExpired || isCheckedOut ? "expired" : "success";
+                var statusText = isCancelled ? "CANCELLED" : isCheckedOut ? "CHECKED OUT" : isExpired ? "EXPIRED" : booking.BookingStatus;
+                var confirmationPath = $"/Booking/Confirmation?confirmedBookingId={booking.BookingId}";
+                var confirmationUrl = $"{publicBaseUrl}{confirmationPath}";
+                var venueDetails = bookingVenues.TryGetValue(booking.BookingId, out var foundVenue) && !string.IsNullOrWhiteSpace(foundVenue)
+                    ? foundVenue
+                    : booking.LocationName;
+                var screenName = bookingScreens.TryGetValue(booking.BookingId, out var foundScreen) && !string.IsNullOrWhiteSpace(foundScreen)
+                    ? foundScreen
+                    : "Screen TBA";
+                var canCancel = !isExpired
+                    && !isCheckedOut
+                    && !cancellationClosed
+                    && booking.BookingStatus == "CONFIRMED"
+                    && booking.PaymentStatus == "SUCCESS"
+                    && booking.CancelledAt == null;
+                refundLookup.TryGetValue(booking.BookingId, out var refund);
+                var refundStatus = (refund?.refund_status ?? booking.PaymentStatus ?? "CANCELLED").Trim().ToUpperInvariant();
+                var refundButtonClass = refundStatus switch
+                {
+                    "SUCCESS" => "refund-status-success",
+                    "PENDING" or "REFUND_PENDING" => "refund-status-pending",
+                    "FAILED" => "refund-status-failed",
+                    "REJECTED" or "CANCELLED" => "refund-status-cancelled",
+                    "RETRY" => "refund-status-retry",
+                    _ => "refund-status-neutral"
+                };
+                var refundLabel = refundStatus switch
+                {
+                    "SUCCESS" => "Refunded",
+                    "PENDING" or "REFUND_PENDING" => "Refund Pending",
+                    "FAILED" => "Refund Failed",
+                    "REJECTED" => "Refund Rejected",
+                    "CANCELLED" => "Refund Cancelled",
+                    "RETRY" => "Refund Retry",
+                    _ => $"Refund {refundStatus}"
+                };
+
+                <article class="booking-card @(isCancelled ? "booking-card-cancelled" : "booking-card-confirmed")"
+                         data-admin-searchable
+                         data-filter-search="@($"{booking.BookingRef} {booking.ShowTitle} {booking.ShowType} {booking.LocationName} {venueDetails} {screenName} {statusText} {booking.PaymentStatus} {booking.PaymentMethod} {refundStatus} {refundLabel}")"
+                         data-filter-status="@($"{statusText}|{booking.PaymentStatus}|{refundStatus}|{refundLabel}")"
+                         data-filter-method="@($"{booking.PaymentMethod}|{refund?.refund_method}")"
+                         data-sort-showtime="@bookingStartInstant.ToUnixTimeSeconds()"
+                         data-sort-booked="@booking.BookedAt.ToString("yyyyMMddHHmmss")"
+                         data-sort-amount="@((booking.PayableAmount ?? booking.TotalAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
+                         data-sort-status="@statusText">
                     <div class="booking-top">
-                        <span class="booking-status @(booking.IsError == 1 ? "failed" : "success")">
-                            @booking.BookingStatus
+                        <span>
+                            <span class="booking-status @statusClass">@statusText</span>
+                            <span class="app-info">
+                                <button type="button" class="app-info-btn" aria-label="Show booking status details">i</button>
+                                <span class="app-info-popover" role="tooltip">
+                                    <b>Booking</b> @statusText<br />
+                                    <b>Payment</b> @(string.IsNullOrWhiteSpace(booking.PaymentStatus) ? "NA" : booking.PaymentStatus)<br />
+                                    <b>Refund</b> @refundLabel<br />
+                                    <b>Show</b> @bookingStartLocal.ToString("dd MMM yyyy, hh:mm tt")
+                                </span>
+                            </span>
                         </span>
                         <strong>@booking.BookingRef</strong>
                     </div>
 
-                    <h2>@booking.ShowTitle</h2>
-
-                    <div class="booking-meta">
+                    <div class="booking-main booking-ticket-surface">
                         <div>
-                            <span>Amount Paid</span>
-                            <strong>@CurrencyFormatter.FormatRupees(booking.TotalAmount)</strong>
+                            <h2>@booking.ShowTitle</h2>
+                            <p class="booking-show">@booking.ShowType at @booking.LocationName</p>
                         </div>
-                        <div>
-                            <span>Payment</span>
-                            <strong>@booking.PaymentStatus</strong>
+                        <div class="booking-qr">
+                            <img src="/Booking/CreateQR?text=@WebUtility.UrlEncode(confirmationUrl)" alt="Ticket QR for @booking.BookingRef" />
                         </div>
                     </div>
 
-                    <p class="booking-date">
-                        @booking.BookedAt.ToString("dd MMM yyyy")
-                    </p>
+                    <div class="booking-meta booking-ticket-surface">
+                        <div>
+                            <span>Show Time</span>
+                            <strong>@bookingStartLocal.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                        </div>
+                        <div>
+                            <span>Booked / Confirmed</span>
+                            <strong>@booking.BookedAt.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                        </div>
+                        <div>
+                            <span>Amount Paid</span>
+                            <strong>@CurrencyFormatter.FormatRupees(booking.PayableAmount ?? booking.TotalAmount)</strong>
+                        </div>
+                        <div>
+                            <span>Payment</span>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.PaymentStatus) ? "NA" : booking.PaymentStatus)</strong>
+                        </div>
+                        <div>
+                            <span>Seats</span>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.SeatNumbers) ? "NA" : booking.SeatNumbers)</strong>
+                        </div>
+                        <div>
+                            <span>Tickets</span>
+                            <strong>@booking.TotalTickets</strong>
+                        </div>
+                        <div>
+                            <span>Method</span>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.PaymentMethod) ? "NA" : booking.PaymentMethod)</strong>
+                        </div>
+                        <div>
+                            <span>Gateway</span>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.GatewayName) ? "NA" : booking.GatewayName)</strong>
+                        </div>
+                        <div>
+                            <span>Screen</span>
+                            <strong>@screenName</strong>
+                        </div>
+                        <div>
+                            <span>Theater</span>
+                            <strong>@(string.IsNullOrWhiteSpace(venueDetails) ? "NA" : venueDetails)</strong>
+                        </div>
+                        <div>
+                            <span>Transaction</span>
+                            <strong>@(string.IsNullOrWhiteSpace(booking.TransactionRef) ? "NA" : booking.TransactionRef)</strong>
+                        </div>
+                    </div>
 
+                    <div class="booking-actions no-print">
+                        @if (isCancelled)
+                        {
+                            <button class="refund-status-btn @refundButtonClass" type="button" disabled>
+                                @refundLabel
+                            </button>
+                        }
+                        else
+                        {
+                            <a class="btn btn-primary" href="@confirmationPath">View Ticket</a>
+                            @if(canUsePrintTools)
+                            {
+                                @if(isExpired || isCheckedOut)
+                                {
+                            <button class="btn btn-secondary disabled-download" type="button" disabled title="Download is unavailable for expired or checked-out tickets">Download</button>
+                                }
+                                else
+                                {
+                            <a class="btn btn-secondary"
+                               href="/Booking/DownloadTicket?confirmedBookingId=@booking.BookingId"
+                               download>Download</a>
+                                }
+                            }
+                        }
+                        @if(canCancel)
+                        {
+                            <form asp-action="CancelBooking" asp-controller="Booking" method="post" class="cancel-form"
+                                  data-refund-rule="@refundRuleLabel"
+                                  data-refund-amount="@CurrencyFormatter.FormatRupees(estimatedRefundTotal)"
+                                  data-coupon="@booking.DiscountAmount">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="bookingId" value="@booking.BookingId" />
+                                <input type="hidden" name="reason" value="Cancelled by customer from My Bookings" />
+                                <button class="btn btn-danger" type="submit">Cancel Ticket</button>
+                            </form>
+                        }
+                        else if (!isCancelled)
+                        {
+                            <button class="btn btn-secondary disabled-cancel" type="button" title="@refundRuleLabel" disabled>
+                                @(cancellationClosed ? "Cancellation Closed" : "Cancel Ticket")
+                            </button>
+                        }
+                    </div>
                 </article>
             }
-
+        </div>
+                }
+            </section>
+        }
         </div>
     }
-
 </section>
 
 <style>
-
 .my-bookings-page {
     padding-bottom: 40px;
 }
@@ -80,20 +348,13 @@
     justify-content: space-between;
     align-items: flex-end;
     gap: 18px;
-    min-height: 240px;
+    min-height: 220px;
     padding: 28px;
     border-radius: 8px;
     margin-bottom: 18px;
-
     background:
         repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px),
-        linear-gradient(
-            135deg,
-            rgba(255,242,199,0.94),
-            rgba(245,178,196,0.86),
-            rgba(146,229,221,0.86)
-        );
-
+        linear-gradient(135deg, rgba(255,242,199,0.94), rgba(245,178,196,0.86), rgba(146,229,221,0.86));
     color: #231f20;
     box-shadow: 0 22px 64px rgba(35,31,32,0.22);
 }
@@ -108,7 +369,7 @@
 .booking-header h1 {
     margin: 8px 0;
     color: #231f20;
-    font-size: clamp(2.8rem, 7vw, 5.8rem);
+    font-size: clamp(2.5rem, 6vw, 5.2rem);
     font-weight: 900;
 }
 
@@ -131,7 +392,7 @@
 .booking-summary span,
 .booking-summary small,
 .booking-meta span,
-.booking-date {
+.booking-show {
     color: var(--app-muted);
 }
 
@@ -156,9 +417,208 @@
     font-weight: 800;
 }
 
+.booking-refund-rule {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 1px solid rgba(35,31,32,0.18);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.booking-refund-rule strong,
+.booking-refund-rule span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+}
+
+.booking-refund-rule strong {
+    color: var(--app-primary);
+    font-weight: 900;
+}
+
+.booking-refund-rule span {
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-input-disabled) 70%, transparent);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
+.booking-filter-anchor {
+    height: 1px;
+}
+
+.booking-category-tabs {
+    display: grid;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 0 18px;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 70%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--app-page-surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+}
+
+.booking-category-tab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.booking-category-tab:hover {
+    color: var(--app-card-text);
+    transform: translateY(-1px);
+}
+
+.booking-category-tab.active {
+    border-color: var(--app-primary);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+}
+
+.booking-category-tab span {
+    font-size: 0.86rem;
+    font-weight: 900;
+}
+
+.booking-category-tab strong {
+    display: inline-grid;
+    place-items: center;
+    min-width: 32px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--app-primary);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+.booking-category-tab-booked strong {
+    background: var(--app-accent-strong);
+}
+
+.booking-category-tab-expired strong {
+    background: #6b7280;
+}
+
+.booking-category-tab-cancelled strong {
+    background: #dc2626;
+}
+
+.booking-section-list {
+    display: grid;
+    gap: 24px;
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+    padding-right: 8px;
+    scroll-behavior: smooth;
+    scrollbar-color: var(--app-primary) color-mix(in srgb, var(--app-input-disabled) 76%, transparent);
+    scrollbar-width: thin;
+}
+
+.booking-section-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.booking-section-list::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-input-disabled) 76%, transparent);
+}
+
+.booking-section-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--app-primary);
+}
+
+.booking-category {
+    display: grid;
+    gap: 14px;
+}
+
+.booking-category-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--app-input-border);
+    border-radius: 8px;
+    background: var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+
+.booking-category-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.booking-category-head p {
+    margin: 3px 0 0;
+    color: var(--app-muted);
+    font-size: 0.86rem;
+    font-weight: 750;
+}
+
+.booking-category-head strong {
+    display: inline-grid;
+    place-items: center;
+    min-width: 40px;
+    height: 34px;
+    border-radius: 999px;
+    background: var(--app-primary);
+    color: #fff;
+    font-weight: 900;
+}
+
+.booking-category-booked .booking-category-head {
+    border-color: color-mix(in srgb, var(--app-accent-strong) 38%, var(--app-input-border));
+}
+
+.booking-category-booked .booking-category-head strong {
+    background: var(--app-accent-strong);
+}
+
+.booking-category-expired .booking-category-head strong {
+    background: #6b7280;
+}
+
+.booking-category-cancelled .booking-category-head strong {
+    background: #dc2626;
+}
+
+.booking-category-empty {
+    padding: 16px;
+    border: 1px dashed var(--app-input-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 76%, transparent);
+    color: var(--app-muted);
+    font-weight: 800;
+}
+
 .booking-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
+    grid-template-columns: repeat(2, minmax(0,1fr));
     gap: 18px;
 }
 
@@ -166,15 +626,18 @@
     display: grid;
     gap: 14px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     padding: 18px;
     border-radius: 8px;
     border: 1px solid var(--app-input-border);
-
     background: var(--app-card);
     color: var(--app-card-text);
-
     box-shadow: 0 14px 28px rgba(0,0,0,0.12);
+}
+
+.booking-card:hover,
+.booking-card:focus-within {
+    z-index: 5;
 }
 
 .booking-card::before {
@@ -185,8 +648,58 @@
     background: linear-gradient(90deg, var(--app-accent), var(--app-accent-strong), var(--app-primary));
 }
 
-.booking-top {
+.booking-card-confirmed::before {
+    background: linear-gradient(90deg, var(--app-accent), var(--app-accent-strong), var(--app-primary));
+}
+
+.booking-card-cancelled {
+    border-color: rgba(220, 38, 38, 0.42);
+    background:
+        linear-gradient(135deg, rgba(254, 226, 226, 0.92), rgba(255, 255, 255, 0.86)),
+        var(--app-card);
+    box-shadow: 0 14px 30px rgba(153, 27, 27, 0.18);
+}
+
+.booking-card-cancelled::before {
+    height: 6px;
+    background: linear-gradient(90deg, #991b1b, #dc2626, #f87171);
+}
+
+.booking-card-cancelled::after {
+    content: "";
+    position: absolute;
+    inset: 62px 22px 76px;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        linear-gradient(32deg, transparent calc(50% - 2px), rgba(153, 27, 27, 0.26) 50%, transparent calc(50% + 2px)),
+        linear-gradient(148deg, transparent calc(50% - 2px), rgba(153, 27, 27, 0.26) 50%, transparent calc(50% + 2px));
+    opacity: 0.48;
+}
+
+.booking-card-cancelled .booking-ticket-surface,
+.booking-card-cancelled .booking-qr {
+    filter: blur(2.2px) grayscale(0.7);
+    opacity: 0.54;
+    user-select: none;
+}
+
+.booking-card-cancelled .booking-ticket-surface {
+    position: relative;
+    z-index: 2;
+}
+
+.booking-card-cancelled .booking-top,
+.booking-card-cancelled .booking-actions {
+    position: relative;
+    z-index: 3;
+}
+
+.booking-top,
+.booking-main,
+.booking-actions {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
 }
@@ -207,15 +720,42 @@
     background: var(--app-accent-strong);
 }
 
+.booking-status.cancelled {
+    background: #dc2626;
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.24);
+}
+
 .booking-status.failed {
     background: var(--app-danger);
 }
 
+.booking-status.expired {
+    background: #6b7280;
+}
+
 .booking-card h2 {
-    min-height: 58px;
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: 900;
+}
+
+.booking-show {
+    margin: 4px 0 0;
+    font-weight: 800;
+}
+
+.booking-qr {
+    flex: 0 0 auto;
+    padding: 8px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+}
+
+.booking-qr img {
+    display: block;
+    width: 96px;
+    height: 96px;
 }
 
 .booking-meta {
@@ -225,6 +765,7 @@
 }
 
 .booking-meta div {
+    min-width: 0;
     padding: 12px;
     border-radius: 8px;
     background: color-mix(in srgb, var(--app-input-disabled) 72%, transparent);
@@ -240,32 +781,92 @@
 }
 
 .booking-meta strong {
+    display: block;
     font-weight: 900;
+    overflow-wrap: anywhere;
 }
 
-.booking-date {
+.booking-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.cancel-form {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
     margin: 0;
-    font-weight: 800;
+}
+
+.disabled-cancel {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.disabled-download {
+    cursor: not-allowed;
+    opacity: 0.72;
+    filter: grayscale(0.4);
+}
+
+.booking-card-cancelled .disabled-cancel {
+    opacity: 1;
+}
+
+.refund-status-btn {
+    min-height: 38px;
+    padding: 9px 14px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-transform: uppercase;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16);
+    cursor: not-allowed;
+}
+
+.refund-status-success {
+    background: linear-gradient(135deg, #047857, #22c55e);
+}
+
+.refund-status-pending {
+    background: linear-gradient(135deg, #b45309, #f59e0b);
+    color: #231f20;
+}
+
+.refund-status-failed,
+.refund-status-cancelled {
+    background: linear-gradient(135deg, #991b1b, #dc2626);
+}
+
+.refund-status-retry {
+    background: linear-gradient(135deg, #4338ca, #6366f1);
+}
+
+.refund-status-neutral {
+    background: linear-gradient(135deg, #475569, #64748b);
 }
 
 .empty-booking {
     padding: 34px;
     border-radius: 8px;
     text-align: center;
-
     background: var(--app-card);
 }
 
 @@media (max-width: 900px) {
-
     .booking-grid {
-        grid-template-columns: repeat(2, minmax(0,1fr));
+        grid-template-columns: 1fr;
     }
 }
 
 @@media (max-width: 640px) {
-
-    .booking-header {
+    .booking-header,
+    .booking-main {
         align-items: stretch;
         flex-direction: column;
     }
@@ -275,9 +876,99 @@
         text-align: left;
     }
 
-    .booking-grid {
+    .booking-meta {
         grid-template-columns: 1fr;
     }
-}
 
+    .booking-category-tabs {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-section-list {
+        max-height: calc(100vh - 230px);
+        padding-right: 4px;
+    }
+
+    .booking-category-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .booking-refund-rule {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .booking-qr img {
+        width: 132px;
+        height: 132px;
+    }
+}
 </style>
+
+<script>
+document.querySelectorAll(".cancel-form").forEach(form => {
+    form.addEventListener("submit", event => {
+        if (form.dataset.confirmed === "true") {
+            form.dataset.confirmed = "false";
+            return;
+        }
+
+        event.preventDefault();
+
+        const coupon = Number(form.dataset.coupon || "0");
+        const refundRule = form.dataset.refundRule || "Refund rule applies";
+        const refundAmount = form.dataset.refundAmount || "";
+        const message = coupon > 0
+            ? `Cancel this ticket?\n\nRefund rule: ${refundRule}\nRefund amount: ${refundAmount}\n\nCoupon discount is not refundable.`
+            : `Cancel this ticket?\n\nRefund rule: ${refundRule}\nRefund amount: ${refundAmount}`;
+
+        window.showCinemaPopup(message, "confirm", {
+            title: "Cancel Ticket?",
+            okText: "Cancel Ticket",
+            cancelText: "Keep Ticket",
+            onOk: () => {
+                form.dataset.confirmed = "true";
+                form.requestSubmit();
+            }
+        });
+    });
+});
+
+(function () {
+    const tabs = Array.from(document.querySelectorAll("[data-booking-tab]"));
+    const categories = Array.from(document.querySelectorAll("[data-booking-category]"));
+
+    if (!tabs.length || !categories.length) return;
+
+    function showCategory(key, shouldScroll) {
+        categories.forEach(category => {
+            category.hidden = category.dataset.bookingCategory !== key;
+        });
+
+        tabs.forEach(tab => {
+            const isActive = tab.dataset.bookingTab === key;
+            tab.classList.toggle("active", isActive);
+            tab.setAttribute("aria-selected", String(isActive));
+        });
+
+        if (shouldScroll) {
+            const target = document.getElementById(`booking-category-${key}`);
+            target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }
+
+    document.addEventListener("click", event => {
+        const link = event.target.closest('a[href^="#booking-category-"]');
+        if (!link) return;
+
+        const key = link.getAttribute("href").replace("#booking-category-", "");
+        if (!key) return;
+
+        event.preventDefault();
+        showCategory(key, true);
+    });
+
+    showCategory("booked", false);
+})();
+</script>

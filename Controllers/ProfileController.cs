@@ -1,55 +1,46 @@
-using AmarShowsBook.Services; // Added for activity logging
-using Npgsql;                 // Added for PostgreSQL exception handling
+using AmarShowsBook.Services;
+using Npgsql;
 using Microsoft.AspNetCore.Mvc;             
 using AmarShowsBook.Data;               
+using AmarShowsBook.Helpers;
 using AmarShowsBook.Models;                             
-using System.IO;        // Added for file handling
-using System.Linq;      // Added for LINQ queries
+using System.IO;
 using System.Text.RegularExpressions;                   
 
+// Profile pages only work with the signed-in user's row and update session values after saved changes.
 public class ProfileController : Controller
 {
     private readonly ApplicationDbContext _context;
-    // ====================== added logger + activity logger ======================
     private readonly ILogger<ProfileController> _logger;
     private readonly IActivityLogger _activityLogger;
-    // ====================== End of added logger + activity logger ======================
+    private readonly RbacService _rbacService;
     private static readonly Regex EmailRegex = new(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$", RegexOptions.Compiled);
     private static readonly Regex MobileRegex = new(@"^[0-9]{10}$", RegexOptions.Compiled);
     private static readonly Regex PasswordRegex = new(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", RegexOptions.Compiled);
     private const string PasswordRuleMessage = "New password must be at least 8 characters and include uppercase, lowercase, and special character.";
 
-    // ====================== commented out old constructor ======================
-    // public ProfileController(ApplicationDbContext context)
-    // {
-    //     _context = context;
-    // }
-    // ====================== Updated constructor to include activity logger ======================
     public ProfileController(
         ILogger<ProfileController> logger,
         ApplicationDbContext context,
-        IActivityLogger activityLogger)
+        IActivityLogger activityLogger,
+        RbacService rbacService)
         {
             _logger = logger;
             _context = context;
             _activityLogger = activityLogger;
+            _rbacService = rbacService;
         }
-    // ====================== End of updated constructor ======================
-    // LOAD PROFILE
-    //public IActionResult Index() //==== commented out old Index action to reuse for saving profile
-    public async Task<IActionResult> Index() // Updated to async for future activity logging
+    public async Task<IActionResult> Index()
     {
         return RedirectToAction("MyProfile");
     }
 
-    //public IActionResult MyProfile() //commented out old MyProfile action to reuse for saving profile
     public async Task<IActionResult> MyProfile()
 {
     try
     {
         var userEmail = HttpContext.Session.GetString("UserEmail");
 
-        // ====================== Unauthorized access logging ======================
         if (string.IsNullOrWhiteSpace(userEmail))
         {
             await _activityLogger.LogAsync(
@@ -95,7 +86,6 @@ public class ProfileController : Controller
         HttpContext.Session.SetString("UserLanguage",
             user.Language ?? "English");
 
-        // ====================== Success activity log ======================
         await _activityLogger.LogAsync(
             userId: user.Id,
             action: "VIEW_PROFILE",
@@ -144,14 +134,9 @@ public class ProfileController : Controller
         throw;
     }
 }
-//update above profile action
-    // SAVE PROFILE
-    //[HttpPost]
-    //public IActionResult MyProfile(User model, IFormFile profileImage) //commented out old MyProfile action to reuse for saving profile
 
     [HttpPost]
-    //public IActionResult MyProfile(User model, IFormFile profileImage) //commented out old MyProfile action to reuse for saving profile
-    public async Task<IActionResult> MyProfile(User model, IFormFile profileImage) //added async for future activity logging
+    public async Task<IActionResult> MyProfile(User model, IFormFile profileImage)
     {
         try
         {
@@ -223,21 +208,18 @@ public class ProfileController : Controller
             return View("MyProfile", user);
         }
 
-        // ================= EMAIL UNIQUE CHECK =================
         if (_context.Users.Any(u => u.Email == newEmail && u.Id != user.Id))
         {
             TempData["Error"] = "Email already exists";
             return View("MyProfile", user);
         }
 
-        // ================= MOBILE UNIQUE CHECK =================
         if (_context.Users.Any(u => u.Mobile == newMobile && u.Id != user.Id))
         {
             TempData["Error"] = "Mobile already exists";
             return View("MyProfile", user);
         }
 
-        // ================= UPDATE FIELDS =================
         user.Email = newEmail;
         user.Mobile = newMobile;
         user.Name = newName;
@@ -252,7 +234,6 @@ user.Pincode = newPincode;
 
         var imageChanged = false;
 
-        // ================= IMAGE UPLOAD =================
        if (profileImage != null && profileImage.Length > 0)
 {
     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
@@ -272,14 +253,12 @@ user.Pincode = newPincode;
     user.ProfileImagePath = "/uploads/" + fileName;
     imageChanged = true;
 }
-        // ================= AUDIT =================
 var currentUser = HttpContext.Session.GetString("UserEmail");
 
 user.UpdatedAt = DateTime.UtcNow;
 user.UpdatedBy = currentUser ?? "System";
 
         _context.SaveChanges();
-        // ============ added activity log for profile update ============
         await _activityLogger.LogAsync(
     userId: user.Id,
     action: "UPDATE_PROFILE",
@@ -297,7 +276,6 @@ user.UpdatedBy = currentUser ?? "System";
         ImageUpdated = imageChanged
     }
 );
-        //==========end of added activity log for profile update ===========
 
         if (emailChanged)
         {
@@ -323,13 +301,6 @@ user.UpdatedBy = currentUser ?? "System";
 
         return RedirectToAction("MyProfile");
         }
-        //==============commented out old catch block to reuse for saving profile with activity logging =================
-        // catch
-        // {
-        //     TempData["Error"] = "The profile scene could not be saved. Please try again.";
-        //     return RedirectToAction("MyProfile");
-        // }
-        //==================================updated catch blocks to log profile update failure =================
         catch (Exception ex)
 {
     await _activityLogger.LogAsync(
@@ -345,18 +316,17 @@ user.UpdatedBy = currentUser ?? "System";
         isError: 1
     );
 
+    // Previous wording: "The profile scene could not be saved. Please try again."
     TempData["Error"] =
-        "The profile scene could not be saved. Please try again.";
+        "We could not save your profile. Please try again.";
 
     return RedirectToAction("MyProfile");
 }
-    //=======================================end of added activity log for profile update failure ===
     }
 
     [HttpPost]
-    //public IActionResult ChangePassword(string verifiedEmail, string newPassword, string confirmPassword)//commented out old ChangePassword action to reuse for password change with activity logging
    
-   public async Task<IActionResult> ChangePassword(string verifiedEmail, string newPassword, string confirmPassword) //added async for future activity logging
+   public async Task<IActionResult> ChangePassword(string verifiedEmail, string newPassword, string confirmPassword)
     {
         try
         {
@@ -403,7 +373,6 @@ user.UpdatedBy = currentUser ?? "System";
             user.UpdatedAt = DateTime.UtcNow;
             user.UpdatedBy = sessionEmail;
             _context.SaveChanges();
-            // ============ added activity log for password change ============
             await _activityLogger.LogAsync(
     userId: user.Id,
     action: "CHANGE_PASSWORD",
@@ -414,18 +383,11 @@ user.UpdatedBy = currentUser ?? "System";
     status: "SUCCESS",
     isError: 0
 );
-//==========end of added activity log for password change ===========
 
             HttpContext.Session.Remove("VerifiedEmailForProfile");
             TempData["Success"] = "Password changed. Your next login has a fresh script.";
             return RedirectToAction("MyProfile");
         }
-        // catch
-        // {
-        //     TempData["Error"] = "Password change could not be completed. Please try again.";
-        //     return RedirectToAction("MyProfile");
-        // }
-        //===================updated catch block to log password change failure =================
         catch (Exception ex)
 {
     await _activityLogger.LogAsync(
@@ -446,6 +408,171 @@ user.UpdatedBy = currentUser ?? "System";
 
     return RedirectToAction("MyProfile");
 }
-//=======================================end of added activity log for password change failure =================
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAccount(string password, string confirmationText, string deletionReason)
+    {
+        try
+        {
+            var sessionEmail = HttpContext.Session.GetString("UserEmail");
+            if (string.IsNullOrWhiteSpace(sessionEmail))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == sessionEmail);
+            if (user == null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Auth");
+            }
+
+            if (_rbacService.HasAnyActiveRole(user.Id, "DUM_ADMIN") &&
+                !_rbacService.HasAnyActiveRole(user.Id, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER"))
+            {
+                TempData["Error"] = "Delete account is not available for dum_Admin users.";
+                return RedirectToAction("MyProfile");
+            }
+
+            if (HttpContext.Session.GetString("VerifiedEmailForProfile") != sessionEmail)
+            {
+                TempData["Error"] = "Verify your email OTP before deleting the account.";
+                return RedirectToAction("MyProfile");
+            }
+
+            if (string.IsNullOrWhiteSpace(password) ||
+                !BCrypt.Net.BCrypt.Verify(password, user.Password))
+            {
+                TempData["Error"] = "Password validation failed.";
+                return RedirectToAction("MyProfile");
+            }
+
+            if (!string.Equals((confirmationText ?? string.Empty).Trim(), "DELETE MY ACCOUNT", StringComparison.Ordinal))
+            {
+                TempData["Error"] = "Type DELETE MY ACCOUNT to confirm account deletion.";
+                return RedirectToAction("MyProfile");
+            }
+
+            var archiveId = await ArchiveUserAccount(user.Id, sessionEmail, deletionReason);
+
+            await _activityLogger.LogAsync(
+                userId: user.Id,
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                entityId: user.Id,
+                description: "User deleted account after OTP and password validation",
+                status: "SUCCESS",
+                isError: 0,
+                metadata: new
+                {
+                    ArchiveId = archiveId,
+                    RecoverUntilDays = 30,
+                    PurgeAfterMonths = 3
+                });
+
+            TempData["Success"] = "Your account was deleted. You can recover it within 30 days by logging in again.";
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login", "Auth");
+        }
+        catch (PostgresException ex)
+        {
+            await _activityLogger.LogAsync(
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Account deletion stopped by database validation",
+                status: "FAILURE",
+                errorCode: ex.SqlState,
+                errorMessage: ex.MessageText,
+                errorSource: ex.TableName ?? ex.ConstraintName ?? "PostgreSQL",
+                stackTrace: ex.StackTrace,
+                isError: 2);
+
+            TempData["Error"] = BuildDeleteAccountErrorMessage(ex);
+            return RedirectToAction("MyProfile");
+        }
+        catch (NpgsqlException ex)
+        {
+            await _activityLogger.LogAsync(
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Account deletion stopped by database connection or command error",
+                status: "FAILURE",
+                errorCode: "DB_COMMAND_ERROR",
+                errorMessage: ex.Message,
+                errorSource: "PostgreSQL",
+                stackTrace: ex.StackTrace,
+                isError: 2);
+
+            TempData["Error"] = "Account deletion did not proceed because the archive database command could not finish. Please try again after the database connection is stable.";
+            return RedirectToAction("MyProfile");
+        }
+        catch (Exception ex)
+        {
+            await _activityLogger.LogAsync(
+                action: "DELETE_ACCOUNT_REQUEST",
+                module: "PROFILE",
+                entityType: "USER",
+                description: "Account deletion failed",
+                status: "FAILURE",
+                errorCode: "APP500",
+                errorMessage: ex.Message,
+                errorSource: "Application",
+                stackTrace: ex.StackTrace,
+                isError: 1);
+
+            TempData["Error"] = "Account deletion did not proceed because the application hit an unexpected error after validation. Your account is still active; please try again.";
+            return RedirectToAction("MyProfile");
+        }
+    }
+
+    private async Task<long> ArchiveUserAccount(int userId, string deletedBy, string? deletionReason)
+    {
+        var connectionString =
+            DatabaseConnectionStringResolver
+                .GetDatabaseConnectionString(HttpContext.RequestServices.GetRequiredService<IConfiguration>());
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var command = new NpgsqlCommand(
+            "SELECT public.fn_archive_user_account(@user_id, @deleted_by, @reason);",
+            connection);
+        command.CommandTimeout = 120;
+
+        command.Parameters.AddWithValue("@user_id", userId);
+        command.Parameters.AddWithValue("@deleted_by", deletedBy);
+        command.Parameters.AddWithValue("@reason", (object?)deletionReason ?? DBNull.Value);
+
+        var result = await command.ExecuteScalarAsync();
+        return Convert.ToInt64(result);
+    }
+
+    private static string BuildDeleteAccountErrorMessage(PostgresException ex)
+    {
+        var relation =
+            !string.IsNullOrWhiteSpace(ex.TableName)
+                ? ex.TableName
+                : ex.ConstraintName;
+
+        return ex.SqlState switch
+        {
+            PostgresErrorCodes.ForeignKeyViolation =>
+                $"Account deletion did not proceed because related data in {relation ?? "another table"} must be archived first. No account data was deleted.",
+            PostgresErrorCodes.UniqueViolation =>
+                "Account deletion did not proceed because an active deletion archive already exists for this account. Try logging in again to recover, or contact support.",
+            PostgresErrorCodes.UndefinedTable =>
+                $"Account deletion did not proceed because the archive process could not find required table {relation ?? "in the database"}.",
+            PostgresErrorCodes.UndefinedColumn =>
+                $"Account deletion did not proceed because a required archive column is missing in {relation ?? "the database"}.",
+            PostgresErrorCodes.RaiseException =>
+                $"Account deletion did not proceed because the archive procedure stopped with: {ex.MessageText}",
+            _ =>
+                $"Account deletion did not proceed because the database stopped the archive step: {ex.MessageText}"
+        };
     }
 }

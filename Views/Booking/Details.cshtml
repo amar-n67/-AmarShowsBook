@@ -1,110 +1,886 @@
-@model AmarShowsBook.Models.BookingDraft
+@model BookingDraft
+@using AmarShowsBook.Helpers
 
 @{
-var schedule=ViewBag.Schedule;
+    var schedule = ViewBag.Schedule;
+    var user = ViewBag.User;
+    var wallet = ViewBag.Wallet as AmarShowsBook.Models.Admin.VwWalletSummary;
+    var screen = ViewBag.Screen as Screen;
+    var venueInfo = ViewBag.Venue as AmarShowsBook.Models.Venue;
+
+    var walletAmountUsed =
+    ViewBag.WalletAmountUsed as decimal? ?? 0;
+
+    var usableWallet =
+    wallet?.WalletStatus=="ACTIVE"
+    ?
+    Math.Max(
+    0,
+    wallet.WalletBalance-wallet.BlockedBalance
+    )
+    :
+    0;
+
+    var couponDiscount =
+    ViewBag.CouponDiscount as decimal? ?? 0;
+
+    var couponCode =
+    ViewBag.CouponCode as string ?? "";
+
+    var availableCoupons =
+    ViewBag.AvailableCoupons as List<string> ?? new List<string>();
+
+    var finalPayable =
+    Math.Max(
+    0,
+    Model.TotalAmount
+    -walletAmountUsed
+    -couponDiscount
+    );
+
+    string title =
+    schedule?.Movie?.Title
+    ??
+    schedule?.StandupShow?.Title
+    ??
+    schedule?.LiveStream?.Title
+    ??
+    "Unknown Show";
+
+    string theater =
+    venueInfo?.VenueName
+    ??
+    schedule?.Location?.Area
+    ??
+    "Unknown Theater";
+
+    string location =
+    venueInfo!=null
+    ?
+    $"{venueInfo.Address}, {venueInfo.City}, {venueInfo.State}, {venueInfo.Country}"
+    :
+    schedule?.Location!=null
+    ?
+    $"{schedule.Location.State}, {schedule.Location.Country}"
+    :
+    "Location unavailable";
+
+    string email =
+    user?.Email
+    ??
+    "Not Available";
+
+    string mobile =
+    user?.Mobile
+    ??
+    "Not Available";
+
+    string showTime =
+    schedule?.StartTime!=null
+    ?
+    schedule.StartTime.ToString(
+    "dd MMM yyyy hh:mm tt")
+    :
+    "N/A";
 }
 
-<div class="card">
+<style>
 
-<h2>
-Booking Summary
-</h2>
+:root{
 
-<p>
+--bg:#f5f7fb;
+--card:#fff;
+--text:#111827;
+--muted:#6b7280;
 
-Movie:
+--primary:#4f46e5;
+--success:#16a34a;
+--danger:#dc2626;
 
-@(schedule.Movie?.Title)
+--border:#e5e7eb;
 
-</p>
+}
 
-<p>
+body{
 
-Seats:
+background:var(--bg);
 
-@Model.SeatNumbers
+font-family:
+Segoe UI,sans-serif;
 
-</p>
+color:var(--text);
 
-<p>
-
-Location:
-
-@(schedule.Location.Area)
-
-</p>
-
-<p>
-
-Timing:
-
-@(schedule.StartTime)
-
-</p>
-
-<p>
-
-Total:
-
-₹@Model.TotalAmount
-
-</p>
+}
 
 
-@if(User.IsInRole("Admin"))
+.booking-container{
+
+max-width:850px;
+
+margin:40px auto;
+
+padding:20px;
+
+animation:fadeUp .5s;
+
+}
+
+
+.booking-card{
+
+background:var(--card);
+
+border-radius:25px;
+
+padding:30px;
+
+border:1px solid var(--border);
+
+box-shadow:
+0 15px 40px rgba(0,0,0,.05);
+
+overflow:visible;
+
+}
+
+
+.booking-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:25px;
+
+padding-bottom:25px;
+
+border-bottom:1px solid var(--border);
+
+}
+
+
+.booking-header h2{
+
+margin:0;
+
+font-size:28px;
+
+font-weight:800;
+
+}
+
+
+.status{
+
+padding:8px 16px;
+
+border-radius:999px;
+
+background:#fff7ed;
+
+color:#ea580c;
+
+font-size:13px;
+
+font-weight:700;
+
+}
+
+
+.info-grid{
+
+display:grid;
+
+grid-template-columns:
+1fr 1fr;
+
+gap:15px;
+
+margin-bottom:25px;
+
+}
+
+
+.info-box{
+
+padding:18px;
+
+border-radius:16px;
+
+background:#fafafa;
+
+border:1px solid transparent;
+
+transition:.3s;
+
+}
+
+
+.info-box:hover{
+
+border-color:#d1d5db;
+
+transform:translateY(-2px);
+
+}
+
+
+.label{
+
+font-size:13px;
+
+color:var(--muted);
+
+margin-bottom:6px;
+
+}
+
+
+.value{
+
+font-size:16px;
+
+font-weight:700;
+
+}
+
+
+
+.section{
+
+margin-top:25px;
+
+padding:22px;
+
+border-radius:20px;
+
+background:#fafafa;
+
+border:1px solid var(--border);
+
+}
+
+
+.section-title{
+
+font-size:18px;
+
+font-weight:800;
+
+margin-bottom:20px;
+
+}
+
+
+.wallet-stats{
+
+display:flex;
+
+justify-content:space-between;
+
+margin-bottom:20px;
+
+}
+
+
+.wallet-stats div{
+
+text-align:center;
+
+}
+
+
+.wallet-stats span{
+
+display:block;
+
+font-size:13px;
+
+color:var(--muted);
+
+margin-bottom:5px;
+
+}
+
+
+.wallet-stats strong{
+
+font-size:18px;
+
+}
+
+
+
+.form-row{
+
+display:flex;
+
+gap:12px;
+
+}
+
+
+.form-row input{
+
+flex:1;
+
+padding:12px;
+
+border-radius:12px;
+
+border:1px solid var(--border);
+
+outline:none;
+
+}
+
+
+.form-row button{
+
+border:none;
+
+padding:12px 18px;
+
+border-radius:12px;
+
+background:var(--primary);
+
+color:white;
+
+font-weight:700;
+
+cursor:pointer;
+
+}
+
+.coupon-hints{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-top:14px;
+}
+
+.coupon-hints button{
+border:1px solid var(--border);
+border-radius:999px;
+padding:8px 12px;
+background:white;
+color:var(--text);
+font-weight:800;
+cursor:pointer;
+}
+
+
+
+.price-breakdown{
+
+display:flex;
+
+flex-direction:column;
+
+gap:10px;
+
+}
+
+
+.price-breakdown div{
+
+display:flex;
+
+justify-content:space-between;
+
+padding:14px;
+
+border-radius:12px;
+
+background:white;
+
+border:1px solid var(--border);
+
+}
+
+
+.total{
+
+background:#ecfdf5 !important;
+
+border:1px solid #bbf7d0 !important;
+
+}
+
+
+.total strong{
+
+color:var(--success);
+
+font-size:22px;
+
+}
+
+
+
+.actions{
+
+margin-top:30px;
+
+display:flex;
+
+gap:15px;
+
+justify-content:flex-end;
+
+}
+
+
+.btn{
+
+padding:13px 20px;
+
+border:none;
+
+border-radius:12px;
+
+font-weight:700;
+
+cursor:pointer;
+
+text-decoration:none;
+
+}
+
+
+.back-btn{
+
+background:#e5e7eb;
+
+color:black;
+
+}
+
+
+.cancel-btn{
+
+background:var(--danger);
+
+color:white;
+
+}
+
+
+.pay-btn{
+
+background:var(--primary);
+
+color:white;
+
+}
+
+
+.btn:hover{
+
+opacity:.9;
+
+transform:translateY(-2px);
+
+}
+
+
+
+@@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(15px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+
+
+@@media(max-width:768px){
+
+.booking-container{
+
+padding:12px;
+
+}
+
+
+.booking-card{
+
+padding:20px;
+
+}
+
+
+.booking-header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+gap:10px;
+
+}
+
+
+.info-grid{
+
+grid-template-columns:1fr;
+
+}
+
+
+.wallet-stats{
+
+flex-direction:column;
+
+gap:15px;
+
+}
+
+
+.form-row{
+
+flex-direction:column;
+
+}
+
+
+.actions{
+
+flex-direction:column;
+
+}
+
+
+.btn{
+
+width:100%;
+
+text-align:center;
+
+}
+
+}
+
+</style>
+
+
+
+<div class="booking-container">
+
+@if(TempData["Success"]!=null)
 {
+<div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if(TempData["Error"]!=null)
+{
+<div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="booking-card">
+
+<div class="booking-header">
+
 <div>
 
-<label>Email</label>
+<h2>@title</h2>
 
-<input
-class="form-control"
-id="email"/>
+<div style="color:#6b7280">
 
-<label>Mobile</label>
-
-<input
-class="form-control"
-id="mobile"/>
+Booking #@Model.Id
 
 </div>
-}
-else
+
+</div>
+
+<span class="status">
+
+@Model.Status
+
+</span>
+
+</div>
+
+
+
+<div class="info-grid">
+
+<div class="info-box">
+<div class="label">Seats</div>
+<div class="value">🍿 @Model.SeatNumbers</div>
+</div>
+
+<div class="info-box">
+<div class="label">Show Time</div>
+<div class="value">@showTime</div>
+</div>
+
+<div class="info-box">
+<div class="label">Theater</div>
+<div class="value">@theater</div>
+</div>
+
+<div class="info-box">
+<div class="label">Screen</div>
+<div class="value">@(screen?.ScreenName ?? "Screen TBA")</div>
+</div>
+
+<div class="info-box">
+<div class="label">Location</div>
+<div class="value">@location</div>
+</div>
+
+<div class="info-box">
+<div class="label">Email</div>
+<div class="value">@email</div>
+</div>
+
+<div class="info-box">
+<div class="label">Mobile</div>
+<div class="value">@mobile</div>
+</div>
+
+</div>
+
+
+
+
+<div class="section">
+
+<div class="section-title">
+
+💰 Wallet
+
+</div>
+
+<div class="wallet-stats">
+
+<div>
+<span>Available</span>
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show available wallet details">i</button>
+<span class="app-info-popover" role="tooltip">
+<b>Wallet</b> Available wallet is balance minus blocked balance.<br />
+<b>Status</b> @(wallet?.WalletStatus ?? "NA")<br />
+<b>Blocked</b> @CurrencyFormatter.FormatRupees(wallet?.BlockedBalance ?? 0)
+</span>
+</span>
+<strong>
+@CurrencyFormatter.FormatRupees(
+usableWallet)
+</strong>
+</div>
+
+<div>
+<span>Used</span>
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show wallet used details">i</button>
+<span class="app-info-popover" role="tooltip">
+This amount will be deducted from your wallet for this booking before gateway payment is calculated.
+</span>
+</span>
+<strong>
+@CurrencyFormatter.FormatRupees(
+walletAmountUsed)
+</strong>
+</div>
+
+</div>
+
+<form
+class="form-row"
+method="post"
+action="/Booking/ApplyWallet">
+
+@Html.AntiForgeryToken()
+
+<input
+type="hidden"
+name="bookingId"
+value="@Model.Id"/>
+
+<input
+type="number"
+name="walletAmount"
+value="@walletAmountUsed"
+step="0.01"
+placeholder="Wallet amount"/>
+
+<button>
+
+Apply
+
+</button>
+
+</form>
+
+</div>
+
+
+
+
+<div class="section">
+
+<div class="section-title">
+
+🎁 Coupon
+
+</div>
+
+<form
+class="form-row"
+method="post"
+action="/Booking/ApplyCoupon">
+
+@Html.AntiForgeryToken()
+
+<input
+type="hidden"
+name="bookingId"
+value="@Model.Id"/>
+
+<input
+type="text"
+name="couponCode"
+value="@couponCode"
+placeholder="Enter coupon code"/>
+
+<button>
+
+Apply
+
+</button>
+
+</form>
+
+@if(availableCoupons.Any())
 {
-<p>
-
-Email:
-
-@Context.Session.GetString("UserEmail")
-
-</p>
-
-<p>
-
-Mobile:
-
-@Context.Session.GetString("Mobile")
-
-</p>
+<div class="coupon-hints">
+@foreach(var coupon in availableCoupons)
+{
+    <button type="button" onclick="fillCoupon('@coupon.Split(" - ")[0]')">@coupon</button>
+}
+</div>
 }
 
+</div>
+
+
+
+
+<div class="section">
+
+<div class="section-title">
+
+🧾 Payment Summary
+
+</div>
+
+<div class="price-breakdown">
+
+<div>
+<span>Ticket</span>
+<strong>
+@CurrencyFormatter.FormatRupees(
+Model.TotalAmount)
+</strong>
+</div>
+
+<div>
+<span>Wallet Used</span>
+<strong>
+-@CurrencyFormatter.FormatRupees(
+walletAmountUsed)
+</strong>
+</div>
+
+<div>
+<span>Coupon Discount</span>
+<span class="app-info">
+<button type="button" class="app-info-btn" aria-label="Show coupon discount details">i</button>
+<span class="app-info-popover" role="tooltip">
+Coupon discount reduces the payable amount. Coupon discount is not counted as a refundable wallet or payment amount.
+</span>
+</span>
+<strong>
+-@CurrencyFormatter.FormatRupees(
+couponDiscount)
+</strong>
+</div>
+
+<div class="total">
+<span>Total Payable</span>
+<strong>
+@CurrencyFormatter.FormatRupees(
+finalPayable)
+</strong>
+</div>
+
+</div>
+
+</div>
+<div class="actions">
+
+<a
+class="btn back-btn"
+href="#"
+onclick="goBack(event)">
+
+Back
+
+</a>
 
 <button
-class="btn btn-success"
-onclick="goPayment()">
+type="button"
+class="btn pay-btn"
+onclick="location.href='/Booking/Payment?bookingId=@Model.Id'">
 
-Confirm Booking
+Proceed Payment
 
 </button>
 
 </div>
 
+
 <script>
 
-function goPayment()
+function goBack(e)
 {
-window.location=
-"/Booking/Payment?bookingId=@Model.Id";
+    e.preventDefault();
+
+    window.location.href=
+    document.referrer +
+    (
+        document.referrer.includes("?")
+        ? "&refresh=" + Date.now()
+        : "?refresh=" + Date.now()
+    );
+}
+
+function fillCoupon(code)
+{
+    const input = document.querySelector('input[name="couponCode"]');
+    if(input)
+    {
+        input.value = code;
+        input.focus();
+    }
 }
 
 </script>

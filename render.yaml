@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: amarshowsbook
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: amarshowsbook-db
+          property: connectionString
+      - key: Otp__Email__From
+        sync: false
+      - key: Otp__Email__Password
+        sync: false
+      - key: Otp__Sms__Fast2SmsApiKey
+        sync: false
+
+databases:
+  - name: amarshowsbook-db
+    databaseName: amarshowsbook
+    user: amarshowsbook
+    plan: free

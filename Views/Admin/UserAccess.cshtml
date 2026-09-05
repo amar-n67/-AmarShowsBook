@@ -1,5 +1,5 @@
 @model List<AmarShowsBook.Models.ViewModels.AdminUserRoleViewModel>
-@using AmarShowsBook.Models.Admin
+@using AmarShowsBook.Models
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -9,9 +9,6 @@
         ViewBag.AllRoles as List<Role>
         ?? new List<Role>();
 
-    // =====================================================
-    // USER COUNTS
-    // =====================================================
 
     int totalUsers =
         Model.Count;
@@ -31,9 +28,6 @@
 
 <section class="admin-page">
 
-    <!-- ===================================================== -->
-    <!-- HEADER -->
-    <!-- ===================================================== -->
 
     <div class="admin-page-header">
 
@@ -55,9 +49,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- ALERTS -->
-    <!-- ===================================================== -->
 
     @if (TempData["Success"] != null)
     {
@@ -73,9 +64,6 @@
         </div>
     }
 
-    <!-- ===================================================== -->
-    <!-- STATS -->
-    <!-- ===================================================== -->
 
     <div class="stats-grid access-stats-grid">
 
@@ -101,9 +89,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- USER CARDS -->
-    <!-- ===================================================== -->
 
     @if (!Model.Any())
     {
@@ -117,17 +102,23 @@
 
             @foreach (var user in Model)
             {
+                var assignedRoles = allRoles
+                    .Where(role => user.RoleIds.Contains(role.Id))
+                    .ToList();
+                var hasDumAdmin = assignedRoles
+                    .Any(role => string.Equals(role.RoleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase));
+                var hasOtherRoles = assignedRoles
+                    .Any(role => !string.Equals(role.RoleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase));
                 var availableRoles = allRoles
                     .Where(role =>
                         role.IsActive &&
-                        !user.RoleIds.Contains(role.Id))
+                        !user.RoleIds.Contains(role.Id) &&
+                        !hasDumAdmin &&
+                        !(hasOtherRoles && string.Equals(role.RoleCode, "DUM_ADMIN", StringComparison.OrdinalIgnoreCase)))
                     .ToList();
 
-                <div class="access-card">
+                <div class="access-card" data-filter-status="@(user.IsActive ? "ACTIVE" : "DISABLED")">
 
-                    <!-- ===================================================== -->
-                    <!-- USER HEADER -->
-                    <!-- ===================================================== -->
 
                     <div class="access-card-header">
 
@@ -153,9 +144,6 @@
 
                     </div>
 
-                    <!-- ===================================================== -->
-                    <!-- CURRENT ROLES -->
-                    <!-- ===================================================== -->
 
                     <div>
 
@@ -185,9 +173,6 @@
 
                     </div>
 
-                    <!-- ===================================================== -->
-                    <!-- GRANT ROLE -->
-                    <!-- ===================================================== -->
 
                     <div>
 
@@ -198,6 +183,7 @@
                         <form asp-action="AddUserRole"
                               method="post"
                               class="grant-role-form">
+                            @Html.AntiForgeryToken()
 
                             <input type="hidden"
                                    name="UserId"
@@ -215,7 +201,7 @@
                                 @foreach (var role in availableRoles)
                                 {
                                     <option value="@role.Id">
-                                        @role.RoleName
+                                        @role.RoleName (@role.RoleCode)
                                     </option>
                                 }
 
@@ -233,9 +219,6 @@
 
                     </div>
 
-                    <!-- ===================================================== -->
-                    <!-- REMOVE ROLE -->
-                    <!-- ===================================================== -->
 
                     <div>
 
@@ -255,6 +238,7 @@
 
                                     <form asp-action="RemoveUserRole"
                                           method="post">
+                                        @Html.AntiForgeryToken()
 
                                         <input type="hidden"
                                                name="userId"
@@ -294,9 +278,6 @@
 
 </section>
 
-<!-- ===================================================== -->
-<!-- PAGE CSS -->
-<!-- ===================================================== -->
 
 <style>
 
@@ -322,9 +303,6 @@
         0 4px 12px rgba(0,0,0,0.04);
 }
 
-/* ===================================================== */
-/* HORIZONTAL USER LIST */
-/* ===================================================== */
 
 .access-card-grid{
     margin-top:30px;

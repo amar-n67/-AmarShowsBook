@@ -1,14 +1,19 @@
 @model AmarShowsBook.Models.Admin.VwRefundSummary
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refund Details";
+    var refundDetailReason = !string.IsNullOrWhiteSpace(Model.FailureReason)
+        ? Model.FailureReason
+        : !string.IsNullOrWhiteSpace(Model.RefundReason)
+            ? Model.RefundReason
+            : "No refund reason recorded.";
 }
 
 <section class="refund-details-page">
 
-    <!-- TOP BAR -->
 
     <div class="top-bar">
 
@@ -85,10 +90,13 @@
 
         <div class="top-actions">
 
-            <button onclick="window.print()"
-                    class="print-btn">
-                Print / Save PDF
-            </button>
+            @if(AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService))
+            {
+                <button onclick="window.print()"
+                        class="print-btn">
+                    Print / Save PDF
+                </button>
+            }
 
             <a href="/Admin/Refunds"
                class="back-btn">
@@ -99,11 +107,9 @@
 
     </div>
 
-    <!-- DETAILS GRID -->
 
     <div class="details-grid">
 
-        <!-- REFUND INFO -->
 
         <div class="detail-card">
 
@@ -131,12 +137,29 @@
                         FAILED
                     </span>
                 }
+                else if (Model.RefundStatus == "REJECTED")
+                {
+                    <span class="status failed">
+                        REJECTED - TICKET ACTIVE
+                    </span>
+                }
                 else
                 {
                     <span class="status pending">
                         @(string.IsNullOrWhiteSpace(Model.RefundStatus)
                             ? "NA"
                             : Model.RefundStatus)
+                    </span>
+                }
+                @if (!string.Equals(Model.RefundStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+                {
+                    <span class="app-info">
+                        <button type="button" class="app-info-btn" aria-label="Show refund status details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            <b>Status</b> @(string.IsNullOrWhiteSpace(Model.RefundStatus) ? "NA" : Model.RefundStatus)<br />
+                            <b>Reason</b> @refundDetailReason<br />
+                            <b>Requested</b> @(Model.RequestedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                        </span>
                     </span>
                 }
 
@@ -177,7 +200,6 @@
 
         </div>
 
-        <!-- BOOKING INFO -->
 
         <div class="detail-card">
 
@@ -202,7 +224,7 @@
 
                 @(Model.RequestedAt.HasValue
                     ? Model.RequestedAt.Value
-                        .ToString("dd MMM yyyy hh:mm tt")
+                    
                     : "NA")
 
             </p>
@@ -212,7 +234,7 @@
 
                 @(Model.ProcessedAt.HasValue
                     ? Model.ProcessedAt.Value
-                        .ToString("dd MMM yyyy hh:mm tt")
+                       
                     : "NA")
 
             </p>
@@ -220,7 +242,7 @@
             <p>
                 <strong>Created At:</strong>
                 @Model.CreatedAt
-                    .ToString("dd MMM yyyy hh:mm tt")
+                   
             </p>
 
             <p>
@@ -228,14 +250,13 @@
 
                 @(Model.UpdatedAt.HasValue
                     ? Model.UpdatedAt.Value
-                        .ToString("dd MMM yyyy hh:mm tt")
+                       
                     : "NA")
 
             </p>
 
         </div>
 
-        <!-- USER INFO -->
 
         <div class="detail-card">
 
@@ -268,6 +289,14 @@
                     <span class="status failed">
                         YES
                     </span>
+                    <span class="app-info">
+                        <button type="button" class="app-info-btn" aria-label="Show refund error details">i</button>
+                        <span class="app-info-popover" role="tooltip">
+                            <b>Error</b> Yes<br />
+                            <b>Reason</b> @(string.IsNullOrWhiteSpace(Model.FailureReason) ? "No gateway failure reason recorded." : Model.FailureReason)<br />
+                            <b>Updated</b> @(Model.UpdatedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "NA")
+                        </span>
+                    </span>
                 }
                 else
                 {
@@ -292,7 +321,6 @@
     min-height:100vh;
 }
 
-/* TOP BAR */
 
 .top-bar{
     display:flex;
@@ -319,7 +347,6 @@
     gap:12px;
 }
 
-/* BUTTONS */
 
 .print-btn,
 .back-btn{
@@ -340,7 +367,6 @@
     color:white;
 }
 
-/* GRID */
 
 .details-grid{
     display:grid;
@@ -348,7 +374,6 @@
     gap:20px;
 }
 
-/* CARD */
 
 .detail-card{
     background:white;
@@ -375,7 +400,6 @@
     color:#0f172a;
 }
 
-/* STATUS */
 
 .status{
     display:inline-block;
@@ -400,7 +424,6 @@
     color:#92400e;
 }
 
-/* MOBILE */
 
 @@media(max-width:1100px){
 
@@ -437,7 +460,6 @@
 
 }
 
-/* PRINT */
 
 @@media print{
 

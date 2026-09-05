@@ -1,5 +1,12 @@
 node_modules/
 .env
 dist/
+bin/
 build/bin/
 obj/
+.DS_Store
+*.lscache
+
+bin/
+obj/
+*.usersecrets
