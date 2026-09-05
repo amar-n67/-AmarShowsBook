@@ -474,8 +474,13 @@ CREATE TABLE IF NOT EXISTS public.developer_profiles
     support_email text,
     support_whatsapp_text text,
     support_whatsapp_phone text,
-    is_support_whatsapp_same_as_phone boolean NOT NULL DEFAULT true,
-    top_whatsapp_text text,
+	    is_support_whatsapp_same_as_phone boolean NOT NULL DEFAULT true,
+	    developer_whatsapp_phone text,
+	    is_developer_whatsapp_same_as_phone boolean NOT NULL DEFAULT true,
+	    developer_email text,
+	    developer_email_subject text,
+	    developer_email_text text,
+	    top_whatsapp_text text,
     support_email_subject text,
     support_email_text text,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -501,7 +506,22 @@ ALTER TABLE public.developer_profiles
 ADD COLUMN IF NOT EXISTS is_support_whatsapp_same_as_phone boolean NOT NULL DEFAULT true;
 
 ALTER TABLE public.developer_profiles
-ADD COLUMN IF NOT EXISTS top_whatsapp_text text;
+ADD COLUMN IF NOT EXISTS developer_whatsapp_phone text;
+
+	ALTER TABLE public.developer_profiles
+	ADD COLUMN IF NOT EXISTS is_developer_whatsapp_same_as_phone boolean NOT NULL DEFAULT true;
+
+	ALTER TABLE public.developer_profiles
+	ADD COLUMN IF NOT EXISTS developer_email text;
+
+	ALTER TABLE public.developer_profiles
+	ADD COLUMN IF NOT EXISTS developer_email_subject text;
+
+	ALTER TABLE public.developer_profiles
+	ADD COLUMN IF NOT EXISTS developer_email_text text;
+
+	ALTER TABLE public.developer_profiles
+	ADD COLUMN IF NOT EXISTS top_whatsapp_text text;
 
 ALTER TABLE public.developer_profiles
 ADD COLUMN IF NOT EXISTS support_email_subject text;
@@ -522,8 +542,13 @@ INSERT INTO public.developer_profiles
     support_email,
     support_whatsapp_text,
     support_whatsapp_phone,
-    is_support_whatsapp_same_as_phone,
-    top_whatsapp_text,
+	    is_support_whatsapp_same_as_phone,
+	    developer_whatsapp_phone,
+	    is_developer_whatsapp_same_as_phone,
+	    developer_email,
+	    developer_email_subject,
+	    developer_email_text,
+	    top_whatsapp_text,
     support_email_subject,
     support_email_text
 )
@@ -543,8 +568,13 @@ SELECT
     'support@showtime.com',
     'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.',
     '+91 9651698863',
-    true,
-    'Hi showTime Team, I''m {{user}}. I visited showTime and would like to connect with you.',
+	    true,
+	    '+91 9651698863',
+	    true,
+	    'example@gmail.com',
+	    'showTime Developer Contact',
+	    'Hi showTime Team, I''m {{user}}. I would like to connect with the developer.',
+	    'Hi showTime Team, I''m {{user}}. I visited showTime and would like to connect with you.',
     'showTime Support Request',
     'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'
 WHERE NOT EXISTS
@@ -559,9 +589,13 @@ SET
     twitter_url = COALESCE(NULLIF(twitter_url, ''), ''),
     support_phone = COALESCE(NULLIF(support_phone, ''), '+91 9651698863'),
     support_email = COALESCE(NULLIF(support_email, ''), 'support@showtime.com'),
-    support_whatsapp_text = COALESCE(NULLIF(support_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'),
-    support_whatsapp_phone = COALESCE(NULLIF(support_whatsapp_phone, ''), NULLIF(support_phone, ''), '+91 9651698863'),
-    top_whatsapp_text = COALESCE(NULLIF(top_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I visited showTime and would like to connect with you.'),
+	    support_whatsapp_text = COALESCE(NULLIF(support_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.'),
+	    support_whatsapp_phone = COALESCE(NULLIF(support_whatsapp_phone, ''), NULLIF(support_phone, ''), '+91 9651698863'),
+	    developer_whatsapp_phone = COALESCE(NULLIF(developer_whatsapp_phone, ''), NULLIF(support_phone, ''), '+91 9651698863'),
+	    developer_email = COALESCE(NULLIF(developer_email, ''), NULLIF(email, ''), NULLIF(support_email, ''), 'example@gmail.com'),
+	    developer_email_subject = COALESCE(NULLIF(developer_email_subject, ''), 'showTime Developer Contact'),
+	    developer_email_text = COALESCE(NULLIF(developer_email_text, ''), 'Hi showTime Team, I''m {{user}}. I would like to connect with the developer.'),
+	    top_whatsapp_text = COALESCE(NULLIF(top_whatsapp_text, ''), 'Hi showTime Team, I''m {{user}}. I visited showTime and would like to connect with you.'),
     support_email_subject = COALESCE(NULLIF(support_email_subject, ''), 'showTime Support Request'),
     support_email_text = COALESCE(NULLIF(support_email_text, ''), 'Hi showTime Team, I''m {{user}}. I need support. Please help me with my request.')
 WHERE developer_id = 1;
@@ -605,8 +639,13 @@ SELECT
     support_whatsapp_phone AS ""SupportWhatsAppPhone"",
     is_support_whatsapp_same_as_phone AS ""IsSupportWhatsAppSameAsPhone"",
     top_whatsapp_text AS ""TopWhatsAppText"",
-    support_email_subject AS ""SupportEmailSubject"",
-    support_email_text AS ""SupportEmailText""
+	    support_email_subject AS ""SupportEmailSubject"",
+	    support_email_text AS ""SupportEmailText"",
+	    developer_whatsapp_phone AS ""DeveloperWhatsAppPhone"",
+	    is_developer_whatsapp_same_as_phone AS ""IsDeveloperWhatsAppSameAsPhone"",
+	    developer_email AS ""DeveloperEmail"",
+	    developer_email_subject AS ""DeveloperEmailSubject"",
+	    developer_email_text AS ""DeveloperEmailText""
 FROM public.developer_profiles;
 ");
     }

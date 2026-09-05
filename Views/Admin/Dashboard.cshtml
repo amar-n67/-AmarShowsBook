@@ -21,6 +21,11 @@
             SupportPhone = "+91 9651698863",
             SupportWhatsAppPhone = "+91 9651698863",
             IsSupportWhatsAppSameAsPhone = true,
+            DeveloperWhatsAppPhone = "+91 9651698863",
+            IsDeveloperWhatsAppSameAsPhone = true,
+            DeveloperEmail = "example@gmail.com",
+            DeveloperEmailSubject = "showTime Developer Contact",
+            DeveloperEmailText = "Hi showTime Team, I'm {user}. I would like to connect with the developer.",
             SupportEmail = "support@showtime.com",
             TopWhatsAppText = "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you.",
             SupportWhatsAppText = "Hi showTime Team, I'm {user}. I need support. Please help me with my request.",
@@ -469,40 +474,72 @@
 
             <form asp-action="UpdateSupportDetails" method="post" class="support-details-form">
                 @Html.AntiForgeryToken()
-                <div class="support-details-grid">
-                    <label>
-                        <span>Support Mobile</span>
-                        <input id="SupportPhone" name="SupportPhone" class="form-control" value="@supportProfile.SupportPhone" placeholder="+91 9651698863" oninput="syncSupportWhatsApp(false)" />
-                    </label>
-                    <label>
-                        <span>Support WhatsApp No</span>
-                        <input id="SupportWhatsAppPhone" name="SupportWhatsAppPhone" class="form-control" value="@supportProfile.SupportWhatsAppPhone" placeholder="+91 9651698863" />
-                    </label>
-                    <label class="support-details-check">
-                        <input id="IsSupportWhatsAppSameAsPhone" name="IsSupportWhatsAppSameAsPhone" type="checkbox" value="true" onchange="syncSupportWhatsApp(true)" @(supportProfile.IsSupportWhatsAppSameAsPhone ? "checked" : "") />
-                        <input name="IsSupportWhatsAppSameAsPhone" type="hidden" value="false" />
-                        <span>WhatsApp number same as support mobile</span>
-                    </label>
-                    <label>
-                        <span>Support Email</span>
-                        <input name="SupportEmail" class="form-control" value="@supportProfile.SupportEmail" placeholder="support@example.com" />
-                    </label>
-                    <label class="support-details-wide">
-                        <span>Connect to Developer WhatsApp</span>
-                        <textarea name="TopWhatsAppText" class="form-control" rows="2">@supportProfile.TopWhatsAppText</textarea>
-                    </label>
-                    <label class="support-details-wide">
-                        <span>Support WhatsApp Text</span>
-                        <textarea name="SupportWhatsAppText" class="form-control" rows="2">@supportProfile.SupportWhatsAppText</textarea>
-                    </label>
-                    <label>
-                        <span>Email Subject</span>
-                        <input name="SupportEmailSubject" class="form-control" value="@supportProfile.SupportEmailSubject" placeholder="showTime Support Request" />
-                    </label>
-                    <label class="support-details-wide">
-                        <span>Email Text</span>
-                        <textarea name="SupportEmailText" class="form-control" rows="3">@supportProfile.SupportEmailText</textarea>
-                    </label>
+                <div class="support-details-groups">
+                    <section class="support-details-group" aria-labelledby="supportDetailsGroupTitle">
+                        <h3 id="supportDetailsGroupTitle">Support Details</h3>
+                        <div class="support-details-grid">
+                            <label>
+                                <span>Mobile Number</span>
+                                <input id="SupportPhone" name="SupportPhone" class="form-control" value="@supportProfile.SupportPhone" placeholder="+91 9651698863" oninput="syncSupportWhatsApp(false)" />
+                            </label>
+                            <label>
+                                <span>WhatsApp Number</span>
+                                <input id="SupportWhatsAppPhone" name="SupportWhatsAppPhone" class="form-control" value="@supportProfile.SupportWhatsAppPhone" placeholder="+91 9651698863" />
+                            </label>
+                            <label class="support-details-check">
+                                <input id="IsSupportWhatsAppSameAsPhone" name="IsSupportWhatsAppSameAsPhone" type="checkbox" value="true" onchange="syncSupportWhatsApp(true)" @(supportProfile.IsSupportWhatsAppSameAsPhone ? "checked" : "") />
+                                <input name="IsSupportWhatsAppSameAsPhone" type="hidden" value="false" />
+                                <span>WhatsApp same as mobile</span>
+                            </label>
+                            <label>
+                                <span>Email Address</span>
+                                <input name="SupportEmail" class="form-control" value="@supportProfile.SupportEmail" placeholder="support@example.com" />
+                            </label>
+                            <label class="support-details-wide">
+                                <span>WhatsApp Text</span>
+                                <textarea name="SupportWhatsAppText" class="form-control" rows="2">@supportProfile.SupportWhatsAppText</textarea>
+                            </label>
+                            <label>
+                                <span>Email Subject</span>
+                                <input name="SupportEmailSubject" class="form-control" value="@supportProfile.SupportEmailSubject" placeholder="showTime Support Request" />
+                            </label>
+                            <label class="support-details-wide">
+                                <span>Email Body</span>
+                                <textarea name="SupportEmailText" class="form-control" rows="3">@supportProfile.SupportEmailText</textarea>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="support-details-group" aria-labelledby="developerDetailsGroupTitle">
+                        <h3 id="developerDetailsGroupTitle">Developer Details</h3>
+                        <div class="support-details-grid">
+                            <label>
+                                <span>WhatsApp Number</span>
+                                <input id="DeveloperWhatsAppPhone" name="DeveloperWhatsAppPhone" class="form-control" value="@supportProfile.DeveloperWhatsAppPhone" placeholder="+91 9651698863" />
+                            </label>
+                            <label class="support-details-check">
+                                <input id="IsDeveloperWhatsAppSameAsPhone" name="IsDeveloperWhatsAppSameAsPhone" type="checkbox" value="true" onchange="syncDeveloperWhatsApp(true)" @(supportProfile.IsDeveloperWhatsAppSameAsPhone ? "checked" : "") />
+                                <input name="IsDeveloperWhatsAppSameAsPhone" type="hidden" value="false" />
+                                <span>WhatsApp same as support mobile</span>
+                            </label>
+                            <label>
+                                <span>Email Address</span>
+                                <input name="DeveloperEmail" class="form-control" value="@supportProfile.DeveloperEmail" placeholder="developer@example.com" />
+                            </label>
+                            <label>
+                                <span>Email Subject</span>
+                                <input name="DeveloperEmailSubject" class="form-control" value="@supportProfile.DeveloperEmailSubject" placeholder="showTime Developer Contact" />
+                            </label>
+                            <label class="support-details-wide">
+                                <span>Email Body</span>
+                                <textarea name="DeveloperEmailText" class="form-control" rows="2">@supportProfile.DeveloperEmailText</textarea>
+                            </label>
+                            <label class="support-details-wide">
+                                <span>WhatsApp Text</span>
+                                <textarea name="TopWhatsAppText" class="form-control" rows="2">@supportProfile.TopWhatsAppText</textarea>
+                            </label>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="support-details-actions">
@@ -900,6 +937,27 @@
         padding: 20px;
     }
 
+    .support-details-groups {
+        display: grid;
+        gap: 16px;
+    }
+
+    .support-details-group {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--admin-panel-strong) 94%, var(--admin-teal) 4%);
+    }
+
+    .support-details-group h3 {
+        margin: 0;
+        color: var(--admin-ink);
+        font-size: 0.95rem;
+        font-weight: 950;
+    }
+
     .support-details-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1004,6 +1062,7 @@
 
         supportDetailsModal.hidden = false;
         syncSupportWhatsApp(true);
+        syncDeveloperWhatsApp(true);
         supportDetailsModal.querySelector("input, textarea, button")?.focus();
     }
 
@@ -1026,8 +1085,10 @@
     });
 
     const sameAsPhone = document.getElementById("IsSupportWhatsAppSameAsPhone");
+    const developerSameAsPhone = document.getElementById("IsDeveloperWhatsAppSameAsPhone");
     const supportPhone = document.getElementById("SupportPhone");
     const supportWhatsApp = document.getElementById("SupportWhatsAppPhone");
+    const developerWhatsApp = document.getElementById("DeveloperWhatsAppPhone");
 
     function syncSupportWhatsApp(clearWhenUnchecked = false) {
         if (!sameAsPhone || !supportPhone || !supportWhatsApp) {
@@ -1045,9 +1106,28 @@
         }
     }
 
+    function syncDeveloperWhatsApp(clearWhenUnchecked = false) {
+        if (!developerSameAsPhone || !supportPhone || !developerWhatsApp) {
+            return;
+        }
+
+        developerWhatsApp.disabled = developerSameAsPhone.checked;
+        if (developerSameAsPhone.checked) {
+            developerWhatsApp.value = supportPhone.value;
+            return;
+        }
+
+        if (clearWhenUnchecked) {
+            developerWhatsApp.value = "";
+        }
+    }
+
     sameAsPhone?.addEventListener("change", () => syncSupportWhatsApp(true));
     supportPhone?.addEventListener("input", () => syncSupportWhatsApp(false));
+    developerSameAsPhone?.addEventListener("change", () => syncDeveloperWhatsApp(true));
+    supportPhone?.addEventListener("input", () => syncDeveloperWhatsApp(false));
     syncSupportWhatsApp(true);
+    syncDeveloperWhatsApp(true);
 
     document.querySelectorAll(".admin-dashboard .dashboard-insight-card").forEach((card) => {
         const head = card.querySelector(".dashboard-section-head");

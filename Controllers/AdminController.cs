@@ -468,8 +468,13 @@ INSERT INTO public.developer_profiles
     support_email,
     support_whatsapp_text,
     support_whatsapp_phone,
-    is_support_whatsapp_same_as_phone,
-    top_whatsapp_text,
+	    is_support_whatsapp_same_as_phone,
+	    developer_whatsapp_phone,
+	    is_developer_whatsapp_same_as_phone,
+	    developer_email,
+	    developer_email_subject,
+	    developer_email_text,
+	    top_whatsapp_text,
     support_email_subject,
     support_email_text,
     updated_at
@@ -485,8 +490,13 @@ VALUES
     {model.SupportEmail},
     {model.SupportWhatsAppText},
     {model.SupportWhatsAppPhone},
-    {model.IsSupportWhatsAppSameAsPhone},
-    {model.TopWhatsAppText},
+	    {model.IsSupportWhatsAppSameAsPhone},
+	    {model.DeveloperWhatsAppPhone},
+	    {model.IsDeveloperWhatsAppSameAsPhone},
+	    {model.DeveloperEmail},
+	    {model.DeveloperEmailSubject},
+	    {model.DeveloperEmailText},
+	    {model.TopWhatsAppText},
     {model.SupportEmailSubject},
     {model.SupportEmailText},
     CURRENT_TIMESTAMP
@@ -497,8 +507,13 @@ DO UPDATE SET
     support_email = EXCLUDED.support_email,
     support_whatsapp_text = EXCLUDED.support_whatsapp_text,
     support_whatsapp_phone = EXCLUDED.support_whatsapp_phone,
-    is_support_whatsapp_same_as_phone = EXCLUDED.is_support_whatsapp_same_as_phone,
-    top_whatsapp_text = EXCLUDED.top_whatsapp_text,
+	    is_support_whatsapp_same_as_phone = EXCLUDED.is_support_whatsapp_same_as_phone,
+	    developer_whatsapp_phone = EXCLUDED.developer_whatsapp_phone,
+	    is_developer_whatsapp_same_as_phone = EXCLUDED.is_developer_whatsapp_same_as_phone,
+	    developer_email = EXCLUDED.developer_email,
+	    developer_email_subject = EXCLUDED.developer_email_subject,
+	    developer_email_text = EXCLUDED.developer_email_text,
+	    top_whatsapp_text = EXCLUDED.top_whatsapp_text,
     support_email_subject = EXCLUDED.support_email_subject,
     support_email_text = EXCLUDED.support_email_text,
     updated_at = CURRENT_TIMESTAMP;
@@ -517,6 +532,11 @@ DO UPDATE SET
                     model.SupportEmail,
                     model.SupportWhatsAppPhone,
                     model.IsSupportWhatsAppSameAsPhone,
+                    model.DeveloperWhatsAppPhone,
+                    model.IsDeveloperWhatsAppSameAsPhone,
+                    model.DeveloperEmail,
+                    model.DeveloperEmailSubject,
+                    model.DeveloperEmailText,
                     model.TopWhatsAppText,
                     model.SupportWhatsAppText,
                     model.SupportEmailSubject,
@@ -536,6 +556,11 @@ DO UPDATE SET
                     SupportPhone = "+91 9651698863",
                     SupportWhatsAppPhone = "+91 9651698863",
                     IsSupportWhatsAppSameAsPhone = true,
+                    DeveloperWhatsAppPhone = "+91 9651698863",
+                    IsDeveloperWhatsAppSameAsPhone = true,
+                    DeveloperEmail = "example@gmail.com",
+                    DeveloperEmailSubject = "showTime Developer Contact",
+                    DeveloperEmailText = "Hi showTime Team, I'm {user}. I would like to connect with the developer.",
                     SupportEmail = "support@showtime.com",
                     TopWhatsAppText = "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you.",
                     SupportWhatsAppText = "Hi showTime Team, I'm {user}. I need support. Please help me with my request.",
@@ -562,9 +587,27 @@ DO UPDATE SET
                 model.SupportWhatsAppPhone = model.SupportWhatsAppPhone?.Trim();
             }
 
+            if (model.IsDeveloperWhatsAppSameAsPhone)
+            {
+                model.DeveloperWhatsAppPhone = model.SupportPhone;
+            }
+            else
+            {
+                model.DeveloperWhatsAppPhone = model.DeveloperWhatsAppPhone?.Trim();
+            }
+
             model.TopWhatsAppText = string.IsNullOrWhiteSpace(model.TopWhatsAppText)
                 ? "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you."
                 : model.TopWhatsAppText.Trim();
+            model.DeveloperEmail = string.IsNullOrWhiteSpace(model.DeveloperEmail)
+                ? model.SupportEmail
+                : model.DeveloperEmail.Trim();
+            model.DeveloperEmailSubject = string.IsNullOrWhiteSpace(model.DeveloperEmailSubject)
+                ? "showTime Developer Contact"
+                : model.DeveloperEmailSubject.Trim();
+            model.DeveloperEmailText = string.IsNullOrWhiteSpace(model.DeveloperEmailText)
+                ? "Hi showTime Team, I'm {user}. I would like to connect with the developer."
+                : model.DeveloperEmailText.Trim();
             model.SupportWhatsAppText = string.IsNullOrWhiteSpace(model.SupportWhatsAppText)
                 ? "Hi showTime Team, I'm {user}. I need support. Please help me with my request."
                 : model.SupportWhatsAppText.Trim();
@@ -589,9 +632,23 @@ DO UPDATE SET
                 ModelState.AddModelError(nameof(model.SupportWhatsAppPhone), "Support WhatsApp number must be a valid phone number.");
             }
 
+            if (string.IsNullOrWhiteSpace(model.DeveloperWhatsAppPhone))
+            {
+                ModelState.AddModelError(nameof(model.DeveloperWhatsAppPhone), "Developer WhatsApp number is required unless it is same as support mobile.");
+            }
+            else if (!SupportPhoneRegex.IsMatch(model.DeveloperWhatsAppPhone))
+            {
+                ModelState.AddModelError(nameof(model.DeveloperWhatsAppPhone), "Developer WhatsApp number must be a valid phone number.");
+            }
+
             if (!SupportEmailRegex.IsMatch(model.SupportEmail))
             {
                 ModelState.AddModelError(nameof(model.SupportEmail), "Support email must be a valid email address.");
+            }
+
+            if (!SupportEmailRegex.IsMatch(model.DeveloperEmail))
+            {
+                ModelState.AddModelError(nameof(model.DeveloperEmail), "Developer email must be a valid email address.");
             }
         }
 
