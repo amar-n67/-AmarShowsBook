@@ -182,8 +182,10 @@
                     && booking.PaymentStatus == "SUCCESS"
                     && booking.CancelledAt == null;
                 refundLookup.TryGetValue(booking.BookingId, out var refund);
-                var refundStatus = (refund?.refund_status ?? booking.PaymentStatus ?? "CANCELLED").Trim().ToUpperInvariant();
-                var refundButtonClass = refundStatus switch
+                var refundStatus = isCancelled
+                    ? (refund?.refund_status ?? "PENDING").Trim().ToUpperInvariant()
+                    : "NA";
+                var refundButtonClass = !isCancelled ? "refund-status-neutral" : refundStatus switch
                 {
                     "SUCCESS" => "refund-status-success",
                     "PENDING" or "REFUND_PENDING" => "refund-status-pending",
@@ -192,7 +194,7 @@
                     "RETRY" => "refund-status-retry",
                     _ => "refund-status-neutral"
                 };
-                var refundLabel = refundStatus switch
+                var refundLabel = !isCancelled ? "NA" : refundStatus switch
                 {
                     "SUCCESS" => "Refunded",
                     "PENDING" or "REFUND_PENDING" => "Refund Pending",
@@ -207,7 +209,7 @@
                          data-admin-searchable
                          data-filter-search="@($"{booking.BookingRef} {booking.ShowTitle} {booking.ShowType} {booking.LocationName} {venueDetails} {screenName} {statusText} {booking.PaymentStatus} {booking.PaymentMethod} {refundStatus} {refundLabel}")"
                          data-filter-status="@($"{statusText}|{booking.PaymentStatus}|{refundStatus}|{refundLabel}")"
-                         data-filter-method="@($"{booking.PaymentMethod}|{refund?.refund_method}")"
+                         data-filter-method="@($"{booking.PaymentMethod}|{(isCancelled ? refund?.refund_method : string.Empty)}")"
                          data-sort-showtime="@bookingStartInstant.ToUnixTimeSeconds()"
                          data-sort-booked="@booking.BookedAt.ToString("yyyyMMddHHmmss")"
                          data-sort-amount="@((booking.PayableAmount ?? booking.TotalAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"

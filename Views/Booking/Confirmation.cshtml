@@ -266,11 +266,13 @@ display:flex;
 
 justify-content:space-between;
 
-align-items:center;
+align-items:flex-end;
 
 gap:18px;
 
 margin-top:25px;
+
+flex-wrap:wrap;
 }
 
 .total{
@@ -291,17 +293,22 @@ border:none;
 display:inline-flex;
 align-items:center;
 justify-content:center;
-flex:0 0 auto;
+flex:1 1 154px;
 
-min-height:44px;
-min-width:132px;
-padding:12px 16px;
+min-height:40px;
+min-width:0;
+max-width:132px;
+padding:9px 10px;
 
-border-radius:14px;
+border-radius:10px;
 
-font-size:14px;
+font-size:12px;
 
 font-weight:800;
+line-height:1.15;
+text-align:center;
+white-space:normal;
+word-break:normal;
 
 cursor:pointer;
 
@@ -322,24 +329,30 @@ transition:.4s;
 display:flex;
 justify-content:flex-end;
 align-items:center;
-gap:10px;
+gap:8px;
 flex:1 1 auto;
 flex-wrap:nowrap;
 min-width:0;
+max-width:100%;
 }
 
 .my-bookings-btn{
 display:inline-flex;
 align-items:center;
 justify-content:center;
-flex:0 0 auto;
+flex:1 1 142px;
 border:1px solid #d7dbe4;
-min-height:44px;
-min-width:132px;
-padding:12px 16px;
-border-radius:14px;
-font-size:14px;
+min-height:40px;
+min-width:0;
+max-width:118px;
+padding:9px 10px;
+border-radius:10px;
+font-size:12px;
 font-weight:800;
+line-height:1.15;
+text-align:center;
+white-space:normal;
+word-break:normal;
 text-decoration:none;
 color:#20212a;
 background:#fff;
@@ -350,14 +363,19 @@ transition:.4s;
 display:inline-flex;
 align-items:center;
 justify-content:center;
-flex:0 0 auto;
+flex:1 1 112px;
 border:0;
-min-height:44px;
-min-width:132px;
-padding:12px 16px;
-border-radius:14px;
-font-size:14px;
+min-height:40px;
+min-width:0;
+max-width:86px;
+padding:9px 10px;
+border-radius:10px;
+font-size:12px;
 font-weight:800;
+line-height:1.15;
+text-align:center;
+white-space:normal;
+word-break:normal;
 text-decoration:none;
 color:white;
 background:linear-gradient(135deg,#2563eb,#06b6d4);
@@ -639,14 +657,27 @@ text-align:center;
 flex-direction:column;
 
 gap:20px;
+
+align-items:stretch;
 }
 
 .ticket-action-row{
 justify-content:center;
 flex-wrap:nowrap;
 width:100%;
-overflow-x:auto;
-padding-bottom:4px;
+overflow:visible;
+padding-bottom:0;
+}
+
+.download-btn,
+.my-bookings-btn,
+.home-btn{
+flex:1 1 0;
+max-width:none;
+width:auto;
+min-width:0;
+padding-inline:7px;
+font-size:11px;
 }
 
 }
@@ -757,48 +788,57 @@ TOTAL
 
 <div class="ticket-action-row no-print">
 
-@if(canUsePrintTools)
+@if(!canUsePrintTools)
 {
-    @if(isTicketDownloadDisabled)
-    {
+<button
+class="download-btn disabled-download"
+type="button"
+disabled
+title="You do not have permission to download tickets">
+
+Download
+
+</button>
+}
+else if(isTicketDownloadDisabled)
+{
 <button
 class="download-btn disabled-download"
 type="button"
 disabled
 title="Download is unavailable for expired or checked-out tickets">
 
-⬇ Download Ticket
+Download
 
 </button>
-    }
-    else if(confirmedBookingId.HasValue)
-    {
+}
+else if(confirmedBookingId.HasValue)
+{
 <a
 class="download-btn"
 href="/Booking/DownloadTicket?confirmedBookingId=@confirmedBookingId.Value"
 download>
 
-⬇ Download Ticket
+Download
 
 </a>
-    }
-    else
-    {
+}
+else
+{
 <button
 class="download-btn"
 onclick="window.print()">
 
-⬇ Download Ticket
+Download
 
 </button>
-    }
 }
 
 <a
 class="my-bookings-btn"
 href="/Booking/MyBookings">
 
-My Bookings
+Bookings
 
 </a>
 
