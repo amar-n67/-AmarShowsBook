@@ -88,7 +88,7 @@ namespace AmarShowsBook.Controllers
         {
             if (!CanEditDeveloperProfile())
             {
-                TempData["Error"] = "Only developer mode role can edit this profile.";
+                TempData["Error"] = "Only Developer role can edit this profile.";
                 await _activityLogger.LogAsync(
                     userId: GetCurrentUserId(),
                     action: "UPDATE_DEVELOPER_PROFILE",
@@ -389,8 +389,7 @@ DO UPDATE SET
                 HttpContext.Session.GetString("UserId");
 
             return int.TryParse(userIdText, out var userId) &&
-                (_rbacService.HasAnyActiveRole(userId, "AMAR_SUPER_ADMIN", "AMAR_DEVELOPER") ||
-                 _rbacService.HasPermission(userId, "DEVELOPER", "EDIT"));
+                _rbacService.HasAnyActiveRole(userId, "AMAR_DEVELOPER");
         }
 
         private void ApplyAnnualExperienceIncrement()

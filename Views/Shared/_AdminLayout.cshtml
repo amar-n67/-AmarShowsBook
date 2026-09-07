@@ -66,7 +66,9 @@
                 transition: width 0.14s ease, height 0.14s ease, opacity 0.18s ease, background 0.14s ease;
             }
 
-            .liquid-cursor::before {
+            .liquid-cursor::before,
+            .liquid-cursor::after,
+            .liquid-cursor-trail::before {
                 content: "";
                 position: absolute;
                 pointer-events: none;
@@ -207,6 +209,7 @@
                 border-radius: 8px;
                 background: rgba(255, 255, 255, 0.86);
                 box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.72), 0 10px 26px rgba(15, 23, 42, 0.22);
+                animation: showTimeProgressPulse 0.72s ease-in-out infinite alternate;
             }
 
             html.app-page-busy .liquid-cursor::before {
@@ -214,22 +217,72 @@
                 border-radius: 6px;
                 opacity: 1;
                 background: url("/images/brand/showtime-progress-cursor.png") center / contain no-repeat;
-                animation: showTimeProgressSpin 0.9s linear infinite;
+                animation: showTimeLogoPulse 0.72s ease-in-out infinite alternate;
+            }
+
+            html.app-page-busy .liquid-cursor::after {
+                inset: 0;
+                border-radius: 8px;
+                opacity: 0.75;
+                background: linear-gradient(115deg, transparent 0 32%, rgba(255, 255, 255, 0.84) 45%, transparent 58% 100%);
+                mix-blend-mode: screen;
+                animation: showTimeProgressSweep 1s ease-in-out infinite;
             }
 
             html.app-page-busy .liquid-cursor-trail {
                 width: 54px;
                 height: 54px;
-                border: 2px solid color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 70%, transparent);
-                border-top-color: transparent;
+                border: 0;
                 border-radius: 999px;
                 background: transparent;
                 opacity: 0.9;
             }
 
+            html.app-page-busy .liquid-cursor-trail::before {
+                inset: 0;
+                border-radius: 999px;
+                opacity: 1;
+                background: conic-gradient(
+                    from 0deg,
+                    transparent 0 18%,
+                    color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 88%, white) 22% 42%,
+                    transparent 48% 100%
+                );
+                -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+                mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+                animation: showTimeProgressSpin 0.72s linear infinite;
+            }
+
             @@keyframes showTimeProgressSpin {
                 to {
                     transform: rotate(360deg);
+                }
+            }
+
+            @@keyframes showTimeProgressPulse {
+                from {
+                    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.68), 0 10px 24px rgba(15, 23, 42, 0.2);
+                }
+                to {
+                    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.42), 0 12px 34px color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 42%, transparent);
+                }
+            }
+
+            @@keyframes showTimeLogoPulse {
+                from {
+                    transform: scale(0.9);
+                }
+                to {
+                    transform: scale(1.08);
+                }
+            }
+
+            @@keyframes showTimeProgressSweep {
+                0% {
+                    transform: translateX(-120%) rotate(12deg);
+                }
+                100% {
+                    transform: translateX(120%) rotate(12deg);
                 }
             }
         }
@@ -309,6 +362,26 @@
         new { Action = "Notifications", Label = "Notifications", Url = "/Admin/Notifications", Module = "NOTIFICATION", Permission = "VIEW" },
         new { Action = "ActivityLogs", Label = "Activity Logs", Url = "/Admin/ActivityLogs", Module = "ADMIN", Permission = "VIEW" },
         new { Action = "Versions", Label = "Versions", Url = "/Admin/Versions", Module = "ADMIN", Permission = "VIEW" }
+    };
+    string adminNavIcon(string action) => action switch
+    {
+        "Dashboard" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4\" y=\"4\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"14\" y=\"4\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"4\" y=\"14\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"6\" height=\"6\" rx=\"1.5\"/></svg>",
+        "Users" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.8 19c1.2-4 9.2-4 10.4 0\"/><circle cx=\"17\" cy=\"9\" r=\"2.5\"/><path d=\"M14.5 16.2c2.5-.8 5.2 0 5.9 2.8\"/></svg>",
+        "UserAccess" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"12\" r=\"3.5\"/><path d=\"M11.5 12H21\"/><path d=\"M17 12v3\"/><path d=\"M14 12v2\"/></svg>",
+        "Roles" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 19 7v5.5c0 3.6-2.5 6.1-7 8-4.5-1.9-7-4.4-7-8V7Z\"/><path d=\"m8.5 12 2.3 2.3 4.7-5\"/></svg>",
+        "ManageShows" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"14\" rx=\"2\"/><path d=\"M4 9h16\"/><path d=\"m10 12 5 3-5 3Z\"/><path d=\"m7 5 2 4\"/><path d=\"m13 5 2 4\"/></svg>",
+        "ContentManager" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><ellipse cx=\"12\" cy=\"6\" rx=\"7\" ry=\"3\"/><path d=\"M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6\"/><path d=\"M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6\"/></svg>",
+        "Bookings" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z\"/><path d=\"M9 8v8\"/></svg>",
+        "Security" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 10V8a4 4 0 0 1 8 0v2\"/><path d=\"M12 14v2\"/></svg>",
+        "Transactions" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"6\" width=\"17\" height=\"12\" rx=\"2\"/><path d=\"M3.5 10h17\"/><path d=\"M7 15h3\"/></svg>",
+        "Refunds" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 8H4v4\"/><path d=\"M4 12a8 8 0 1 0 2.3-5.7Z\"/><path d=\"M12 8v5l3 2\"/></svg>",
+        "CouponUsage" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z\"/><path d=\"m9 15 6-6\"/><path d=\"M9 9h.01\"/><path d=\"M15 15h.01\"/></svg>",
+        "Wallets" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 7.5A2.5 2.5 0 0 1 6.5 5H18a2 2 0 0 1 2 2v11H6.5A2.5 2.5 0 0 1 4 15.5Z\"/><path d=\"M16 12h5v4h-5a2 2 0 0 1 0-4Z\"/><path d=\"M16.5 14h.01\"/></svg>",
+        "Notifications" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 10a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7\"/><path d=\"M10 21h4\"/></svg>",
+        "ActivityLogs" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7\"/><path d=\"M3 5v6h6\"/><path d=\"M12 7v5l3 2\"/></svg>",
+        "SupportDetails" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12a8 8 0 0 1 16 0v4a2 2 0 0 1-2 2h-2\"/><path d=\"M6 12v3a2 2 0 0 0 2 2h1v-7H8a2 2 0 0 0-2 2Z\"/><path d=\"M18 12v3a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2Z\"/><path d=\"M12 18h4\"/></svg>",
+        "Versions" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 13V7a2 2 0 0 0-2-2h-6l-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6\"/><path d=\"m16 19 2 2 4-5\"/></svg>",
+        _ => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><path d=\"M12 8v8\"/><path d=\"M8 12h8\"/></svg>"
     };
     var showAdminFilters = new[]
     {
@@ -416,13 +489,19 @@
 
                 if (item.Action == "Versions" && canEditSupportDetails)
                 {
-                    <button type="button" class="admin-nav-button" onclick="openAdminSupportDetails()">
-                        <span class="admin-nav-label">Support Details</span>
+                    <button type="button" class="admin-nav-button" title="Support Details" aria-label="Support Details" onclick="openAdminSupportDetails()">
+                        <span class="admin-nav-main">
+                            <span class="admin-nav-icon">@Html.Raw(adminNavIcon("SupportDetails"))</span>
+                            <span class="admin-nav-label">Support Details</span>
+                        </span>
                     </button>
                 }
 
-                <a class="@(isActive ? "active" : "")" href="@item.Url">
-                    <span class="admin-nav-label">@item.Label</span>
+                <a class="@(isActive ? "active" : "")" href="@item.Url" title="@item.Label" aria-label="@item.Label">
+                    <span class="admin-nav-main">
+                        <span class="admin-nav-icon">@Html.Raw(adminNavIcon(item.Action))</span>
+                        <span class="admin-nav-label">@item.Label</span>
+                    </span>
                     @if (item.Action == "Notifications" && adminNotificationCount > 0)
                     {
                         <span class="admin-nav-count" title="Pending admin notifications">
@@ -1734,11 +1813,21 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <script>
 (function () {
-    function contactIconSvg(type) {
-        if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
-        if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
-        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
-    }
+	    function contactIconSvg(type) {
+	        if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+	        if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
+	        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
+	    }
+
+	    function actionGlyphSvg(type) {
+	        const icons = {
+	            summary: '<path d="M5 17 9 9l4 5 6-9"/><path d="M5 19h14"/><circle cx="9" cy="9" r="1.3"/><circle cx="13" cy="14" r="1.3"/>',
+	            logout: '<path d="M6 5.5h8v13H6Z"/><path d="M12 12h8"/><path d="m17 8.5 3 3.5-3 3.5"/>',
+	            profile: '<path d="M12 5c3 0 5 2 5 5s-2 5-5 5-5-2-5-5 2-5 5-5Z"/><path d="M5.5 19c3.8-2.3 9.2-2.3 13 0"/>',
+	            developer: '<path d="M7 7.5 3.5 12 7 16.5"/><path d="M17 7.5 20.5 12 17 16.5"/><path d="M14 5 10 19"/>'
+	        };
+	        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true">' + (icons[type] || icons.summary) + '</svg>';
+	    }
 
     const iconMap = new Map([
         ["help", contactIconSvg("call")],
@@ -1746,8 +1835,8 @@ document.addEventListener("DOMContentLoaded", function () {
         ["write us", contactIconSvg("mail")],
         ["whatsapp us", contactIconSvg("whatsapp")],
         ["call us", contactIconSvg("call")],
-        ["summary", "📊"],
-        ["admin summary", "📊"],
+	        ["summary", actionGlyphSvg("summary")],
+	        ["admin summary", actionGlyphSvg("summary")],
         ["search", "🔎"],
         ["search records", "🔎"],
         ["export", "⬇"],
@@ -1776,9 +1865,9 @@ document.addEventListener("DOMContentLoaded", function () {
         ["suspend", "⏸"],
         ["back to dashboard", "←"],
         ["back to transactions", "←"],
-        ["logout", "⏻"],
-        ["my profile", "👤"],
-        ["developer profile", "🧩"]
+	        ["logout", actionGlyphSvg("logout")],
+	        ["my profile", actionGlyphSvg("profile")],
+	        ["developer profile", actionGlyphSvg("developer")]
     ]);
 
     function normalizedText(element) {
@@ -1897,15 +1986,15 @@ document.addEventListener("DOMContentLoaded", function () {
     left: 0 !important;
 }
 
-@@media (max-width: 820px) {
-    .admin-sidebar-toggle {
-        left: 0 !important;
-    }
+	@@media (max-width: 820px) {
+	    .admin-sidebar-toggle {
+	        left: 0 !important;
+	    }
 
-    .admin-wrapper.nav-collapsed .admin-sidebar-toggle {
-        left: calc(min(82vw, 300px) - 14px) !important;
-    }
-}
+	    .admin-wrapper.nav-collapsed .admin-sidebar-toggle {
+	        left: 62px !important;
+	    }
+	}
 
 button:not(.admin-sidebar-toggle):not(:disabled):not(.disabled):not([aria-disabled="true"]),
 a.btn:not(.disabled):not([aria-disabled="true"]),

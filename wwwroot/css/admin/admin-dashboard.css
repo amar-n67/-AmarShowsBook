@@ -15,6 +15,7 @@
     --admin-warning: #9a6a16;
     --admin-danger: #b33d58;
     --admin-shadow: 0 18px 46px rgba(23, 25, 35, 0.13);
+    --admin-menu-icon-color: #ffffff;
 }
 
 html[data-theme="white"] {
@@ -34,6 +35,7 @@ html[data-theme="white"] {
     --admin-warning: #b45309;
     --admin-danger: #dc2626;
     --admin-shadow: 0 18px 46px rgba(17, 24, 39, 0.1);
+    --admin-menu-icon-color: #ffffff;
 }
 
 html[data-theme="system"] {
@@ -52,6 +54,7 @@ html[data-theme="system"] {
     --admin-success: #1d7d79;
     --admin-warning: #a37c40;
     --admin-danger: #9f3a3a;
+    --admin-menu-icon-color: #ffffff;
 }
 
 html[data-theme="dark"] {
@@ -72,6 +75,7 @@ html[data-theme="dark"] {
     --admin-warning: #fbbf24;
     --admin-danger: #dc4c64;
     --admin-shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
+    --admin-menu-icon-color: #ffe7a3;
 }
 
 html[data-theme="cinema"] {
@@ -92,6 +96,7 @@ html[data-theme="cinema"] {
     --admin-warning: #b98933;
     --admin-danger: #bd3e4b;
     --admin-shadow: 0 20px 52px rgba(22, 59, 77, 0.18);
+    --admin-menu-icon-color: #fff4c7;
 }
 
     box-sizing: border-box;
@@ -491,6 +496,38 @@ html[data-theme="cinema"] .admin-sidebar {
     transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border 0.18s ease;
 }
 
+.admin-nav-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.admin-nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 0;
+    background: transparent;
+    color: var(--admin-menu-icon-color);
+    box-shadow: none;
+}
+
+.admin-nav-icon svg {
+    width: 21px;
+    height: 21px;
+    stroke: currentColor;
+    stroke-width: 2.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    filter: none;
+}
+
 .admin-nav-label {
     min-width: 0;
     overflow: hidden;
@@ -527,6 +564,16 @@ html[data-theme="cinema"] .admin-sidebar {
     border-color: rgba(255,209,102,0.18);
     color: #ffd166;
     transform: translateX(3px);
+}
+
+.admin-nav a:hover .admin-nav-icon,
+.admin-nav a.active .admin-nav-icon,
+.admin-nav-button:hover .admin-nav-icon,
+.admin-nav-button:focus-visible .admin-nav-icon {
+    border-color: transparent;
+    background: transparent;
+    color: currentColor;
+    box-shadow: none;
 }
 
 .admin-nav a.active {
@@ -1222,8 +1269,15 @@ html[data-theme="cinema"] .admin-topbar {
     }
 
     .admin-wrapper.nav-collapsed .admin-sidebar {
-        width: min(82vw, 300px);
-        padding: 22px 18px;
+        width: 76px;
+        height: 100dvh;
+        max-height: 100dvh;
+        padding: 18px 10px;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom));
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
     }
 
     .admin-wrapper:not(.nav-collapsed) .admin-sidebar {
@@ -1233,6 +1287,97 @@ html[data-theme="cinema"] .admin-topbar {
     .admin-wrapper.nav-collapsed .admin-sidebar {
         transform: translateX(0);
         box-shadow: 18px 0 46px rgba(23, 25, 35, 0.28);
+    }
+
+    .admin-wrapper.nav-collapsed .admin-logo {
+        justify-content: center;
+        padding-inline: 0;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-logo-image {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-logo-text {
+        position: absolute;
+        left: calc(100% + 10px);
+        top: 24px;
+        z-index: 2147483001;
+        max-width: 190px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: #111827;
+        color: #fff;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.24);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateX(-4px);
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-logo:hover .admin-logo-text,
+    .admin-wrapper.nav-collapsed .admin-logo:focus-within .admin-logo-text {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(0);
+    }
+
+    .admin-wrapper.nav-collapsed .admin-nav {
+        gap: 8px;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-nav a,
+    .admin-wrapper.nav-collapsed .admin-nav-button {
+        position: relative;
+        justify-content: center;
+        min-height: 48px;
+        padding: 9px;
+        overflow: hidden;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-nav-main {
+        justify-content: center;
+        gap: 0;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-nav-label {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        z-index: 2147483001;
+        max-width: 56px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: #111827;
+        color: #fff;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.24);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translate(-50%, -50%) scale(0.96);
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+    }
+
+    .admin-wrapper.nav-collapsed .admin-nav a:hover .admin-nav-label,
+    .admin-wrapper.nav-collapsed .admin-nav a:focus-visible .admin-nav-label,
+    .admin-wrapper.nav-collapsed .admin-nav-button:hover .admin-nav-label,
+    .admin-wrapper.nav-collapsed .admin-nav-button:focus-visible .admin-nav-label {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    .admin-wrapper.nav-collapsed .admin-nav-count {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        font-size: 0.64rem;
     }
 
     .admin-sidebar-toggle {
@@ -1246,7 +1391,7 @@ html[data-theme="cinema"] .admin-topbar {
     }
 
     .admin-wrapper.nav-collapsed .admin-sidebar-toggle {
-        left: calc(min(82vw, 300px) - 14px);
+        left: 62px;
     }
 
     .admin-sidebar-toggle:hover,

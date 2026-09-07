@@ -27,6 +27,7 @@
     --app-warning: #9a6a16;
     --app-soft: rgba(255, 255, 255, 0.58);
     --app-cursor-color: #139487;
+    --app-menu-icon-color: #153f59;
     --app-page-surface: #fffdf7;
     --app-page-text: #22252f;
     --app-popup-surface: #fffdf7;
@@ -59,6 +60,7 @@ html[data-theme="system"] {
     --app-warning: #a37c40;
     --app-soft: rgba(249, 251, 255, 0.62);
     --app-cursor-color: #315f9f;
+    --app-menu-icon-color: #fff8dd;
     --app-page-surface: #f9fbff;
     --app-page-text: #1f2937;
     --app-popup-surface: #f9fbff;
@@ -91,6 +93,7 @@ html[data-theme="white"] {
     --app-warning: #b45309;
     --app-soft: rgba(255, 255, 255, 0.72);
     --app-cursor-color: #3858d6;
+    --app-menu-icon-color: #1d4ed8;
     --app-page-surface: #ffffff;
     --app-page-text: #111827;
     --app-popup-surface: #ffffff;
@@ -124,6 +127,7 @@ html[data-theme="dark"] {
     --app-warning: #fbbf24;
     --app-soft: rgba(248, 250, 252, 0.08);
     --app-cursor-color: #7a8cff;
+    --app-menu-icon-color: #ffe7a3;
     --app-page-surface: #2a2c38;
     --app-page-text: #f9fafb;
     --app-popup-surface: #2a2c38;
@@ -157,6 +161,7 @@ html[data-theme="cinema"] {
     --app-warning: #b98933;
     --app-soft: rgba(248, 250, 246, 0.62);
     --app-cursor-color: #168f98;
+    --app-menu-icon-color: #fff4c7;
     --app-page-surface: #fffefa;
     --app-page-text: #182536;
     --app-popup-surface: #fffefa;
@@ -384,6 +389,7 @@ html[data-theme="cinema"] body {
 	        border-radius: 8px;
 	        background: rgba(255, 255, 255, 0.86);
 	        box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.72), 0 10px 26px rgba(15, 23, 42, 0.22);
+	        animation: showTimeProgressPulse 0.72s ease-in-out infinite alternate;
 	    }
 
 	    html.app-page-busy .liquid-cursor::before {
@@ -391,22 +397,72 @@ html[data-theme="cinema"] body {
 	        border-radius: 6px;
 	        opacity: 1;
 	        background: url("/images/brand/showtime-progress-cursor.png") center / contain no-repeat;
-	        animation: showTimeProgressSpin 0.9s linear infinite;
+	        animation: showTimeLogoPulse 0.72s ease-in-out infinite alternate;
+	    }
+
+	    html.app-page-busy .liquid-cursor::after {
+	        inset: 0;
+	        border-radius: 8px;
+	        opacity: 0.75;
+	        background: linear-gradient(115deg, transparent 0 32%, rgba(255, 255, 255, 0.84) 45%, transparent 58% 100%);
+	        mix-blend-mode: screen;
+	        animation: showTimeProgressSweep 1s ease-in-out infinite;
 	    }
 
 	    html.app-page-busy .liquid-cursor-trail {
 	        width: 54px;
 	        height: 54px;
-	        border: 2px solid color-mix(in srgb, var(--app-cursor-color, var(--app-accent-strong)) 70%, transparent);
-	        border-top-color: transparent;
+	        border: 0;
 	        border-radius: 999px;
 	        background: transparent;
 	        opacity: 0.9;
 	    }
 
+	    html.app-page-busy .liquid-cursor-trail::before {
+	        inset: 0;
+	        border-radius: 999px;
+	        opacity: 1;
+	        background: conic-gradient(
+	            from 0deg,
+	            transparent 0 18%,
+	            color-mix(in srgb, var(--app-cursor-color, var(--app-accent-strong)) 88%, white) 22% 42%,
+	            transparent 48% 100%
+	        );
+	        -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+	        mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+	        animation: showTimeProgressSpin 0.72s linear infinite;
+	    }
+
 	    @@keyframes showTimeProgressSpin {
 	        to {
 	            transform: rotate(360deg);
+	        }
+	    }
+
+	    @@keyframes showTimeProgressPulse {
+	        from {
+	            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.68), 0 10px 24px rgba(15, 23, 42, 0.2);
+	        }
+	        to {
+	            box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.42), 0 12px 34px color-mix(in srgb, var(--app-cursor-color, var(--app-accent-strong)) 42%, transparent);
+	        }
+	    }
+
+	    @@keyframes showTimeLogoPulse {
+	        from {
+	            transform: scale(0.9);
+	        }
+	        to {
+	            transform: scale(1.08);
+	        }
+	    }
+
+	    @@keyframes showTimeProgressSweep {
+	        0% {
+	            transform: translateX(-120%) rotate(12deg);
+	        }
+	        100% {
+	            transform: translateX(120%) rotate(12deg);
 	        }
 	    }
 	}
@@ -907,13 +963,9 @@ html[data-theme="dark"] [style*="color: black"] {
 
 .film-mobile-menu-icon,
 .film-nav-icon {
-    background:
-        radial-gradient(circle at 32% 24%, rgba(255,255,255,.9), transparent 32%),
-        linear-gradient(145deg, color-mix(in srgb, var(--app-accent) 42%, #fff), color-mix(in srgb, var(--app-accent-strong) 28%, var(--app-primary)));
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.7),
-        inset 0 -9px 14px rgba(15,23,42,.14),
-        0 8px 16px rgba(15,23,42,.2);
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 
 .film-mobile-menu-icon {
@@ -921,8 +973,8 @@ html[data-theme="dark"] [style*="color: black"] {
     place-items: center;
     width: 24px;
     height: 24px;
-    border-radius: 8px;
-    color: #231f20;
+    border-radius: 6px;
+    color: currentColor;
 }
 
 .film-menu {
@@ -1057,11 +1109,11 @@ html[data-theme="dark"] [style*="color: black"] {
     font-weight: 950;
 }
 
-.film-nav-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
+	    .film-nav-btn {
+	        display: inline-flex;
+	        align-items: center;
+	        justify-content: center;
+	        gap: 8px;
     position: relative;
     min-width: 0;
     min-height: 42px;
@@ -1088,23 +1140,35 @@ html[data-theme="dark"] [style*="color: black"] {
     outline: none;
 }
 
-.film-nav-icon {
-    display: none;
-    align-items: center;
-    justify-content: center;
+	.film-nav-icon {
+	    display: inline-flex;
+	    align-items: center;
+	    justify-content: center;
     flex: 0 0 auto;
     width: 28px;
     height: 28px;
-    border-radius: 11px;
-    color: var(--app-nav-text);
-    font-size: 1rem;
-    line-height: 1;
-}
+	    border-radius: 6px;
+	    color: var(--app-menu-icon-color);
+	    font-size: 1rem;
+	    line-height: 1;
+	}
+
+	.film-nav-icon svg,
+	.film-mobile-menu-icon svg {
+	    width: 18px;
+	    height: 18px;
+	    stroke: currentColor;
+	    stroke-width: 2;
+	    stroke-linecap: round;
+	    stroke-linejoin: round;
+	    fill: none;
+	}
 
 .film-nav-btn:hover .film-nav-icon,
 .film-nav-btn:focus-visible .film-nav-icon {
-    background: rgba(35,31,32,0.12);
-    color: #231f20;
+    background: transparent;
+    border-color: transparent;
+    color: currentColor;
 }
 
 .film-nav-label {
@@ -1126,11 +1190,12 @@ html[data-theme="dark"] [style*="color: black"] {
     text-overflow: ellipsis;
 }
 
-.film-nav-btn:hover .film-nav-label,
-.film-nav-btn:focus-visible .film-nav-label {
-    opacity: 1;
-    transform: none;
-}
+	    .film-nav-btn:hover .film-nav-label,
+	    .film-nav-btn:focus-visible .film-nav-label,
+	    .film-support-menu.support-open .film-nav-label {
+	        opacity: 1;
+	        transform: none;
+	    }
 
 .film-support-menu {
     position: relative;
@@ -1224,8 +1289,8 @@ html[data-theme="dark"] [style*="color: black"] {
 }
 
 .film-profile-btn .film-nav-icon {
-    color: #231f20;
-    background: rgba(35,31,32,0.1);
+    color: currentColor;
+    background: transparent;
 }
 
 .film-logout-btn {
@@ -1238,8 +1303,8 @@ html[data-theme="dark"] [style*="color: black"] {
 }
 
 .film-logout-btn .film-nav-icon {
-    background: rgba(255,255,255,0.18);
-    color: #fff;
+    background: transparent;
+    color: currentColor;
 }
 
 .theme-switcher {
@@ -1444,8 +1509,7 @@ html[data-theme="dark"] [style*="color: black"] {
 }
 
 .contact-svg-icon,
-.action-icon-inline svg,
-.film-nav-icon svg {
+.action-icon-inline svg {
     display: block;
     width: 1em;
     height: 1em;
@@ -1454,6 +1518,19 @@ html[data-theme="dark"] [style*="color: black"] {
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+.film-nav-icon svg,
+.film-mobile-menu-icon svg {
+    display: block;
+    width: 21px;
+    height: 21px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: none;
 }
 
 .film-support-dropdown a,
@@ -1577,7 +1654,10 @@ html[data-theme="system"] .film-nav-btn {
 
 html[data-theme="white"] .film-nav-icon,
 html[data-theme="system"] .film-nav-icon {
-    background: rgba(17,24,39,0.08);
+    background: transparent;
+    border-color: transparent;
+    color: var(--app-menu-icon-color);
+    box-shadow: none;
 }
 
 @@media (max-width: 1180px) {
@@ -1672,25 +1752,50 @@ html[data-theme="system"] .film-nav-icon {
         transform: translateY(0);
     }
 
-    .film-nav-icon {
-        display: none;
-    }
+	.film-nav-label {
+	    position: absolute;
+	    left: 50%;
+	    top: calc(100% + 8px);
+	    z-index: 1200;
+	    display: block;
+	    opacity: 0;
+	    pointer-events: none;
+	    transform: translateX(-50%) translateY(-4px);
+	    max-width: min(220px, calc(100vw - 32px));
+	    padding: 7px 9px;
+	    border: 1px solid color-mix(in srgb, var(--app-nav-text) 20%, transparent);
+	    border-radius: 8px;
+	    background: color-mix(in srgb, var(--app-card) 96%, white 4%);
+	    color: var(--app-text);
+	    overflow: hidden;
+	    text-overflow: ellipsis;
+	    visibility: hidden;
+	    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+	}
 
-    .film-nav-label {
-        position: static;
-        display: inline;
-        opacity: 1;
-        pointer-events: auto;
-        transform: none;
-        max-width: 100%;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        color: inherit;
-        box-shadow: none;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+	    .film-nav-btn:hover .film-nav-label,
+	    .film-nav-btn:focus-visible .film-nav-label,
+	    .film-support-menu.support-open .film-nav-label {
+	        opacity: 1;
+	        transform: translateX(-50%) translateY(0);
+	        visibility: visible;
+	    }
+
+	    .film-nav-btn {
+	        aspect-ratio: 1;
+	        min-width: 48px;
+	        width: 48px;
+	        padding: 8px;
+	    }
+
+	    .film-nav-icon {
+	        width: 30px;
+	        height: 30px;
+	    }
+
+	    .film-navigation-links {
+	        grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+	    }
 
     .film-user-card {
         width: 100%;
@@ -1720,9 +1825,12 @@ html[data-theme="system"] .film-nav-icon {
 }
 
 @@media (max-width: 430px) {
-    .film-navigation-links,
     .theme-switcher {
         grid-template-columns: 1fr;
+    }
+
+    .film-navigation-links {
+        grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
     }
 
         .app-version-badge {
@@ -2512,9 +2620,22 @@ z-index:9999;">
         && !(currentController == "Transaction" && currentAction == "Details")
         && !(currentController == "Profile" && currentAction == "MyProfile")
         && !(currentController == "Wallet" && currentAction == "MyWallet");
-    var currentVersion = "1.0.0";
+	    var currentVersion = "1.0.0";
+	    string navIcon(string icon) => icon switch
+	    {
+	        "home" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 10.5 9-7 9 7\"/><path d=\"M5 10v10h14V10\"/><path d=\"M9.5 20v-6h5v6\"/></svg>",
+	        "ticket" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z\"/><path d=\"M9 8v8\"/></svg>",
+	        "card" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"6\" width=\"17\" height=\"12\" rx=\"2\"/><path d=\"M3.5 10h17\"/><path d=\"M7 15h3\"/></svg>",
+	        "wallet" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 7.5A2.5 2.5 0 0 1 6.5 5H18a2 2 0 0 1 2 2v11H6.5A2.5 2.5 0 0 1 4 15.5Z\"/><path d=\"M16 12h5v4h-5a2 2 0 0 1 0-4Z\"/><path d=\"M16.5 14h.01\"/></svg>",
+	        "chart" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4\" y=\"4\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"14\" y=\"4\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"4\" y=\"14\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"6\" height=\"6\" rx=\"1.5\"/></svg>",
+	        "user" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4.5 20c1.7-4 13.3-4 15 0\"/></svg>",
+	        "code" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"4.5\" width=\"17\" height=\"15\" rx=\"2\"/><path d=\"m9 10-3 2 3 2\"/><path d=\"m15 10 3 2-3 2\"/><path d=\"m13 8-2 8\"/></svg>",
+	        "logout" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10\"/><path d=\"M13 12h7\"/><path d=\"m17 8 4 4-4 4\"/></svg>",
+	        "menu" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 7h16\"/><path d=\"M4 12h16\"/><path d=\"M4 17h16\"/></svg>",
+	        _ => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><path d=\"M12 8v8\"/><path d=\"M8 12h8\"/></svg>"
+	    };
 
-    try
+	    try
     {
         currentVersion =
             AppDb.ApplicationVersions
@@ -2544,7 +2665,7 @@ z-index:9999;">
         @if (isLoggedIn)
         {
             <button class="film-mobile-menu-btn" type="button" aria-expanded="false" aria-controls="filmMenu" data-film-menu-button onclick="toggleFilmMenu(this)">
-                <span class="film-mobile-menu-icon" aria-hidden="true">☰</span>
+                <span class="film-mobile-menu-icon" aria-hidden="true">@Html.Raw(navIcon("menu"))</span>
                 <span>Menu</span>
             </button>
         }
@@ -2563,10 +2684,10 @@ z-index:9999;">
                     <div class="film-navigation-links" aria-label="Main navigation">
                         @if (!isDashboardOnlyAdmin)
                         {
-                            <a class="film-nav-btn" href="/Home/ShowTime" title="Home" aria-label="Home"><span class="film-nav-icon">🏠</span><span class="film-nav-label">Home</span></a>
-                            <a class="film-nav-btn" href="/Booking/MyBookings" title="My Bookings" aria-label="My Bookings"><span class="film-nav-icon">🎟</span><span class="film-nav-label">My Bookings</span></a>
-                            <a class="film-nav-btn" href="/Transaction/History" title="My Transactions" aria-label="My Transactions"><span class="film-nav-icon">💳</span><span class="film-nav-label">My Transactions</span></a>
-                            <a class="film-nav-btn" href="/Wallet/MyWallet" title="Wallet" aria-label="Wallet"><span class="film-nav-icon">💰</span><span class="film-nav-label">Wallet</span></a>
+	                            <a class="film-nav-btn" href="/Home/ShowTime" title="Home" aria-label="Home"><span class="film-nav-icon">@Html.Raw(navIcon("home"))</span><span class="film-nav-label">Home</span></a>
+	                            <a class="film-nav-btn" href="/Booking/MyBookings" title="My Bookings" aria-label="My Bookings"><span class="film-nav-icon">@Html.Raw(navIcon("ticket"))</span><span class="film-nav-label">My Bookings</span></a>
+	                            <a class="film-nav-btn" href="/Transaction/History" title="My Transactions" aria-label="My Transactions"><span class="film-nav-icon">@Html.Raw(navIcon("card"))</span><span class="film-nav-label">My Transactions</span></a>
+	                            <a class="film-nav-btn" href="/Wallet/MyWallet" title="Wallet" aria-label="Wallet"><span class="film-nav-icon">@Html.Raw(navIcon("wallet"))</span><span class="film-nav-label">Wallet</span></a>
                             <div class="film-support-menu">
                                 <button class="film-nav-btn film-support-trigger"
                                         type="button"
@@ -2587,18 +2708,18 @@ z-index:9999;">
                         }
                         @if (canOpenAdmin)
                         {
-                            <a class="film-nav-btn" href="/Admin/Dashboard" title="Admin Dashboard" aria-label="Admin Dashboard"><span class="film-nav-icon">📊</span><span class="film-nav-label">Admin Dashboard</span></a>
-                        }
-                        <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile" title="My Profile" aria-label="My Profile"><span class="film-nav-icon">👤</span><span class="film-nav-label">My Profile</span></a>
-                        @if (canOpenDeveloper)
-                        {
-                            <a class="film-nav-btn film-profile-btn" href="/Developer/Profile" title="Developer Profile" aria-label="Developer Profile"><span class="film-nav-icon">🧩</span><span class="film-nav-label">Developer Profile</span></a>
-                        }
+	                            <a class="film-nav-btn" href="/Admin/Dashboard" title="Admin Dashboard" aria-label="Admin Dashboard"><span class="film-nav-icon">@Html.Raw(navIcon("chart"))</span><span class="film-nav-label">Admin Dashboard</span></a>
+	                        }
+	                        <a class="film-nav-btn film-profile-btn" href="/Profile/MyProfile" title="My Profile" aria-label="My Profile"><span class="film-nav-icon">@Html.Raw(navIcon("user"))</span><span class="film-nav-label">My Profile</span></a>
+	                        @if (canOpenDeveloper)
+	                        {
+	                            <a class="film-nav-btn film-profile-btn" href="/Developer/Profile" title="Developer Profile" aria-label="Developer Profile"><span class="film-nav-icon">@Html.Raw(navIcon("code"))</span><span class="film-nav-label">Developer Profile</span></a>
+	                        }
                         <a class="film-nav-btn film-logout-btn"
                            href="/Auth/Logout"
                            title="Logout"
                            aria-label="Logout"
-                           onclick="return confirmLogout()"><span class="film-nav-icon">⏻</span><span class="film-nav-label">Logout</span></a>
+	                           onclick="return confirmLogout()"><span class="film-nav-icon">@Html.Raw(navIcon("logout"))</span><span class="film-nav-label">Logout</span></a>
                     </div>
 
                     <div class="film-user-card">
@@ -4476,11 +4597,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script>
 (function () {
-    function contactIconSvg(type) {
-        if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
-        if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
-        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
-    }
+	    function contactIconSvg(type) {
+	        if (type === "mail") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>';
+	        if (type === "whatsapp") return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.4-4.8A8.5 8.5 0 1 1 7.8 19L3 21Z"/><path d="M9.2 8.8c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.8 1.8c.1.3.1.5-.1.7l-.4.5c-.1.1-.2.3 0 .5.4.8 1.1 1.5 2.1 2 .3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5 0 .6-.4 1.4-.9 1.7-.5.3-1.8.6-4.1-.5-3.4-1.6-5.5-4.7-5.7-6.1-.2-1 .3-1.6.7-1.9.2-.2.5-.3.8-.3Z"/></svg>';
+	        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg>';
+	    }
+
+	    function actionGlyphSvg(type) {
+	        const icons = {
+	            book: '<path d="M5 8c4-3 10-3 14 0-2 2.7-2 5.3 0 8-4 3-10 3-14 0 2-2.7 2-5.3 0-8Z"/><circle cx="14.5" cy="12" r="1.7"/>',
+	            summary: '<path d="M5 17 9 9l4 5 6-9"/><path d="M5 19h14"/><circle cx="9" cy="9" r="1.3"/><circle cx="13" cy="14" r="1.3"/>',
+	            ticket: '<path d="M5 8c4-3 10-3 14 0-2 2.7-2 5.3 0 8-4 3-10 3-14 0 2-2.7 2-5.3 0-8Z"/><path d="M9 8.8v6.4"/>'
+	        };
+	        return '<svg class="contact-svg-icon" viewBox="0 0 24 24" aria-hidden="true">' + (icons[type] || icons.summary) + '</svg>';
+	    }
 
     const iconMap = new Map([
         ["help", contactIconSvg("call")],
@@ -4488,18 +4618,18 @@ document.addEventListener("DOMContentLoaded", function () {
         ["write us", contactIconSvg("mail")],
         ["whatsapp us", contactIconSvg("whatsapp")],
         ["call us", contactIconSvg("call")],
-        ["book", "🎟"],
+	        ["book", actionGlyphSvg("book")],
         ["seats", "💺"],
         ["upcoming", "📅"],
         ["theme", "◐"],
         ["cursor", "◉"],
-        ["summary", "📊"],
+	        ["summary", actionGlyphSvg("summary")],
         ["search", "🔎"],
         ["search records", "🔎"],
         ["export", "⬇"],
         ["access", "🔐"],
         ["view", "👁"],
-        ["view ticket", "🎟"],
+	        ["view ticket", actionGlyphSvg("ticket")],
         ["download", "⬇"],
         ["print", "🖨"],
         ["save", "✓"],
