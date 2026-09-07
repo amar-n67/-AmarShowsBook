@@ -66,6 +66,14 @@
                 transition: width 0.14s ease, height 0.14s ease, opacity 0.18s ease, background 0.14s ease;
             }
 
+            .liquid-cursor::before {
+                content: "";
+                position: absolute;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.14s ease;
+            }
+
             .liquid-cursor-trail {
                 width: 34px;
                 height: 34px;
@@ -178,6 +186,50 @@
                 }
                 50% {
                     border-radius: 42% 62% 44% 58%;
+                }
+            }
+
+            html.app-page-busy,
+            html.app-page-busy body,
+            html.app-page-busy a,
+            html.app-page-busy button,
+            html.app-page-busy input,
+            html.app-page-busy select,
+            html.app-page-busy textarea,
+            html.app-page-busy [role="button"] {
+                cursor: url("/images/brand/showtime-progress-cursor.png") 16 16, progress !important;
+            }
+
+            html.app-page-busy .liquid-cursor {
+                width: 34px;
+                height: 34px;
+                border: 0;
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.86);
+                box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.72), 0 10px 26px rgba(15, 23, 42, 0.22);
+            }
+
+            html.app-page-busy .liquid-cursor::before {
+                inset: 3px;
+                border-radius: 6px;
+                opacity: 1;
+                background: url("/images/brand/showtime-progress-cursor.png") center / contain no-repeat;
+                animation: showTimeProgressSpin 0.9s linear infinite;
+            }
+
+            html.app-page-busy .liquid-cursor-trail {
+                width: 54px;
+                height: 54px;
+                border: 2px solid color-mix(in srgb, var(--app-cursor-color, var(--admin-teal)) 70%, transparent);
+                border-top-color: transparent;
+                border-radius: 999px;
+                background: transparent;
+                opacity: 0.9;
+            }
+
+            @@keyframes showTimeProgressSpin {
+                to {
+                    transform: rotate(360deg);
                 }
             }
         }
@@ -1573,10 +1625,54 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     };
 
-    function setActionState(event) {
-        const action = event.target.closest("a,button,input,select,textarea,label,[role='button'],.dashboard-card,.admin-nav a,.admin-icon-btn");
-        root.classList.toggle("cursor-action", Boolean(action));
-    }
+	    function setActionState(event) {
+	        const action = event.target.closest("a,button,input,select,textarea,label,[role='button'],.dashboard-card,.admin-nav a,.admin-icon-btn");
+	        root.classList.toggle("cursor-action", Boolean(action));
+	    }
+
+	    function showProgressCursor(duration) {
+	        root.classList.remove("cursor-hidden");
+	        root.classList.add("app-page-busy");
+	        window.clearTimeout(window.__showTimeProgressTimer);
+	        if (duration) {
+	            window.__showTimeProgressTimer = window.setTimeout(hideProgressCursor, duration);
+	        }
+	    }
+
+	    function hideProgressCursor() {
+	        root.classList.remove("app-page-busy");
+	    }
+
+	    function isSamePageHash(url) {
+	        return url.origin === window.location.origin &&
+	            url.pathname === window.location.pathname &&
+	            url.search === window.location.search &&
+	            Boolean(url.hash);
+	    }
+
+	    function shouldShowProgressForLink(link, event) {
+	        if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+	            return false;
+	        }
+
+	        const href = link.getAttribute("href");
+	        if (!href || href === "#" || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+	            return false;
+	        }
+
+	        if (link.target && link.target.toLowerCase() !== "_self") {
+	            return false;
+	        }
+
+	        try {
+	            return !isSamePageHash(new URL(href, window.location.href));
+	        } catch {
+	            return false;
+	        }
+	    }
+
+	    window.showTimeProgressCursor = showProgressCursor;
+	    window.hideShowTimeProgressCursor = hideProgressCursor;
 
     function moveCursor(event) {
         cursorX = event.clientX;
@@ -1607,10 +1703,33 @@ document.addEventListener("DOMContentLoaded", function () {
         applyCursorStyle(localStorage.getItem("showTimeCursor") || "liquid");
     });
 
-    document.addEventListener("mousemove", moveCursor, { passive: true });
-    document.addEventListener("mouseleave", function () {
-        root.classList.add("cursor-hidden");
-    });
+	    document.addEventListener("mousemove", moveCursor, { passive: true });
+	    document.addEventListener("mouseover", setActionState, true);
+	    document.addEventListener("mouseout", setActionState, true);
+	    document.addEventListener("click", function (event) {
+	        const link = event.target.closest("a");
+	        if (shouldShowProgressForLink(link, event)) {
+	            showProgressCursor(1600);
+	            return;
+	        }
+
+	        const submitButton = event.target.closest("button[type='submit'],input[type='submit']");
+	        if (submitButton && !submitButton.disabled) {
+	            showProgressCursor(2200);
+	        }
+	    }, true);
+	    document.addEventListener("submit", function (event) {
+	        if (!event.defaultPrevented) {
+	            showProgressCursor(2400);
+	        }
+	    }, true);
+	    window.addEventListener("beforeunload", function () {
+	        showProgressCursor();
+	    });
+	    window.addEventListener("pageshow", hideProgressCursor);
+	    document.addEventListener("mouseleave", function () {
+	        root.classList.add("cursor-hidden");
+	    });
 })();
 </script>
 <script>
