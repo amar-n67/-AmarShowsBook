@@ -27,7 +27,7 @@
     --app-warning: #9a6a16;
     --app-soft: rgba(255, 255, 255, 0.58);
     --app-cursor-color: #139487;
-    --app-menu-icon-color: #153f59;
+    --app-menu-icon-color: #0f766e;
     --app-page-surface: #fffdf7;
     --app-page-text: #22252f;
     --app-popup-surface: #fffdf7;
@@ -60,7 +60,7 @@ html[data-theme="system"] {
     --app-warning: #a37c40;
     --app-soft: rgba(249, 251, 255, 0.62);
     --app-cursor-color: #315f9f;
-    --app-menu-icon-color: #fff8dd;
+    --app-menu-icon-color: #ffd166;
     --app-page-surface: #f9fbff;
     --app-page-text: #1f2937;
     --app-popup-surface: #f9fbff;
@@ -93,7 +93,7 @@ html[data-theme="white"] {
     --app-warning: #b45309;
     --app-soft: rgba(255, 255, 255, 0.72);
     --app-cursor-color: #3858d6;
-    --app-menu-icon-color: #1d4ed8;
+    --app-menu-icon-color: #2563eb;
     --app-page-surface: #ffffff;
     --app-page-text: #111827;
     --app-popup-surface: #ffffff;
@@ -127,7 +127,7 @@ html[data-theme="dark"] {
     --app-warning: #fbbf24;
     --app-soft: rgba(248, 250, 252, 0.08);
     --app-cursor-color: #7a8cff;
-    --app-menu-icon-color: #ffe7a3;
+    --app-menu-icon-color: #ffd166;
     --app-page-surface: #2a2c38;
     --app-page-text: #f9fafb;
     --app-popup-surface: #2a2c38;
@@ -161,7 +161,7 @@ html[data-theme="cinema"] {
     --app-warning: #b98933;
     --app-soft: rgba(248, 250, 246, 0.62);
     --app-cursor-color: #168f98;
-    --app-menu-icon-color: #fff4c7;
+    --app-menu-icon-color: #ffd166;
     --app-page-surface: #fffefa;
     --app-page-text: #182536;
     --app-popup-surface: #fffefa;
@@ -1151,6 +1151,7 @@ html[data-theme="dark"] [style*="color: black"] {
 	    color: var(--app-menu-icon-color);
 	    font-size: 1rem;
 	    line-height: 1;
+	    filter: drop-shadow(0 1px 0 rgba(0,0,0,0.16));
 	}
 
 	.film-nav-icon svg,
@@ -1158,7 +1159,7 @@ html[data-theme="dark"] [style*="color: black"] {
 	    width: 18px;
 	    height: 18px;
 	    stroke: currentColor;
-	    stroke-width: 2;
+	    stroke-width: 2.55;
 	    stroke-linecap: round;
 	    stroke-linejoin: round;
 	    fill: none;
@@ -1174,7 +1175,7 @@ html[data-theme="dark"] [style*="color: black"] {
 .film-nav-label {
     position: static;
     display: inline;
-    max-width: 180px;
+    max-width: none;
     padding: 0;
     border-radius: 0;
     background: transparent;
@@ -1186,8 +1187,8 @@ html[data-theme="dark"] [style*="color: black"] {
     pointer-events: auto;
     transform: none;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 	    .film-nav-btn:hover .film-nav-label,
@@ -1752,40 +1753,30 @@ html[data-theme="system"] .film-nav-icon {
         transform: translateY(0);
     }
 
-	.film-nav-label {
-	    position: absolute;
-	    left: 50%;
-	    top: calc(100% + 8px);
-	    z-index: 1200;
-	    display: block;
-	    opacity: 0;
-	    pointer-events: none;
-	    transform: translateX(-50%) translateY(-4px);
-	    max-width: min(220px, calc(100vw - 32px));
-	    padding: 7px 9px;
-	    border: 1px solid color-mix(in srgb, var(--app-nav-text) 20%, transparent);
-	    border-radius: 8px;
-	    background: color-mix(in srgb, var(--app-card) 96%, white 4%);
-	    color: var(--app-text);
-	    overflow: hidden;
-	    text-overflow: ellipsis;
-	    visibility: hidden;
-	    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
-	}
-
-	    .film-nav-btn:hover .film-nav-label,
-	    .film-nav-btn:focus-visible .film-nav-label,
-	    .film-support-menu.support-open .film-nav-label {
-	        opacity: 1;
-	        transform: translateX(-50%) translateY(0);
-	        visibility: visible;
-	    }
+    .film-nav-label {
+        position: static;
+        display: inline;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: none;
+        max-width: none;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: inherit;
+        overflow: visible;
+        text-overflow: clip;
+        box-shadow: none;
+    }
 
 	    .film-nav-btn {
-	        aspect-ratio: 1;
-	        min-width: 48px;
-	        width: 48px;
-	        padding: 8px;
+	        aspect-ratio: auto;
+	        min-width: 0;
+	        width: 100%;
+	        padding: 9px 10px;
+	        gap: 7px;
 	    }
 
 	    .film-nav-icon {
@@ -1794,7 +1785,7 @@ html[data-theme="system"] .film-nav-icon {
 	    }
 
 	    .film-navigation-links {
-	        grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+	        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 	    }
 
     .film-user-card {
@@ -1830,7 +1821,7 @@ html[data-theme="system"] .film-nav-icon {
     }
 
     .film-navigation-links {
-        grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+        grid-template-columns: 1fr;
     }
 
         .app-version-badge {

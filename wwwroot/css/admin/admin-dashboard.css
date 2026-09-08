@@ -15,7 +15,7 @@
     --admin-warning: #9a6a16;
     --admin-danger: #b33d58;
     --admin-shadow: 0 18px 46px rgba(23, 25, 35, 0.13);
-    --admin-menu-icon-color: #ffffff;
+    --admin-menu-icon-color: #ffd166;
 }
 
 html[data-theme="white"] {
@@ -35,7 +35,7 @@ html[data-theme="white"] {
     --admin-warning: #b45309;
     --admin-danger: #dc2626;
     --admin-shadow: 0 18px 46px rgba(17, 24, 39, 0.1);
-    --admin-menu-icon-color: #ffffff;
+    --admin-menu-icon-color: #93c5fd;
 }
 
 html[data-theme="system"] {
@@ -54,7 +54,7 @@ html[data-theme="system"] {
     --admin-success: #1d7d79;
     --admin-warning: #a37c40;
     --admin-danger: #9f3a3a;
-    --admin-menu-icon-color: #ffffff;
+    --admin-menu-icon-color: #f2c46d;
 }
 
 html[data-theme="dark"] {
@@ -75,7 +75,7 @@ html[data-theme="dark"] {
     --admin-warning: #fbbf24;
     --admin-danger: #dc4c64;
     --admin-shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
-    --admin-menu-icon-color: #ffe7a3;
+    --admin-menu-icon-color: #ffd166;
 }
 
 html[data-theme="cinema"] {
@@ -96,7 +96,7 @@ html[data-theme="cinema"] {
     --admin-warning: #b98933;
     --admin-danger: #bd3e4b;
     --admin-shadow: 0 20px 52px rgba(22, 59, 77, 0.18);
-    --admin-menu-icon-color: #fff4c7;
+    --admin-menu-icon-color: #ffd166;
 }
 
     box-sizing: border-box;
@@ -515,13 +515,14 @@ html[data-theme="cinema"] .admin-sidebar {
     background: transparent;
     color: var(--admin-menu-icon-color);
     box-shadow: none;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.28));
 }
 
 .admin-nav-icon svg {
     width: 21px;
     height: 21px;
     stroke: currentColor;
-    stroke-width: 2.25;
+    stroke-width: 2.55;
     stroke-linecap: round;
     stroke-linejoin: round;
     fill: none;
@@ -530,9 +531,11 @@ html[data-theme="cinema"] .admin-sidebar {
 
 .admin-nav-label {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
 }
 
 .admin-nav-count {
@@ -1348,7 +1351,8 @@ html[data-theme="cinema"] .admin-topbar {
         left: 50%;
         top: 50%;
         z-index: 2147483001;
-        max-width: 56px;
+        min-width: max-content;
+        max-width: 220px;
         padding: 7px 10px;
         border-radius: 8px;
         background: #111827;
@@ -1359,6 +1363,9 @@ html[data-theme="cinema"] .admin-topbar {
         pointer-events: none;
         transform: translate(-50%, -50%) scale(0.96);
         transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+        white-space: nowrap;
+        overflow: visible;
+        overflow-wrap: normal;
     }
 
     .admin-wrapper.nav-collapsed .admin-nav a:hover .admin-nav-label,

@@ -3,31 +3,39 @@
 }
 
 <section class="auth-stage">
+    <div class="auth-motion auth-motion-one" aria-hidden="true"></div>
+    <div class="auth-motion auth-motion-two" aria-hidden="true"></div>
+    <div class="auth-scanline" aria-hidden="true"></div>
+
     <div class="auth-frame">
         <div class="auth-copy">
-            @* Previous wording: "Shot 01 / Entry Gate" *@
             <span class="auth-kicker">Account Access</span>
-            <img class="auth-logo" src="~/images/brand/showtime-login-logo.png" alt="showTime" asp-append-version="true" />
-            @* Previous wording: "Take your mark, verify the script, and open the next scene." *@
-            <p>Sign in securely to continue to your account.</p>
-            <small class="auth-version">Version <span data-current-version></span></small>
+            <div class="auth-logo-stage">
+                <span class="auth-logo-ring" aria-hidden="true"></span>
+                <img class="auth-logo" src="~/images/brand/showtime-login-logo.png" alt="showTime" asp-append-version="true" />
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Sign in securely to continue to your bookings, wallet, and tickets.</p>
+            <div class="auth-mini-status" aria-label="Application status">
+                <span>Secure</span>
+                <span>Live</span>
+                <span>v<span data-current-version></span></span>
+            </div>
         </div>
 
         <div class="auth-card">
             <div class="auth-slate">
-                @* Previous wording: "Rolling" *@
-                <span>Secure</span>
-                @* Previous wording: "Login Take" *@
+                <span>showTime</span>
                 <span>Login</span>
             </div>
 
             <form method="post" novalidate onsubmit="return validateLoginForm()">
-                <div class="mb-3">
+                <div class="auth-field mb-3">
                     <label>Email</label>
                     <input name="email" type="email" class="form-control" placeholder="artist@gmail.com" required />
                 </div>
 
-                <div class="mb-3">
+                <div class="auth-field mb-3">
                     <label>Password</label>
                     <div class="input-group">
                         <input id="loginPassword" name="password" type="password" class="form-control" minlength="8"
@@ -81,55 +89,197 @@
 
 <style>
 .auth-stage {
-    min-height: calc(100vh - 190px);
+    position: relative;
+    isolation: isolate;
+    min-height: calc(100vh - 150px);
     display: grid;
     align-items: center;
-    padding: 24px 0 44px;
+    overflow: hidden;
+    padding: clamp(24px, 4vw, 54px) 0;
+    border-radius: 8px;
 }
+
+.auth-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    background:
+        linear-gradient(120deg,
+            color-mix(in srgb, var(--app-bg) 74%, #101722),
+            color-mix(in srgb, var(--app-primary) 30%, var(--app-bg)) 44%,
+            color-mix(in srgb, var(--app-accent-strong) 32%, var(--app-bg)));
+}
+
+.auth-stage::after {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    z-index: -2;
+    opacity: 0.38;
+    background:
+        repeating-linear-gradient(90deg,
+            transparent 0 42px,
+            color-mix(in srgb, var(--app-nav-text) 15%, transparent) 42px 48px,
+            transparent 48px 92px),
+        repeating-linear-gradient(0deg,
+            transparent 0 32px,
+            color-mix(in srgb, var(--app-card) 18%, transparent) 32px 34px,
+            transparent 34px 70px);
+    transform: rotate(-7deg);
+    animation: authFilmDrift 18s linear infinite;
+}
+
+.auth-motion {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    border: 1px solid color-mix(in srgb, var(--app-card) 48%, transparent);
+    border-radius: 8px;
+    background:
+        linear-gradient(90deg, transparent 0 10px, color-mix(in srgb, var(--app-card) 54%, transparent) 10px 16px, transparent 16px 34px),
+        linear-gradient(180deg, color-mix(in srgb, var(--app-card) 28%, transparent), transparent);
+    box-shadow: 0 22px 60px color-mix(in srgb, var(--app-primary) 18%, transparent);
+}
+
+.auth-motion-one {
+    width: min(720px, 92vw);
+    height: 88px;
+    left: -190px;
+    top: 12%;
+    transform: rotate(-10deg);
+    animation: authSlideRight 13s linear infinite;
+}
+
+.auth-motion-two {
+    width: min(620px, 86vw);
+    height: 74px;
+    right: -220px;
+    bottom: 14%;
+    transform: rotate(9deg);
+    animation: authSlideLeft 15s linear infinite;
+}
+
+.auth-scanline {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    z-index: 1;
+    opacity: 0.8;
+    background: linear-gradient(90deg, transparent, var(--app-accent), transparent);
+    animation: authScan 3.4s ease-in-out infinite;
+}
+
 .auth-frame {
+    position: relative;
+    z-index: 2;
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(320px, 440px);
-    gap: 28px;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+    gap: clamp(22px, 4vw, 46px);
     align-items: stretch;
+    width: min(1080px, calc(100% - 32px));
+    margin: 0 auto;
 }
 .auth-copy {
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    min-height: 430px;
+    min-height: 480px;
     overflow: hidden;
     border-radius: 8px;
-    padding: 34px;
-    color: #231f20;
+    padding: clamp(26px, 5vw, 54px);
+    color: var(--app-nav-text);
     background:
-        linear-gradient(135deg, rgba(255, 242, 199, 0.92), rgba(245, 178, 196, 0.88), rgba(146, 229, 221, 0.86)),
-        repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
-    box-shadow: 0 24px 70px rgba(35, 31, 32, 0.24);
+        linear-gradient(150deg,
+            rgba(255, 255, 255, 0.16),
+            rgba(15, 23, 42, 0.12)),
+        var(--app-nav);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    animation: authPanelIn 0.72s ease both;
+}
+
+.auth-copy::before,
+.auth-copy::after {
+    content: "";
+    position: absolute;
+    inset-inline: 24px;
+    height: 10px;
+    background:
+        repeating-linear-gradient(90deg,
+            rgba(255,255,255,0.58) 0 10px,
+            transparent 10px 20px);
+    opacity: 0.38;
+}
+
+.auth-copy::before {
+    top: 24px;
+}
+
+.auth-copy::after {
+    bottom: 24px;
+}
+
+.auth-logo-stage {
+    position: relative;
+    width: min(350px, 86%);
+    aspect-ratio: 1.35;
+    display: grid;
+    place-items: center;
+    margin: 14px 0 18px;
+}
+
+.auth-logo-ring {
+    position: absolute;
+    inset: 8%;
+    border: 2px solid color-mix(in srgb, var(--app-accent) 70%, transparent);
+    border-radius: 999px;
+    opacity: 0.64;
+    animation: authLogoRing 2.8s ease-in-out infinite;
 }
 .auth-logo {
     display: block;
-    width: min(390px, 84%);
-    max-height: 260px;
-    margin: 12px 0 12px;
+    width: 86%;
+    max-height: 230px;
     object-fit: contain;
-    object-position: left center;
-    filter: drop-shadow(0 12px 22px rgba(35, 31, 32, 0.24));
+    object-position: center;
+    filter: drop-shadow(0 18px 26px rgba(15, 23, 42, 0.28));
+    animation: authLogoFloat 4.2s ease-in-out infinite;
+}
+
+.auth-copy h1 {
+    margin: 0 0 10px;
+    font-size: clamp(2.4rem, 5vw, 4.8rem);
+    line-height: 0.96;
+    font-weight: 950;
+    letter-spacing: 0;
 }
 .auth-copy p {
-    max-width: 520px;
+    max-width: 560px;
     margin: 0;
-    color: #34303a;
+    color: color-mix(in srgb, var(--app-nav-text) 84%, transparent);
     font-size: 1.08rem;
+    font-weight: 650;
 }
-.auth-version {
+
+.auth-mini-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.auth-mini-status > span {
     display: inline-flex;
-    width: fit-content;
-    margin-top: 14px;
+    min-height: 28px;
+    align-items: center;
     padding: 5px 10px;
-    border: 1px solid rgba(35,31,32,0.18);
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 24%, transparent);
     border-radius: 999px;
-    color: #34303a;
+    background: color-mix(in srgb, var(--app-card) 22%, transparent);
+    color: var(--app-nav-text);
+    font-size: 0.78rem;
     font-weight: 900;
 }
 .auth-kicker,
@@ -137,16 +287,18 @@
     text-transform: uppercase;
     font-size: 0.74rem;
     font-weight: 850;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
 }
 .auth-card {
     align-self: center;
     overflow: hidden;
-    border: 1px solid var(--app-input-border);
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 72%, #ffffff 28%);
     border-radius: 8px;
-    background: var(--app-card);
+    background: color-mix(in srgb, var(--app-card) 92%, transparent);
     color: var(--app-card-text);
-    box-shadow: 0 22px 58px rgba(0,0,0,0.24);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+    animation: authCardIn 0.72s ease 0.12s both;
 }
 .auth-slate {
     display: flex;
@@ -165,9 +317,53 @@
     margin-bottom: 6px;
     font-weight: 800;
 }
+
+.auth-field {
+    animation: authFieldIn 0.55s ease both;
+}
+
+.auth-field:nth-child(2) {
+    animation-delay: 0.08s;
+}
+
+.auth-card .form-control {
+    min-height: 46px;
+    border-radius: 8px;
+    border-color: var(--app-input-border);
+    background: var(--app-input);
+    color: var(--app-input-text);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.auth-card .form-control:focus {
+    border-color: var(--app-accent-strong);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-accent-strong) 18%, transparent);
+    transform: translateY(-1px);
+}
+
+.auth-card .input-group .btn {
+    min-width: 48px;
+    border-radius: 0 8px 8px 0;
+    border-color: var(--app-input-border);
+    color: var(--app-card-text);
+    background: color-mix(in srgb, var(--app-card) 72%, var(--app-input));
+}
+
 .auth-main-btn {
-    min-height: 44px;
+    min-height: 48px;
     font-weight: 850;
+    border: 0;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--app-primary), var(--app-accent-strong));
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--app-primary) 34%, transparent);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.auth-main-btn:hover,
+.auth-main-btn:focus-visible {
+    transform: translateY(-2px);
+    filter: saturate(1.08);
+    box-shadow: 0 18px 38px color-mix(in srgb, var(--app-primary) 42%, transparent);
 }
 .auth-links {
     display: flex;
@@ -178,6 +374,7 @@
 .auth-close-btn {
     width: calc(100% - 44px) !important;
     font-weight: 850;
+    border-radius: 8px;
 }
 .recovery-modal {
     position: fixed;
@@ -237,15 +434,135 @@
     gap: 10px;
 }
 @@media (max-width: 840px) {
+    .auth-stage {
+        min-height: calc(100vh - 120px);
+        padding-inline: 0;
+    }
+
     .auth-frame {
         grid-template-columns: 1fr;
+        width: min(100% - 24px, 520px);
     }
+
     .auth-copy {
-        min-height: 260px;
+        min-height: 310px;
+        text-align: center;
+        align-items: center;
     }
+
+    .auth-copy p {
+        font-size: 0.98rem;
+    }
+
     .auth-logo {
-        width: min(290px, 92%);
+        width: min(240px, 88%);
         max-height: 180px;
+    }
+
+    .auth-logo-stage {
+        margin-inline: auto;
+    }
+
+    .auth-card form,
+    .auth-links,
+    .auth-close-btn {
+        margin: 18px;
+    }
+
+    .auth-close-btn {
+        width: calc(100% - 36px) !important;
+    }
+}
+
+@@media (prefers-reduced-motion: reduce) {
+    .auth-stage::after,
+    .auth-motion,
+    .auth-scanline,
+    .auth-copy,
+    .auth-card,
+    .auth-logo,
+    .auth-logo-ring,
+    .auth-field {
+        animation: none !important;
+    }
+}
+
+@@keyframes authFilmDrift {
+    to {
+        transform: rotate(-7deg) translateX(-92px);
+    }
+}
+
+@@keyframes authSlideRight {
+    50% {
+        transform: rotate(-10deg) translateX(130px);
+    }
+}
+
+@@keyframes authSlideLeft {
+    50% {
+        transform: rotate(9deg) translateX(-130px);
+    }
+}
+
+@@keyframes authScan {
+    0%, 100% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(calc(100vh - 150px));
+        opacity: 0.82;
+    }
+}
+
+@@keyframes authPanelIn {
+    from {
+        opacity: 0;
+        transform: translateX(-18px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@@keyframes authCardIn {
+    from {
+        opacity: 0;
+        transform: translateX(18px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@@keyframes authFieldIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@@keyframes authLogoFloat {
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@@keyframes authLogoRing {
+    0%, 100% {
+        transform: scale(0.88);
+        opacity: 0.28;
+    }
+    50% {
+        transform: scale(1.08);
+        opacity: 0.68;
     }
 }
 </style>
