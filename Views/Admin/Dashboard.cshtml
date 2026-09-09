@@ -15,6 +15,9 @@
         !RbacService.HasAnyActiveRole(dashboardUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER");
     var canShowDashboardAdminLinks = canUseSuperAdminDashboardLinks || isDumAdmin;
     var canEditSupportDetails = hasDashboardUserId && RbacService.CanOpenAdminDashboard(dashboardUserId);
+    var canCancelBookings =
+        hasDashboardUserId &&
+        RbacAuthorizationHelper.CanAccess(Context, RbacService, "BOOKING", "CANCEL");
     var supportProfile = ViewBag.SupportProfile as AmarShowsBook.Models.ViewModels.DeveloperVM
         ?? new AmarShowsBook.Models.ViewModels.DeveloperVM
         {
@@ -445,6 +448,10 @@
                 @if (canEditSupportDetails)
                 {
                     <button type="button" class="dashboard-shortcut-button" onclick="openSupportDetailsModal()">Support Details</button>
+                }
+                @if (canCancelBookings)
+                {
+                    <a href="/Admin/Cancellations">Cancellations</a>
                 }
                 <a href="/Admin/Versions">Versions</a>
                 @if (canUseSuperAdminDashboardLinks)

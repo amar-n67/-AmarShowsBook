@@ -262,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const getRowText = (row) => normalize(row.dataset.filterSearch || row.textContent);
         const getRowTime = (row) => Number(row.dataset.sortTime || 0);
+        const getRowNumber = (row, key) => Number(row.dataset[key] || 0);
         const compareRows = (left, right, sort) => {
             const leftPriority = priorityRank[normalize(left.dataset.filterPriority)] || 0;
             const rightPriority = priorityRank[normalize(right.dataset.filterPriority)] || 0;
@@ -269,6 +270,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const rightStatus = normalize(right.dataset.filterStatus);
             const leftSource = normalize(left.dataset.filterMethod);
             const rightSource = normalize(right.dataset.filterMethod);
+            const leftTitle = normalize(left.dataset.sortTitle || left.dataset.filterSearch || left.textContent);
+            const rightTitle = normalize(right.dataset.sortTitle || right.dataset.filterSearch || right.textContent);
             const leftTime = getRowTime(left);
             const rightTime = getRowTime(right);
 
@@ -290,6 +293,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (sort === "newest") {
                 return rightTime - leftTime || getRowText(left).localeCompare(getRowText(right));
+            }
+
+            if (sort === "title") {
+                return leftTitle.localeCompare(rightTitle) || leftTime - rightTime;
+            }
+
+            if (sort === "tickets") {
+                return getRowNumber(right, "sortTickets") - getRowNumber(left, "sortTickets") || leftTime - rightTime;
+            }
+
+            if (sort === "amount") {
+                return getRowNumber(right, "sortAmount") - getRowNumber(left, "sortAmount") || leftTime - rightTime;
             }
 
             return 0;

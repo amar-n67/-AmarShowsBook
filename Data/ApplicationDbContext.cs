@@ -36,6 +36,7 @@ public DbSet<DummyCard> DummyCards { get; set; }
         public DbSet<TicketValidationLog> TicketValidationLogs { get; set; }
         public DbSet<ScannerDevice> ScannerDevices { get; set; }
         public DbSet<ApplicationVersion> ApplicationVersions { get; set; }
+        public DbSet<AdminTicketCancellation> AdminTicketCancellations { get; set; }
 
         public DbSet<Refund> Refunds { get; set; }
 
@@ -201,6 +202,19 @@ modelBuilder.Entity<Refund>(entity =>
 
     modelBuilder.Entity<ApplicationVersion>()
         .ToTable("application_versions");
+
+    modelBuilder.Entity<AdminTicketCancellation>(entity =>
+    {
+        entity.ToTable("admin_ticket_cancellations");
+
+        entity.HasKey(x=>x.Id);
+
+        entity.Property(x=>x.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.RevokedAt)
+            .HasColumnType("timestamp without time zone");
+    });
 
     modelBuilder.Entity<SeatLock>()
         .ToTable("seat_locks");

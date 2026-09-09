@@ -155,6 +155,7 @@ namespace AmarShowsBook.Controllers
                    actionName.Equals(nameof(TransactionDetails), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(Refunds), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(RefundDetails), StringComparison.OrdinalIgnoreCase) ||
+                   actionName.Equals(nameof(Cancellations), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(CouponUsage), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(Wallets), StringComparison.OrdinalIgnoreCase) ||
                    actionName.Equals(nameof(Notifications), StringComparison.OrdinalIgnoreCase) ||
@@ -1986,6 +1987,190 @@ DO UPDATE SET
             return View(bookings);
         }
 
+        public async Task<IActionResult> Cancellations()
+        {
+            await EnsureAdminReportingViews();
+            await EnsureAdminCancellationStorage();
+
+            var vm = await BuildAdminCancellationsViewModel();
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelIndividualBooking(long bookingId, string cancellationReason)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "BOOKING", "CANCEL"))
+            {
+                TempData["Error"] = "You do not have permission to cancel bookings.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var reason = NormalizeCancellationReason(cancellationReason);
+            if (reason == null)
+            {
+                TempData["Error"] = "Please enter a clear cancellation reason.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            await EnsureAdminCancellationStorage();
+
+            var booking = await _context.Bookings
+                .FirstOrDefaultAsync(x =>
+                    x.Id == bookingId &&
+                    x.BookingStatus == "CONFIRMED" &&
+                    x.PaymentStatus == "SUCCESS");
+
+            if (booking == null)
+            {
+                TempData["Error"] = "Only active confirmed paid bookings can be cancelled.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var result = await CancelBookingsByAdmin(
+                new List<Booking> { booking },
+                "BOOKING",
+                reason);
+
+            TempData[result.Success ? "Success" : "Error"] = result.Message;
+            return RedirectToAction(nameof(Cancellations));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelWholeTheater(int scheduleId, string cancellationReason, string confirmationText)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "BOOKING", "CANCEL"))
+            {
+                TempData["Error"] = "You do not have permission to cancel theater bookings.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var reason = NormalizeCancellationReason(cancellationReason);
+            if (reason == null)
+            {
+                TempData["Error"] = "Please enter a clear cancellation reason.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            if (!string.Equals(confirmationText?.Trim(), "CANCEL SHOW", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Type CANCEL SHOW to confirm whole theater cancellation.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            await EnsureAdminCancellationStorage();
+
+            var showSummary = await GetCancellationScheduleSummary(scheduleId);
+            if (showSummary.StartTime == DateTime.MinValue || showSummary.StartTime < DatabaseTimestampNow())
+            {
+                TempData["Error"] = "Only upcoming shows can be cancelled from this page.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var alreadyCancelled = await _context.AdminTicketCancellations
+                .AsNoTracking()
+                .AnyAsync(x => x.Scope == "THEATER" && x.ScheduleId == scheduleId && !x.IsRevoked);
+
+            if (alreadyCancelled)
+            {
+                TempData["Error"] = "This show is already cancelled.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var bookings = await _context.Bookings
+                .Where(x =>
+                    x.ScheduleId == scheduleId &&
+                    x.BookingStatus == "CONFIRMED" &&
+                    x.PaymentStatus == "SUCCESS")
+                .OrderBy(x => x.Id)
+                .ToListAsync();
+
+            if (!bookings.Any())
+            {
+                var emptyShowResult = await CancelEmptyFutureShowByAdmin(scheduleId, reason, showSummary);
+                TempData[emptyShowResult.Success ? "Success" : "Error"] = emptyShowResult.Message;
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var result = await CancelBookingsByAdmin(bookings, "THEATER", reason);
+            TempData[result.Success ? "Success" : "Error"] = result.Message;
+            return RedirectToAction(nameof(Cancellations));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RelaunchTheaterShow(long cancellationId, string relaunchReason, string confirmationText)
+        {
+            if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "BOOKING", "CANCEL"))
+            {
+                TempData["Error"] = "You do not have permission to relaunch cancelled shows.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            if (!string.Equals(confirmationText?.Trim(), "RELAUNCH", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Type RELAUNCH to confirm show relaunch.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var reason = NormalizeCancellationReason(relaunchReason);
+            if (reason == null)
+            {
+                TempData["Error"] = "Please enter a clear relaunch reason.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            await EnsureAdminCancellationStorage();
+
+            var cancellation = await _context.AdminTicketCancellations
+                .FirstOrDefaultAsync(x =>
+                    x.Id == cancellationId &&
+                    x.Scope == "THEATER" &&
+                    x.ScheduleId.HasValue &&
+                    !x.IsRevoked);
+
+            if (cancellation == null)
+            {
+                TempData["Error"] = "Only active theater cancellations can be relaunched.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var showSummary = await GetCancellationScheduleSummary(cancellation.ScheduleId!.Value);
+            if (showSummary.StartTime == DateTime.MinValue || showSummary.StartTime < DatabaseTimestampNow())
+            {
+                TempData["Error"] = "Only future cancelled theater shows can be relaunched.";
+                return RedirectToAction(nameof(Cancellations));
+            }
+
+            var now = DatabaseTimestampNow();
+            var adminUserId = TryGetSessionUserId();
+            var adminName = HttpContext.Session.GetString("UserName") ??
+                HttpContext.Session.GetString("UserEmail") ??
+                "Admin";
+
+            cancellation.IsRevoked = true;
+            cancellation.RevokedAt = now;
+            cancellation.RevokedByUserId = adminUserId;
+            cancellation.RevokedByName = adminName;
+            cancellation.RelaunchReason = reason;
+
+            await _context.SaveChangesAsync();
+
+            await _activityLogger.LogAsync(
+                userId: adminUserId,
+                action: "ADMIN_RELAUNCH_THEATER",
+                module: "BOOKING",
+                entityType: "THEATER",
+                entityId: cancellation.ScheduleId,
+                description: $"Admin relaunched future show schedule {cancellation.ScheduleId}. Reason: {reason}",
+                status: "SUCCESS",
+                isError: 0);
+
+            TempData["Success"] = "Future theater show relaunched. It will appear again for booking; previously cancelled tickets remain cancelled.";
+            return RedirectToAction(nameof(Cancellations));
+        }
+
 
         public async Task<IActionResult> Transactions(int page = 1)
         {
@@ -2960,6 +3145,692 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
             return DateTime.SpecifyKind(
                 DateTime.UtcNow,
                 DateTimeKind.Unspecified);
+        }
+
+        private async Task<AdminCancellationsViewModel> BuildAdminCancellationsViewModel()
+        {
+            var bookingRows = await _context.VwBookingCompleteDetails
+                .AsNoTracking()
+                .Where(x => x.BookingStatus == "CONFIRMED" && x.PaymentStatus == "SUCCESS")
+                .OrderBy(x => x.StartTime)
+                .ThenByDescending(x => x.BookedAt)
+                .ToListAsync();
+
+            var bookings = bookingRows
+                .Select(x => new AdminCancelableBookingViewModel
+                {
+                    BookingId = x.BookingId,
+                    BookingRef = NullText(x.BookingRef),
+                    UserName = NullText(x.UserName),
+                    UserEmail = NullText(x.UserEmail),
+                    ShowTitle = NullText(x.ShowTitle),
+                    ShowType = NullText(x.ShowType),
+                    StartTime = x.StartTime,
+                    SeatNumbers = NullText(x.SeatNumbers),
+                    TotalTickets = x.TotalTickets,
+                    Amount = x.PayableAmount ?? x.TotalAmount,
+                    PaymentStatus = NullText(x.PaymentStatus)
+                })
+                .ToList();
+
+            var nextSecond = DateTime.UtcNow.AddSeconds(1);
+            var showCounts = await _context.Bookings
+                .AsNoTracking()
+                .Where(x => x.BookingStatus == "CONFIRMED" && x.PaymentStatus == "SUCCESS")
+                .GroupBy(x => x.ScheduleId)
+                .Select(g => new
+                {
+                    ScheduleId = g.Key,
+                    BookingCount = g.Count(),
+                    TicketCount = g.Sum(x => x.TotalTickets),
+                    Amount = g.Sum(x => x.PayableAmount ?? x.TotalAmount)
+                })
+                .ToListAsync();
+
+            var activeTheaterCancellations = await _context.AdminTicketCancellations
+                .AsNoTracking()
+                .Where(x => x.Scope == "THEATER" && x.ScheduleId.HasValue && !x.IsRevoked)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+            var activeTheaterCancellationLookup = activeTheaterCancellations
+                .GroupBy(x => x.ScheduleId!.Value)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            var futureSchedules = await _context.ShowSchedules
+                .AsNoTracking()
+                .Include(x => x.Movie)
+                .Include(x => x.StandupShow)
+                .Include(x => x.LiveStream)
+                .Include(x => x.Screen)
+                .Where(x => x.StartTime >= nextSecond)
+                .OrderBy(x => x.StartTime)
+                .ToListAsync();
+
+            var venueIds = futureSchedules
+                .Where(x => x.Screen?.VenueId > 0)
+                .Select(x => x.Screen!.VenueId)
+                .Distinct()
+                .ToList();
+
+            var venueLookup = await _context.Venues
+                .AsNoTracking()
+                .Where(x => venueIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id);
+
+            var countLookup = showCounts.ToDictionary(x => x.ScheduleId);
+            var shows = futureSchedules
+                .Select(schedule =>
+                {
+                    Venue? venue = null;
+                    if (schedule.Screen?.VenueId > 0)
+                    {
+                        venueLookup.TryGetValue(schedule.Screen.VenueId, out venue);
+                    }
+
+                    countLookup.TryGetValue(schedule.Id, out var count);
+                    activeTheaterCancellationLookup.TryGetValue(schedule.Id, out var activeCancellation);
+                    return new AdminCancelableShowViewModel
+                    {
+                        ScheduleId = schedule.Id,
+                        ShowType = schedule.Type ?? "Show",
+                        ShowTitle = schedule.Movie?.Title ?? schedule.StandupShow?.Title ?? schedule.LiveStream?.Title ?? "Untitled Show",
+                        VenueName = venue?.VenueName ?? "Venue not mapped",
+                        ScreenName = schedule.Screen?.ScreenName ?? "Screen not mapped",
+                        StartTime = schedule.StartTime,
+                        BookingCount = count?.BookingCount ?? 0,
+                        TicketCount = count?.TicketCount ?? 0,
+                        Amount = count?.Amount ?? 0,
+                        IsCancelled = activeCancellation != null,
+                        CancellationId = activeCancellation?.Id,
+                        CancellationRef = activeCancellation?.CancellationRef ?? string.Empty,
+                        CancellationReason = activeCancellation?.Reason ?? string.Empty,
+                        CancelledAt = activeCancellation?.CreatedAt
+                    };
+                })
+                .OrderBy(x => x.VenueName)
+                .ThenBy(x => x.ScreenName)
+                .ThenBy(x => x.StartTime)
+                .ToList();
+
+            var history = await _context.AdminTicketCancellations
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+            return new AdminCancellationsViewModel
+            {
+                Bookings = bookings,
+                Shows = shows,
+                RelaunchableShows = shows
+                    .Where(x => x.IsCancelled && x.CancellationId.HasValue)
+                    .OrderBy(x => x.VenueName)
+                    .ThenBy(x => x.ScreenName)
+                    .ThenBy(x => x.StartTime)
+                    .ToList(),
+                RecentCancellations = history,
+                IndividualCancellationHistory = history
+                    .Where(x => x.Scope != "THEATER")
+                    .ToList(),
+                TheaterCancellationHistory = history
+                    .Where(x => x.Scope == "THEATER")
+                    .ToList()
+            };
+        }
+
+        private async Task<(bool Success, string Message)> CancelBookingsByAdmin(
+            List<Booking> bookings,
+            string scope,
+            string reason)
+        {
+            var activeBookings = bookings
+                .Where(x => x.BookingStatus == "CONFIRMED" && x.PaymentStatus == "SUCCESS")
+                .ToList();
+
+            if (!activeBookings.Any())
+            {
+                return (false, "No active confirmed paid bookings were available to cancel.");
+            }
+
+            var now = DatabaseTimestampNow();
+            var bookingIds = activeBookings.Select(x => x.Id).ToList();
+            var transactionIds = activeBookings
+                .Where(x => x.TransactionId.HasValue)
+                .Select(x => x.TransactionId!.Value)
+                .ToList();
+            var scheduleIds = activeBookings.Select(x => x.ScheduleId).Distinct().ToList();
+            var scheduleSummaries = new Dictionary<int, (string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime)>();
+            foreach (var bookingScheduleId in scheduleIds)
+            {
+                scheduleSummaries[bookingScheduleId] = await GetCancellationScheduleSummary(bookingScheduleId);
+            }
+
+            var scheduleId = activeBookings.First().ScheduleId;
+            var scheduleSummary = scheduleSummaries[scheduleId];
+            var adminUserId = TryGetSessionUserId();
+            var adminName = HttpContext.Session.GetString("UserName") ??
+                HttpContext.Session.GetString("UserEmail") ??
+                "Admin";
+
+            await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+            var transactions = await _context.Transactions
+                .Where(x => (x.BookingId.HasValue && bookingIds.Contains(x.BookingId.Value)) ||
+                            transactionIds.Contains(x.Id))
+                .OrderByDescending(x => x.CompletedAt)
+                .ThenByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+            var tickets = await _context.Tickets
+                .Where(x => bookingIds.Contains(x.BookingId))
+                .ToListAsync();
+
+            var bookingSeats = await _context.BookingSeats
+                .Where(x => bookingIds.Contains(x.BookingId))
+                .ToListAsync();
+
+            var existingRefundBookingIds = await _context.Refunds
+                .Where(x => bookingIds.Contains(x.booking_id) &&
+                            x.refund_status != "REJECTED")
+                .Select(x => x.booking_id)
+                .ToListAsync();
+
+            var affectedTickets = 0;
+            var walletRefunds = new List<(Booking Booking, Transaction Transaction, Refund Refund, decimal Amount)>();
+            var couponReversals = new List<(Booking Booking, Transaction Transaction, long CouponId, decimal Amount)>();
+            foreach (var booking in activeBookings)
+            {
+                var bookingScheduleSummary = scheduleSummaries[booking.ScheduleId];
+                booking.BookingStatus = "CANCELLED";
+                booking.PaymentStatus = "REFUND_PENDING";
+                booking.RefundStatus = "PENDING";
+                booking.CancelledAt = now;
+                booking.CancellationReason = reason;
+                booking.UpdatedAt = now;
+                booking.UpdatedBy = adminName;
+
+                var transaction = transactions
+                    .Where(x => x.BookingId == booking.Id || x.Id == booking.TransactionId)
+                    .OrderByDescending(x => x.CompletedAt)
+                    .ThenByDescending(x => x.CreatedAt)
+                    .FirstOrDefault();
+
+                if (transaction != null && !existingRefundBookingIds.Contains(booking.Id))
+                {
+                    var refundRate = GetCancellationRefundRate(bookingScheduleSummary.StartTime, now);
+                    var sourceAmount = RoundCurrency(Math.Max(0, booking.PayableAmount ?? booking.TotalAmount) * refundRate);
+                    var walletAmount = RoundCurrency(Math.Max(0, booking.WalletAmountUsed ?? 0) * refundRate);
+                    var couponAmount = Math.Max(0, booking.DiscountAmount ?? 0);
+                    var refundAmount = sourceAmount + walletAmount;
+                    var refundMethod = ResolveAdminRefundMethod(transaction.PaymentMethod, walletAmount, sourceAmount);
+                    var refundStatus = ShouldAutoRefund(refundMethod) ? "SUCCESS" : "PENDING";
+                    var refundPolicy = GetCancellationRefundPolicyText(bookingScheduleSummary.StartTime, now);
+
+                    var refund = new Refund
+                    {
+                        booking_id = booking.Id,
+                        transaction_id = transaction.Id,
+                        user_id = booking.UserId,
+                        refund_ref = $"RFD-ADM-{booking.Id}-{now:yyyyMMddHHmmssfff}",
+                        refund_amount = refundAmount,
+                        refund_reason = reason,
+                        refund_status = refundStatus,
+                        refund_method = refundMethod,
+                        gateway_refund_id = refundStatus == "SUCCESS" ? $"AUTO-{Guid.NewGuid():N}" : null,
+                        requested_at = now,
+                        processed_at = refundStatus == "SUCCESS" ? now : null,
+                        created_at = now,
+                        updated_at = now,
+                        workflow_action = refundStatus == "SUCCESS"
+                            ? "AUTO_REFUNDED"
+                            : scope == "THEATER" ? "ADMIN_THEATER_CANCELLED" : "ADMIN_BOOKING_CANCELLED",
+                        admin_notes = refundStatus == "SUCCESS"
+                            ? $"Admin cancellation by {adminName}. Refund completed automatically under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
+                            : $"Admin cancellation by {adminName}. Refund case raised for approval under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
+                    };
+
+                    _context.Refunds.Add(refund);
+
+                    transaction.RefundStatus = refundStatus;
+                    transaction.RefundedAmount = (transaction.RefundedAmount ?? 0) + refundAmount;
+                    transaction.UpdatedAt = now;
+
+                    if (walletAmount > 0)
+                    {
+                        walletRefunds.Add((booking, transaction, refund, walletAmount));
+                    }
+
+                    if (booking.CouponId.HasValue && couponAmount > 0)
+                    {
+                        couponReversals.Add((booking, transaction, booking.CouponId.Value, couponAmount));
+                    }
+                }
+            }
+
+            foreach (var ticket in tickets)
+            {
+                ticket.TicketStatus = "CANCELLED";
+                ticket.UpdatedAt = now;
+                affectedTickets++;
+            }
+
+            foreach (var seat in bookingSeats)
+            {
+                seat.BookingStatus = "CANCELLED";
+            }
+
+            var seatIds = bookingSeats.Select(x => x.ScreenSeatId).Distinct().ToList();
+            var locks = await _context.SeatLocks
+                .Where(x => scheduleIds.Contains(x.ScheduleId) && seatIds.Contains(x.ScreenSeatId))
+                .ToListAsync();
+
+            foreach (var seatLock in locks)
+            {
+                seatLock.LockStatus = "RELEASED";
+            }
+
+            await _context.SaveChangesAsync();
+
+            foreach (var walletRefund in walletRefunds)
+            {
+                await CreditAdminWalletRefund(
+                    walletRefund.Booking,
+                    walletRefund.Transaction,
+                    walletRefund.Refund,
+                    walletRefund.Amount);
+            }
+
+            foreach (var couponReversal in couponReversals)
+            {
+                await RecordAdminCouponReversal(
+                    couponReversal.Booking,
+                    couponReversal.Transaction,
+                    couponReversal.CouponId,
+                    couponReversal.Amount);
+            }
+
+            _context.AdminTicketCancellations.Add(new AdminTicketCancellation
+            {
+                CancellationRef = $"CNCL-{scope}-{now:yyyyMMddHHmmssfff}",
+                Scope = scope,
+                BookingId = scope == "BOOKING" ? activeBookings.First().Id : null,
+                ScheduleId = scheduleId,
+                ShowTitle = scheduleSummary.ShowTitle,
+                ShowType = scheduleSummary.ShowType,
+                VenueName = scheduleSummary.VenueName,
+                ScreenName = scheduleSummary.ScreenName,
+                Reason = reason,
+                AffectedBookings = activeBookings.Count,
+                AffectedTickets = affectedTickets,
+                RequestedByUserId = adminUserId,
+                RequestedByName = adminName,
+                CreatedAt = now
+            });
+
+            await _context.SaveChangesAsync();
+            await dbTransaction.CommitAsync();
+
+            await _activityLogger.LogAsync(
+                userId: adminUserId,
+                action: scope == "THEATER" ? "ADMIN_CANCEL_THEATER" : "ADMIN_CANCEL_BOOKING",
+                module: "BOOKING",
+                entityType: scope,
+                entityId: activeBookings.First().Id > int.MaxValue ? null : (int)activeBookings.First().Id,
+                description: $"Admin cancelled {activeBookings.Count} booking(s), {affectedTickets} ticket(s). Reason: {reason}",
+                status: "SUCCESS",
+                isError: 0);
+
+            return (true, $"Cancelled {activeBookings.Count} booking(s) and {affectedTickets} ticket(s). Refund flow has been created.");
+        }
+
+        private async Task<(bool Success, string Message)> CancelEmptyFutureShowByAdmin(
+            int scheduleId,
+            string reason,
+            (string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime) showSummary)
+        {
+            var now = DatabaseTimestampNow();
+            var adminUserId = TryGetSessionUserId();
+            var adminName = HttpContext.Session.GetString("UserName") ??
+                HttpContext.Session.GetString("UserEmail") ??
+                "Admin";
+
+            _context.AdminTicketCancellations.Add(new AdminTicketCancellation
+            {
+                CancellationRef = $"CNCL-THEATER-{now:yyyyMMddHHmmssfff}",
+                Scope = "THEATER",
+                ScheduleId = scheduleId,
+                ShowTitle = showSummary.ShowTitle,
+                ShowType = showSummary.ShowType,
+                VenueName = showSummary.VenueName,
+                ScreenName = showSummary.ScreenName,
+                Reason = reason,
+                AffectedBookings = 0,
+                AffectedTickets = 0,
+                RequestedByUserId = adminUserId,
+                RequestedByName = adminName,
+                CreatedAt = now
+            });
+
+            await _context.SaveChangesAsync();
+
+            await _activityLogger.LogAsync(
+                userId: adminUserId,
+                action: "ADMIN_CANCEL_THEATER",
+                module: "BOOKING",
+                entityType: "THEATER",
+                entityId: scheduleId,
+                description: $"Admin cancelled future show schedule {scheduleId} with no active bookings. Reason: {reason}",
+                status: "SUCCESS",
+                isError: 0);
+
+            return (true, "Future show cancelled. It will no longer appear in Home or booking lists.");
+        }
+
+        private async Task<(string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime)> GetCancellationScheduleSummary(int scheduleId)
+        {
+            var schedule = await _context.ShowSchedules
+                .AsNoTracking()
+                .Include(x => x.Movie)
+                .Include(x => x.StandupShow)
+                .Include(x => x.LiveStream)
+                .Include(x => x.Screen)
+                .FirstOrDefaultAsync(x => x.Id == scheduleId);
+
+            var venueName = "Venue not mapped";
+            if (schedule?.Screen?.VenueId > 0)
+            {
+                venueName = await _context.Venues
+                    .AsNoTracking()
+                    .Where(x => x.Id == schedule.Screen.VenueId)
+                    .Select(x => x.VenueName)
+                    .FirstOrDefaultAsync() ?? venueName;
+            }
+
+            return (
+                schedule?.Movie?.Title ?? schedule?.StandupShow?.Title ?? schedule?.LiveStream?.Title ?? "Untitled Show",
+                schedule?.Type ?? "Show",
+                venueName,
+                schedule?.Screen?.ScreenName ?? "Screen not mapped",
+                schedule?.StartTime ?? DateTime.MinValue);
+        }
+
+        private static string? NormalizeCancellationReason(string? reason)
+        {
+            var normalized = reason?.Trim();
+            return string.IsNullOrWhiteSpace(normalized) || normalized.Length < 5
+                ? null
+                : normalized.Length > 500
+                    ? normalized[..500]
+                    : normalized;
+        }
+
+        private static decimal RoundCurrency(decimal value)
+        {
+            return Math.Round(value, 2, MidpointRounding.AwayFromZero);
+        }
+
+        private static string ResolveAdminRefundMethod(string? paymentMethod, decimal walletAmount, decimal sourceAmount)
+        {
+            var method = (paymentMethod ?? string.Empty).Trim().ToUpperInvariant();
+
+            if (walletAmount > 0 && sourceAmount <= 0)
+            {
+                return "WALLET";
+            }
+
+            if (method.Contains("UPI"))
+            {
+                return walletAmount > 0 ? "WALLET_UPI" : "UPI";
+            }
+
+            if (method == "QR")
+            {
+                return walletAmount > 0 ? "WALLET_QR" : "QR";
+            }
+
+            if (method.Contains("CARD") || method.Contains("NET") || method.Contains("BANK"))
+            {
+                return method;
+            }
+
+            return walletAmount > 0 ? "WALLET_SOURCE" : "SOURCE";
+        }
+
+        private static bool ShouldAutoRefund(string refundMethod)
+        {
+            var method = refundMethod.ToUpperInvariant();
+            return method.Contains("WALLET") || method == "UPI" || method == "QR" || method == "SOURCE";
+        }
+
+        private static decimal GetCancellationRefundRate(DateTime showTime, DateTime now)
+        {
+            var minutesUntilShow = (showTime - now).TotalMinutes;
+
+            if (minutesUntilShow < 45)
+            {
+                return 0m;
+            }
+
+            return minutesUntilShow >= 120 ? 1m : 0.5m;
+        }
+
+        private static string GetCancellationRefundPolicyText(DateTime showTime, DateTime now)
+        {
+            var minutesUntilShow = (showTime - now).TotalMinutes;
+
+            if (minutesUntilShow < 45)
+            {
+                return "Cancellation closes 45 minutes before show time; no refund is available after that cutoff";
+            }
+
+            return minutesUntilShow >= 120
+                ? "Full refund because cancellation is 2 hours or more before show time"
+                : "Partial 50% refund because cancellation is between 45 minutes and 2 hours before show time";
+        }
+
+        private async Task CreditAdminWalletRefund(
+            Booking booking,
+            Transaction transaction,
+            Refund refund,
+            decimal amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            var reference = $"WLR-{booking.Id}-{refund.id}";
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO wallet_transactions
+(
+    wallet_id,
+    user_id,
+    booking_id,
+    transaction_id,
+    refund_id,
+    transaction_ref,
+    transaction_type,
+    entry_type,
+    amount,
+    opening_balance,
+    closing_balance,
+    remarks,
+    transaction_status,
+    created_at,
+    created_by,
+    description,
+    status,
+    reference_type,
+    reference_id,
+    balance_before,
+    balance_after,
+    payment_method,
+    gateway_name,
+    gateway_reference,
+    is_deleted
+)
+SELECT
+    uw.id,
+    {booking.UserId},
+    {booking.Id},
+    {transaction.Id},
+    {refund.id},
+    {reference},
+    'REFUND',
+    'CREDIT',
+    {amount},
+    uw.wallet_balance,
+    uw.wallet_balance + {amount},
+    'Wallet refund for admin-cancelled booking',
+    'SUCCESS',
+    CURRENT_TIMESTAMP,
+    {booking.UserId.ToString()},
+    'Wallet credit after admin ticket cancellation',
+    'SUCCESS',
+    'REFUND',
+    {refund.id},
+    uw.wallet_balance,
+    uw.wallet_balance + {amount},
+    'WALLET',
+    'WALLET',
+    {refund.refund_ref},
+    false
+FROM user_wallets uw
+WHERE uw.user_id = {booking.UserId}
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM wallet_transactions wt
+      WHERE wt.refund_id = {refund.id}
+        AND wt.transaction_type = 'REFUND'
+        AND wt.entry_type = 'CREDIT'
+        AND wt.is_deleted = false
+  );");
+        }
+
+        private async Task RecordAdminCouponReversal(
+            Booking booking,
+            Transaction transaction,
+            long couponId,
+            decimal couponDiscount)
+        {
+            if (couponDiscount <= 0)
+            {
+                return;
+            }
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+INSERT INTO coupon_usage
+(
+    coupon_id,
+    booking_id,
+    transaction_id,
+    user_id,
+    coupon_code,
+    original_amount,
+    discount_amount,
+    final_amount,
+    usage_status,
+    used_at
+)
+SELECT
+    c.id,
+    {booking.Id},
+    {transaction.Id},
+    {booking.UserId},
+    c.coupon_code,
+    {Math.Max(0, booking.OriginalAmount ?? booking.TotalAmount)},
+    {-couponDiscount},
+    {-Math.Max(0, booking.PayableAmount ?? booking.TotalAmount)},
+    'REVERSED',
+    CURRENT_TIMESTAMP
+FROM coupons c
+WHERE c.id = {couponId}
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM coupon_usage cu
+      WHERE cu.booking_id = {booking.Id}
+        AND cu.coupon_id = c.id
+        AND cu.usage_status = 'REVERSED'
+  );
+
+UPDATE coupons c
+SET used_count =
+    GREATEST(
+        0,
+        (
+            SELECT count(*)
+            FROM coupon_usage cu
+            WHERE cu.coupon_id = c.id
+              AND cu.usage_status = 'SUCCESS'
+        )
+        -
+        (
+            SELECT count(*)
+            FROM coupon_usage cu
+            WHERE cu.coupon_id = c.id
+              AND cu.usage_status = 'REVERSED'
+        )
+    )::integer,
+    updated_at = CURRENT_TIMESTAMP
+WHERE c.id = {couponId};");
+        }
+
+        private async Task EnsureAdminCancellationStorage()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+CREATE TABLE IF NOT EXISTS public.admin_ticket_cancellations
+(
+    id bigserial PRIMARY KEY,
+    cancellation_ref varchar(80) NOT NULL,
+    scope varchar(30) NOT NULL,
+    booking_id bigint NULL,
+    schedule_id integer NULL,
+    show_title varchar(255) NULL,
+    show_type varchar(40) NULL,
+    venue_name varchar(255) NULL,
+    screen_name varchar(255) NULL,
+    reason varchar(500) NOT NULL,
+    affected_bookings integer NOT NULL DEFAULT 0,
+    affected_tickets integer NOT NULL DEFAULT 0,
+    requested_by_user_id bigint NULL,
+    requested_by_name varchar(255) NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_revoked boolean NOT NULL DEFAULT false,
+    revoked_at timestamp without time zone NULL,
+    revoked_by_user_id bigint NULL,
+    revoked_by_name varchar(255) NULL,
+    relaunch_reason varchar(500) NULL
+);
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS is_revoked boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_at timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_by_user_id bigint NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_by_name varchar(255) NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_reason varchar(500) NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_admin_ticket_cancellations_ref
+ON public.admin_ticket_cancellations(cancellation_ref);
+
+CREATE INDEX IF NOT EXISTS idx_admin_ticket_cancellations_scope_created
+ON public.admin_ticket_cancellations(scope, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_admin_ticket_cancellations_booking
+ON public.admin_ticket_cancellations(booking_id);
+
+CREATE INDEX IF NOT EXISTS idx_admin_ticket_cancellations_schedule
+ON public.admin_ticket_cancellations(schedule_id);");
         }
 
         private async Task EnsureAdminReportingViews()
@@ -4913,6 +5784,10 @@ private static bool TryGetAdminPermission(
         [nameof(DeleteManagedShow)] = ("SHOW", "DELETE"),
 
         [nameof(Bookings)] = ("BOOKING", "VIEW"),
+        [nameof(Cancellations)] = ("BOOKING", "CANCEL"),
+        [nameof(CancelIndividualBooking)] = ("BOOKING", "CANCEL"),
+        [nameof(CancelWholeTheater)] = ("BOOKING", "CANCEL"),
+        [nameof(RelaunchTheaterShow)] = ("BOOKING", "CANCEL"),
         [nameof(Security)] = ("SCANNER", "VIEW"),
         [nameof(AcknowledgeSecurityAlerts)] = ("SCANNER", "VIEW"),
         [nameof(AddSecurityValidation)] = ("SCANNER", "VIEW"),
@@ -5991,6 +6866,45 @@ ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS created_at time
 ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS created_by varchar(255);
 ALTER TABLE public.application_versions ADD COLUMN IF NOT EXISTS is_current boolean NOT NULL DEFAULT false;
 
+CREATE TABLE IF NOT EXISTS public.admin_ticket_cancellations
+(
+    id bigserial PRIMARY KEY,
+    cancellation_ref varchar(80) NOT NULL,
+    scope varchar(30) NOT NULL,
+    booking_id bigint NULL,
+    schedule_id integer NULL,
+    show_title varchar(255) NULL,
+    show_type varchar(40) NULL,
+    venue_name varchar(255) NULL,
+    screen_name varchar(255) NULL,
+    reason varchar(500) NOT NULL,
+    affected_bookings integer NOT NULL DEFAULT 0,
+    affected_tickets integer NOT NULL DEFAULT 0,
+    requested_by_user_id bigint NULL,
+    requested_by_name varchar(255) NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_revoked boolean NOT NULL DEFAULT false,
+    revoked_at timestamp without time zone NULL,
+    revoked_by_user_id bigint NULL,
+    revoked_by_name varchar(255) NULL,
+    relaunch_reason varchar(500) NULL
+);
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS is_revoked boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_at timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_by_user_id bigint NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_by_name varchar(255) NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_reason varchar(500) NULL;
+
 DROP VIEW IF EXISTS public.vw_home_show_listing;
 
 CREATE OR REPLACE VIEW public.vw_home_show_listing AS
@@ -6030,7 +6944,15 @@ LEFT JOIN public.""StandupShows"" st ON s.""StandupShowId"" = st.""Id""
 LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id""
 LEFT JOIN public.""Locations"" l ON s.""LocationId"" = l.""Id""
 LEFT JOIN public.screens sc ON s.screen_id = sc.id
-LEFT JOIN public.venues v ON sc.venue_id = v.id;
+LEFT JOIN public.venues v ON sc.venue_id = v.id
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.admin_ticket_cancellations cancelled
+    WHERE cancelled.scope = 'THEATER'
+      AND COALESCE(cancelled.is_revoked, false) = false
+      AND cancelled.schedule_id = s.""Id""
+);
 
 DROP VIEW IF EXISTS public.vw_coupon_usage_admin;
 

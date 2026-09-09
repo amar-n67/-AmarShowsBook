@@ -310,6 +310,7 @@
         "Dashboard",
         "Users",
         "Bookings",
+        "Cancellations",
         "Security",
         "Transactions",
         "Refunds",
@@ -354,6 +355,7 @@
         new { Action = "ManageShows", Label = "Manage Shows", Url = "/Admin/ManageShows", Module = "SHOW", Permission = "VIEW" },
         new { Action = "ContentManager", Label = "Data Manager", Url = "/Admin/ContentManager", Module = "SHOW", Permission = "VIEW" },
         new { Action = "Bookings", Label = "Bookings", Url = "/Admin/Bookings", Module = "BOOKING", Permission = "VIEW" },
+        new { Action = "Cancellations", Label = "Cancellations", Url = "/Admin/Cancellations", Module = "BOOKING", Permission = "CANCEL" },
         new { Action = "Security", Label = "Security", Url = "/Admin/Security", Module = "SCANNER", Permission = "VIEW" },
         new { Action = "Transactions", Label = "Transactions", Url = "/Admin/Transactions", Module = "PAYMENT", Permission = "VIEW" },
         new { Action = "Refunds", Label = "Refunds", Url = "/Admin/Refunds", Module = "REFUND", Permission = "VIEW" },
@@ -372,6 +374,7 @@
         "ManageShows" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4\" y=\"5\" width=\"16\" height=\"14\" rx=\"2\"/><path d=\"M4 9h16\"/><path d=\"m10 12 5 3-5 3Z\"/><path d=\"m7 5 2 4\"/><path d=\"m13 5 2 4\"/></svg>",
         "ContentManager" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><ellipse cx=\"12\" cy=\"6\" rx=\"7\" ry=\"3\"/><path d=\"M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6\"/><path d=\"M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6\"/></svg>",
         "Bookings" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z\"/><path d=\"M9 8v8\"/></svg>",
+        "Cancellations" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z\"/><path d=\"m9 9 6 6\"/><path d=\"m15 9-6 6\"/></svg>",
         "Security" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 10V8a4 4 0 0 1 8 0v2\"/><path d=\"M12 14v2\"/></svg>",
         "Transactions" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"6\" width=\"17\" height=\"12\" rx=\"2\"/><path d=\"M3.5 10h17\"/><path d=\"M7 15h3\"/></svg>",
         "Refunds" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 8H4v4\"/><path d=\"M4 12a8 8 0 1 0 2.3-5.7Z\"/><path d=\"M12 8v5l3 2\"/></svg>",
@@ -386,7 +389,7 @@
     var showAdminFilters = new[]
     {
         "Users","UserAccess","Roles","Bookings","Security",
-        "Transactions","Wallets","Notifications","ActivityLogs","Versions","ContentManager"
+        "Transactions","Wallets","Notifications","ActivityLogs","Versions","ContentManager","Cancellations"
     }.Contains(currentAction);
     var adminStatusOptions = currentAction switch
     {
@@ -394,6 +397,7 @@
         "UserAccess" => new[] { "ACTIVE", "DISABLED" },
         "Roles" => new[] { "ACTIVE", "INACTIVE" },
         "Bookings" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
+        "Cancellations" => new[] { "Individual Booking", "Future Show", "History Booking", "History Theater" },
         "Security" => new[] { "VALID", "INVALID", "DUPLICATE", "USED", "ISSUE", "CLEAR" },
         "Transactions" => new[] { "SUCCESS", "PENDING", "FAILED", "CONFIRMED", "CANCELLED" },
         "Wallets" => new[] { "ACTIVE", "DISABLED", "BLOCKED" },
@@ -402,12 +406,21 @@
         "Versions" => new[] { "CURRENT", "PREVIOUS" },
         _ => Array.Empty<string>()
     };
+    if (ViewData["AdminStatusOptions"] is IEnumerable<string> customAdminStatusOptions)
+    {
+        adminStatusOptions = customAdminStatusOptions
+            .Where(option => !string.IsNullOrWhiteSpace(option))
+            .Select(option => option.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+    var adminStatusLabel = ViewData["AdminStatusLabel"] as string ?? "Status";
     var adminMethodLabel = currentAction switch
     {
         "Transactions" => "Payment Method",
         "Security" => "Gate / Device",
         "Notifications" => "Source",
-        "Bookings" or "ContentManager" => "Show Type",
+        "Bookings" or "ContentManager" or "Cancellations" => "Show Type",
         _ => string.Empty
     };
     var adminMethodOptions = currentAction switch
@@ -415,15 +428,50 @@
         "Transactions" => new[] { "UPI", "CARD", "NETBANKING", "WALLET", "QR" },
         "Security" => new[] { "GATE", "SCANNER", "DEVICE", "UNKNOWN" },
         "Notifications" => new[] { "REFUND", "BOOKING", "PAYMENT", "NOTIFICATION", "SECURITY", "AUTH", "ADMIN", "LOG", "EMAIL", "SMS", "PUSH", "IN_APP", "WHATSAPP" },
-        "Bookings" or "ContentManager" => new[] { "MOVIE", "STANDUP", "LIVE" },
+        "Bookings" or "ContentManager" or "Cancellations" => new[] { "MOVIE", "STANDUP", "LIVE", "Movie", "Standup", "Live" },
         _ => Array.Empty<string>()
     };
+    if (ViewData["AdminMethodLabel"] is string customAdminMethodLabel && !string.IsNullOrWhiteSpace(customAdminMethodLabel))
+    {
+        adminMethodLabel = customAdminMethodLabel;
+    }
+    if (ViewData["AdminMethodOptions"] is IEnumerable<string> customAdminMethodOptions)
+    {
+        adminMethodOptions = customAdminMethodOptions
+            .Where(option => !string.IsNullOrWhiteSpace(option))
+            .Select(option => option.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
     var adminPriorityOptions = currentAction switch
     {
         "Notifications" => new[] { "HIGH", "MEDIUM", "LOW", "NORMAL" },
         "Security" => new[] { "HIGH", "NORMAL" },
         _ => Array.Empty<string>()
     };
+    var adminFilterTarget = ViewData["AdminFilterTarget"] as string
+        ?? ".admin-table tbody tr, table tbody tr, .access-card, [data-admin-searchable]";
+    var defaultAdminSortOptions = new[]
+    {
+        "newest|Newest First",
+        "oldest|Oldest First",
+        "priority|Priority First",
+        "status|Status A-Z",
+        "source|Source A-Z"
+    };
+    var adminSortOptionValues = ViewData["AdminSortOptions"] is IEnumerable<string> customAdminSortOptions
+        ? customAdminSortOptions.Where(option => !string.IsNullOrWhiteSpace(option)).ToArray()
+        : defaultAdminSortOptions;
+    var adminSortOptions = adminSortOptionValues
+        .Select(option =>
+        {
+            var parts = option.Split('|', 2);
+            var value = parts[0].Trim();
+            var label = parts.Length > 1 ? parts[1].Trim() : value;
+            return new { Value = value, Label = label };
+        })
+        .Where(option => !string.IsNullOrWhiteSpace(option.Value))
+        .ToArray();
     var canUsePrintTools =
         AmarShowsBook.Helpers.RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
     var canUseProtectedCapture =
@@ -581,7 +629,7 @@
             <section class="admin-detail-panel admin-filter-panel no-print"
                      id="adminContextFilter"
                      data-page-filter
-                     data-page-filter-target=".admin-table tbody tr, table tbody tr, .access-card, [data-admin-searchable]">
+                     data-page-filter-target="@adminFilterTarget">
                 <div class="row g-3 align-items-center">
                     <div class="col-md-3">
                         <input type="text"
@@ -593,7 +641,7 @@
                     {
                     <div class="col-md-2">
                         <select class="form-select rounded-pill" data-page-filter-status>
-                            <option value="">All Status</option>
+                            <option value="">All @adminStatusLabel</option>
                             @foreach(var option in adminStatusOptions)
                             {
                                 <option value="@option">@option</option>
@@ -628,11 +676,10 @@
                     <div class="col-md-2">
                         <select class="form-select rounded-pill" data-page-filter-sort>
                             <option value="">Default Sort</option>
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                            <option value="priority">Priority First</option>
-                            <option value="status">Status A-Z</option>
-                            <option value="source">Source A-Z</option>
+                            @foreach(var option in adminSortOptions)
+                            {
+                                <option value="@option.Value">@option.Label</option>
+                            }
                         </select>
                     </div>
                     <div class="col-md-1 text-end">

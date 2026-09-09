@@ -433,6 +433,45 @@ UPDATE public.""ShowSchedules""
 SET ""ShowDay"" = trim(to_char(""StartTime"", 'Day'))
 WHERE ""ShowDay"" IS NULL OR trim(""ShowDay"") = '';
 
+CREATE TABLE IF NOT EXISTS public.admin_ticket_cancellations
+(
+    id bigserial PRIMARY KEY,
+    cancellation_ref varchar(80) NOT NULL,
+    scope varchar(30) NOT NULL,
+    booking_id bigint NULL,
+    schedule_id integer NULL,
+    show_title varchar(255) NULL,
+    show_type varchar(40) NULL,
+    venue_name varchar(255) NULL,
+    screen_name varchar(255) NULL,
+    reason varchar(500) NOT NULL,
+    affected_bookings integer NOT NULL DEFAULT 0,
+    affected_tickets integer NOT NULL DEFAULT 0,
+    requested_by_user_id bigint NULL,
+    requested_by_name varchar(255) NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_revoked boolean NOT NULL DEFAULT false,
+    revoked_at timestamp without time zone NULL,
+    revoked_by_user_id bigint NULL,
+    revoked_by_name varchar(255) NULL,
+    relaunch_reason varchar(500) NULL
+);
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS is_revoked boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_at timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_by_user_id bigint NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS revoked_by_name varchar(255) NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_reason varchar(500) NULL;
+
 CREATE OR REPLACE VIEW public.vw_home_show_listing AS
 SELECT
     s.""Id"" AS schedule_id,
@@ -470,7 +509,15 @@ LEFT JOIN public.""StandupShows"" st ON s.""StandupShowId"" = st.""Id""
 LEFT JOIN public.""LiveStreams"" ls ON s.""LiveStreamId"" = ls.""Id""
 LEFT JOIN public.""Locations"" l ON s.""LocationId"" = l.""Id""
 LEFT JOIN public.screens sc ON s.screen_id = sc.id
-LEFT JOIN public.venues v ON sc.venue_id = v.id;
+LEFT JOIN public.venues v ON sc.venue_id = v.id
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.admin_ticket_cancellations cancelled
+    WHERE cancelled.scope = 'THEATER'
+      AND COALESCE(cancelled.is_revoked, false) = false
+      AND cancelled.schedule_id = s.""Id""
+);
 ");
                 _homeShowListingViewReady = true;
             }
