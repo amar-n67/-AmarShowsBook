@@ -124,14 +124,36 @@
 
     <div class="cancellation-filter-anchor" data-page-filter-anchor></div>
 
+    <div class="content-tabs cancellation-content-tabs">
+        <button type="button" data-content-target="cancellation-individual" aria-expanded="false" aria-controls="cancellation-individual">
+            <span>Individual Bookings</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="cancellation-shows" aria-expanded="false" aria-controls="cancellation-shows">
+            <span>Future Shows</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="cancellation-relaunch" aria-expanded="false" aria-controls="cancellation-relaunch">
+            <span>Relaunch</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="cancellation-history" aria-expanded="false" aria-controls="cancellation-history">
+            <span>History</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+    </div>
+
     <div class="cancellation-grid">
-        <article class="cancellation-panel">
+        <article id="cancellation-individual" class="cancellation-panel content-section" hidden>
             <div class="cancellation-panel-head">
                 <div>
                     <span>Part 1</span>
                     <h2>All Individual Bookings</h2>
                     <p>Cancel a single user booking. Refund follows the normal cancellation flow.</p>
                 </div>
+                <button type="button" class="content-section-toggle" data-content-collapse="cancellation-individual" aria-label="Hide Individual Bookings">
+                    ↑
+                </button>
             </div>
 
             <div class="table-wrapper">
@@ -199,13 +221,16 @@
             </div>
         </article>
 
-        <article class="cancellation-panel">
+        <article id="cancellation-shows" class="cancellation-panel content-section" hidden>
             <div class="cancellation-panel-head danger-zone">
                 <div>
                     <span>Part 2</span>
                     <h2>All Future Shows - Theater Wise</h2>
                     <p>Shows start from the next second onward. Cancelled shows stay visible here with their status.</p>
                 </div>
+                <button type="button" class="content-section-toggle" data-content-collapse="cancellation-shows" aria-label="Hide Future Shows">
+                    ↑
+                </button>
             </div>
 
             @if (!Model.Shows.Any())
@@ -304,13 +329,16 @@
         </article>
     </div>
 
-    <article class="cancellation-panel mt-4">
+    <article id="cancellation-relaunch" class="cancellation-panel content-section mt-4" hidden>
         <div class="cancellation-panel-head relaunch-zone">
             <div>
                 <span>Part 3</span>
                 <h2>Relaunch Future Cancelled Shows</h2>
                 <p>Only theater cancellations can be relaunched. Individual cancelled tickets stay cancelled.</p>
             </div>
+            <button type="button" class="content-section-toggle" data-content-collapse="cancellation-relaunch" aria-label="Hide Relaunch">
+                ↑
+            </button>
         </div>
 
         @if (!Model.RelaunchableShows.Any())
@@ -392,13 +420,16 @@
         }
     </article>
 
-    <article class="cancellation-panel mt-4">
+    <article id="cancellation-history" class="cancellation-panel content-section mt-4" hidden>
         <div class="cancellation-panel-head">
             <div>
                 <span>Part 4</span>
                 <h2>Cancelled History</h2>
                 <p>All admin cancellations are separated into individual booking and theater show history.</p>
             </div>
+            <button type="button" class="content-section-toggle" data-content-collapse="cancellation-history" aria-label="Hide Cancelled History">
+                ↑
+            </button>
         </div>
 
         <div class="history-sections">
@@ -567,6 +598,70 @@
     .cancellation-filter-anchor {
         height: 0;
         overflow: hidden;
+    }
+
+    .content-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .content-tabs button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 38px;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        padding: 8px 14px;
+        background: var(--admin-panel);
+        color: var(--admin-ink);
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .content-tabs button:hover,
+    .content-tabs button:focus-visible,
+    .content-tabs button.is-active {
+        border-color: var(--admin-rose);
+        background: var(--admin-night);
+        color: #ffffff;
+    }
+
+    .content-toggle-arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        font-weight: 950;
+    }
+
+    .content-section {
+        margin-bottom: 18px;
+    }
+
+    .content-section-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 38px;
+        height: 38px;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: var(--admin-night);
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 950;
+    }
+
+    .content-section-toggle:hover,
+    .content-section-toggle:focus-visible {
+        background: var(--admin-rose);
+        color: #ffffff;
     }
 
     .cancellation-panel {
@@ -927,11 +1022,13 @@
     <script>
         (() => {
             const page = document.querySelector(".cancellation-admin-page");
-            const groups = [...document.querySelectorAll("[data-cancellation-group]")];
-
-            if (!page || groups.length === 0) {
+            if (!page) {
                 return;
             }
+
+            const buttons = [...page.querySelectorAll("[data-content-target]")];
+            const sections = [...page.querySelectorAll(".content-section")];
+            const groups = [...page.querySelectorAll("[data-cancellation-group]")];
 
             const refreshGroups = () => {
                 groups.forEach((group) => {
@@ -940,12 +1037,64 @@
                 });
             };
 
-            const observer = new MutationObserver(refreshGroups);
-            observer.observe(page, {
-                subtree: true,
-                attributes: true,
-                attributeFilter: ["hidden"]
+            const setActiveSection = (targetId, updateHash) => {
+                const targetSection = targetId ? document.getElementById(targetId) : null;
+
+                sections.forEach((section) => {
+                    section.hidden = section !== targetSection;
+                });
+
+                buttons.forEach((button) => {
+                    const isActive = button.dataset.contentTarget === targetId && Boolean(targetSection);
+                    button.classList.toggle("is-active", isActive);
+                    button.setAttribute("aria-expanded", isActive ? "true" : "false");
+
+                    const arrow = button.querySelector(".content-toggle-arrow");
+                    if (arrow) {
+                        arrow.textContent = isActive ? "↑" : "↓";
+                    }
+                });
+
+                refreshGroups();
+
+                if (updateHash) {
+                    if (targetSection) {
+                        history.replaceState(null, "", "#" + targetId);
+                    } else {
+                        history.replaceState(null, "", window.location.pathname + window.location.search);
+                    }
+                }
+            };
+
+            buttons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    const targetId = button.dataset.contentTarget;
+                    const isOpen = button.getAttribute("aria-expanded") === "true";
+                    setActiveSection(isOpen ? "" : targetId, true);
+                });
             });
+
+            page.querySelectorAll("[data-content-collapse]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    setActiveSection("", true);
+                });
+            });
+
+            const hashTarget = window.location.hash.replace("#", "");
+            if (hashTarget && sections.some((section) => section.id === hashTarget)) {
+                setActiveSection(hashTarget, false);
+            } else {
+                setActiveSection("", false);
+            }
+
+            if (groups.length > 0) {
+                const observer = new MutationObserver(refreshGroups);
+                observer.observe(page, {
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ["hidden"]
+                });
+            }
 
             refreshGroups();
         })();
