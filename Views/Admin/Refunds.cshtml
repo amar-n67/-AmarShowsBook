@@ -5,16 +5,31 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Refund Management";
+    var refundRows = Model.ToList();
     var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
-    var totalRefunds = Model.Count();
-    var successRefunds = Model.Count(x => x.RefundStatus == "SUCCESS");
-    var pendingRefunds = Model.Count(x => x.RefundStatus == "PENDING");
-    var failedRefunds = Model.Count(x => x.RefundStatus == "FAILED");
-    var rejectedRefunds = Model.Count(x => x.RefundStatus == "REJECTED");
-    var totalRefundAmount = Model.Sum(x => x.RefundAmount ?? 0);
+    var totalRefunds = refundRows.Count;
+    var successRefunds = refundRows.Count(x => x.RefundStatus == "SUCCESS");
+    var pendingRefunds = refundRows.Count(x => x.RefundStatus == "PENDING");
+    var failedRefunds = refundRows.Count(x => x.RefundStatus == "FAILED");
+    var rejectedRefunds = refundRows.Count(x => x.RefundStatus == "REJECTED");
+    var totalRefundAmount = refundRows.Sum(x => x.RefundAmount ?? 0);
     var currentPage = ViewBag.CurrentPage ?? 1;
     var totalPages = ViewBag.TotalPages ?? 1;
     var totalRecords = ViewBag.TotalRecords ?? totalRefunds;
+    var statusOptions = refundRows
+        .Select(x => x.RefundStatus)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Select(x => x!)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(x => x)
+        .ToList();
+    var methodOptions = refundRows
+        .Select(x => x.RefundMethod)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Select(x => x!)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(x => x)
+        .ToList();
 }
 <div class="container-fluid px-4 py-4">
     @if (TempData["Success"] != null)
@@ -219,15 +234,12 @@
                         <option value="">
                             All Status
                         </option>
-                        <option value="SUCCESS">
-                            SUCCESS
-                        </option>
-                        <option value="PENDING">
-                            PENDING
-                        </option>
-                        <option value="FAILED">
-                            FAILED
-                        </option>
+                        @foreach (var status in statusOptions)
+                        {
+                            <option value="@status">
+                                @status
+                            </option>
+                        }
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -237,18 +249,12 @@
                         <option value="">
                             All Methods
                         </option>
-                        <option value="UPI">
-                            UPI
-                        </option>
-                        <option value="CARD">
-                            CARD
-                        </option>
-                        <option value="NETBANKING">
-                            NETBANKING
-                        </option>
-                        <option value="WALLET">
-                            WALLET
-                        </option>
+                        @foreach (var method in methodOptions)
+                        {
+                            <option value="@method">
+                                @method
+                            </option>
+                        }
                     </select>
                 </div>
                 <div class="col-md-2 text-end">
@@ -261,9 +267,22 @@
             </div>
         </div>
     </div>
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0 refund-auto-table" id="refundTable">
+    <div class="card border-0 shadow-sm rounded-4 refund-table-card">
+        <div class="table-wrapper refund-table-shell">
+            <table class="table admin-table refund-grid-table align-middle mb-0" id="refundTable">
+                <colgroup>
+                    <col class="refund-col-ref" />
+                    <col class="refund-col-user" />
+                    <col class="refund-col-booking" />
+                    <col class="refund-col-transaction" />
+                    <col class="refund-col-amount" />
+                    <col class="refund-col-status" />
+                    <col class="refund-col-method" />
+                    <col class="refund-col-requested" />
+                    <col class="refund-col-workflow" />
+                    <col class="refund-col-view" />
+                    <col class="refund-col-workflow-actions" />
+                </colgroup>
                 <thead class="table-light">
                     <tr>
                         <th>Refund Ref</th>
@@ -280,7 +299,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @if (!refundRows.Any())
+                    {
+                        <tr>
+                            <td colspan="11" class="empty-state">
+                                No refunds found
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in refundRows)
                     {
                         var refundDetailReason = !string.IsNullOrWhiteSpace(item.FailureReason)
                             ? item.FailureReason
@@ -290,22 +317,28 @@
 
                         <tr data-refund-status="@item.RefundStatus"
                             data-refund-method="@item.RefundMethod">
-                            <td class="fw-semibold text-dark">
-                                @item.RefundRef
-                            </td>
                             <td>
-                                <div class="fw-semibold">
-                                    @item.UserName
-                                </div>
-                                <div class="small text-muted">
-                                    @item.UserEmail
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.RefundRef) ? "NA" : item.RefundRef)
                                 </div>
                             </td>
                             <td>
-                                @item.BookingRef
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.UserName) ? "NA" : item.UserName)
+                                </div>
+                                <div class="sub-text">
+                                    @(string.IsNullOrWhiteSpace(item.UserEmail) ? "NA" : item.UserEmail)
+                                </div>
                             </td>
                             <td>
-                                @item.TransactionRef
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.BookingRef) ? "NA" : item.BookingRef)
+                                </div>
+                            </td>
+                            <td>
+                                <div class="primary-text">
+                                    @(string.IsNullOrWhiteSpace(item.TransactionRef) ? "NA" : item.TransactionRef)
+                                </div>
                             </td>
                             <td class="fw-bold">
                                 @CurrencyFormatter.FormatRupees(item.RefundAmount)
@@ -341,17 +374,18 @@
                                     </span>
                                 }
                             </td>
-                            <td>
+                            <td class="refund-method-cell">
                                 <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
-                                    @item.RefundMethod
+                                    @(string.IsNullOrWhiteSpace(item.RefundMethod) ? "NA" : item.RefundMethod)
                                 </span>
                             </td>
-                            <td>
-                                @item.RequestedAt?
-                                <br />
-                                <span class="small text-muted">
-                                    @item.RequestedAt?
-                                </span>
+                            <td class="refund-date-cell">
+                                <div class="primary-text">
+                                    @ShowTimeFormatter.Format(item.RequestedAt, "dd MMM yyyy", "NA")
+                                </div>
+                                <div class="sub-text">
+                                    @ShowTimeFormatter.Format(item.RequestedAt, "hh:mm tt", "")
+                                </div>
                             </td>
                             <td>
     @if (item.RefundStatus == "SUCCESS")
@@ -545,14 +579,133 @@
 </script>
 
 <style>
-    .refund-auto-table {
-        table-layout: auto;
-        width: max-content;
-        min-width: 100%;
+    .refund-table-card {
+        overflow: visible;
     }
 
-    .refund-auto-table th,
-    .refund-auto-table td {
+    .refund-table-shell {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+    }
+
+    .refund-grid-table {
+        min-width: 1480px !important;
+        table-layout: fixed !important;
+    }
+
+    .refund-grid-table .refund-col-ref {
+        width: 150px;
+    }
+
+    .refund-grid-table .refund-col-user {
+        width: 210px;
+    }
+
+    .refund-grid-table .refund-col-booking {
+        width: 135px;
+    }
+
+    .refund-grid-table .refund-col-transaction {
+        width: 165px;
+    }
+
+    .refund-grid-table .refund-col-amount {
+        width: 115px;
+    }
+
+    .refund-grid-table .refund-col-status {
+        width: 130px;
+    }
+
+    .refund-grid-table .refund-col-method {
+        width: 115px;
+    }
+
+    .refund-grid-table .refund-col-requested {
+        width: 135px;
+    }
+
+    .refund-grid-table .refund-col-workflow {
+        width: 175px;
+    }
+
+    .refund-grid-table .refund-col-view {
+        width: 105px;
+    }
+
+    .refund-grid-table .refund-col-workflow-actions {
+        width: 185px;
+    }
+
+    .refund-grid-table th,
+    .refund-grid-table td {
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .refund-grid-table th:first-child,
+    .refund-grid-table td:first-child,
+    .refund-grid-table th:last-child,
+    .refund-grid-table td:last-child,
+    .refund-grid-table td:has(.btn),
+    .refund-grid-table td:has(form) {
+        width: auto !important;
+    }
+
+    .refund-grid-table .primary-text {
+        color: var(--admin-ink, #111827);
+        font-weight: 850;
+        line-height: 1.25;
+    }
+
+    .refund-grid-table .sub-text {
+        margin-top: 3px;
+        color: var(--admin-muted, #64748b);
+        font-size: 0.78rem;
+        line-height: 1.25;
+    }
+
+    .refund-grid-table .badge {
+        max-width: 100%;
+        white-space: normal;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    .refund-grid-table .btn {
         white-space: nowrap;
+    }
+
+    .refund-grid-table .btn-group {
+        display: inline-flex;
+        flex-wrap: nowrap;
+        max-width: 100%;
+    }
+
+    .refund-grid-table .btn-group form {
+        margin: 0;
+    }
+
+    .refund-grid-table .app-info {
+        margin-left: 4px;
+        vertical-align: middle;
+    }
+
+    .refund-date-cell,
+    .refund-method-cell {
+        text-align: center;
+    }
+
+    @@media (max-width: 900px) {
+        .refund-grid-table {
+            min-width: 1260px !important;
+        }
+
+        .refund-grid-table th,
+        .refund-grid-table td {
+            padding: 10px 11px;
+            font-size: 0.82rem;
+        }
     }
 </style>
