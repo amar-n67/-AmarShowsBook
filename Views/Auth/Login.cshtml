@@ -11,8 +11,10 @@
         <div class="auth-copy">
             <span class="auth-kicker">Account Access</span>
             <div class="auth-logo-stage">
-                <span class="auth-logo-ring" aria-hidden="true"></span>
-                <img class="auth-logo" src="~/images/brand/showtime-login-logo.png" alt="showTime" asp-append-version="true" />
+                <span class="auth-logo-orbit auth-logo-orbit-one" aria-hidden="true"></span>
+                <span class="auth-logo-orbit auth-logo-orbit-two" aria-hidden="true"></span>
+                <span class="auth-logo-pulse" aria-hidden="true"></span>
+                <img class="auth-logo" src="~/images/brand/showtime-login-logo-tight.png" alt="showTime" asp-append-version="true" />
             </div>
             <h1>Welcome Back</h1>
             <p>Sign in securely to continue to your bookings, wallet, and tickets.</p>
@@ -172,26 +174,30 @@
 }
 
 .auth-frame {
+    --auth-panel-height: clamp(398px, 58vh, 456px);
     position: relative;
     z-index: 2;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
-    gap: clamp(22px, 4vw, 46px);
+    grid-template-columns: repeat(2, minmax(320px, 430px));
+    justify-content: center;
+    gap: clamp(18px, 3vw, 34px);
     align-items: stretch;
     width: min(1080px, calc(100% - 32px));
     margin: 0 auto;
 }
+
 .auth-copy {
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    min-height: 480px;
+    justify-content: center;
+    min-height: var(--auth-panel-height);
     overflow: hidden;
     border-radius: 8px;
-    padding: clamp(26px, 5vw, 54px);
+    padding: clamp(22px, 4vw, 38px);
     color: var(--app-nav-text);
     background:
+        radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--app-card) 32%, transparent), transparent 30%),
         linear-gradient(150deg,
             rgba(255, 255, 255, 0.16),
             rgba(15, 23, 42, 0.12)),
@@ -204,8 +210,8 @@
 .auth-copy::after {
     content: "";
     position: absolute;
-    inset-inline: 24px;
-    height: 10px;
+    inset-inline: 18px;
+    height: 8px;
     background:
         repeating-linear-gradient(90deg,
             rgba(255,255,255,0.58) 0 10px,
@@ -223,25 +229,65 @@
 
 .auth-logo-stage {
     position: relative;
-    width: min(350px, 86%);
-    aspect-ratio: 1.35;
+    width: min(218px, 76%);
+    aspect-ratio: 1;
     display: grid;
     place-items: center;
-    margin: 14px 0 18px;
+    align-self: center;
+    margin: 8px auto 16px;
 }
 
-.auth-logo-ring {
+.auth-logo-stage::before,
+.auth-logo-stage::after {
+    content: "";
     position: absolute;
-    inset: 8%;
-    border: 2px solid color-mix(in srgb, var(--app-accent) 70%, transparent);
+    inset: 4%;
     border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--app-nav-text) 26%, transparent);
+}
+
+.auth-logo-stage::after {
+    inset: 14%;
+    border-style: dashed;
+    opacity: 0.54;
+    animation: authLogoSpin 14s linear infinite;
+}
+
+.auth-logo-orbit,
+.auth-logo-pulse {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 999px;
+}
+
+.auth-logo-orbit {
+    inset: 0;
+    border: 2px solid color-mix(in srgb, var(--app-accent) 70%, transparent);
     opacity: 0.64;
     animation: authLogoRing 2.8s ease-in-out infinite;
 }
+
+.auth-logo-orbit-two {
+    inset: 20%;
+    border-color: color-mix(in srgb, var(--app-accent-strong) 72%, transparent);
+    animation-delay: -1.25s;
+}
+
+.auth-logo-pulse {
+    inset: 20%;
+    background:
+        radial-gradient(circle, color-mix(in srgb, var(--app-card) 82%, transparent), transparent 58%),
+        color-mix(in srgb, var(--app-card) 18%, transparent);
+    box-shadow: 0 22px 48px color-mix(in srgb, var(--app-primary) 22%, transparent);
+    animation: authLogoPulse 3.6s ease-in-out infinite;
+}
+
 .auth-logo {
+    position: relative;
+    z-index: 2;
     display: block;
-    width: 86%;
-    max-height: 230px;
+    width: 72%;
+    max-height: 158px;
     object-fit: contain;
     object-position: center;
     filter: drop-shadow(0 18px 26px rgba(15, 23, 42, 0.28));
@@ -250,24 +296,29 @@
 
 .auth-copy h1 {
     margin: 0 0 10px;
-    font-size: clamp(2.4rem, 5vw, 4.8rem);
+    text-align: center;
+    font-size: clamp(2.05rem, 4vw, 3.35rem);
     line-height: 0.96;
     font-weight: 950;
     letter-spacing: 0;
 }
+
 .auth-copy p {
-    max-width: 560px;
+    max-width: 320px;
     margin: 0;
+    align-self: center;
+    text-align: center;
     color: color-mix(in srgb, var(--app-nav-text) 84%, transparent);
-    font-size: 1.08rem;
+    font-size: 0.98rem;
     font-weight: 650;
 }
 
 .auth-mini-status {
+    justify-content: center;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 18px;
+    margin-top: 16px;
 }
 
 .auth-mini-status > span {
@@ -289,8 +340,18 @@
     font-weight: 850;
     letter-spacing: 0.06em;
 }
-.auth-card {
+
+.auth-kicker {
     align-self: center;
+    margin-bottom: 8px;
+}
+
+.auth-card {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: var(--auth-panel-height);
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--app-input-border) 72%, #ffffff 28%);
     border-radius: 8px;
@@ -444,23 +505,27 @@
         width: min(100% - 24px, 520px);
     }
 
+    .auth-copy,
+    .auth-card {
+        min-height: auto;
+    }
+
     .auth-copy {
-        min-height: 310px;
         text-align: center;
         align-items: center;
+        padding: 22px;
     }
 
     .auth-copy p {
         font-size: 0.98rem;
     }
 
-    .auth-logo {
-        width: min(240px, 88%);
-        max-height: 180px;
+    .auth-logo-stage {
+        width: min(180px, 72%);
     }
 
-    .auth-logo-stage {
-        margin-inline: auto;
+    .auth-logo {
+        max-height: 132px;
     }
 
     .auth-card form,
@@ -481,7 +546,9 @@
     .auth-copy,
     .auth-card,
     .auth-logo,
-    .auth-logo-ring,
+    .auth-logo-orbit,
+    .auth-logo-pulse,
+    .auth-logo-stage::after,
     .auth-field {
         animation: none !important;
     }
@@ -551,7 +618,7 @@
 
 @@keyframes authLogoFloat {
     50% {
-        transform: translateY(-8px);
+        transform: translateY(-6px);
     }
 }
 
@@ -563,6 +630,23 @@
     50% {
         transform: scale(1.08);
         opacity: 0.68;
+    }
+}
+
+@@keyframes authLogoPulse {
+    0%, 100% {
+        transform: scale(0.96);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.04);
+        opacity: 1;
+    }
+}
+
+@@keyframes authLogoSpin {
+    to {
+        transform: rotate(360deg);
     }
 }
 </style>
