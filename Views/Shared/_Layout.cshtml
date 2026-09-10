@@ -3816,6 +3816,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	        const submitButton = event.target.closest("button[type='submit'],input[type='submit']");
 	        if (submitButton && !submitButton.disabled) {
+	            const form = submitButton.form;
+	            if (form && typeof form.checkValidity === "function" && !form.checkValidity()) {
+	                return;
+	            }
 	            showProgressCursor(2200);
 	        }
 	    }, true);

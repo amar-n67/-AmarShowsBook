@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Npgsql;
+using NpgsqlTypes;
+using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -2098,9 +2101,19 @@ DO UPDATE SET
             return RedirectToAction(nameof(Cancellations));
         }
 
+        [HttpGet]
+        public IActionResult RelaunchTheaterShow()
+        {
+            return Redirect($"{Url.Action(nameof(Cancellations))}#cancellation-relaunch");
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RelaunchTheaterShow(long cancellationId, string relaunchReason, string confirmationText)
+        public async Task<IActionResult> RelaunchTheaterShow(
+            long cancellationId,
+            string relaunchReason,
+            string confirmationText,
+            DateTime? relaunchStartTime = null)
         {
             if (!RbacAuthorizationHelper.CanAccess(HttpContext, _rbacService, "BOOKING", "CANCEL"))
             {
@@ -2123,51 +2136,69 @@ DO UPDATE SET
 
             await EnsureAdminCancellationStorage();
 
-            var cancellation = await _context.AdminTicketCancellations
-                .FirstOrDefaultAsync(x =>
-                    x.Id == cancellationId &&
-                    x.Scope == "THEATER" &&
-                    x.ScheduleId.HasValue &&
-                    !x.IsRevoked);
+            var relaunchSameTime = Request.HasFormContentType &&
+                Request.Form.TryGetValue("relaunchSameTime", out var sameTimeValues) &&
+                sameTimeValues.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
 
-            if (cancellation == null)
+            DateTime? newStartTimeUtc = null;
+            if (!relaunchSameTime)
             {
-                TempData["Error"] = "Only active theater cancellations can be relaunched.";
-                return RedirectToAction(nameof(Cancellations));
+                if (!relaunchStartTime.HasValue)
+                {
+                    TempData["Error"] = "Please select a new show date and time, or choose same previous time.";
+                    return RedirectToAction(nameof(Cancellations));
+                }
+
+                var localRelaunchStart = DateTime.SpecifyKind(relaunchStartTime.Value, DateTimeKind.Unspecified);
+                var appTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+                newStartTimeUtc = TimeZoneInfo.ConvertTimeToUtc(localRelaunchStart, appTimeZone);
+                if (newStartTimeUtc <= DateTime.UtcNow)
+                {
+                    TempData["Error"] = "New relaunch time must be in the future.";
+                    return RedirectToAction(nameof(Cancellations));
+                }
             }
 
-            var showSummary = await GetCancellationScheduleSummary(cancellation.ScheduleId!.Value);
-            if (showSummary.StartTime == DateTime.MinValue || showSummary.StartTime < DatabaseTimestampNow())
-            {
-                TempData["Error"] = "Only future cancelled theater shows can be relaunched.";
-                return RedirectToAction(nameof(Cancellations));
-            }
-
-            var now = DatabaseTimestampNow();
             var adminUserId = TryGetSessionUserId();
             var adminName = HttpContext.Session.GetString("UserName") ??
                 HttpContext.Session.GetString("UserEmail") ??
                 "Admin";
 
-            cancellation.IsRevoked = true;
-            cancellation.RevokedAt = now;
-            cancellation.RevokedByUserId = adminUserId;
-            cancellation.RevokedByName = adminName;
-            cancellation.RelaunchReason = reason;
-
-            await _context.SaveChangesAsync();
+            AdminTheaterRelaunchResult result;
+            try
+            {
+                result = await ExecuteAdminTheaterRelaunch(
+                    cancellationId,
+                    reason,
+                    adminUserId,
+                    adminName,
+                    relaunchSameTime,
+                    newStartTimeUtc);
+            }
+            catch (PostgresException ex)
+            {
+                TempData["Error"] = string.IsNullOrWhiteSpace(ex.MessageText)
+                    ? "The database could not relaunch this show."
+                    : ex.MessageText;
+                return RedirectToAction(nameof(Cancellations));
+            }
 
             await _activityLogger.LogAsync(
                 userId: adminUserId,
                 action: "ADMIN_RELAUNCH_THEATER",
                 module: "BOOKING",
                 entityType: "THEATER",
-                entityId: cancellation.ScheduleId,
-                description: $"Admin relaunched future show schedule {cancellation.ScheduleId}. Reason: {reason}",
+                entityId: result.ScheduleId,
+                description: relaunchSameTime
+                    ? $"Admin relaunched future show schedule {result.ScheduleId} at the same time. Reason: {reason}"
+                    : $"Admin relaunched future show schedule {result.ScheduleId} from {result.PreviousStartTime} to {result.NewStartTime}. Reason: {reason}",
                 status: "SUCCESS",
                 isError: 0);
 
-            TempData["Success"] = "Future theater show relaunched. It will appear again for booking; previously cancelled tickets remain cancelled.";
+            var relaunchTimeText = result.NewStartTime.ToString("dd MMM yyyy, hh:mm tt", CultureInfo.InvariantCulture);
+            TempData["Success"] = relaunchSameTime
+                ? $"Future theater show relaunched at the same previous time. {result.AffectedCancellations} cancellation record(s) were synced and it will appear again for booking."
+                : $"Future theater show relaunched at {relaunchTimeText}. {result.AffectedCancellations} cancellation record(s) were synced and it will appear again for booking.";
             return RedirectToAction(nameof(Cancellations));
         }
 
@@ -3147,6 +3178,116 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 DateTimeKind.Unspecified);
         }
 
+        private static DateTime? ToAppLocalHistoryTime(DateTime value)
+        {
+            if (value == DateTime.MinValue)
+            {
+                return null;
+            }
+
+            var utcValue = value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            };
+
+            var localValue = TimeZoneInfo.ConvertTimeFromUtc(
+                utcValue,
+                TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata"));
+
+            return DateTime.SpecifyKind(localValue, DateTimeKind.Unspecified);
+        }
+
+        private async Task<AdminTheaterRelaunchResult> ExecuteAdminTheaterRelaunch(
+            long cancellationId,
+            string reason,
+            long? adminUserId,
+            string adminName,
+            bool relaunchSameTime,
+            DateTime? newStartTimeUtc)
+        {
+            var connection = _context.Database.GetDbConnection();
+            if (connection is not NpgsqlConnection npgsqlConnection)
+            {
+                throw new InvalidOperationException("The relaunch workflow requires the PostgreSQL database connection.");
+            }
+
+            var shouldCloseConnection = npgsqlConnection.State != ConnectionState.Open;
+            if (shouldCloseConnection)
+            {
+                await npgsqlConnection.OpenAsync();
+            }
+
+            try
+            {
+                await using var command = new NpgsqlCommand(@"
+SELECT
+    schedule_id,
+    affected_cancellations,
+    previous_start_time,
+    previous_end_time,
+    new_start_time,
+    new_end_time
+FROM public.fn_admin_relaunch_theater_show(
+    @cancellation_id,
+    @relaunch_reason,
+    @revoked_by_user_id,
+    @revoked_by_name,
+    @relaunch_same_time,
+    @new_start_time_utc);", npgsqlConnection);
+
+                command.Parameters.AddWithValue("cancellation_id", NpgsqlDbType.Bigint, cancellationId);
+                command.Parameters.AddWithValue("relaunch_reason", NpgsqlDbType.Varchar, reason);
+                command.Parameters.Add("revoked_by_user_id", NpgsqlDbType.Bigint).Value = (object?)adminUserId ?? DBNull.Value;
+                command.Parameters.AddWithValue("revoked_by_name", NpgsqlDbType.Varchar, adminName);
+                command.Parameters.AddWithValue("relaunch_same_time", NpgsqlDbType.Boolean, relaunchSameTime);
+
+                var newStartParameter = command.Parameters.Add("new_start_time_utc", NpgsqlDbType.TimestampTz);
+                newStartParameter.Value = newStartTimeUtc.HasValue
+                    ? DateTime.SpecifyKind(newStartTimeUtc.Value, DateTimeKind.Utc)
+                    : DBNull.Value;
+
+                await using var reader = await command.ExecuteReaderAsync();
+                if (!await reader.ReadAsync())
+                {
+                    throw new InvalidOperationException("The database did not return relaunch details.");
+                }
+
+                return new AdminTheaterRelaunchResult
+                {
+                    ScheduleId = reader.GetInt32(reader.GetOrdinal("schedule_id")),
+                    AffectedCancellations = reader.GetInt32(reader.GetOrdinal("affected_cancellations")),
+                    PreviousStartTime = reader.GetDateTime(reader.GetOrdinal("previous_start_time")),
+                    PreviousEndTime = reader.GetDateTime(reader.GetOrdinal("previous_end_time")),
+                    NewStartTime = reader.GetDateTime(reader.GetOrdinal("new_start_time")),
+                    NewEndTime = reader.GetDateTime(reader.GetOrdinal("new_end_time"))
+                };
+            }
+            finally
+            {
+                if (shouldCloseConnection)
+                {
+                    await npgsqlConnection.CloseAsync();
+                }
+            }
+        }
+
+        private sealed class AdminTheaterRelaunchResult
+        {
+            public int ScheduleId { get; set; }
+
+            public int AffectedCancellations { get; set; }
+
+            public DateTime PreviousStartTime { get; set; }
+
+            public DateTime PreviousEndTime { get; set; }
+
+            public DateTime NewStartTime { get; set; }
+
+            public DateTime NewEndTime { get; set; }
+        }
+
         private async Task<AdminCancellationsViewModel> BuildAdminCancellationsViewModel()
         {
             var bookingRows = await _context.VwBookingCompleteDetails
@@ -3299,7 +3440,7 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 .Select(x => x.TransactionId!.Value)
                 .ToList();
             var scheduleIds = activeBookings.Select(x => x.ScheduleId).Distinct().ToList();
-            var scheduleSummaries = new Dictionary<int, (string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime)>();
+            var scheduleSummaries = new Dictionary<int, (string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime, DateTime EndTime)>();
             foreach (var bookingScheduleId in scheduleIds)
             {
                 scheduleSummaries[bookingScheduleId] = await GetCancellationScheduleSummary(bookingScheduleId);
@@ -3336,6 +3477,8 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 .ToListAsync();
 
             var affectedTickets = 0;
+            var refundWorkflowBookings = 0;
+            var noRefundBookings = 0;
             var walletRefunds = new List<(Booking Booking, Transaction Transaction, Refund Refund, decimal Amount)>();
             var couponReversals = new List<(Booking Booking, Transaction Transaction, long CouponId, decimal Amount)>();
             foreach (var booking in activeBookings)
@@ -3366,6 +3509,22 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                     var refundStatus = ShouldAutoRefund(refundMethod) ? "SUCCESS" : "PENDING";
                     var refundPolicy = GetCancellationRefundPolicyText(bookingScheduleSummary.StartTime, now);
 
+                    if (refundAmount <= 0)
+                    {
+                        booking.PaymentStatus = "NO_REFUND";
+                        booking.RefundStatus = "NO_REFUND";
+                        transaction.RefundStatus = "NO_REFUND";
+                        transaction.UpdatedAt = now;
+                        noRefundBookings++;
+
+                        if (booking.CouponId.HasValue && couponAmount > 0)
+                        {
+                            couponReversals.Add((booking, transaction, booking.CouponId.Value, couponAmount));
+                        }
+
+                        continue;
+                    }
+
                     var refund = new Refund
                     {
                         booking_id = booking.Id,
@@ -3390,6 +3549,7 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                     };
 
                     _context.Refunds.Add(refund);
+                    refundWorkflowBookings++;
 
                     transaction.RefundStatus = refundStatus;
                     transaction.RefundedAmount = (transaction.RefundedAmount ?? 0) + refundAmount;
@@ -3464,7 +3624,9 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 AffectedTickets = affectedTickets,
                 RequestedByUserId = adminUserId,
                 RequestedByName = adminName,
-                CreatedAt = now
+                CreatedAt = now,
+                RelaunchOriginalStartTime = ToAppLocalHistoryTime(scheduleSummary.StartTime),
+                RelaunchOriginalEndTime = ToAppLocalHistoryTime(scheduleSummary.EndTime)
             });
 
             await _context.SaveChangesAsync();
@@ -3480,13 +3642,21 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 status: "SUCCESS",
                 isError: 0);
 
-            return (true, $"Cancelled {activeBookings.Count} booking(s) and {affectedTickets} ticket(s). Refund flow has been created.");
+            var refundMessage = refundWorkflowBookings > 0
+                ? "Refund flow has been created where refundable amount was due."
+                : "No refundable amount was due.";
+            if (noRefundBookings > 0 && refundWorkflowBookings > 0)
+            {
+                refundMessage += $" {noRefundBookings} booking(s) had no refundable amount.";
+            }
+
+            return (true, $"Cancelled {activeBookings.Count} booking(s) and {affectedTickets} ticket(s). {refundMessage}");
         }
 
         private async Task<(bool Success, string Message)> CancelEmptyFutureShowByAdmin(
             int scheduleId,
             string reason,
-            (string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime) showSummary)
+            (string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime, DateTime EndTime) showSummary)
         {
             var now = DatabaseTimestampNow();
             var adminUserId = TryGetSessionUserId();
@@ -3508,7 +3678,9 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 AffectedTickets = 0,
                 RequestedByUserId = adminUserId,
                 RequestedByName = adminName,
-                CreatedAt = now
+                CreatedAt = now,
+                RelaunchOriginalStartTime = ToAppLocalHistoryTime(showSummary.StartTime),
+                RelaunchOriginalEndTime = ToAppLocalHistoryTime(showSummary.EndTime)
             });
 
             await _context.SaveChangesAsync();
@@ -3526,7 +3698,7 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
             return (true, "Future show cancelled. It will no longer appear in Home or booking lists.");
         }
 
-        private async Task<(string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime)> GetCancellationScheduleSummary(int scheduleId)
+        private async Task<(string ShowTitle, string ShowType, string VenueName, string ScreenName, DateTime StartTime, DateTime EndTime)> GetCancellationScheduleSummary(int scheduleId)
         {
             var schedule = await _context.ShowSchedules
                 .AsNoTracking()
@@ -3551,7 +3723,8 @@ private async Task RestoreBookingAfterRefundRejection(Refund refund)
                 schedule?.Type ?? "Show",
                 venueName,
                 schedule?.Screen?.ScreenName ?? "Screen not mapped",
-                schedule?.StartTime ?? DateTime.MinValue);
+                schedule?.StartTime ?? DateTime.MinValue,
+                schedule?.EndTime ?? DateTime.MinValue);
         }
 
         private static string? NormalizeCancellationReason(string? reason)
@@ -3802,7 +3975,12 @@ CREATE TABLE IF NOT EXISTS public.admin_ticket_cancellations
     revoked_at timestamp without time zone NULL,
     revoked_by_user_id bigint NULL,
     revoked_by_name varchar(255) NULL,
-    relaunch_reason varchar(500) NULL
+    relaunch_reason varchar(500) NULL,
+    relaunch_same_time boolean NOT NULL DEFAULT true,
+    relaunch_original_start_time timestamp without time zone NULL,
+    relaunch_original_end_time timestamp without time zone NULL,
+    relaunch_new_start_time timestamp without time zone NULL,
+    relaunch_new_end_time timestamp without time zone NULL
 );
 
 ALTER TABLE public.admin_ticket_cancellations
@@ -3819,6 +3997,199 @@ ADD COLUMN IF NOT EXISTS revoked_by_name varchar(255) NULL;
 
 ALTER TABLE public.admin_ticket_cancellations
 ADD COLUMN IF NOT EXISTS relaunch_reason varchar(500) NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_same_time boolean NOT NULL DEFAULT true;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_original_start_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_original_end_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_new_start_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_new_end_time timestamp without time zone NULL;
+
+UPDATE public.admin_ticket_cancellations cancellation
+SET
+    relaunch_original_start_time = COALESCE(cancellation.relaunch_original_start_time, schedule.""StartTime"" AT TIME ZONE 'Asia/Kolkata'),
+    relaunch_original_end_time = COALESCE(cancellation.relaunch_original_end_time, schedule.""EndTime"" AT TIME ZONE 'Asia/Kolkata')
+FROM public.""ShowSchedules"" schedule
+WHERE cancellation.schedule_id = schedule.""Id""
+  AND (
+      cancellation.relaunch_original_start_time IS NULL
+      OR cancellation.relaunch_original_end_time IS NULL
+  );
+
+UPDATE public.admin_ticket_cancellations
+SET
+    relaunch_new_start_time = COALESCE(relaunch_new_start_time, relaunch_original_start_time),
+    relaunch_new_end_time = COALESCE(relaunch_new_end_time, relaunch_original_end_time)
+WHERE is_revoked = true
+  AND (
+      relaunch_new_start_time IS NULL
+      OR relaunch_new_end_time IS NULL
+  );
+
+CREATE OR REPLACE FUNCTION public.fn_admin_relaunch_theater_show
+(
+    p_cancellation_id bigint,
+    p_relaunch_reason varchar,
+    p_revoked_by_user_id bigint,
+    p_revoked_by_name varchar,
+    p_relaunch_same_time boolean,
+    p_new_start_time_utc timestamp with time zone DEFAULT NULL
+)
+RETURNS TABLE
+(
+    schedule_id integer,
+    affected_cancellations integer,
+    previous_start_time timestamp without time zone,
+    previous_end_time timestamp without time zone,
+    new_start_time timestamp without time zone,
+    new_end_time timestamp without time zone
+)
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_cancellation record;
+    v_schedule record;
+    v_schedule_id integer;
+    v_reason varchar(500);
+    v_previous_start_time timestamp without time zone;
+    v_previous_end_time timestamp without time zone;
+    v_new_start_time timestamp without time zone;
+    v_new_end_time timestamp without time zone;
+    v_new_start_time_utc timestamp with time zone;
+    v_new_end_time_utc timestamp with time zone;
+    v_duration interval;
+    v_now_utc timestamp with time zone := CURRENT_TIMESTAMP;
+    v_revoked_at timestamp without time zone := CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
+    v_affected_cancellations integer := 0;
+BEGIN
+    v_reason := left(btrim(COALESCE(p_relaunch_reason, '')), 500);
+    IF v_reason = '' THEN
+        RAISE EXCEPTION 'Please enter a clear relaunch reason.' USING ERRCODE = 'P0001';
+    END IF;
+
+    SELECT cancellation.*
+    INTO v_cancellation
+    FROM public.admin_ticket_cancellations cancellation
+    WHERE cancellation.id = p_cancellation_id
+    FOR UPDATE;
+
+    IF NOT FOUND
+       OR v_cancellation.scope <> 'THEATER'
+       OR v_cancellation.schedule_id IS NULL
+       OR COALESCE(v_cancellation.is_revoked, false) = true
+    THEN
+        RAISE EXCEPTION 'Only active theater cancellations can be relaunched.' USING ERRCODE = 'P0001';
+    END IF;
+
+    v_schedule_id := v_cancellation.schedule_id;
+
+    SELECT schedule.*
+    INTO v_schedule
+    FROM public.""ShowSchedules"" schedule
+    WHERE schedule.""Id"" = v_schedule_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Show schedule was not found for this cancellation.' USING ERRCODE = 'P0001';
+    END IF;
+
+    v_previous_start_time := COALESCE(
+        v_cancellation.relaunch_original_start_time,
+        v_schedule.""StartTime"" AT TIME ZONE 'Asia/Kolkata');
+    v_previous_end_time := COALESCE(
+        v_cancellation.relaunch_original_end_time,
+        v_schedule.""EndTime"" AT TIME ZONE 'Asia/Kolkata');
+
+    v_duration := CASE
+        WHEN v_previous_end_time > v_previous_start_time
+            THEN v_previous_end_time - v_previous_start_time
+        WHEN v_schedule.""EndTime"" > v_schedule.""StartTime""
+            THEN v_schedule.""EndTime"" - v_schedule.""StartTime""
+        ELSE interval '120 minutes'
+    END;
+
+    IF COALESCE(p_relaunch_same_time, false) THEN
+        v_new_start_time := v_previous_start_time;
+        v_new_end_time := COALESCE(v_previous_end_time, v_previous_start_time + v_duration);
+        v_new_start_time_utc := v_new_start_time AT TIME ZONE 'Asia/Kolkata';
+        v_new_end_time_utc := v_new_end_time AT TIME ZONE 'Asia/Kolkata';
+    ELSE
+        IF p_new_start_time_utc IS NULL THEN
+            RAISE EXCEPTION 'Please select a new show date and time, or choose same previous time.' USING ERRCODE = 'P0001';
+        END IF;
+
+        v_new_start_time_utc := p_new_start_time_utc;
+        v_new_end_time_utc := p_new_start_time_utc + v_duration;
+        v_new_start_time := p_new_start_time_utc AT TIME ZONE 'Asia/Kolkata';
+        v_new_end_time := v_new_end_time_utc AT TIME ZONE 'Asia/Kolkata';
+    END IF;
+
+    IF v_new_start_time_utc <= v_now_utc THEN
+        RAISE EXCEPTION 'New relaunch time must be in the future.' USING ERRCODE = 'P0001';
+    END IF;
+
+    UPDATE public.""ShowSchedules""
+    SET
+        ""StartTime"" = v_new_start_time_utc,
+        ""EndTime"" = v_new_end_time_utc,
+        ""ShowDay"" = trim(to_char(v_new_start_time, 'Day'))
+    WHERE ""Id"" = v_schedule_id;
+
+    UPDATE public.admin_ticket_cancellations cancellation
+    SET
+        is_revoked = true,
+        revoked_at = v_revoked_at,
+        revoked_by_user_id = p_revoked_by_user_id,
+        revoked_by_name = COALESCE(NULLIF(btrim(p_revoked_by_name), ''), 'Admin'),
+        relaunch_reason = v_reason,
+        relaunch_same_time = COALESCE(p_relaunch_same_time, false),
+        relaunch_original_start_time = COALESCE(cancellation.relaunch_original_start_time, v_previous_start_time),
+        relaunch_original_end_time = COALESCE(cancellation.relaunch_original_end_time, v_previous_end_time),
+        relaunch_new_start_time = v_new_start_time,
+        relaunch_new_end_time = v_new_end_time
+    WHERE cancellation.scope = 'THEATER'
+      AND cancellation.schedule_id = v_schedule_id
+      AND COALESCE(cancellation.is_revoked, false) = false;
+
+    GET DIAGNOSTICS v_affected_cancellations = ROW_COUNT;
+    IF v_affected_cancellations < 1 THEN
+        RAISE EXCEPTION 'Only active theater cancellations can be relaunched.' USING ERRCODE = 'P0001';
+    END IF;
+
+    UPDATE public.seat_locks seat_lock
+    SET lock_status = 'RELEASED'
+    WHERE seat_lock.schedule_id = v_schedule_id
+      AND seat_lock.lock_status IN ('LOCKED', 'CONFIRMED')
+      AND NOT EXISTS
+      (
+          SELECT 1
+          FROM public.booking_seats booking_seat
+          JOIN public.bookings booking ON booking.id = booking_seat.booking_id
+          WHERE booking.schedule_id = seat_lock.schedule_id
+            AND booking_seat.screen_seat_id = seat_lock.screen_seat_id
+            AND booking.booking_status = 'CONFIRMED'
+            AND booking.payment_status = 'SUCCESS'
+            AND COALESCE(booking_seat.booking_status, '') <> 'CANCELLED'
+      );
+
+    RETURN QUERY
+    SELECT
+        v_schedule_id,
+        v_affected_cancellations,
+        v_previous_start_time,
+        v_previous_end_time,
+        v_new_start_time,
+        v_new_end_time;
+END;
+$function$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_admin_ticket_cancellations_ref
 ON public.admin_ticket_cancellations(cancellation_ref);
@@ -6887,7 +7258,12 @@ CREATE TABLE IF NOT EXISTS public.admin_ticket_cancellations
     revoked_at timestamp without time zone NULL,
     revoked_by_user_id bigint NULL,
     revoked_by_name varchar(255) NULL,
-    relaunch_reason varchar(500) NULL
+    relaunch_reason varchar(500) NULL,
+    relaunch_same_time boolean NOT NULL DEFAULT true,
+    relaunch_original_start_time timestamp without time zone NULL,
+    relaunch_original_end_time timestamp without time zone NULL,
+    relaunch_new_start_time timestamp without time zone NULL,
+    relaunch_new_end_time timestamp without time zone NULL
 );
 
 ALTER TABLE public.admin_ticket_cancellations
@@ -6904,6 +7280,21 @@ ADD COLUMN IF NOT EXISTS revoked_by_name varchar(255) NULL;
 
 ALTER TABLE public.admin_ticket_cancellations
 ADD COLUMN IF NOT EXISTS relaunch_reason varchar(500) NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_same_time boolean NOT NULL DEFAULT true;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_original_start_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_original_end_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_new_start_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_new_end_time timestamp without time zone NULL;
 
 DROP VIEW IF EXISTS public.vw_home_show_listing;
 

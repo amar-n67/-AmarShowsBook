@@ -454,7 +454,12 @@ CREATE TABLE IF NOT EXISTS public.admin_ticket_cancellations
     revoked_at timestamp without time zone NULL,
     revoked_by_user_id bigint NULL,
     revoked_by_name varchar(255) NULL,
-    relaunch_reason varchar(500) NULL
+    relaunch_reason varchar(500) NULL,
+    relaunch_same_time boolean NOT NULL DEFAULT true,
+    relaunch_original_start_time timestamp without time zone NULL,
+    relaunch_original_end_time timestamp without time zone NULL,
+    relaunch_new_start_time timestamp without time zone NULL,
+    relaunch_new_end_time timestamp without time zone NULL
 );
 
 ALTER TABLE public.admin_ticket_cancellations
@@ -471,6 +476,21 @@ ADD COLUMN IF NOT EXISTS revoked_by_name varchar(255) NULL;
 
 ALTER TABLE public.admin_ticket_cancellations
 ADD COLUMN IF NOT EXISTS relaunch_reason varchar(500) NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_same_time boolean NOT NULL DEFAULT true;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_original_start_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_original_end_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_new_start_time timestamp without time zone NULL;
+
+ALTER TABLE public.admin_ticket_cancellations
+ADD COLUMN IF NOT EXISTS relaunch_new_end_time timestamp without time zone NULL;
 
 CREATE OR REPLACE VIEW public.vw_home_show_listing AS
 SELECT

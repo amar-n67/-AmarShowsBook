@@ -66,4 +66,19 @@ public class AdminTicketCancellation
 
     [Column("relaunch_reason")]
     public string? RelaunchReason { get; set; }
+
+    [Column("relaunch_same_time")]
+    public bool RelaunchSameTime { get; set; } = true;
+
+    [Column("relaunch_original_start_time")]
+    public DateTime? RelaunchOriginalStartTime { get; set; }
+
+    [Column("relaunch_original_end_time")]
+    public DateTime? RelaunchOriginalEndTime { get; set; }
+
+    [Column("relaunch_new_start_time")]
+    public DateTime? RelaunchNewStartTime { get; set; }
+
+    [Column("relaunch_new_end_time")]
+    public DateTime? RelaunchNewEndTime { get; set; }
 }

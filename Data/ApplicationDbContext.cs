@@ -214,6 +214,18 @@ modelBuilder.Entity<Refund>(entity =>
 
         entity.Property(x=>x.RevokedAt)
             .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.RelaunchOriginalStartTime)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.RelaunchOriginalEndTime)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.RelaunchNewStartTime)
+            .HasColumnType("timestamp without time zone");
+
+        entity.Property(x=>x.RelaunchNewEndTime)
+            .HasColumnType("timestamp without time zone");
     });
 
     modelBuilder.Entity<SeatLock>()

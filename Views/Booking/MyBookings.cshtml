@@ -15,6 +15,7 @@
     var bookingScreens = ViewBag.BookingScreens as Dictionary<long,string> ?? new Dictionary<long,string>();
     var refundLookup = ViewBag.RefundLookup as Dictionary<long,Refund> ?? new Dictionary<long,Refund>();
     var bookingWalletAmounts = ViewBag.BookingWalletAmounts as Dictionary<long,decimal> ?? new Dictionary<long,decimal>();
+    var bookingRefundStatuses = ViewBag.BookingRefundStatuses as Dictionary<long,string> ?? new Dictionary<long,string>();
     var checkedOutBookingIds = ViewBag.CheckedOutBookingIds as HashSet<long> ?? new HashSet<long>();
     var expiredBookingIds = ViewBag.ExpiredBookingIds as HashSet<long> ?? new HashSet<long>();
     var bookingCategoryLookup = ViewBag.BookingCategoryLookup as Dictionary<long,string> ?? new Dictionary<long,string>();
@@ -182,8 +183,11 @@
                     && booking.PaymentStatus == "SUCCESS"
                     && booking.CancelledAt == null;
                 refundLookup.TryGetValue(booking.BookingId, out var refund);
+                var bookingRefundStatus = bookingRefundStatuses.TryGetValue(booking.BookingId, out var foundRefundStatus)
+                    ? foundRefundStatus
+                    : string.Empty;
                 var refundStatus = isCancelled
-                    ? (refund?.refund_status ?? "PENDING").Trim().ToUpperInvariant()
+                    ? (refund?.refund_status ?? (string.IsNullOrWhiteSpace(bookingRefundStatus) ? "PENDING" : bookingRefundStatus)).Trim().ToUpperInvariant()
                     : "NA";
                 var refundButtonClass = !isCancelled ? "refund-status-neutral" : refundStatus switch
                 {
@@ -192,6 +196,7 @@
                     "FAILED" => "refund-status-failed",
                     "REJECTED" or "CANCELLED" => "refund-status-cancelled",
                     "RETRY" => "refund-status-retry",
+                    "NO_REFUND" => "refund-status-neutral",
                     _ => "refund-status-neutral"
                 };
                 var refundLabel = !isCancelled ? "NA" : refundStatus switch
@@ -202,6 +207,7 @@
                     "REJECTED" => "Refund Rejected",
                     "CANCELLED" => "Refund Cancelled",
                     "RETRY" => "Refund Retry",
+                    "NO_REFUND" => "No Refund Due",
                     _ => $"Refund {refundStatus}"
                 };
 

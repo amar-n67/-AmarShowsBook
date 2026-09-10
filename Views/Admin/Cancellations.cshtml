@@ -71,6 +71,28 @@
     }
 
     string SortAmount(decimal value) => value.ToString(CultureInfo.InvariantCulture);
+
+    string DateTimeLocalInput(DateTime value)
+    {
+        var utcValue = value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        return TimeZoneInfo.ConvertTimeFromUtc(utcValue, TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata"))
+            .ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+    }
+
+    string HistoryDateTime(DateTime? value) =>
+        value.HasValue
+            ? value.Value.ToString("dd MMM yyyy, hh:mm tt", CultureInfo.InvariantCulture)
+            : "Not saved in DB";
+
+    string HistoryTimeRange(DateTime? start, DateTime? end)
+    {
+        if (!start.HasValue && !end.HasValue)
+        {
+            return "Not saved in DB";
+        }
+
+        return $"{HistoryDateTime(start)} - {HistoryDateTime(end)}";
+    }
 }
 
 <section class="admin-page cancellation-admin-page">
@@ -206,7 +228,7 @@
                                         <div class="sub-text">@booking.ShowType | @booking.StartTime</div>
                                     </td>
                                     <td class="cancel-action-cell">
-                                        <form asp-action="CancelIndividualBooking" method="post" class="cancel-inline-form">
+                                        <form asp-action="CancelIndividualBooking" method="post" class="cancel-inline-form" data-cancellation-submit-form>
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="bookingId" value="@booking.BookingId" />
                                             <textarea name="cancellationReason" rows="2" maxlength="500" required placeholder="Reason"></textarea>
@@ -308,7 +330,7 @@
                                                     }
                                                     else
                                                     {
-                                                        <form asp-action="CancelWholeTheater" method="post" class="cancel-inline-form theater-cancel-form">
+                                                        <form asp-action="CancelWholeTheater" method="post" class="cancel-inline-form theater-cancel-form" data-cancellation-submit-form data-confirm-text="CANCEL SHOW">
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="scheduleId" value="@show.ScheduleId" />
                                                             <textarea name="cancellationReason" rows="2" maxlength="500" required placeholder="Reason"></textarea>
@@ -401,10 +423,16 @@
                                                 <div class="sub-text cancellation-reason">@show.CancellationReason</div>
                                             </td>
                                             <td class="cancel-action-cell">
-                                                <form asp-action="RelaunchTheaterShow" method="post" class="cancel-inline-form theater-cancel-form relaunch-form">
+                                                <form asp-action="RelaunchTheaterShow" method="post" class="cancel-inline-form theater-cancel-form relaunch-form" data-cancellation-submit-form data-confirm-text="RELAUNCH">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="cancellationId" value="@show.CancellationId" />
                                                     <textarea name="relaunchReason" rows="2" maxlength="500" required placeholder="Relaunch reason"></textarea>
+                                                    <label class="relaunch-time-check">
+                                                        <input type="checkbox" name="relaunchSameTime" value="true" checked data-relaunch-same-time />
+                                                        Same previous time
+                                                    </label>
+                                                    <input type="hidden" name="relaunchSameTime" value="false" />
+                                                    <input type="datetime-local" name="relaunchStartTime" value="@DateTimeLocalInput(show.StartTime)" data-relaunch-start-time disabled />
                                                     <input name="confirmationText" maxlength="20" required placeholder="RELAUNCH" />
                                                     <button type="submit" class="btn btn-success btn-sm">Relaunch</button>
                                                 </form>
@@ -445,6 +473,7 @@
                             <tr>
                                 <th>Reference</th>
                                 <th>Show</th>
+                                <th>Schedule Details</th>
                                 <th>Reason</th>
                                 <th>Impact</th>
                                 <th>Admin</th>
@@ -454,13 +483,14 @@
                             @if (!Model.IndividualCancellationHistory.Any())
                             {
                                 <tr>
-                                    <td colspan="5" class="empty-state">No individual booking cancellations saved yet.</td>
+                                    <td colspan="6" class="empty-state">No individual booking cancellations saved yet.</td>
                                 </tr>
                             }
                             else
                             {
                                 @foreach (var item in Model.IndividualCancellationHistory)
                                 {
+                                    var individualScheduleRange = HistoryTimeRange(item.RelaunchOriginalStartTime, item.RelaunchOriginalEndTime);
                                     <tr class="cancellation-data-row"
                                         data-admin-searchable
                                         data-admin-filter-row
@@ -477,6 +507,11 @@
                                         <td>
                                             <div class="primary-text">@(item.ShowTitle ?? "Untitled Show")</div>
                                             <div class="sub-text">@(item.VenueName ?? "Venue not mapped") | @(item.ScreenName ?? "Screen not mapped")</div>
+                                        </td>
+                                        <td class="schedule-history-cell">
+                                            <div class="primary-text">Previous show</div>
+                                            <div class="sub-text">@individualScheduleRange</div>
+                                            <div class="sub-text">Booking #@(item.BookingId?.ToString() ?? "N/A") | Schedule #@(item.ScheduleId?.ToString() ?? "N/A")</div>
                                         </td>
                                         <td>
                                             <div class="sub-text cancellation-reason">@item.Reason</div>
@@ -528,6 +563,7 @@
                                                 <th>Reference</th>
                                                 <th>Show</th>
                                                 <th>Status</th>
+                                                <th>Schedule Details</th>
                                                 <th>Reason</th>
                                                 <th>Impact</th>
                                                 <th>Admin</th>
@@ -537,6 +573,9 @@
                                             @foreach (var item in theaterGroup.OrderByDescending(x => x.CreatedAt))
                                             {
                                                 var theaterStatusLabel = item.IsRevoked ? "Relaunched" : "Cancelled";
+                                                var originalScheduleRange = HistoryTimeRange(item.RelaunchOriginalStartTime, item.RelaunchOriginalEndTime);
+                                                var newScheduleRange = HistoryTimeRange(item.RelaunchNewStartTime, item.RelaunchNewEndTime);
+                                                var relaunchMode = item.RelaunchSameTime ? "Same previous time" : "Changed time";
                                                 <tr class="cancellation-data-row"
                                                     data-admin-searchable
                                                     data-admin-filter-row
@@ -552,14 +591,29 @@
                                                     </td>
                                                     <td>
                                                         <div class="primary-text">@(item.ShowTitle ?? "Untitled Show")</div>
-                                                        <div class="sub-text">@(item.ScreenName ?? "Screen not mapped")</div>
+                                                        <div class="sub-text">@((item.ShowType ?? "Show")) | @(item.VenueName ?? "Venue not mapped")</div>
+                                                        <div class="sub-text">@(item.ScreenName ?? "Screen not mapped") | Schedule #@(item.ScheduleId?.ToString() ?? "N/A")</div>
                                                     </td>
                                                     <td>
                                                         <span class="badge @(item.IsRevoked ? "success" : "danger")">@theaterStatusLabel</span>
                                                         @if (item.IsRevoked)
                                                         {
-                                                            <div class="sub-text">@(item.RevokedAt?.ToString() ?? "Relaunched")</div>
-                                                            <div class="sub-text cancellation-reason">@item.RelaunchReason</div>
+                                                            <div class="sub-text">Relaunched: @HistoryDateTime(item.RevokedAt)</div>
+                                                            <div class="sub-text">By @(item.RevokedByName ?? "Not saved in DB")</div>
+                                                        }
+                                                    </td>
+                                                    <td class="schedule-history-cell">
+                                                        @if (item.IsRevoked)
+                                                        {
+                                                            <div class="primary-text">@relaunchMode</div>
+                                                            <div class="sub-text">Previous show: @originalScheduleRange</div>
+                                                            <div class="sub-text">Relaunch show: @newScheduleRange</div>
+                                                            <div class="sub-text cancellation-reason">@(item.RelaunchReason ?? "Relaunch reason not saved in DB")</div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="primary-text">Cancelled schedule</div>
+                                                            <div class="sub-text">Previous show: @originalScheduleRange</div>
                                                         }
                                                     </td>
                                                     <td>
@@ -857,6 +911,27 @@
         min-width: 0;
     }
 
+    .relaunch-form {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+    }
+
+    .relaunch-time-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 38px;
+        margin: 0;
+        color: var(--admin-ink, #111827);
+        font-size: .82rem;
+        font-weight: 850;
+    }
+
+    .relaunch-time-check input {
+        width: auto;
+        min-height: auto;
+    }
+
     .relaunch-form button {
         background: #15803d;
         border-color: #15803d;
@@ -887,6 +962,16 @@
     .seat-list,
     .cancellation-reason {
         max-width: 380px;
+        white-space: normal;
+    }
+
+    .schedule-history-cell {
+        min-width: 240px;
+        max-width: 360px;
+    }
+
+    .schedule-history-cell .primary-text,
+    .schedule-history-cell .sub-text {
         white-space: normal;
     }
 
@@ -1029,6 +1114,13 @@
             const buttons = [...page.querySelectorAll("[data-content-target]")];
             const sections = [...page.querySelectorAll(".content-section")];
             const groups = [...page.querySelectorAll("[data-cancellation-group]")];
+            const activeSectionStorageKey = "showTime.admin.cancellations.activeSection";
+            const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
+            const isPageRefresh = navigationEntry?.type === "reload";
+
+            if (isPageRefresh) {
+                sessionStorage.removeItem(activeSectionStorageKey);
+            }
 
             const refreshGroups = () => {
                 groups.forEach((group) => {
@@ -1037,7 +1129,21 @@
                 });
             };
 
-            const setActiveSection = (targetId, updateHash) => {
+            const rememberActiveSection = (targetId) => {
+                if (targetId) {
+                    sessionStorage.setItem(activeSectionStorageKey, targetId);
+                } else {
+                    sessionStorage.removeItem(activeSectionStorageKey);
+                }
+            };
+
+            const cleanPageHash = () => {
+                if (window.location.hash) {
+                    history.replaceState(null, "", window.location.pathname + window.location.search);
+                }
+            };
+
+            const setActiveSection = (targetId, remember) => {
                 const targetSection = targetId ? document.getElementById(targetId) : null;
 
                 sections.forEach((section) => {
@@ -1057,13 +1163,11 @@
 
                 refreshGroups();
 
-                if (updateHash) {
-                    if (targetSection) {
-                        history.replaceState(null, "", "#" + targetId);
-                    } else {
-                        history.replaceState(null, "", window.location.pathname + window.location.search);
-                    }
+                if (remember) {
+                    rememberActiveSection(targetSection ? targetId : "");
                 }
+
+                cleanPageHash();
             };
 
             buttons.forEach((button) => {
@@ -1080,9 +1184,83 @@
                 });
             });
 
+            page.querySelectorAll("[data-relaunch-same-time]").forEach((checkbox) => {
+                const form = checkbox.closest("form");
+                const timeInput = form?.querySelector("[data-relaunch-start-time]");
+                const syncTimeInput = () => {
+                    if (!timeInput) {
+                        return;
+                    }
+
+                    timeInput.disabled = checkbox.checked;
+                    timeInput.required = !checkbox.checked;
+                    if (checkbox.checked) {
+                        timeInput.setCustomValidity("");
+                    }
+                };
+
+                checkbox.addEventListener("change", syncTimeInput);
+                syncTimeInput();
+            });
+
+            page.querySelectorAll("[data-cancellation-submit-form]").forEach((form) => {
+                const fields = [...form.querySelectorAll("textarea, input")];
+                const submitButton = form.querySelector("button[type='submit']");
+
+                const clearValidation = () => {
+                    fields.forEach((field) => field.setCustomValidity(""));
+                };
+
+                fields.forEach((field) => {
+                    field.addEventListener("input", clearValidation);
+                });
+
+                form.addEventListener("submit", (event) => {
+                    clearValidation();
+
+                    const reasonField = form.querySelector("textarea[name='cancellationReason'], textarea[name='relaunchReason']");
+                    if (reasonField && reasonField.value.trim().length < 5) {
+                        reasonField.setCustomValidity("Enter at least 5 characters.");
+                    }
+
+                    const expectedConfirmation = form.dataset.confirmText || "";
+                    const confirmationField = form.querySelector("input[name='confirmationText']");
+                    if (confirmationField && expectedConfirmation &&
+                        confirmationField.value.trim().toUpperCase() !== expectedConfirmation.toUpperCase()) {
+                        confirmationField.setCustomValidity(`Type ${expectedConfirmation} to continue.`);
+                    }
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        window.hideShowTimeProgressCursor?.();
+                        form.reportValidity();
+                        form.querySelector(":invalid")?.focus();
+                        return;
+                    }
+
+                    const section = form.closest(".content-section");
+                    if (section?.id) {
+                        rememberActiveSection(section.id);
+                    }
+
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.textContent = form.classList.contains("relaunch-form")
+                            ? "Launching..."
+                            : "Working...";
+                    }
+
+                    window.showTimeProgressCursor?.();
+                });
+            });
+
             const hashTarget = window.location.hash.replace("#", "");
-            if (hashTarget && sections.some((section) => section.id === hashTarget)) {
+            const storedTarget = isPageRefresh ? "" : sessionStorage.getItem(activeSectionStorageKey);
+            if (!isPageRefresh && hashTarget && sections.some((section) => section.id === hashTarget)) {
                 setActiveSection(hashTarget, false);
+            } else if (storedTarget && sections.some((section) => section.id === storedTarget)) {
+                setActiveSection(storedTarget, false);
             } else {
                 setActiveSection("", false);
             }

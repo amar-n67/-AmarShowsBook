@@ -803,6 +803,13 @@ public async Task<IActionResult> MyBookings()
             .Select(x=>new { x.Id, WalletAmount = x.WalletAmountUsed ?? 0 })
             .ToDictionaryAsync(x=>x.Id,x=>x.WalletAmount);
 
+    ViewBag.BookingRefundStatuses =
+        await _context.Bookings
+            .AsNoTracking()
+            .Where(x=>bookingIds.Contains(x.Id))
+            .Select(x=>new { x.Id, x.RefundStatus })
+            .ToDictionaryAsync(x=>x.Id,x=>x.RefundStatus ?? string.Empty);
+
     var checkedOutBookingIds =
         (await _context.Tickets
             .AsNoTracking()
@@ -980,48 +987,68 @@ public async Task<IActionResult> MyBookings()
     var refundStatus = ShouldAutoRefund(refundMethod) ? "SUCCESS" : "PENDING";
     var refundPolicy =
         GetCancellationRefundPolicyText(schedule.StartTime,now);
+    var refundAmount = sourceRefundAmount + walletRefundAmount;
 
-    var refund = new Refund
+    if(refundAmount>0)
     {
-        booking_id=booking.Id,
-        transaction_id=transaction.Id,
-        user_id=booking.UserId,
-        refund_ref=$"RFD-{booking.Id}-{now:yyyyMMddHHmmssfff}",
-        refund_amount=sourceRefundAmount + walletRefundAmount,
-        refund_reason=booking.CancellationReason,
-        refund_status=refundStatus,
-        refund_method=refundMethod,
-        gateway_refund_id=refundStatus=="SUCCESS" ? $"AUTO-{Guid.NewGuid():N}" : null,
-        requested_at=now,
-        processed_at=refundStatus=="SUCCESS" ? now : null,
-        created_at=now,
-        updated_at=now,
-        workflow_action=refundStatus=="SUCCESS" ? "AUTO_REFUNDED" : "CUSTOMER_CANCELLED",
-        admin_notes=refundStatus=="SUCCESS"
-            ? $"Refund completed automatically under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
-            : $"Refund case raised for admin approval under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
-    };
+        var refund = new Refund
+        {
+            booking_id=booking.Id,
+            transaction_id=transaction.Id,
+            user_id=booking.UserId,
+            refund_ref=$"RFD-{booking.Id}-{now:yyyyMMddHHmmssfff}",
+            refund_amount=refundAmount,
+            refund_reason=booking.CancellationReason,
+            refund_status=refundStatus,
+            refund_method=refundMethod,
+            gateway_refund_id=refundStatus=="SUCCESS" ? $"AUTO-{Guid.NewGuid():N}" : null,
+            requested_at=now,
+            processed_at=refundStatus=="SUCCESS" ? now : null,
+            created_at=now,
+            updated_at=now,
+            workflow_action=refundStatus=="SUCCESS" ? "AUTO_REFUNDED" : "CUSTOMER_CANCELLED",
+            admin_notes=refundStatus=="SUCCESS"
+                ? $"Refund completed automatically under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
+                : $"Refund case raised for admin approval under rule: {refundPolicy}. Coupon discount excluded: {couponAmount:0.00}."
+        };
 
-    _context.Refunds.Add(refund);
-    await _context.SaveChangesAsync();
+        _context.Refunds.Add(refund);
+        await _context.SaveChangesAsync();
 
-    if(walletRefundAmount>0)
-    {
-        await CreditWalletRefund(booking,transaction,refund,walletRefundAmount);
+        if(walletRefundAmount>0)
+        {
+            await CreditWalletRefund(booking,transaction,refund,walletRefundAmount);
+        }
+
+        if(booking.CouponId.HasValue && couponAmount>0)
+        {
+            await RecordCouponReversal(
+            booking,
+            transaction,
+            booking.CouponId.Value,
+            couponAmount);
+        }
+
+        transaction.RefundStatus=refundStatus;
+        transaction.RefundedAmount=(transaction.RefundedAmount ?? 0) + refund.refund_amount;
+        transaction.UpdatedAt=now;
     }
-
-    if(booking.CouponId.HasValue && couponAmount>0)
+    else
     {
-        await RecordCouponReversal(
-        booking,
-        transaction,
-        booking.CouponId.Value,
-        couponAmount);
-    }
+        booking.PaymentStatus="NO_REFUND";
+        booking.RefundStatus="NO_REFUND";
+        transaction.RefundStatus="NO_REFUND";
+        transaction.UpdatedAt=now;
 
-    transaction.RefundStatus=refundStatus;
-    transaction.RefundedAmount=(transaction.RefundedAmount ?? 0) + refund.refund_amount;
-    transaction.UpdatedAt=now;
+        if(booking.CouponId.HasValue && couponAmount>0)
+        {
+            await RecordCouponReversal(
+            booking,
+            transaction,
+            booking.CouponId.Value,
+            couponAmount);
+        }
+    }
 
     var tickets = await _context.Tickets.Where(x=>x.BookingId==booking.Id).ToListAsync();
     foreach(var ticket in tickets)
@@ -1049,9 +1076,11 @@ public async Task<IActionResult> MyBookings()
     await _context.SaveChangesAsync();
     await dbTransaction.CommitAsync();
 
-    TempData["Success"] = refundStatus=="SUCCESS"
-        ? $"Booking cancelled and refund processed. {refundPolicy}."
-        : $"Booking cancelled. Refund case has been raised for admin approval. {refundPolicy}.";
+    TempData["Success"] = refundAmount<=0
+        ? $"Booking cancelled. No refundable amount was due. {refundPolicy}."
+        : refundStatus=="SUCCESS"
+            ? $"Booking cancelled and refund processed. {refundPolicy}."
+            : $"Booking cancelled. Refund case has been raised for admin approval. {refundPolicy}.";
 
     return RedirectToAction(nameof(MyBookings));
 }
