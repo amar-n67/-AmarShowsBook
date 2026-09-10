@@ -120,8 +120,7 @@
             </p>
         </div>
         <div class="admin-actions">
-            <a href="/Admin/Bookings" class="admin-back-btn admin-page-back">Bookings</a>
-            <a href="/Admin/Dashboard" class="admin-back-btn admin-page-back">Dashboard</a>
+            <a href="/Admin/Dashboard" class="admin-back-btn admin-page-back">← Back to Dashboard</a>
         </div>
     </div>
 
@@ -191,7 +190,7 @@
                             <th>Booking</th>
                             <th>User</th>
                             <th>Show</th>
-                            <th>Cancel</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -288,7 +287,7 @@
                                             <th>Show</th>
                                             <th>Screen</th>
                                             <th>Booked Tickets</th>
-                                            <th>Cancel</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -394,7 +393,7 @@
                                         <th>Show</th>
                                         <th>Screen</th>
                                         <th>Cancelled</th>
-                                        <th>Relaunch</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -649,16 +648,37 @@
         align-items: start;
     }
 
+    .admin-filter-panel {
+        position: relative;
+        z-index: 2;
+        margin-bottom: 22px;
+    }
+
+    .admin-filter-panel + .cancellation-admin-page {
+        margin-top: 4px;
+    }
+
     .cancellation-filter-anchor {
-        height: 0;
-        overflow: hidden;
+        min-height: 1px;
+        margin-bottom: 14px;
+        overflow: visible;
+        scroll-margin-top: 96px;
     }
 
     .content-tabs {
         display: flex;
         gap: 8px;
+        row-gap: 10px;
         margin-bottom: 14px;
         flex-wrap: wrap;
+    }
+
+    .cancellation-content-tabs {
+        position: relative;
+        z-index: 1;
+        clear: both;
+        margin-top: 16px;
+        margin-bottom: 18px;
     }
 
     .content-tabs button {
@@ -737,36 +757,104 @@
         min-width: 1040px;
     }
 
-    .booking-info-col {
-        width: 24%;
+    .cancellation-table th,
+    .cancellation-table td {
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
-    .booking-user-col {
-        width: 22%;
+    .cancellation-table th:first-child,
+    .cancellation-table td:first-child,
+    .cancellation-table th:last-child,
+    .cancellation-table td:last-child,
+    .cancellation-table td:has(.btn),
+    .cancellation-table td:has(form) {
+        width: auto !important;
     }
 
-    .booking-show-col {
-        width: 22%;
+    .booking-cancel-table {
+        min-width: 1180px;
     }
 
-    .show-info-col {
-        width: 28%;
+    .show-cancel-table {
+        min-width: 1240px;
     }
 
-    .show-theater-col {
-        width: 20%;
+    .history-cancel-table {
+        min-width: 1320px;
     }
 
-    .show-ticket-col {
-        width: 16%;
+    .booking-cancel-table .booking-info-col {
+        width: 230px;
     }
 
-    .cancel-form-col {
-        width: 32%;
+    .booking-cancel-table .booking-user-col {
+        width: 240px;
+    }
+
+    .booking-cancel-table .booking-show-col {
+        width: 280px;
+    }
+
+    .booking-cancel-table .cancel-form-col {
+        width: 430px;
+    }
+
+    .show-cancel-table .show-info-col {
+        width: 330px;
+    }
+
+    .show-cancel-table .show-theater-col {
+        width: 230px;
+    }
+
+    .show-cancel-table .show-ticket-col {
+        width: 190px;
+    }
+
+    .show-cancel-table .cancel-form-col {
+        width: 490px;
+    }
+
+    .history-cancel-table th:nth-child(1),
+    .history-cancel-table td:nth-child(1) {
+        width: 170px;
+    }
+
+    .history-cancel-table th:nth-child(2),
+    .history-cancel-table td:nth-child(2) {
+        width: 280px;
+    }
+
+    .history-cancel-table th:nth-child(3),
+    .history-cancel-table td:nth-child(3) {
+        width: 180px;
+    }
+
+    .history-cancel-table th:nth-child(4),
+    .history-cancel-table td:nth-child(4) {
+        width: 280px;
+    }
+
+    .history-cancel-table th:nth-child(5),
+    .history-cancel-table td:nth-child(5) {
+        width: 230px;
+    }
+
+    .history-cancel-table th:nth-child(6),
+    .history-cancel-table td:nth-child(6) {
+        width: 180px;
+    }
+
+    .history-cancel-table th:nth-child(7),
+    .history-cancel-table td:nth-child(7) {
+        width: 190px;
     }
 
     .cancel-action-cell {
         min-width: 0;
+        width: auto !important;
         white-space: normal;
     }
 
@@ -1068,8 +1156,16 @@
     }
 
     @@media (max-width: 1100px) {
-        .cancellation-table {
-            min-width: 980px;
+        .booking-cancel-table {
+            min-width: 1040px;
+        }
+
+        .show-cancel-table {
+            min-width: 1080px;
+        }
+
+        .history-cancel-table {
+            min-width: 1180px;
         }
 
         .theater-cancel-form {
@@ -1094,6 +1190,16 @@
         .history-section-head {
             align-items: flex-start;
             flex-direction: column;
+        }
+
+        .content-tabs {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .content-tabs button {
+            width: 100%;
+            justify-content: space-between;
         }
 
         .cancel-inline-form,

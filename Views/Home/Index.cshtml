@@ -74,6 +74,16 @@
     </div>
 
 <div class="showtime-controls @(platformMode ? "platform-mode" : "")">
+    <div class="location-field search-filter-field">
+        <label for="showtimeSearch">Search</label>
+        <input id="showtimeSearch"
+               class="form-control"
+               type="search"
+               data-app-search-input
+               placeholder="Search title, venue, city..."
+               autocomplete="off"
+               oninput="applyLocationFilter()" />
+    </div>
     <div class="location-field">
         <label for="showTypeFilter">Show type</label>
         <select id="showTypeFilter" class="form-control" onchange="changeShowType(this.value)">
@@ -102,7 +112,9 @@
     </div>
     <div class="location-field compact-filter-field">
         <label for="dateFilter">Available Dates</label>
-        <input id="dateFilter" class="form-control" type="date" onchange="applyLocationFilter()" />
+        <select id="dateFilter" class="form-control" onchange="applyLocationFilter()">
+            <option value="">Any date</option>
+        </select>
     </div>
     <div class="location-field compact-filter-field">
         <label for="sortShows">Sort</label>
@@ -321,6 +333,18 @@
     var showLocation = string.Join(", ", new[] { item.Location, item.State, item.Country }
         .Where(value => !string.IsNullOrWhiteSpace(value)));
     var hasTrailer = !string.IsNullOrWhiteSpace(item.TrailerUrl);
+    var showSearchText = string.Join(" ", new[]
+    {
+        item.Title,
+        item.ShowType,
+        item.Director,
+        item.Cast,
+        showRegion,
+        showLocation,
+        showStart.ToString("dd MMM yyyy"),
+        showStart.ToString("hh:mm tt"),
+        item.ImdbRating?.ToString(System.Globalization.CultureInfo.InvariantCulture)
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
 <article class="show-card"
 data-location="@showLocation"
@@ -328,6 +352,7 @@ data-country="@item.Country"
 data-state="@item.State"
 data-region="@item.Location"
 data-show-type="@item.ShowType"
+data-filter-search="@showSearchText"
 data-title="@item.Title"
 data-director="@item.Director"
 data-rating="@(item.ImdbRating?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
@@ -1670,8 +1695,8 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 
 .showtime-controls {
     display: grid;
-    grid-template-columns: minmax(90px, .78fr) minmax(150px, 1.3fr) minmax(82px, .62fr) minmax(116px, .8fr) minmax(116px, .86fr) minmax(64px, auto);
-    gap: 8px;
+    grid-template-columns: minmax(220px, 1.55fr) minmax(118px, .72fr) minmax(190px, 1.2fr) minmax(92px, .55fr) minmax(154px, .82fr) minmax(154px, .82fr) minmax(76px, auto);
+    gap: 10px;
     align-items: end;
     margin: 10px 0 16px;
     padding: 8px;
@@ -1687,6 +1712,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
 }
 
 .showtime-controls.platform-mode .location-picker,
+.showtime-controls.platform-mode .search-filter-field,
 .showtime-controls.platform-mode .compact-filter-field,
 .showtime-controls.platform-mode .location-panel,
 .showtime-controls.platform-mode .location-status {
@@ -1728,6 +1754,23 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     padding: 0;
     border: 0;
     background: transparent;
+}
+
+.search-filter-field {
+    min-width: 220px;
+}
+
+.compact-filter-field {
+    min-width: 92px;
+}
+
+#showTypeFilter {
+    min-width: 118px;
+}
+
+#dateFilter,
+#sortShows {
+    min-width: 154px;
 }
 
 .location-field label,
@@ -1796,7 +1839,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     margin-left: auto;
 }
 
-.location-field:not(.location-actions):not(.filter-clear-field)::after {
+.location-field:not(.location-actions):not(.filter-clear-field):not(.search-filter-field)::after {
     content: "⌄";
     position: absolute;
     right: 15px;
@@ -1807,7 +1850,8 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
     pointer-events: none;
 }
 
-.location-field select:focus {
+.location-field select:focus,
+.location-field input:focus {
     border-color: var(--app-primary);
     outline: 0;
     box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--app-primary) 18%, transparent);
@@ -2684,6 +2728,7 @@ function toggleFilterActive(controlId,isActive)
 
 function updateFilterFieldStyles()
 {
+    toggleFilterActive("showtimeSearch",Boolean(document.getElementById("showtimeSearch")?.value?.trim()));
     toggleFilterActive("showTypeFilter",(document.getElementById("showTypeFilter")?.value || "All") !== "All");
     toggleFilterActive("locationSummaryButton",getSelectedLocationName() !== "All locations");
     toggleFilterActive("country",Boolean(document.getElementById("country")?.value));
@@ -2702,6 +2747,7 @@ function hasVisibleShows()
 function getShowtimeFilterState()
 {
     return {
+        search:document.getElementById("showtimeSearch")?.value || "",
         type:document.getElementById("showTypeFilter")?.value || "All",
         country:document.getElementById("country")?.value || "",
         state:document.getElementById("state")?.value || "",
@@ -2725,6 +2771,7 @@ function saveShowtimeFilters()
     {
         const state=getShowtimeFilterState();
         const hasMeaningfulFilter=Boolean(
+            state.search ||
             state.country ||
             (state.type && state.type!=="All") ||
             state.state ||
@@ -2928,17 +2975,16 @@ function populateDynamicFilters()
 
     setSimpleOptions("ratingFilter",ratings,"Any");
 
-    const dateInput=document.getElementById("dateFilter");
-    const dates=cards
-    .map(card=>card.dataset.date)
-    .filter(Boolean)
-    .sort();
+    const dates=[...new Map(cards
+    .map(card=>({
+        value:card.dataset.date || "",
+        label:card.dataset.dateLabel || card.dataset.date || ""
+    }))
+    .filter(item=>item.value)
+    .sort((a,b)=>a.value.localeCompare(b.value))
+    .map(item=>[item.value,item])).values()];
 
-    if(dateInput && dates.length)
-    {
-        dateInput.min=dates[0];
-        dateInput.max=dates[dates.length-1];
-    }
+    setSimpleOptions("dateFilter",dates,"Any date");
 }
 
 function setControlValue(controlId,value)
@@ -2954,6 +3000,7 @@ async function restoreSavedShowtimeFilters()
 {
     const saved=getSavedShowtimeFilters();
     const hasSavedFilter=Boolean(
+        saved.search ||
         saved.country ||
         (saved.type && saved.type!=="All") ||
         saved.state ||
@@ -2991,6 +3038,7 @@ async function restoreSavedShowtimeFilters()
             selectBestLocationOption("district",[saved.district]);
         }
 
+        setControlValue("showtimeSearch",saved.search || "");
         setControlValue("ratingFilter",saved.rating || "");
         setControlValue("dateFilter",saved.date || "");
         setControlValue("sortShows",saved.sort || "upcoming");
@@ -3396,6 +3444,9 @@ async function detectCurrentLocation(isAuto)
 
 function applyLocationFilter()
 {
+    const searchValue=
+    normalizeLocationText(document.getElementById("showtimeSearch")?.value || "");
+
     const country=
     document.getElementById("country")?.value.toLowerCase() || "";
 
@@ -3422,6 +3473,7 @@ function applyLocationFilter()
         const cardRating=card.dataset.rating || "";
         const cardDate=card.dataset.date || "";
         const cardType=card.dataset.showType || "";
+        const cardSearch=normalizeLocationText(card.dataset.filterSearch || card.innerText || "");
         let matchesCountry=!country || cardCountry===country || cardLocation.includes(country);
         let matchesState=!state || cardState===state || cardLocation.includes(state);
         let matchesDistrict=!district || cardRegion===district || cardLocation.includes(district);
@@ -3447,7 +3499,8 @@ function applyLocationFilter()
         const matchesRating=!ratingValue || cardRating===ratingValue;
         const matchesDate=!dateValue || cardDate===dateValue;
         const matchesType=typeValue==="All" || cardType===typeValue;
-        card.hidden=!(matchesCountry && matchesState && matchesDistrict && matchesRating && matchesDate && matchesType);
+        const matchesSearch=!searchValue || cardSearch.includes(searchValue);
+        card.hidden=!(matchesSearch && matchesCountry && matchesState && matchesDistrict && matchesRating && matchesDate && matchesType);
     });
 
     updateLocationSummary();
@@ -3485,9 +3538,11 @@ function updateFilterEmptyState()
     if(emptyMessage)
     {
         const locationName=getSelectedLocationName();
+        const search=document.getElementById("showtimeSearch")?.value?.trim() || "";
         const rating=document.getElementById("ratingFilter")?.value || "";
         const date=document.getElementById("dateFilter")?.value || "";
         const filterText=[
+            search ? `"${search}"` : "",
             rating ? `rating ${rating}` : "",
             date ? date : ""
         ].filter(Boolean).join(", ");
@@ -3674,7 +3729,7 @@ function resetLocationFilter()
 
     clearCurrentLocationFilter();
 
-    ["ratingFilter","dateFilter","sortShows"].forEach(id=>{
+    ["showtimeSearch","ratingFilter","dateFilter","sortShows"].forEach(id=>{
         const field=document.getElementById(id);
         if(field)
         {
@@ -3715,7 +3770,7 @@ async function clearAllShowtimeFilters()
         return;
     }
 
-    ["ratingFilter","dateFilter"].forEach(id=>{
+    ["showtimeSearch","ratingFilter","dateFilter"].forEach(id=>{
         const field=document.getElementById(id);
         if(field)
         {
