@@ -48,8 +48,11 @@ venueInfo!=null
 
 var selectedShowDay =
 string.IsNullOrWhiteSpace(Model.ShowDay)
-? Model.StartTime.ToString("dddd")
+? ShowTimeFormatter.Format(Model.StartTime, "dddd")
 : Model.ShowDay;
+
+var selectedStartLocal =
+ShowTimeFormatter.ToAppLocal(Model.StartTime);
 }
 
 <section class="booking-page">
@@ -74,7 +77,7 @@ Seat Shot
 
 @Model.Type /
 @selectedShowDay /
-@Model.StartTime.ToString("dd MMM yyyy, hh:mm tt")
+@selectedStartLocal.ToString("dd MMM yyyy, hh:mm tt")
 /
 @theaterDetails
 
@@ -100,7 +103,7 @@ Seat Shot
 
 @{
     var currentDate =
-    Model.StartTime.Date;
+    selectedStartLocal.Date;
 }
 
 @if(availableDates != null && availableDates.Any())
@@ -109,16 +112,19 @@ Seat Shot
 
 @foreach(var show in
 availableDates
-.GroupBy(x=>x.StartTime.Date)
+.GroupBy(x=>ShowTimeFormatter.ToAppLocal(x.StartTime).Date)
 .Select(x=>x.First())
 .OrderBy(x=>x.StartTime))
 {
+    var showStartLocal =
+    ShowTimeFormatter.ToAppLocal(show.StartTime);
+
     bool activeDate =
-    show.StartTime.Date == currentDate;
+    showStartLocal.Date == currentDate;
 
     var showDay =
     string.IsNullOrWhiteSpace(show.ShowDay)
-    ? show.StartTime.ToString("ddd")
+    ? showStartLocal.ToString("ddd")
     : show.ShowDay;
 
     showDay = showDay.Length > 3 ? showDay.Substring(0, 3) : showDay;
@@ -128,7 +134,7 @@ availableDates
     href="/Booking/Seats/@show.Id">
 
         <span>@showDay</span>
-        <strong>@show.StartTime.ToString("dd MMM")</strong>
+        <strong>@showStartLocal.ToString("dd MMM")</strong>
 
     </a>
 }

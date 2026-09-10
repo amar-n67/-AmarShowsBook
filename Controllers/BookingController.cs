@@ -3049,7 +3049,7 @@ private async Task EnsureScheduleDayCompatibility()
 ALTER TABLE public.""ShowSchedules"" ADD COLUMN IF NOT EXISTS ""ShowDay"" varchar(20);
 
 UPDATE public.""ShowSchedules""
-SET ""ShowDay"" = trim(to_char(""StartTime"", 'Day'))
+SET ""ShowDay"" = trim(to_char(""StartTime"" AT TIME ZONE 'Asia/Kolkata', 'Day'))
 WHERE ""ShowDay"" IS NULL OR trim(""ShowDay"") = '';
 ");
 }

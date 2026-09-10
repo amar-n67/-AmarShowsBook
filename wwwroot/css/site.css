@@ -149,3 +149,64 @@ body {
 .table-responsive:has(.app-info) {
   overflow: visible !important;
 }
+
+.table-wrapper,
+.table-responsive,
+[class*="table-wrap"],
+[class*="table-wrapper"] {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrapper > table,
+.table-responsive > table,
+[class*="table-wrap"] > table,
+[class*="table-wrapper"] > table,
+table.table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.table-wrapper > table,
+.table-responsive > table,
+[class*="table-wrap"] > table,
+[class*="table-wrapper"] > table {
+  min-width: 720px !important;
+}
+
+table.table th,
+table.table td,
+.table-wrapper th,
+.table-wrapper td,
+.table-responsive th,
+.table-responsive td {
+  min-width: 0 !important;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+table.table th[style*="min-width"],
+table.table td[style*="min-width"] {
+  min-width: 0 !important;
+}
+
+table.table th:first-child,
+table.table td:first-child {
+  width: clamp(58px, 8vw, 105px);
+}
+
+table.table th:last-child,
+table.table td:last-child {
+  width: clamp(88px, 12vw, 160px);
+}
+
+table.table .text-end,
+table.table .show-actions,
+table.table .table-actions,
+table.table td:has(.btn),
+table.table td:has(form) {
+  width: clamp(104px, 14vw, 180px);
+}

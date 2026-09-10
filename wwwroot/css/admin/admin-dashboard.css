@@ -867,10 +867,11 @@ html[data-theme="cinema"] .admin-topbar {
 }
 
 .admin-table {
-    width: 100%;
-    min-width: 760px;
+    width: 100% !important;
+    min-width: 920px !important;
     margin: 0;
     border-collapse: collapse;
+    table-layout: fixed !important;
     background: transparent;
     color: var(--admin-ink);
 }
@@ -892,13 +893,54 @@ html[data-theme="cinema"] .admin-topbar {
 .admin-table td {
     padding: 13px 14px;
     vertical-align: middle;
+    min-width: 0 !important;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.admin-table th[style*="min-width"],
+.admin-table td[style*="min-width"] {
+    min-width: 0 !important;
+}
+
+.admin-table th:first-child,
+.admin-table td:first-child {
+    width: clamp(64px, 8vw, 110px);
+}
+
+.admin-table th:last-child,
+.admin-table td:last-child {
+    width: clamp(96px, 12vw, 170px);
+}
+
+.admin-table .text-end,
+.admin-table .show-actions,
+.admin-table .table-actions,
+.admin-table td:has(.btn),
+.admin-table td:has(form) {
+    width: clamp(110px, 14vw, 190px);
+}
+
+.admin-table .primary-text,
+.admin-table .sub-text,
+.admin-table .cancellation-reason,
+.admin-table .version-muted {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .admin-table td {
     border-color: rgba(23,25,35,0.08);
     color: var(--admin-ink);
     font-size: 0.9rem;
-    overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+    .admin-table {
+        min-width: 780px !important;
+    }
 }
 
 .admin-table tbody tr[hidden],

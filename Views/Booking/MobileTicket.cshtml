@@ -294,7 +294,7 @@ translateY(0);
 <span>Date</span>
 
 <span>
-@(schedule?.StartTime.ToString("dd MMM yyyy") ?? "TBA")
+@(schedule?.StartTime != null ? ShowTimeFormatter.Format(schedule.StartTime, "dd MMM yyyy") : "TBA")
 </span>
 
 </div>
@@ -305,7 +305,7 @@ translateY(0);
 <span>Time</span>
 
 <span>
-@(schedule?.StartTime.ToString("hh:mm tt") ?? "TBA")
+@(schedule?.StartTime != null ? ShowTimeFormatter.Format(schedule.StartTime, "hh:mm tt") : "TBA")
 </span>
 
 </div>

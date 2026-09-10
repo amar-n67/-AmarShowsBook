@@ -66,18 +66,18 @@
 
     long SortTime(DateTime value)
     {
-        var utcValue = value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
-        return new DateTimeOffset(utcValue).ToUnixTimeMilliseconds();
+        return ShowTimeFormatter.SortTicks(value);
     }
 
     string SortAmount(decimal value) => value.ToString(CultureInfo.InvariantCulture);
 
     string DateTimeLocalInput(DateTime value)
     {
-        var utcValue = value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
-        return TimeZoneInfo.ConvertTimeFromUtc(utcValue, TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata"))
-            .ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+        return ShowTimeFormatter.InputValue(value);
     }
+
+    string ShowDateTime(DateTime value) =>
+        ShowTimeFormatter.Format(value, "dd MMM yyyy, hh:mm tt");
 
     string HistoryDateTime(DateTime? value) =>
         value.HasValue
@@ -225,7 +225,7 @@
                                     </td>
                                     <td>
                                         <div class="primary-text">@booking.ShowTitle</div>
-                                        <div class="sub-text">@booking.ShowType | @booking.StartTime</div>
+                                        <div class="sub-text">@booking.ShowType | @ShowDateTime(booking.StartTime)</div>
                                     </td>
                                     <td class="cancel-action-cell">
                                         <form asp-action="CancelIndividualBooking" method="post" class="cancel-inline-form" data-cancellation-submit-form>
@@ -306,7 +306,7 @@
                                                 data-sort-amount="@SortAmount(show.Amount)">
                                                 <td>
                                                     <div class="primary-text">@show.ShowTitle</div>
-                                                    <div class="sub-text">@show.ShowType | @show.StartTime</div>
+                                                    <div class="sub-text">@show.ShowType | @ShowDateTime(show.StartTime)</div>
                                                     @if (show.IsCancelled)
                                                     {
                                                         <span class="badge danger status-badge">Cancelled</span>
@@ -411,7 +411,7 @@
                                             data-sort-amount="@SortAmount(show.Amount)">
                                             <td>
                                                 <div class="primary-text">@show.ShowTitle</div>
-                                                <div class="sub-text">@show.ShowType | @show.StartTime</div>
+                                                <div class="sub-text">@show.ShowType | @ShowDateTime(show.StartTime)</div>
                                             </td>
                                             <td>
                                                 <div class="primary-text">@show.VenueName</div>

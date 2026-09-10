@@ -1,4 +1,5 @@
 using AmarShowsBook.Data;
+using AmarShowsBook.Helpers;
 using AmarShowsBook.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -273,7 +274,7 @@ public class AmaroController : Controller
                 .ToListAsync();
 
             var summary = upcomingBookings.Any()
-                ? string.Join(" | ", upcomingBookings.Select(x => $"{x.BookingRef}: {x.ShowTitle}, {x.StartTime:dd MMM hh:mm tt}, seats {NullText(x.SeatNumbers)}, {x.BookingStatus}/{x.PaymentStatus}"))
+                ? string.Join(" | ", upcomingBookings.Select(x => $"{x.BookingRef}: {x.ShowTitle}, {ShowTimeFormatter.Format(x.StartTime, "dd MMM hh:mm tt")}, seats {NullText(x.SeatNumbers)}, {x.BookingStatus}/{x.PaymentStatus}"))
                 : "You do not have upcoming booked shows right now.";
 
             return new AmaroAskResponse(
@@ -321,7 +322,7 @@ public class AmaroController : Controller
                 .ToList();
 
             var summary = bookings.Any()
-                ? string.Join(" | ", bookings.Select(x => $"{x.BookingRef}: {x.ShowTitle}, {x.BookingStatus}/{x.PaymentStatus}, {x.StartTime:dd MMM hh:mm tt}, seats {NullText(x.SeatNumbers)}"))
+                ? string.Join(" | ", bookings.Select(x => $"{x.BookingRef}: {x.ShowTitle}, {x.BookingStatus}/{x.PaymentStatus}, {ShowTimeFormatter.Format(x.StartTime, "dd MMM hh:mm tt")}, seats {NullText(x.SeatNumbers)}"))
                 : "No bookings found for your account.";
 
             var options = bookings
@@ -620,7 +621,7 @@ public class AmaroController : Controller
         var summary = string.Join(" | ", shows.Select(x =>
         {
             var venue = FormatList(new[] { x.VenueName, x.ScreenName, x.Location });
-            return $"{x.Title} - {x.StartTime:dd MMM, hh:mm tt} at {venue}";
+            return $"{x.Title} - {ShowTimeFormatter.Format(x.StartTime, "dd MMM, hh:mm tt")} at {venue}";
         }));
 
         var wantsBooking = IsBookShowIntent(normalized);
@@ -630,7 +631,7 @@ public class AmaroController : Controller
 
         var options = shows
             .Select(x => new AmaroQuickOption(
-                wantsBooking ? $"Book {x.StartTime:hh:mm tt}" : $"{x.Title} {x.StartTime:hh:mm tt}",
+                wantsBooking ? $"Book {ShowTimeFormatter.Format(x.StartTime, "hh:mm tt")}" : $"{x.Title} {ShowTimeFormatter.Format(x.StartTime, "hh:mm tt")}",
                 $"/Booking/Seats/{x.ScheduleId}"))
             .Prepend(new AmaroQuickOption("Upcoming Shows", "/Home/ShowTime"))
             .Prepend(new AmaroQuickOption("Browse Shows", string.IsNullOrWhiteSpace(type) ? "/Home/ShowTime" : $"/Home/ShowTime?type={type}"))
@@ -700,7 +701,7 @@ public class AmaroController : Controller
             .Select(x => $"{x.Key} INR {x.Min(seat => seat.SeatPrice):0.00}-{x.Max(seat => seat.SeatPrice):0.00}")
             .ToList();
 
-        var message = $"{show.Title} on {show.StartTime:dd MMM hh:mm tt}: {available.Count} of {seats.Count} seats available. Prices: {FormatList(priceBands)}.";
+        var message = $"{show.Title} on {ShowTimeFormatter.Format(show.StartTime, "dd MMM hh:mm tt")}: {available.Count} of {seats.Count} seats available. Prices: {FormatList(priceBands)}.";
 
         return new AmaroAskResponse(
             message,

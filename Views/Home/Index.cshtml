@@ -313,6 +313,7 @@
 .GroupBy(x => x.ShowId)
 .Select(x => x.First()))
 {
+    var showStart = ShowTimeFormatter.ToAppLocal(item.StartTime);
     var showRegion =
     string.IsNullOrWhiteSpace(item.TheaterDetails)
     ? $"{item.Location}, {item.State}, {item.Country}"
@@ -330,10 +331,10 @@ data-show-type="@item.ShowType"
 data-title="@item.Title"
 data-director="@item.Director"
 data-rating="@(item.ImdbRating?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")"
-data-date="@item.StartTime.ToString("yyyy-MM-dd")"
-data-date-label="@item.StartTime.ToString("dd MMM yyyy")"
-data-start="@item.StartTime.ToString("O")"
-data-time="@item.StartTime.TimeOfDay.TotalMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+data-date="@showStart.ToString("yyyy-MM-dd")"
+data-date-label="@showStart.ToString("dd MMM yyyy")"
+data-start="@showStart.ToString("O")"
+data-time="@showStart.TimeOfDay.TotalMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture)">
   <div class="card-body">
 
         <h2 class="movie-title">
@@ -368,11 +369,11 @@ data-time="@item.StartTime.TimeOfDay.TotalMinutes.ToString(System.Globalization.
     <div class="detail-row">
 
         <span>Date:
-            @item.StartTime.ToString("dd MMM yyyy")
+            @showStart.ToString("dd MMM yyyy")
         </span>
 
         <span>Time:
-            @item.StartTime.ToString("hh:mm tt")
+            @showStart.ToString("hh:mm tt")
         </span>
 
     </div>

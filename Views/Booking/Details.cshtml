@@ -78,7 +78,8 @@
     string showTime =
     schedule?.StartTime!=null
     ?
-    schedule.StartTime.ToString(
+    ShowTimeFormatter.Format(
+    schedule.StartTime,
     "dd MMM yyyy hh:mm tt")
     :
     "N/A";

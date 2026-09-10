@@ -184,7 +184,7 @@
                         data-filter-method="@schedule.Type">
                         <td><strong>@title</strong></td>
                         <td>@schedule.Type</td>
-                        <td>@schedule.StartTime.ToString("dd MMM yyyy hh:mm tt")</td>
+                        <td>@ShowTimeFormatter.Format(schedule.StartTime, "dd MMM yyyy hh:mm tt")</td>
                         <td>@schedule.Location?.Area, @schedule.Location?.State</td>
                         <td>@venueName</td>
                         <td>@(schedule.Screen?.ScreenName ?? "Not assigned")</td>
@@ -227,7 +227,7 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Date Time</label>
-                                    <input name="StartTime" class="form-control" type="datetime-local" value="@schedule.StartTime.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" required />
+                                    <input name="StartTime" class="form-control" type="datetime-local" value="@ShowTimeFormatter.InputValue(schedule.StartTime)" required />
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Minutes</label>

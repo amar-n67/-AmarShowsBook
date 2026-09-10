@@ -27,7 +27,7 @@ else
         <div class="date-list">
 
             @foreach(var date in Model
-                .GroupBy(x => x.StartTime.Date)
+                .GroupBy(x => ShowTimeFormatter.ToAppLocal(x.StartTime).Date)
                 .OrderBy(x => x.Key))
             {
                 <a

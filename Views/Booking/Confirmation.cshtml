@@ -719,11 +719,11 @@ alt="@title poster"
 </p>
 
 <p>
-📅 @(schedule?.StartTime.ToString("dd MMM yyyy") ?? "TBA")
+📅 @(schedule?.StartTime != null ? ShowTimeFormatter.Format(schedule.StartTime, "dd MMM yyyy") : "TBA")
 </p>
 
 <p>
-🕒 @(schedule?.StartTime.ToString("hh:mm tt") ?? "TBA")
+🕒 @(schedule?.StartTime != null ? ShowTimeFormatter.Format(schedule.StartTime, "hh:mm tt") : "TBA")
 </p>
 
 </div>

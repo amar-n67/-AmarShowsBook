@@ -1826,7 +1826,7 @@ DO UPDATE SET
             schedule.ScreenId = resolvedScreenId;
             schedule.StartTime = startTime;
             schedule.EndTime = startTime.AddMinutes(duration);
-            schedule.ShowDay = GetScheduleDayName(startTime);
+            schedule.ShowDay = GetScheduleDayName(request.StartTime);
 
             if (schedule.Movie != null)
             {
@@ -7214,7 +7214,7 @@ ALTER TABLE public.""LiveStreams"" ADD COLUMN IF NOT EXISTS ""TrailerUrl"" text;
 ALTER TABLE public.""ShowSchedules"" ADD COLUMN IF NOT EXISTS ""ShowDay"" varchar(20);
 
 UPDATE public.""ShowSchedules""
-SET ""ShowDay"" = trim(to_char(""StartTime"", 'Day'))
+SET ""ShowDay"" = trim(to_char(""StartTime"" AT TIME ZONE 'Asia/Kolkata', 'Day'))
 WHERE ""ShowDay"" IS NULL OR trim(""ShowDay"") = '';
 
 CREATE TABLE IF NOT EXISTS public.application_versions
