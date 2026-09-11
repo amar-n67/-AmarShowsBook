@@ -21,15 +21,18 @@ namespace AmarShowsBook.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
         private readonly RbacService _rbacService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         public BookingController(
             ApplicationDbContext context,
             IActivityLogger activityLogger,
-            RbacService rbacService)
+            RbacService rbacService,
+            IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _activityLogger = activityLogger;
             _rbacService = rbacService;
+            _webHostEnvironment = webHostEnvironment;
         }
 public async Task<IActionResult> Ticket(long id)
 {
@@ -1138,27 +1141,60 @@ DROP CONSTRAINT IF EXISTS fk_payment_session_booking;");
         CreateQR(string text)
         {
             byte[] bytes=
-            CreateQrPngBytes(text,20);
+            CreateQrSvgBytes(text,20);
 
             return File(
             bytes,
-            "image/png");
+            "image/svg+xml; charset=utf-8");
         }
 
-        private static byte[] CreateQrPngBytes(string text,int pixelsPerModule)
+        private byte[] CreateQrSvgBytes(string text,int pixelsPerModule)
         {
+            byte[]? logoBytes =
+            LoadQrLogoBytes();
+
             QRCodeGenerator generator=
             new QRCodeGenerator();
 
             QRCodeData data=
             generator.CreateQrCode(
-            text,
-            QRCodeGenerator.ECCLevel.Q);
+            string.IsNullOrWhiteSpace(text) ? "showTime" : text,
+            QRCodeGenerator.ECCLevel.H);
 
-            PngByteQRCode qr=
-            new PngByteQRCode(data);
+            SvgQRCode qr=
+            new SvgQRCode(data);
 
-            return qr.GetGraphic(pixelsPerModule);
+            string svg =
+            logoBytes is { Length: > 0 }
+            ? qr.GetGraphic(
+                pixelsPerModule,
+                "#111827",
+                "#ffffff",
+                true,
+                SvgQRCode.SizingMode.WidthHeightAttribute,
+                new SvgQRCode.SvgLogo(logoBytes,18,true))
+            : qr.GetGraphic(pixelsPerModule);
+
+            return Encoding.UTF8.GetBytes(svg);
+        }
+
+        private byte[]? LoadQrLogoBytes()
+        {
+            var webRoot =
+            string.IsNullOrWhiteSpace(_webHostEnvironment.WebRootPath)
+            ? Path.Combine(Directory.GetCurrentDirectory(),"wwwroot")
+            : _webHostEnvironment.WebRootPath;
+
+            var logoPath =
+            Path.Combine(
+            webRoot,
+            "images",
+            "brand",
+            "showtime-qr-logo.png");
+
+            return System.IO.File.Exists(logoPath)
+            ? System.IO.File.ReadAllBytes(logoPath)
+            : null;
         }
 
 
@@ -2852,7 +2888,7 @@ public async Task<IActionResult> DownloadTicket(long confirmedBookingId)
         BuildAbsoluteUrl($"/Booking/Confirmation?confirmedBookingId={booking.Id}");
 
     var qrBytes =
-        CreateQrPngBytes(ticketUrl,10);
+        CreateQrSvgBytes(ticketUrl,10);
 
     var html =
         BuildDownloadTicketHtml(booking,summary,user,ticketUrl,qrBytes);
@@ -2929,8 +2965,9 @@ body{margin:0;background:#f4f6ff;font-family:Segoe UI,Arial,sans-serif;color:#17
 .cell{border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;padding:12px}
 .cell span{display:block;color:#667085;font-size:12px;font-weight:800;text-transform:uppercase}
 .cell strong{display:block;margin-top:4px;font-size:15px;overflow-wrap:anywhere}
-.qr{display:grid;place-items:center;align-content:center;gap:10px;border-radius:16px;background:#fff7eb;border:1px dashed #f2bd2d;padding:14px;text-align:center}
-.qr img{width:150px;height:150px}
+	.qr{position:relative;display:grid;place-items:center;align-content:center;gap:10px;border-radius:20px;background:linear-gradient(145deg,#fff,#fff7eb);border:1px solid #f2bd2d;padding:14px;text-align:center;box-shadow:inset 0 0 0 5px rgba(242,189,45,.16),0 16px 34px rgba(23,32,51,.12)}
+	.qr:before{content:"showTime secure QR";display:inline-flex;align-items:center;justify-content:center;margin-bottom:2px;padding:5px 10px;border-radius:999px;background:#172033;color:#fff;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+	.qr img{width:154px;height:154px;border-radius:14px;background:#fff;box-shadow:0 10px 24px rgba(23,32,51,.12)}
 .foot{padding:18px 24px;background:#172033;color:#fff;display:flex;justify-content:space-between;gap:14px;font-weight:800}
 </style>
 </head>
@@ -2955,7 +2992,7 @@ body{margin:0;background:#f4f6ff;font-family:Segoe UI,Arial,sans-serif;color:#17
 </div>
 </div>
 <div class="qr">
-<img src="data:image/png;base64,{{qrData}}" alt="Ticket QR">
+<img src="data:image/svg+xml;base64,{{qrData}}" alt="Ticket QR">
 </div>
 </div>
 <div class="foot">

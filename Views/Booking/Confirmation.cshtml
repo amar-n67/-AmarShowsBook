@@ -538,40 +538,107 @@ font-weight:800;
 
 margin-top:20px;
 
-display:flex;
+position:relative;
 
-justify-content:center;
+display:grid;
+
+justify-items:center;
+
+align-content:center;
+
+gap:12px;
+
+flex:1;
+
+padding:18px;
+
+border:1px solid color-mix(in srgb, var(--app-accent, #f0bd4f) 48%, var(--app-input-border, #e5e7eb));
+
+border-radius:28px;
+
+background:
+radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--app-accent, #f0bd4f) 18%, transparent), transparent 42%),
+linear-gradient(145deg, color-mix(in srgb, var(--app-card, #ffffff) 92%, var(--app-accent-strong, #168f98) 8%), var(--app-card, #ffffff));
+
+box-shadow:
+inset 0 0 0 5px color-mix(in srgb, var(--app-accent, #f0bd4f) 12%, transparent),
+0 20px 46px color-mix(in srgb, #000000 16%, transparent);
+}
+
+.qr-badge{
+
+display:inline-flex;
 
 align-items:center;
 
-flex:1;
+justify-content:center;
+
+gap:8px;
+
+padding:6px 12px 6px 8px;
+
+border:1px solid color-mix(in srgb, var(--app-accent-strong, #168f98) 34%, var(--app-input-border, #e5e7eb));
+
+border-radius:999px;
+
+color:var(--app-card-text, #172033);
+
+background:color-mix(in srgb, var(--app-card, #ffffff) 86%, var(--app-accent, #f0bd4f) 14%);
+
+font-size:12px;
+
+font-weight:950;
+
+text-transform:uppercase;
+}
+
+.qr-badge img{
+
+width:34px;
+height:34px;
+
+object-fit:contain;
+}
+
+.qr-frame{
+
+display:grid;
+
+place-items:center;
+
+padding:12px;
+
+border-radius:26px;
+
+background:#ffffff;
+
+box-shadow:0 12px 30px rgba(0,0,0,.12);
+
+animation:qrPulse 3s infinite;
 }
 
 
-.qr img{
+.qr-frame img{
 
 width:220px;
 height:220px;
 
-padding:18px;
+padding:0;
 
 background:white;
 
-border-radius:22px;
+border-radius:18px;
 
 object-fit:contain;
 
-box-shadow:
-0 10px 25px rgba(0,0,0,.12);
+box-shadow:none;
 
 transition:.4s;
 
-animation:
-qrPulse 3s infinite;
 }
 
 
-.qr img:hover{
+.qr-frame:hover{
 
 transform:
 scale(1.05);
@@ -584,6 +651,16 @@ scale(1.05);
 
 transform:
 translateY(-5px);
+}
+
+}
+
+@@media (prefers-reduced-motion: reduce){
+
+.qr-frame{
+
+animation:none;
+transition:none;
 }
 
 }
@@ -946,9 +1023,19 @@ Booking Date
 
 <div class="qr">
 
+<div class="qr-badge">
+<img src="/images/brand/showtime-qr-logo.png" alt="" />
+<span>showTime secure QR</span>
+</div>
+
+<div class="qr-frame">
+
 <img
 src="/Booking/CreateQR?text=@WebUtility.UrlEncode(ticketUrl)"
+alt="showTime ticket QR"
 />
+
+</div>
 
 </div>
 

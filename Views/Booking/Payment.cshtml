@@ -2389,14 +2389,100 @@ body::after {
     background: color-mix(in srgb, var(--payment-danger) 12%, var(--payment-card-bg));
 }
 
-.payment-status-track {
-    background: color-mix(in srgb, var(--payment-page-text) 10%, transparent);
-}
+    .payment-status-track {
+        background: color-mix(in srgb, var(--payment-page-text) 10%, transparent);
+    }
 
 #qrImage {
     border: 1px solid color-mix(in srgb, var(--payment-border) 82%, transparent);
     background: #ffffff;
     box-shadow: 0 16px 34px color-mix(in srgb, #000000 12%, transparent);
+}
+
+#qrSection {
+    position: relative;
+    overflow: hidden;
+    display: none;
+    padding: 22px;
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--payment-warm) 18%, transparent), transparent 38%),
+        linear-gradient(145deg, color-mix(in srgb, var(--payment-card-bg) 92%, var(--payment-accent) 8%), var(--payment-card-bg));
+}
+
+#qrSection::before {
+    position: absolute;
+    inset: 10px;
+    pointer-events: none;
+    content: "";
+    border: 1px solid color-mix(in srgb, var(--payment-accent) 18%, transparent);
+    border-radius: 22px;
+}
+
+.qr-brand-badge {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 6px 12px 6px 8px;
+    border: 1px solid color-mix(in srgb, var(--payment-accent) 34%, var(--payment-border));
+    border-radius: 999px;
+    color: var(--payment-page-text);
+    background: color-mix(in srgb, var(--payment-soft-bg) 86%, var(--payment-warm) 14%);
+    font-size: 0.76rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.qr-brand-badge img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.qr-frame {
+    position: relative;
+    z-index: 1;
+    display: inline-grid;
+    place-items: center;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--payment-warm) 45%, #ffffff);
+    border-radius: 26px;
+    background:
+        linear-gradient(#ffffff, #ffffff) padding-box,
+        linear-gradient(135deg, var(--payment-primary), var(--payment-warm), var(--payment-accent)) border-box;
+    box-shadow:
+        inset 0 0 0 5px color-mix(in srgb, var(--payment-warm) 13%, transparent),
+        0 18px 42px color-mix(in srgb, #000000 16%, transparent);
+    animation: qrFloat 3.4s ease-in-out infinite;
+}
+
+.qr-frame::after {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 52px;
+    height: 52px;
+    pointer-events: none;
+    content: "";
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--payment-accent) 18%, transparent);
+}
+
+.qr-frame #qrImage {
+    display: block;
+    width: min(220px, 64vw);
+    height: min(220px, 64vw);
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    object-fit: contain;
+    background: #ffffff;
+    box-shadow: none;
+    animation: none;
 }
 
 .live-card-face {
@@ -2444,6 +2530,7 @@ body::after {
     .payment-option,
     .method-details,
     .amount,
+    .qr-frame,
     #qrImage,
     .live-card-face::before,
     .live-card-face::after,
@@ -2781,17 +2868,21 @@ QR Scan
 </div>
 
 <div id="qrSection">
+    <div class="qr-brand-badge">
+        <img src="~/images/brand/showtime-qr-logo.png" alt="" asp-append-version="true" />
+        <span>showTime secure QR</span>
+    </div>
 
-<img
-id="qrImage"
-width="220" />
+    <div class="qr-frame">
+        <img
+        id="qrImage"
+        width="220"
+        alt="showTime payment QR" />
+    </div>
 
-<div class="scan-text">
-
-Scan QR using any UPI app
-
-</div>
-
+    <div class="scan-text">
+        Scan QR using any UPI app
+    </div>
 </div>
 </div>
 
