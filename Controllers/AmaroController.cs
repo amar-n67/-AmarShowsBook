@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmarShowsBook.Controllers;
 
-// The assistant answers from app data first, then limits every admin shortcut to the user's current roles.
+// Amaro reads from application data first, then limits every shortcut to the user's current role.
 public class AmaroController : Controller
 {
     private const string SupportPhone = "+91 9651698863";
@@ -121,7 +121,7 @@ public class AmaroController : Controller
                 canPrint
                     ? "I'm Amaro. I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, search the current page, print, go back, export allowed admin data, check wallet/profile/transactions, switch theme or cursor, and connect you to support."
                     : "I'm Amaro. I can book shows, show prices and available seats, list upcoming shows, filter movies/standup/live, open role-allowed pages, search the current page, go back, check wallet/profile/transactions, switch theme or cursor, and connect you to support. Print and capture tools are admin-only.",
-                BuildAssistantOptions(menuItems, userId).Take(8).ToArray());
+                BuildAmaroOptions(menuItems, userId).Take(8).ToArray());
         }
 
         if (IsSupportIntent(normalized))
@@ -1265,7 +1265,7 @@ public class AmaroController : Controller
 
         return new AmaroAskResponse(
             "Smart next steps: browse shows, check seats and prices, review your bookings, contact support, or open a role-allowed page. I will keep actions inside your access.",
-            BuildAssistantOptions(menuItems, userId).Take(6).ToArray());
+            BuildAmaroOptions(menuItems, userId).Take(6).ToArray());
     }
 
     private async Task<AmaroAskResponse> BuildAdminOverviewReply(
@@ -1452,7 +1452,7 @@ VALUES
             .ToArray();
     }
 
-    private IEnumerable<AmaroQuickOption> BuildAssistantOptions(List<AmaroMenuItem> menuItems, int userId)
+    private IEnumerable<AmaroQuickOption> BuildAmaroOptions(List<AmaroMenuItem> menuItems, int userId)
     {
         yield return new AmaroQuickOption("Book Shows", "/Home/ShowTime");
         yield return new AmaroQuickOption("Available Seats", "", "show-suggestions");

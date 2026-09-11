@@ -954,7 +954,7 @@
     </button>
     <section id="adminAmaroPanel"
              class="admin-amaro-panel"
-             aria-label="Amaro role assistant"
+             aria-label="Amaro admin help panel"
              hidden>
         <div class="admin-amaro-header">
             <div>
@@ -977,7 +977,7 @@
         </div>
         <div class="admin-amaro-options" data-amaro-options></div>
         <div class="admin-amaro-thread" data-amaro-thread>
-            <div class="admin-amaro-message admin-amaro-message-bot">
+            <div class="admin-amaro-message admin-amaro-message-reply">
                 I follow your RBAC role. Ask for refunds, users, bookings, security, wallet, notifications, coupons, support, versions, shows, or developer tools.
             </div>
         </div>
@@ -1236,7 +1236,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 <script>
 (function () {
-    // Admin assistant can trigger local export only when the current role can see the export button.
+    // Amaro can trigger local export only when the current role can see the export button.
     const widget = document.querySelector("[data-amaro-widget]");
     if (!widget) return;
 
@@ -1273,7 +1273,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function applyPageSearch(term) {
         const searchInput = findPageSearchInput();
         if (!searchInput) {
-            addMessage("I could not find a search box on this page.", "bot");
+            addMessage("I could not find a search box on this page.", "reply");
             return true;
         }
 
@@ -1283,7 +1283,7 @@ document.addEventListener("DOMContentLoaded", function () {
             searchInput.dispatchEvent(new Event(type, { bubbles: true }));
         });
 
-        addMessage(term ? `Searching this page for "${term}".` : "Search box is ready. Type what you want to find.", "bot");
+        addMessage(term ? `Searching this page for "${term}".` : "Search box is ready. Type what you want to find.", "reply");
         return true;
     }
 
@@ -1305,7 +1305,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (lower === "search this page" || lower === "search page" || lower === "filter this page") return "page-search:";
         if (lower.includes("export dashboard") || lower.includes("dashboard export")) return "export-dashboard";
         if (lower === "export" || lower === "export this page") return "admin-export";
-        if (lower === "close" || lower === "close bot" || lower === "hide bot" || lower === "hide amaro") return "close-bot";
+        if (lower === "close" || lower === "close amaro" || lower === "hide amaro") return "close-amaro";
         if (lower === "top" || lower === "go top" || lower === "scroll top") return "scroll-top";
         if (lower === "bottom" || lower === "go bottom" || lower === "scroll bottom") return "scroll-bottom";
         if (lower === "reload" || lower === "refresh" || lower === "refresh page") return "reload-page";
@@ -1352,7 +1352,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 { label: "White Theme", command: "theme:white" },
                 { label: "System Theme", command: "theme:system" }
             ]);
-            addMessage("Choose a theme option.", "bot");
+            addMessage("Choose a theme option.", "reply");
             return true;
         }
 
@@ -1363,7 +1363,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 { label: "Precision Cursor", command: "cursor:precision" },
                 { label: "Spotlight Cursor", command: "cursor:spotlight" }
             ]);
-            addMessage("Choose a cursor style.", "bot");
+            addMessage("Choose a cursor style.", "reply");
             return true;
         }
 
@@ -1375,7 +1375,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 { label: "Live Streams", command: "filter-type:Live" },
                 { label: "Today Shows", command: "ask:today shows" }
             ]);
-            addMessage("Choose how you want to explore shows.", "bot");
+            addMessage("Choose how you want to explore shows.", "reply");
             return true;
         }
 
@@ -1387,7 +1387,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 { label: "Admin Dashboard", url: "/Admin/Dashboard" },
                 { label: "My Bookings", url: "/Booking/MyBookings" }
             ]);
-            addMessage("Choose Call Us, Write Us, or WhatsApp Us for support. Share the booking, transaction, or refund reference when possible.", "bot");
+            addMessage("Choose Call Us, Write Us, or WhatsApp Us for support. Share the booking, transaction, or refund reference when possible.", "reply");
             return true;
         }
 
@@ -1395,15 +1395,15 @@ document.addEventListener("DOMContentLoaded", function () {
             const exportButton = document.querySelector("[data-admin-export]");
             if (exportButton) {
                 exportButton.click();
-                addMessage((label || "Export") + " is being generated. Your download will start shortly.", "bot");
+                addMessage((label || "Export") + " is being generated. Your download will start shortly.", "reply");
             } else {
-                addMessage("Open an admin table page first, then I can export its visible rows.", "bot");
+                addMessage("Open an admin table page first, then I can export its visible rows.", "reply");
             }
             return true;
         }
 
         if (value === "export-dashboard") {
-            addMessage("Dashboard Excel export is being generated. Your download will start shortly.", "bot");
+            addMessage("Dashboard Excel export is being generated. Your download will start shortly.", "reply");
             window.location.href = "/Admin/ExportDashboard";
             return true;
         }
@@ -1411,16 +1411,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (value === "print-page") {
             if (!canCapture) {
                 window.showCaptureProtection?.("Print is allowed only for Admin and Super Admin.");
-                addMessage("Print is blocked for your role.", "bot");
+                addMessage("Print is blocked for your role.", "reply");
                 return true;
             }
-            addMessage("Opening the print dialog for this page.", "bot");
+            addMessage("Opening the print dialog for this page.", "reply");
             setTimeout(() => window.print(), 80);
             return true;
         }
 
         if (value === "go-back") {
-            addMessage("Taking you back.", "bot");
+            addMessage("Taking you back.", "reply");
             setTimeout(() => {
                 if (window.adminBack) {
                     window.adminBack();
@@ -1441,7 +1441,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return applyPageSearch("");
         }
 
-        if (value === "close-bot") {
+        if (value === "close-amaro") {
             panel.hidden = true;
             toggle.setAttribute("aria-expanded", "false");
             return true;
@@ -1449,18 +1449,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (value === "scroll-top") {
             window.scrollTo({ top: 0, behavior: "smooth" });
-            addMessage("Moved to the top of the page.", "bot");
+            addMessage("Moved to the top of the page.", "reply");
             return true;
         }
 
         if (value === "scroll-bottom") {
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
-            addMessage("Moved to the bottom of the page.", "bot");
+            addMessage("Moved to the bottom of the page.", "reply");
             return true;
         }
 
         if (value === "reload-page") {
-            addMessage("Refreshing this page.", "bot");
+            addMessage("Refreshing this page.", "reply");
             setTimeout(() => window.location.reload(), 120);
             return true;
         }
@@ -1468,7 +1468,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (value.startsWith("open:")) {
             const url = value.slice(5);
             if (url.startsWith("/")) {
-                addMessage("Opening " + (label || "that page") + ".", "bot");
+                addMessage("Opening " + (label || "that page") + ".", "reply");
                 window.location.href = url;
                 return true;
             }
@@ -1486,14 +1486,14 @@ document.addEventListener("DOMContentLoaded", function () {
             } else if (window.setAppTheme) {
                 window.setAppTheme(theme);
             }
-            addMessage((label || "Theme") + " applied.", "bot");
+            addMessage((label || "Theme") + " applied.", "reply");
             return true;
         }
 
         if (value.startsWith("cursor:")) {
             const cursor = value.split(":")[1] || "native";
             window.setAppCursorStyle?.(cursor);
-            addMessage((label || "Cursor") + " applied across the app.", "bot");
+            addMessage((label || "Cursor") + " applied across the app.", "reply");
             return true;
         }
 
@@ -1584,7 +1584,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        const thinking = addMessage("Thinking...", "bot");
+        const thinking = addMessage("Thinking...", "reply");
         input.disabled = true;
         if (submitButton) {
             submitButton.disabled = true;
@@ -1602,12 +1602,12 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(response => response.json())
         .then(data => {
             thinking.remove();
-            addMessage(data.message || "I could not find details for that yet.", "bot");
+            addMessage(data.message || "I could not find details for that yet.", "reply");
             renderOptions(data.options || []);
         })
         .catch(() => {
             thinking.remove();
-            addMessage("I could not reach Amaro right now. Please try again.", "bot");
+            addMessage("I could not reach Amaro right now. Please try again.", "reply");
         })
         .finally(() => {
             input.disabled = false;

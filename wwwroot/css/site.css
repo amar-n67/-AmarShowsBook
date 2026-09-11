@@ -143,10 +143,7 @@ body {
   transform: translate(0, 0);
 }
 
-.card:has(.app-info),
-[class*="table-wrap"]:has(.app-info),
-[class*="table-wrapper"]:has(.app-info),
-.table-responsive:has(.app-info) {
+.card:has(.app-info) {
   overflow: visible !important;
 }
 
@@ -155,34 +152,41 @@ body {
 [class*="table-wrap"],
 [class*="table-wrapper"] {
   max-width: 100%;
-  overflow-x: auto;
+  overflow-x: auto !important;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
-}
-
-.table-wrapper > table,
-.table-responsive > table,
-[class*="table-wrap"] > table,
-[class*="table-wrapper"] > table,
-table.table {
-  width: 100% !important;
-  table-layout: fixed !important;
+  scrollbar-gutter: stable both-edges;
 }
 
 .table-wrapper > table,
 .table-responsive > table,
 [class*="table-wrap"] > table,
 [class*="table-wrapper"] > table {
-  min-width: 720px !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  table-layout: auto !important;
+}
+
+table.table {
+  max-width: 100%;
 }
 
 table.table th,
-table.table td,
+table.table td {
+  min-width: 0 !important;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
 .table-wrapper th,
 .table-wrapper td,
 .table-responsive th,
 .table-responsive td {
-  min-width: 0 !important;
-  max-width: 100%;
+  min-width: 110px !important;
+  max-width: min(420px, 72vw);
   white-space: normal;
   overflow-wrap: anywhere;
   vertical-align: middle;
@@ -191,6 +195,13 @@ table.table td,
 table.table th[style*="min-width"],
 table.table td[style*="min-width"] {
   min-width: 0 !important;
+}
+
+.table-wrapper th[style*="min-width"],
+.table-wrapper td[style*="min-width"],
+.table-responsive th[style*="min-width"],
+.table-responsive td[style*="min-width"] {
+  min-width: 110px !important;
 }
 
 table.table th:first-child,
@@ -209,4 +220,99 @@ table.table .table-actions,
 table.table td:has(.btn),
 table.table td:has(form) {
   width: clamp(104px, 14vw, 180px);
+}
+
+/* Shared responsive guardrails for pages that use Bootstrap tables and cards. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+main,
+section,
+article,
+form,
+.container,
+.container-fluid,
+.row,
+[class*="col-"],
+.card,
+.table,
+.table-wrapper,
+.table-responsive,
+.modal-content,
+.dropdown-menu,
+.list-group,
+.list-group-item {
+  min-width: 0;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .container,
+  .container-fluid {
+    width: 100%;
+    max-width: 100%;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .row {
+    --bs-gutter-x: 1rem;
+  }
+
+  .card,
+  .modal-content,
+  .list-group-item {
+    border-radius: 8px !important;
+  }
+
+  .btn,
+  .form-control,
+  .form-select,
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+
+  .btn,
+  button,
+  [role="button"] {
+    min-height: 40px;
+  }
+
+  .table-wrapper,
+  .table-responsive,
+  [class*="table-wrap"],
+  [class*="table-wrapper"] {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 8px;
+    overscroll-behavior-x: contain;
+  }
+
+  .table-wrapper > table,
+  .table-responsive > table,
+  [class*="table-wrap"] > table,
+  [class*="table-wrapper"] > table {
+    min-width: max(100%, 720px) !important;
+  }
 }
