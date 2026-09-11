@@ -266,6 +266,20 @@
     .booking-table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: auto !important;
+        min-width: 1180px !important;
+    }
+
+    .booking-table th:first-child,
+    .booking-table td:first-child {
+        width: auto !important;
+        min-width: 220px !important;
+    }
+
+    .booking-table th:last-child,
+    .booking-table td:last-child {
+        width: auto !important;
+        min-width: 190px !important;
     }
 
     .booking-table th {
@@ -362,6 +376,7 @@
     .created-date {
         font-weight: 500;
         color: #111827;
+        white-space: nowrap;
     }
 
     .badge {

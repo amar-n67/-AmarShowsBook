@@ -575,6 +575,11 @@
                                                 var originalScheduleRange = HistoryTimeRange(item.RelaunchOriginalStartTime, item.RelaunchOriginalEndTime);
                                                 var newScheduleRange = HistoryTimeRange(item.RelaunchNewStartTime, item.RelaunchNewEndTime);
                                                 var relaunchMode = item.RelaunchSameTime ? "Same previous time" : "Changed time";
+                                                var scheduleChanged = item.IsRevoked &&
+                                                    item.RelaunchOriginalStartTime.HasValue &&
+                                                    item.RelaunchNewStartTime.HasValue &&
+                                                    (item.RelaunchOriginalStartTime.Value != item.RelaunchNewStartTime.Value ||
+                                                     item.RelaunchOriginalEndTime != item.RelaunchNewEndTime);
                                                 <tr class="cancellation-data-row"
                                                     data-admin-searchable
                                                     data-admin-filter-row
@@ -605,8 +610,14 @@
                                                         @if (item.IsRevoked)
                                                         {
                                                             <div class="primary-text">@relaunchMode</div>
-                                                            <div class="sub-text">Previous show: @originalScheduleRange</div>
-                                                            <div class="sub-text">Relaunch show: @newScheduleRange</div>
+                                                            <div class="schedule-history-line previous @(scheduleChanged ? "schedule-changed" : "")">
+                                                                <span>Previous show</span>
+                                                                <strong>@originalScheduleRange</strong>
+                                                            </div>
+                                                            <div class="schedule-history-line relaunch @(scheduleChanged ? "schedule-changed" : "")">
+                                                                <span>Relaunch show</span>
+                                                                <strong>@newScheduleRange</strong>
+                                                            </div>
                                                             <div class="sub-text cancellation-reason">@(item.RelaunchReason ?? "Relaunch reason not saved in DB")</div>
                                                         }
                                                         else
@@ -1063,6 +1074,51 @@
         white-space: normal;
     }
 
+    .schedule-history-line {
+        display: grid;
+        gap: 2px;
+        margin-top: 7px;
+        padding: 9px 10px;
+        border: 1px solid var(--admin-line, rgba(17, 24, 39, .12));
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--admin-panel-strong, #f8fafc) 86%, transparent);
+    }
+
+    .schedule-history-line span {
+        color: var(--admin-muted, #64748b);
+        font-size: .7rem;
+        font-weight: 900;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .schedule-history-line strong {
+        color: var(--admin-ink, #111827);
+        font-size: .78rem;
+        font-weight: 850;
+        line-height: 1.35;
+    }
+
+    .schedule-history-line.previous.schedule-changed {
+        border-color: #fbbf24;
+        background: #fffbeb;
+    }
+
+    .schedule-history-line.previous.schedule-changed span,
+    .schedule-history-line.previous.schedule-changed strong {
+        color: #92400e;
+    }
+
+    .schedule-history-line.relaunch.schedule-changed {
+        border-color: #86efac;
+        background: #ecfdf5;
+    }
+
+    .schedule-history-line.relaunch.schedule-changed span,
+    .schedule-history-line.relaunch.schedule-changed strong {
+        color: #166534;
+    }
+
     .history-sections {
         display: grid;
         gap: 18px;
@@ -1153,6 +1209,25 @@
 
     html[data-theme="dark"] .history-section-head h3 {
         color: #f8fafc;
+    }
+
+    html[data-theme="dark"] .schedule-history-line {
+        background: rgba(248, 250, 252, .08);
+        border-color: rgba(248, 250, 252, .18);
+    }
+
+    html[data-theme="dark"] .schedule-history-line strong {
+        color: #f8fafc;
+    }
+
+    html[data-theme="dark"] .schedule-history-line.previous.schedule-changed {
+        background: rgba(251, 191, 36, .16);
+        border-color: rgba(251, 191, 36, .52);
+    }
+
+    html[data-theme="dark"] .schedule-history-line.relaunch.schedule-changed {
+        background: rgba(34, 197, 94, .14);
+        border-color: rgba(134, 239, 172, .46);
     }
 
     @@media (max-width: 1100px) {

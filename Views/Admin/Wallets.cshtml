@@ -82,9 +82,28 @@
     </div>
 
 
-    <div class="table-wrapper">
+    <div class="wallet-grid-shell" data-wallet-grid>
+
+        <div class="wallet-grid-top-scroll" data-wallet-grid-top-scroll aria-hidden="true">
+            <div class="wallet-grid-scroll-spacer" data-wallet-grid-scroll-spacer></div>
+        </div>
+
+        <div class="wallet-data-grid-scroll" data-wallet-grid-scroll aria-label="Wallet records scroll area">
 
         <table class="table admin-table wallet-table">
+
+            <colgroup>
+                <col class="wallet-col-user" />
+                <col class="wallet-col-balance" />
+                <col class="wallet-col-blocked" />
+                <col class="wallet-col-used" />
+                <col class="wallet-col-loyalty" />
+                <col class="wallet-col-status" />
+                <col class="wallet-col-reason" />
+                <col class="wallet-col-date" />
+                <col class="wallet-col-action" />
+                <col class="wallet-col-history" />
+            </colgroup>
 
             <thead>
 
@@ -315,18 +334,16 @@
                             </td>
 
 
-                            <td>
+                            <td class="wallet-date-cell">
 
                                 @if (item.LastTransactionAt != null)
                                 {
                                     <div class="created-date">
-                                        @item.LastTransactionAt?
-                                            .ToString("dd MMM yyyy")
+                                        @item.LastTransactionAt?.ToString("dd MMM yyyy")
                                     </div>
 
                                     <div class="sub-text">
-                                        @item.LastTransactionAt?
-                                            .ToString("hh:mm tt")
+                                        @item.LastTransactionAt?.ToString("hh:mm tt")
                                     </div>
                                 }
                                 else
@@ -389,7 +406,7 @@
                             </td>
 
 
-                            <td>
+                            <td class="wallet-history-cell">
 
                                 <details class="wallet-history-panel">
                                     <summary>
@@ -420,9 +437,9 @@
                                                         @history.ActionReason
                                                     </p>
                                                     <small>
-                                                        @history.CreatedAt.ToString("dd MMM yyyy hh:mm tt")
-                                                        · By @(string.IsNullOrWhiteSpace(history.ActionBy) ? "Admin" : history.ActionBy)
-                                                        · Balance @CurrencyFormatter.FormatRupees(history.WalletBalance)
+                                                        <span>@history.CreatedAt.ToString("dd MMM yyyy hh:mm tt")</span>
+                                                        <span>By @(string.IsNullOrWhiteSpace(history.ActionBy) ? "Admin" : history.ActionBy)</span>
+                                                        <span>Balance @CurrencyFormatter.FormatRupees(history.WalletBalance)</span>
                                                     </small>
                                                 </div>
                                             }
@@ -440,6 +457,8 @@
 
         </table>
 
+        </div>
+
     </div>
 
 
@@ -455,12 +474,197 @@
 
 <style>
 
-    .wallet-table {
+    .wallet-grid-shell {
+        --wallet-grid-width: 2350px;
         width: 100%;
-        border-collapse: collapse;
+        max-width: 100%;
+        min-width: 0;
     }
 
-    .wallet-table th {
+    .wallet-grid-top-scroll {
+        width: 100%;
+        max-width: 100%;
+        height: 18px;
+        margin-bottom: 8px;
+        overflow-x: scroll;
+        overflow-y: hidden;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--admin-panel-strong, #ffffff) 82%, var(--admin-line, #d1d5db));
+        scrollbar-color: var(--admin-teal, #168f98) color-mix(in srgb, var(--admin-panel-strong, #ffffff) 70%, var(--admin-line, #d1d5db));
+    }
+
+    .wallet-grid-scroll-spacer {
+        width: var(--wallet-grid-width);
+        height: 1px;
+    }
+
+    .wallet-data-grid-scroll {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        border: 1px solid var(--admin-line, #e5e7eb);
+        border-radius: 12px;
+        background: var(--admin-panel-strong, #ffffff);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+        overflow-x: scroll !important;
+        overflow-y: visible !important;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-gutter: stable both-edges;
+        scrollbar-color: var(--admin-teal, #168f98) color-mix(in srgb, var(--admin-panel-strong, #ffffff) 70%, var(--admin-line, #d1d5db));
+    }
+
+    .wallet-grid-top-scroll::-webkit-scrollbar,
+    .wallet-data-grid-scroll::-webkit-scrollbar {
+        height: 12px;
+    }
+
+    .wallet-grid-top-scroll::-webkit-scrollbar-track,
+    .wallet-data-grid-scroll::-webkit-scrollbar-track {
+        background: color-mix(in srgb, var(--admin-panel-strong, #ffffff) 78%, var(--admin-line, #d1d5db));
+        border-radius: 999px;
+    }
+
+    .wallet-grid-top-scroll::-webkit-scrollbar-thumb,
+    .wallet-data-grid-scroll::-webkit-scrollbar-thumb {
+        border: 2px solid color-mix(in srgb, var(--admin-panel-strong, #ffffff) 78%, var(--admin-line, #d1d5db));
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--admin-teal, #168f98), var(--admin-gold, #d9a441));
+    }
+
+    table.table.admin-table.wallet-table {
+        width: max(100%, var(--wallet-grid-width)) !important;
+        min-width: var(--wallet-grid-width) !important;
+        max-width: none !important;
+        border-collapse: collapse;
+        table-layout: fixed !important;
+    }
+
+    .wallet-col-user {
+        width: 280px;
+    }
+
+    .wallet-col-history {
+        width: 420px;
+    }
+
+    .wallet-col-balance {
+        width: 170px;
+    }
+
+    .wallet-col-blocked {
+        width: 190px;
+    }
+
+    .wallet-col-used {
+        width: 205px;
+    }
+
+    .wallet-col-loyalty {
+        width: 150px;
+    }
+
+    .wallet-col-status {
+        width: 165px;
+    }
+
+    .wallet-col-reason {
+        width: 340px;
+    }
+
+    .wallet-col-date {
+        width: 180px;
+    }
+
+    .wallet-col-action {
+        width: 250px;
+    }
+
+    table.table.admin-table.wallet-table th,
+    table.table.admin-table.wallet-table td {
+        min-width: 120px !important;
+        max-width: none !important;
+        box-sizing: border-box;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(1),
+    table.table.admin-table.wallet-table td:nth-child(1) {
+        min-width: 280px !important;
+        width: 280px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(2),
+    table.table.admin-table.wallet-table td:nth-child(2) {
+        min-width: 170px !important;
+        width: 170px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(3),
+    table.table.admin-table.wallet-table td:nth-child(3) {
+        min-width: 190px !important;
+        width: 190px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(4),
+    table.table.admin-table.wallet-table td:nth-child(4) {
+        min-width: 205px !important;
+        width: 205px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(5),
+    table.table.admin-table.wallet-table td:nth-child(5) {
+        min-width: 150px !important;
+        width: 150px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(6),
+    table.table.admin-table.wallet-table td:nth-child(6) {
+        min-width: 165px !important;
+        width: 165px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(7),
+    table.table.admin-table.wallet-table td:nth-child(7) {
+        min-width: 340px !important;
+        width: 340px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(8),
+    table.table.admin-table.wallet-table td:nth-child(8) {
+        min-width: 180px !important;
+        width: 180px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(9),
+    table.table.admin-table.wallet-table td:nth-child(9) {
+        min-width: 250px !important;
+        width: 250px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(10),
+    table.table.admin-table.wallet-table td:nth-child(10) {
+        min-width: 420px !important;
+        width: 420px !important;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(1),
+    table.table.admin-table.wallet-table td:nth-child(1),
+    table.table.admin-table.wallet-table th:nth-child(9),
+    table.table.admin-table.wallet-table td:nth-child(9),
+    table.table.admin-table.wallet-table th:nth-child(10),
+    table.table.admin-table.wallet-table td.wallet-history-cell,
+    table.table.admin-table.wallet-table td:nth-child(10) {
+        max-width: none !important;
+        position: relative;
+    }
+
+    table.table.admin-table.wallet-table th:nth-child(8),
+    table.table.admin-table.wallet-table td.wallet-date-cell {
+        white-space: nowrap;
+    }
+
+    table.table.admin-table.wallet-table th {
         background: linear-gradient(180deg,#f8fafc,#e8eef7);
         color: #111827;
         padding: 14px;
@@ -472,29 +676,21 @@
         box-shadow: inset 0 -1px 0 rgba(15,23,42,.05);
     }
 
-    .wallet-table td {
+    table.table.admin-table.wallet-table td {
         padding: 14px;
         vertical-align: top;
         border-bottom: 1px solid #e5e7eb;
         font-size: 14px;
     }
 
-    .wallet-table tbody tr:hover {
+    table.table.admin-table.wallet-table tbody tr:hover {
         background: #f9fafb;
     }
 
-    .wallet-table tr:target {
+    table.table.admin-table.wallet-table tr:target {
         outline: 3px solid rgba(239,68,68,.28);
         outline-offset: -3px;
         background: #fff7ed;
-    }
-
-    .table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        border-radius: 12px;
-        background: white;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
     }
 
     .stats-grid {
@@ -553,7 +749,8 @@
 
     .wallet-suspend-panel,
     .wallet-reactivate-panel {
-        width: 210px;
+        width: 100%;
+        max-width: 230px;
     }
 
     .wallet-suspend-panel summary,
@@ -639,8 +836,15 @@
     }
 
     .wallet-history-panel {
-        width: 260px;
-        margin-top: 10px;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        margin-top: 0;
+        overflow: visible;
+    }
+
+    .wallet-history-panel[open] {
+        z-index: 4;
     }
 
     .wallet-history-panel summary {
@@ -671,8 +875,9 @@
         margin-top: 10px;
         display: grid;
         gap: 8px;
-        max-height: 260px;
+        max-height: 320px;
         overflow-y: auto;
+        overflow-x: hidden;
         padding-right: 4px;
     }
 
@@ -683,6 +888,10 @@
         border-radius: 10px;
         background: #f8fafc;
         border: 1px solid #e2e8f0;
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .wallet-history-empty {
@@ -701,6 +910,7 @@
         color: #111827;
         font-size: 12px;
         font-weight: 900;
+        overflow-wrap: anywhere;
     }
 
     .history-action {
@@ -731,11 +941,13 @@
     }
 
     .wallet-history-item small {
-        display: block;
+        display: grid;
+        gap: 2px;
         color: #64748b;
         font-size: 11px;
         font-weight: 750;
         line-height: 1.35;
+        overflow-wrap: anywhere;
     }
 
     .wallet-reactivate-btn {
@@ -861,6 +1073,7 @@
     .created-date {
         font-weight: 500;
         color: #111827;
+        white-space: nowrap;
     }
 
     @@media(max-width: 768px) {
@@ -869,8 +1082,8 @@
             font-size: 24px;
         }
 
-        .wallet-table td,
-        .wallet-table th {
+        table.table.admin-table.wallet-table td,
+        table.table.admin-table.wallet-table th {
             font-size: 13px;
             padding: 10px;
         }
@@ -878,3 +1091,50 @@
     }
 
 </style>
+
+@section Scripts {
+    <script>
+        (() => {
+            const grid = document.querySelector("[data-wallet-grid]");
+            if (!grid) {
+                return;
+            }
+
+            const topScroll = grid.querySelector("[data-wallet-grid-top-scroll]");
+            const bodyScroll = grid.querySelector("[data-wallet-grid-scroll]");
+            const spacer = grid.querySelector("[data-wallet-grid-scroll-spacer]");
+            const table = grid.querySelector(".wallet-table");
+            let isSyncing = false;
+
+            const updateSpacerWidth = () => {
+                if (!spacer || !table) {
+                    return;
+                }
+
+                spacer.style.width = `${table.scrollWidth}px`;
+            };
+
+            const syncScroll = (source, target) => {
+                if (isSyncing || !source || !target) {
+                    return;
+                }
+
+                isSyncing = true;
+                target.scrollLeft = source.scrollLeft;
+                window.requestAnimationFrame(() => {
+                    isSyncing = false;
+                });
+            };
+
+            updateSpacerWidth();
+
+            topScroll?.addEventListener("scroll", () => syncScroll(topScroll, bodyScroll));
+            bodyScroll?.addEventListener("scroll", () => syncScroll(bodyScroll, topScroll));
+            window.addEventListener("resize", updateSpacerWidth);
+
+            if (window.ResizeObserver && table) {
+                new ResizeObserver(updateSpacerWidth).observe(table);
+            }
+        })();
+    </script>
+}
