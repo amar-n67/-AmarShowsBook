@@ -120,7 +120,7 @@ async (context, next) =>
 app.MapControllerRoute(
 name:"default",
 pattern:
-"{controller=Home}/{action=ShowTime}/{id?}"
+"{controller=Home}/{action=Intro}/{id?}"
 );
 
 // Startup keeps old databases usable by creating the small tables and views that newer pages depend on.
@@ -305,7 +305,9 @@ static bool IsDashboardOnlyAdminAllowedPath(PathString path)
 {
     var value = path.Value ?? "/";
 
-    return value.StartsWith("/Admin/Dashboard", StringComparison.OrdinalIgnoreCase) ||
+    return value.Equals("/", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Home/Intro", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("/Admin/Dashboard", StringComparison.OrdinalIgnoreCase) ||
         value.Equals("/Admin", StringComparison.OrdinalIgnoreCase) ||
         value.StartsWith("/Admin/Users", StringComparison.OrdinalIgnoreCase) ||
         value.StartsWith("/Admin/Bookings", StringComparison.OrdinalIgnoreCase) ||

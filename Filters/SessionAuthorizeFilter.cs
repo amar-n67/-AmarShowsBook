@@ -201,7 +201,8 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
 
         if (controller.Equals("Home", StringComparison.OrdinalIgnoreCase))
         {
-            return action.Equals("Index", StringComparison.OrdinalIgnoreCase) ||
+            return action.Equals("Intro", StringComparison.OrdinalIgnoreCase) ||
+                   action.Equals("Index", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("ShowTime", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("News", StringComparison.OrdinalIgnoreCase) ||
                    action.Equals("ResolveNewsLive", StringComparison.OrdinalIgnoreCase) ||

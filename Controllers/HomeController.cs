@@ -35,6 +35,12 @@ namespace AmarShowsBook.Controllers
             return RedirectToAction(nameof(ShowTime), new { type });
         }
 
+        // This startup intro is intentionally static, so the first screen does not wait for show data.
+        public IActionResult Intro()
+        {
+            return View();
+        }
+
         // The public landing page is the showTime feed: it reads the SQL view, enriches venue text, then logs the visit.
         public async Task<IActionResult> ShowTime(string type = "All")
         {
