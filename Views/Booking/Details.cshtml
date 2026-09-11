@@ -578,6 +578,378 @@ text-align:center;
 
 }
 
+.booking-container {
+    position: relative;
+    isolation: isolate;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(18px, 4vw, 46px) 16px 54px;
+}
+
+body {
+    color: #172033;
+    background:
+        radial-gradient(circle at 12% 8%, rgba(240, 189, 79, 0.20), transparent 26%),
+        radial-gradient(circle at 88% 10%, rgba(22, 143, 152, 0.14), transparent 24%),
+        linear-gradient(120deg, #f7fbf8 0%, #fff5df 48%, #f5d5ca 100%);
+}
+
+.booking-container::before {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    content: "";
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 12% 8%, rgba(240, 189, 79, 0.26), transparent 26%),
+        radial-gradient(circle at 88% 10%, rgba(22, 143, 152, 0.18), transparent 24%),
+        linear-gradient(120deg, #f7fbf8 0%, #fff5df 48%, #f5d5ca 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
+
+.booking-container::after {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    content: "";
+    border-radius: 28px;
+    background-image:
+        linear-gradient(rgba(23, 32, 51, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 51, 0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.92), transparent 92%);
+}
+
+.booking-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.76);
+    border-radius: 28px;
+    padding: clamp(20px, 4vw, 34px);
+    color: #172033;
+    background: rgba(255, 253, 248, 0.76);
+    box-shadow: 0 24px 70px rgba(23, 32, 51, 0.16);
+    backdrop-filter: blur(18px);
+    animation: bookingStageIn 0.7s ease both;
+}
+
+.booking-card::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 5px;
+    content: "";
+    background: linear-gradient(90deg, #e45d48, #f0bd4f, #168f98, #3758d6);
+    background-size: 220% 100%;
+    animation: bookingGradientRun 5.4s linear infinite;
+}
+
+.booking-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 22px;
+    align-items: start;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(23, 32, 51, 0.12);
+}
+
+.booking-title-block {
+    display: grid;
+    gap: 10px;
+}
+
+.booking-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    padding: 8px 13px 8px 9px;
+    border: 1px solid rgba(23, 32, 51, 0.10);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.66);
+    color: #172033;
+    font-weight: 900;
+    box-shadow: 0 12px 28px rgba(23, 32, 51, 0.08);
+}
+
+.booking-brand img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+}
+
+.booking-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #20364a;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.booking-kicker::before {
+    width: 36px;
+    height: 3px;
+    border-radius: 999px;
+    content: "";
+    background: linear-gradient(90deg, #e45d48, #f0bd4f, #168f98);
+}
+
+.booking-header h2 {
+    max-width: 760px;
+    margin: 0;
+    color: #101826;
+    font-size: clamp(2rem, 5vw, 4.5rem);
+    line-height: 0.96;
+    letter-spacing: 0;
+}
+
+.booking-submeta {
+    color: #5a667a;
+    font-weight: 800;
+}
+
+.booking-hero-badge {
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+    min-width: 170px;
+}
+
+.booking-hero-badge small {
+    color: #5a667a;
+    font-weight: 800;
+}
+
+.status {
+    padding: 9px 15px;
+    border: 1px solid rgba(228, 93, 72, 0.28);
+    border-radius: 999px;
+    color: #a33b2f;
+    font-size: 0.82rem;
+    font-weight: 900;
+    background: rgba(228, 93, 72, 0.12);
+}
+
+.info-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.info-box,
+.section,
+.price-breakdown div {
+    border: 1px solid rgba(23, 32, 51, 0.12);
+    background: rgba(255, 255, 255, 0.66);
+    box-shadow: 0 14px 30px rgba(23, 32, 51, 0.07);
+}
+
+.info-box {
+    min-height: 104px;
+    border-radius: 18px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-box:hover,
+.section:hover {
+    border-color: rgba(22, 143, 152, 0.32);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 38px rgba(23, 32, 51, 0.10);
+}
+
+.info-box:nth-child(5) {
+    grid-column: span 2;
+}
+
+.label,
+.wallet-stats span,
+.section-title {
+    color: #5a667a;
+    letter-spacing: 0;
+}
+
+.value {
+    color: #172033;
+    overflow-wrap: anywhere;
+}
+
+.section {
+    border-radius: 22px;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 253, 248, 0.62));
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    color: #172033;
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.section-title::before {
+    display: inline-block;
+    width: 10px;
+    height: 30px;
+    border-radius: 999px;
+    content: "";
+    background: linear-gradient(180deg, #e45d48, #f0bd4f, #168f98);
+}
+
+.wallet-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.wallet-stats div {
+    padding: 14px;
+    border: 1px solid rgba(23, 32, 51, 0.10);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.56);
+}
+
+.wallet-stats strong,
+.price-breakdown strong {
+    color: #172033;
+}
+
+.form-row {
+    align-items: stretch;
+    margin-top: 12px;
+}
+
+.form-row input {
+    min-height: 48px;
+    border: 1px solid rgba(23, 32, 51, 0.14);
+    border-radius: 16px;
+    color: #172033;
+    background: rgba(255, 255, 255, 0.78);
+    font-weight: 800;
+}
+
+.form-row input:focus {
+    border-color: #168f98;
+    box-shadow: 0 0 0 4px rgba(22, 143, 152, 0.14);
+}
+
+.form-row button,
+.coupon-hints button,
+.booking-card .btn {
+    min-height: 46px;
+    border: 1px solid rgba(23, 32, 51, 0.12);
+    border-radius: 999px;
+    font-weight: 900;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.form-row button,
+.pay-btn {
+    color: #fffefa;
+    background: linear-gradient(135deg, #168f98, #3758d6);
+    box-shadow: 0 16px 34px rgba(55, 88, 214, 0.16);
+}
+
+.coupon-hints button {
+    color: #20364a;
+    background: rgba(255, 255, 255, 0.68);
+}
+
+.coupon-hints button:hover,
+.form-row button:hover,
+.booking-card .btn:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(23, 32, 51, 0.12);
+}
+
+.price-breakdown div {
+    align-items: center;
+    border-radius: 16px;
+}
+
+.total {
+    background: linear-gradient(135deg, rgba(22, 143, 152, 0.12), rgba(240, 189, 79, 0.18)) !important;
+    border-color: rgba(22, 143, 152, 0.28) !important;
+}
+
+.total strong {
+    color: #0f766e;
+}
+
+.actions {
+    flex-wrap: wrap;
+}
+
+.back-btn {
+    color: #20364a;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+@@keyframes bookingStageIn {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@@keyframes bookingGradientRun {
+    to {
+        background-position: 220% 0;
+    }
+}
+
+@@media (max-width: 960px) {
+    .booking-header {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-hero-badge {
+        justify-items: start;
+    }
+
+    .info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@@media (max-width: 640px) {
+    .booking-container {
+        padding-inline: 10px;
+    }
+
+    .booking-card {
+        border-radius: 22px;
+    }
+
+    .booking-header h2 {
+        font-size: clamp(2rem, 12vw, 3.4rem);
+    }
+
+    .info-grid,
+    .wallet-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .info-box:nth-child(5) {
+        grid-column: auto;
+    }
+
+    .actions {
+        justify-content: stretch;
+    }
+}
+
 </style>
 
 
@@ -598,11 +970,18 @@ text-align:center;
 
 <div class="booking-header">
 
-<div>
+<div class="booking-title-block">
+
+<div class="booking-brand">
+<img src="~/images/brand/showtime-login-logo-tight.png" alt="showTime logo" asp-append-version="true" />
+<span>showTime checkout</span>
+</div>
+
+<span class="booking-kicker">Booking review</span>
 
 <h2>@title</h2>
 
-<div style="color:#6b7280">
+<div class="booking-submeta">
 
 Booking #@Model.Id
 
@@ -610,11 +989,14 @@ Booking #@Model.Id
 
 </div>
 
+<div class="booking-hero-badge">
 <span class="status">
 
 @Model.Status
 
 </span>
+<small>Ready for payment</small>
+</div>
 
 </div>
 
@@ -624,7 +1006,7 @@ Booking #@Model.Id
 
 <div class="info-box">
 <div class="label">Seats</div>
-<div class="value">🍿 @Model.SeatNumbers</div>
+<div class="value">@Model.SeatNumbers</div>
 </div>
 
 <div class="info-box">
@@ -666,7 +1048,7 @@ Booking #@Model.Id
 
 <div class="section-title">
 
-💰 Wallet
+Wallet
 
 </div>
 
@@ -740,7 +1122,7 @@ Apply
 
 <div class="section-title">
 
-🎁 Coupon
+Coupon
 
 </div>
 
@@ -789,7 +1171,7 @@ Apply
 
 <div class="section-title">
 
-🧾 Payment Summary
+Payment Summary
 
 </div>
 
@@ -858,6 +1240,8 @@ Proceed Payment
 
 </div>
 
+</div>
+</div>
 
 <script>
 
