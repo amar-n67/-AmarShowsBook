@@ -15,9 +15,27 @@
         !RbacService.HasAnyActiveRole(dashboardUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN", "AMAR_DEVELOPER");
     var canShowDashboardAdminLinks = canUseSuperAdminDashboardLinks || isDumAdmin;
     var canEditSupportDetails = hasDashboardUserId && RbacService.CanOpenAdminDashboard(dashboardUserId);
+    var canManageUserAccess =
+        hasDashboardUserId &&
+        !isDumAdmin &&
+        RbacService.HasPermission(dashboardUserId, "USER", "GRANT_ACCESS");
+    var canOpenRolesShortcut =
+        hasDashboardUserId &&
+        !isDumAdmin &&
+        canUseSuperAdminDashboardLinks &&
+        RbacService.HasPermission(dashboardUserId, "ROLE", "VIEW");
+    var canManageShowsShortcut =
+        hasDashboardUserId &&
+        !isDumAdmin &&
+        canUseSuperAdminDashboardLinks &&
+        RbacService.HasPermission(dashboardUserId, "SHOW", "VIEW");
+    var canOpenDataManagerShortcut =
+        hasDashboardUserId &&
+        !isDumAdmin &&
+        RbacService.HasPermission(dashboardUserId, "SHOW", "VIEW");
     var canCancelBookings =
         hasDashboardUserId &&
-        RbacAuthorizationHelper.CanAccess(Context, RbacService, "BOOKING", "CANCEL");
+        (isDumAdmin || RbacAuthorizationHelper.CanAccess(Context, RbacService, "BOOKING", "CANCEL"));
     var supportProfile = ViewBag.SupportProfile as AmarShowsBook.Models.ViewModels.DeveloperVM
         ?? new AmarShowsBook.Models.ViewModels.DeveloperVM
         {
@@ -437,7 +455,27 @@
             </div>
             <div class="dashboard-shortcuts">
                 <a href="/Admin/Users">Users <strong>@Model.TotalUsers</strong></a>
+                @if (canManageUserAccess)
+                {
+                    <a href="/Admin/UserAccess">User Access</a>
+                }
+                @if (canOpenRolesShortcut)
+                {
+                    <a href="/Admin/Roles">Roles <strong>@Model.ActiveRoles</strong></a>
+                }
+                @if (canManageShowsShortcut)
+                {
+                    <a href="/Admin/ManageShows">Manage Shows <strong>@Model.TotalSchedules</strong></a>
+                }
+                @if (canOpenDataManagerShortcut)
+                {
+                    <a href="/Admin/ContentManager">Data Manager</a>
+                }
                 <a href="/Admin/Bookings">Bookings <strong>@Model.TotalBookings</strong></a>
+                @if (canCancelBookings)
+                {
+                    <a href="/Admin/Cancellations">Cancellations</a>
+                }
                 <a href="/Admin/Security">Security <strong>@Model.TicketValidationIssues</strong></a>
                 <a href="/Admin/Transactions">Transactions <strong>@Model.SuccessfulPayments</strong></a>
                 <a href="/Admin/Refunds">Refunds <strong>@Model.TotalRefunds</strong></a>
@@ -449,15 +487,9 @@
                 {
                     <button type="button" class="dashboard-shortcut-button" onclick="openSupportDetailsModal()">Support Details</button>
                 }
-                @if (canCancelBookings)
-                {
-                    <a href="/Admin/Cancellations">Cancellations</a>
-                }
                 <a href="/Admin/Versions">Versions</a>
-                @if (canUseSuperAdminDashboardLinks)
+                @if (canOpenDataManagerShortcut)
                 {
-                    <a href="/Admin/Roles">Roles <strong>@Model.ActiveRoles</strong></a>
-                    <a href="/Admin/ContentManager">Content Manager</a>
                     <a href="/Admin/ContentManager#news">News Manage</a>
                     <a href="/Admin/ContentManager#music">Music Manage</a>
                 }
