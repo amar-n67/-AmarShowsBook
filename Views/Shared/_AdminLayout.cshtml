@@ -1986,6 +1986,50 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 })();
 </script>
+
+<script>
+(function () {
+    const isLoggedIn = @(!string.IsNullOrWhiteSpace(Context.Session.GetString("UserId"))).ToString().ToLowerInvariant();
+
+    if (!isLoggedIn || !navigator.sendBeacon) {
+        return;
+    }
+
+    function textOf(element) {
+        return (element.innerText || element.value || element.getAttribute("aria-label") || element.title || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 250);
+    }
+
+    // Admin pages have many JavaScript-driven buttons, so log the click before page code handles it.
+    function sendActivity(element, eventType) {
+        const payload = {
+            eventType,
+            elementType: element.tagName,
+            text: textOf(element),
+            href: element.href || element.getAttribute("href"),
+            path: window.location.pathname,
+            id: element.id || "",
+            name: element.name || "",
+            cssClass: element.className || ""
+        };
+
+        navigator.sendBeacon("/Activity/ClientEvent", new Blob([JSON.stringify(payload)], {
+            type: "application/json"
+        }));
+    }
+
+    document.addEventListener("click", function (event) {
+        const target = event.target.closest("a,button,input[type='button'],input[type='submit'],input[type='checkbox'],input[type='radio'],select,[data-log-click]");
+
+        if (target) {
+            sendActivity(target, "click");
+        }
+    }, true);
+})();
+</script>
+
 @await RenderSectionAsync("Scripts", required: false)
 
 <style>

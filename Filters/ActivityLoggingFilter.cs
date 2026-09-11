@@ -19,6 +19,7 @@ public class ActivityLoggingFilter : IAsyncActionFilter
         ActionExecutingContext context,
         ActionExecutionDelegate next)
     {
+        // Run the action first so the log can include the real result, status, and exception details.
         var executed = await next();
         var http = context.HttpContext;
         var controller = context.RouteData.Values["controller"]?.ToString() ?? "UNKNOWN";
@@ -58,6 +59,7 @@ public class ActivityLoggingFilter : IAsyncActionFilter
         return int.TryParse(value, out var userId) ? userId : null;
     }
 
+    // Keep top-level audit actions consistent, while specific controllers can still add business events.
     private static string ResolveAuditAction(string method, IActionResult? result, string acceptHeader)
     {
         if (HttpMethods.IsGet(method))
@@ -90,6 +92,7 @@ public class ActivityLoggingFilter : IAsyncActionFilter
         return acceptHeader.Contains("application/json", StringComparison.OrdinalIgnoreCase);
     }
 
+    // MVC result objects often know the intended status before the response has finished writing.
     private static int ResolveStatusCode(IActionResult? result, int responseStatusCode)
     {
         return result switch
@@ -103,6 +106,7 @@ public class ActivityLoggingFilter : IAsyncActionFilter
         };
     }
 
+    // Form data lands in the audit trail, so sensitive values are removed before serialization.
     private static Dictionary<string, object?> SanitizeActionArguments(IDictionary<string, object?> arguments)
     {
         return arguments.ToDictionary(
@@ -158,6 +162,7 @@ public class ActivityLoggingFilter : IAsyncActionFilter
                normalized.Contains("otp") ||
                normalized.Contains("token") ||
                normalized.Contains("secret") ||
+               normalized.Contains("authorization") ||
                normalized.Contains("cvv") ||
                normalized.Contains("card") ||
                normalized.Contains("pin");

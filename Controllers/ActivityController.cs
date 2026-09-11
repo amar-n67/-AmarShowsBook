@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AmarShowsBook.Controllers;
 
+// Receives browser-side activity such as button clicks that never reach a normal MVC action by themselves.
 public class ActivityController : Controller
 {
     private readonly IActivityLogger _activityLogger;
@@ -15,13 +16,21 @@ public class ActivityController : Controller
     [HttpPost]
     public async Task<IActionResult> ClientEvent([FromBody] ClientActivityEvent request)
     {
+        if (request == null)
+        {
+            return BadRequest(new { success = false });
+        }
+
         var userId = int.TryParse(HttpContext.Session.GetString("UserId"), out var id)
             ? id
             : (int?)null;
 
+        // Keep client logs short; full page data is already captured by the MVC activity filter.
         await _activityLogger.LogAsync(
             userId: userId,
-            action: "CLIENT_CLICK",
+            action: string.Equals(request.EventType, "change", StringComparison.OrdinalIgnoreCase)
+                ? "CLIENT_CHANGE"
+                : "CLIENT_CLICK",
             module: "CLIENT",
             entityType: request.ElementType ?? "UI",
             description: request.Text ?? request.Href ?? request.Path ?? "Client interaction",
@@ -31,6 +40,7 @@ public class ActivityController : Controller
         return Json(new { success = true });
     }
 
+    // This shape intentionally mirrors the tiny payload sent by both public and admin layouts.
     public class ClientActivityEvent
     {
         public string? EventType { get; set; }
