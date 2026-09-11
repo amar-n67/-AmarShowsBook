@@ -950,6 +950,164 @@ body {
     }
 }
 
+/* Keeps the redesigned checkout page readable in every application theme. */
+:root {
+    --bg: var(--app-bg, #f5f7fb);
+    --card: var(--app-card, #ffffff);
+    --text: var(--app-card-text, #111827);
+    --muted: var(--app-muted, #6b7280);
+    --primary: var(--app-primary, #4f46e5);
+    --success: var(--app-success, #16a34a);
+    --danger: var(--app-danger, #dc2626);
+    --border: var(--app-input-border, #e5e7eb);
+    --booking-solid-bg: var(--app-bg, #f5f7fb);
+    --booking-page-bg: var(--app-profile-bg, var(--app-bg, #f5f7fb));
+    --booking-page-text: var(--app-page-text, var(--app-card-text, #111827));
+    --booking-card-bg: color-mix(in srgb, var(--app-card, #ffffff) 88%, transparent);
+    --booking-soft-bg: color-mix(in srgb, var(--app-input, #ffffff) 74%, transparent);
+    --booking-strong-bg: color-mix(in srgb, var(--app-card, #ffffff) 92%, var(--app-bg, #f5f7fb) 8%);
+    --booking-border: color-mix(in srgb, var(--app-input-border, #e5e7eb) 78%, transparent);
+    --booking-muted: var(--app-muted, #6b7280);
+    --booking-primary: var(--app-primary, #4f46e5);
+    --booking-accent: var(--app-accent-strong, #168f98);
+    --booking-warm: var(--app-accent, #f0bd4f);
+    --booking-danger: var(--app-danger, #dc2626);
+    --booking-success: var(--app-success, #16a34a);
+    --booking-shadow: 0 24px 70px color-mix(in srgb, #000000 18%, transparent);
+}
+
+html[data-theme] body {
+    color: var(--booking-page-text);
+    background: var(--booking-page-bg);
+}
+
+.booking-container::before {
+    background:
+        radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--booking-warm) 24%, transparent), transparent 26%),
+        radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--booking-accent) 20%, transparent), transparent 24%),
+        linear-gradient(120deg, color-mix(in srgb, var(--booking-solid-bg) 84%, var(--booking-card-bg) 16%), var(--booking-strong-bg));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--booking-border) 72%, transparent);
+}
+
+.booking-container::after {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--booking-page-text) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--booking-page-text) 7%, transparent) 1px, transparent 1px);
+}
+
+.booking-card {
+    border-color: var(--booking-border);
+    color: var(--booking-page-text);
+    background: var(--booking-card-bg);
+    box-shadow: var(--booking-shadow);
+}
+
+.booking-card::before,
+.booking-kicker::before,
+.section-title::before {
+    background: linear-gradient(90deg, var(--booking-primary), var(--booking-warm), var(--booking-accent));
+}
+
+.booking-header {
+    border-bottom-color: var(--booking-border);
+}
+
+.booking-brand,
+.info-box,
+.section,
+.wallet-stats div,
+.price-breakdown div,
+.coupon-hints button,
+.back-btn {
+    border-color: var(--booking-border);
+    color: var(--booking-page-text);
+    background: var(--booking-soft-bg);
+    box-shadow: 0 14px 30px color-mix(in srgb, #000000 9%, transparent);
+}
+
+.section {
+    background:
+        linear-gradient(145deg, color-mix(in srgb, var(--booking-card-bg) 92%, var(--booking-warm) 8%), var(--booking-card-bg));
+}
+
+.info-box:hover,
+.section:hover {
+    border-color: color-mix(in srgb, var(--booking-accent) 44%, var(--booking-border));
+    box-shadow: 0 18px 38px color-mix(in srgb, var(--booking-accent) 14%, transparent);
+}
+
+.booking-kicker,
+.booking-submeta,
+.booking-hero-badge small,
+.label,
+.wallet-stats span {
+    color: var(--booking-muted);
+}
+
+.booking-header h2,
+.value,
+.section-title,
+.wallet-stats strong,
+.price-breakdown strong {
+    color: var(--booking-page-text);
+}
+
+.status {
+    border-color: color-mix(in srgb, var(--booking-danger) 34%, var(--booking-border));
+    color: var(--booking-danger);
+    background: color-mix(in srgb, var(--booking-danger) 12%, var(--booking-card-bg));
+}
+
+.form-row input {
+    border-color: var(--app-input-border, var(--booking-border));
+    color: var(--app-input-text, var(--booking-page-text));
+    background: var(--app-input, var(--booking-soft-bg));
+}
+
+.form-row input::placeholder {
+    color: color-mix(in srgb, var(--app-input-text, var(--booking-page-text)) 55%, transparent);
+}
+
+.form-row input:focus {
+    border-color: var(--booking-accent);
+    background: color-mix(in srgb, var(--app-input, var(--booking-soft-bg)) 92%, var(--booking-card-bg));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--booking-accent) 18%, transparent);
+}
+
+.form-row button,
+.pay-btn {
+    border-color: color-mix(in srgb, var(--booking-accent) 42%, var(--booking-border));
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--booking-primary), var(--booking-accent));
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--booking-primary) 20%, transparent);
+}
+
+.coupon-hints button:hover,
+.back-btn:hover {
+    border-color: color-mix(in srgb, var(--booking-accent) 44%, var(--booking-border));
+    color: var(--booking-accent);
+}
+
+.total {
+    border-color: color-mix(in srgb, var(--booking-success) 34%, var(--booking-border)) !important;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--booking-success) 13%, var(--booking-card-bg)), color-mix(in srgb, var(--booking-warm) 14%, var(--booking-card-bg))) !important;
+}
+
+.total strong {
+    color: var(--booking-success);
+}
+
+@@media (prefers-reduced-motion: reduce) {
+    .booking-card,
+    .booking-card::before,
+    .info-box,
+    .section {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 </style>
 
 

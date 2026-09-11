@@ -2156,6 +2156,303 @@ body {
     }
 }
 
+/* Keeps the animated payment screen tied to the active application theme. */
+:root {
+    --bg: var(--app-bg, #f4f7fc);
+    --card: var(--app-card, rgba(255, 255, 255, 0.92));
+    --primary: var(--app-primary, #ff2d55);
+    --primary2: var(--app-accent-strong, #7d4dff);
+    --success: var(--app-success, #16db65);
+    --text: var(--app-card-text, #111827);
+    --muted: var(--app-muted, #6b7280);
+    --border: var(--app-input-border, rgba(0, 0, 0, 0.08));
+    --payment-solid-bg: var(--app-bg, #f4f7fc);
+    --payment-page-bg: var(--app-profile-bg, var(--app-bg, #f4f7fc));
+    --payment-page-text: var(--app-page-text, var(--app-card-text, #111827));
+    --payment-card-bg: color-mix(in srgb, var(--app-card, #ffffff) 88%, transparent);
+    --payment-soft-bg: color-mix(in srgb, var(--app-input, #ffffff) 74%, transparent);
+    --payment-strong-bg: color-mix(in srgb, var(--app-card, #ffffff) 92%, var(--app-bg, #f4f7fc) 8%);
+    --payment-border: color-mix(in srgb, var(--app-input-border, #d1d5db) 78%, transparent);
+    --payment-muted: var(--app-muted, #6b7280);
+    --payment-primary: var(--app-primary, #3858d6);
+    --payment-accent: var(--app-accent-strong, #168f98);
+    --payment-warm: var(--app-accent, #f0bd4f);
+    --payment-danger: var(--app-danger, #dc2626);
+    --payment-success: var(--app-success, #16a34a);
+    --payment-shadow: 0 24px 70px color-mix(in srgb, #000000 18%, transparent);
+}
+
+html[data-theme] body {
+    color: var(--payment-page-text);
+    background: var(--payment-page-bg);
+}
+
+body::before {
+    background:
+        conic-gradient(
+            from 0deg,
+            color-mix(in srgb, var(--payment-primary) 10%, transparent),
+            transparent,
+            color-mix(in srgb, var(--payment-accent) 9%, transparent),
+            transparent);
+}
+
+body::after {
+    background:
+        radial-gradient(circle, color-mix(in srgb, var(--payment-primary) 10%, transparent) 0, transparent 10%),
+        radial-gradient(circle, color-mix(in srgb, var(--payment-accent) 9%, transparent) 0, transparent 8%);
+}
+
+.payment-container::before {
+    background:
+        radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--payment-warm) 25%, transparent), transparent 26%),
+        radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--payment-accent) 20%, transparent), transparent 24%),
+        linear-gradient(120deg, color-mix(in srgb, var(--payment-solid-bg) 84%, var(--payment-card-bg) 16%), var(--payment-strong-bg));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--payment-border) 72%, transparent);
+}
+
+.payment-container::after {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--payment-page-text) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--payment-page-text) 7%, transparent) 1px, transparent 1px);
+}
+
+.payment-card {
+    border-color: var(--payment-border);
+    color: var(--payment-page-text);
+    background: var(--payment-card-bg);
+    box-shadow: var(--payment-shadow);
+}
+
+.payment-card::before,
+.payment-kicker::before,
+.step-title::before,
+.payment-status-fill {
+    background: linear-gradient(90deg, var(--payment-primary), var(--payment-warm), var(--payment-accent));
+}
+
+.payment-header {
+    border-bottom-color: var(--payment-border);
+}
+
+.payment-card > .payment-step,
+.payment-deadline {
+    border-bottom-color: var(--payment-border);
+}
+
+.amount-box {
+    border-left-color: var(--payment-border);
+    background:
+        radial-gradient(circle at 85% 8%, color-mix(in srgb, var(--payment-warm) 18%, transparent), transparent 28%),
+        linear-gradient(145deg, color-mix(in srgb, var(--payment-card-bg) 94%, var(--payment-accent) 6%), var(--payment-card-bg));
+}
+
+.payment-brand,
+.payment-reference,
+.payment-deadline,
+.payment-option,
+.method-details,
+#qrSection,
+.payment-status,
+.upi-handle-options button,
+.saved-detail-btn {
+    border-color: var(--payment-border);
+    color: var(--payment-page-text);
+    background: var(--payment-soft-bg);
+    box-shadow: 0 14px 30px color-mix(in srgb, #000000 9%, transparent);
+}
+
+.payment-kicker,
+.payment-reference,
+.payment-deadline span,
+.amount-box h3,
+.payment-field label,
+.field-hint,
+.payment-status-text,
+.scan-text {
+    color: var(--payment-muted);
+}
+
+.payment-header h2,
+.payment-deadline strong,
+.step-title,
+.step-title strong,
+.method-title,
+.payment-option,
+.amount {
+    color: var(--payment-page-text);
+}
+
+.deadline-clock {
+    --timer-color: var(--payment-accent);
+    --timer-glow: color-mix(in srgb, var(--payment-accent) 24%, transparent);
+    background: conic-gradient(var(--timer-color) 0 var(--timer-progress), color-mix(in srgb, var(--payment-page-text) 12%, transparent) var(--timer-progress) 360deg);
+    box-shadow: 0 14px 30px var(--timer-glow), inset 0 0 0 1px var(--payment-border);
+}
+
+.deadline-clock::before {
+    background:
+        repeating-conic-gradient(from -1deg, color-mix(in srgb, var(--payment-page-text) 24%, transparent) 0deg 2deg, transparent 2deg 30deg),
+        radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--app-input, #ffffff) 92%, #ffffff 8%), var(--app-input, #ffffff) 52%, var(--payment-card-bg) 100%);
+}
+
+.deadline-clock::after {
+    background: color-mix(in srgb, var(--app-input, #ffffff) 86%, var(--payment-card-bg) 14%);
+}
+
+.wallet-applied,
+.validation-message.success {
+    border: 1px solid color-mix(in srgb, var(--payment-success) 28%, var(--payment-border));
+    color: var(--payment-success);
+    background: color-mix(in srgb, var(--payment-success) 12%, var(--payment-card-bg));
+}
+
+.payment-option:hover {
+    border-color: color-mix(in srgb, var(--payment-accent) 44%, var(--payment-border));
+    box-shadow: 0 18px 38px color-mix(in srgb, var(--payment-accent) 14%, transparent);
+}
+
+.payment-option:has(input:checked) {
+    border-color: color-mix(in srgb, var(--payment-accent) 52%, var(--payment-border));
+    background:
+        radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--payment-warm) 20%, transparent), transparent 42%),
+        color-mix(in srgb, var(--payment-card-bg) 88%, var(--payment-accent) 12%);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--payment-accent) 14%, transparent), 0 18px 38px color-mix(in srgb, #000000 10%, transparent);
+}
+
+.payment-option input {
+    accent-color: var(--payment-accent);
+}
+
+.payment-field input,
+.payment-field select {
+    border-color: var(--app-input-border, var(--payment-border));
+    color: var(--app-input-text, var(--payment-page-text));
+    background: var(--app-input, var(--payment-soft-bg));
+}
+
+.payment-field input::placeholder {
+    color: color-mix(in srgb, var(--app-input-text, var(--payment-page-text)) 55%, transparent);
+}
+
+.payment-field input:focus,
+.payment-field select:focus {
+    border-color: var(--payment-accent);
+    background: color-mix(in srgb, var(--app-input, var(--payment-soft-bg)) 92%, var(--payment-card-bg));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--payment-accent) 18%, transparent);
+}
+
+.upi-handle-options button.active,
+.upi-handle-options button:hover,
+.saved-detail-btn:hover,
+.saved-detail-btn:focus-visible {
+    border-color: color-mix(in srgb, var(--payment-accent) 44%, var(--payment-border));
+    color: var(--payment-accent);
+    background: color-mix(in srgb, var(--payment-accent) 12%, var(--payment-card-bg));
+}
+
+.saved-detail-btn {
+    border: 0;
+    color: var(--payment-accent);
+    background:
+        linear-gradient(transparent 58%, color-mix(in srgb, var(--payment-warm) 38%, transparent) 58%),
+        transparent;
+    box-shadow: none;
+    text-decoration-color: color-mix(in srgb, var(--payment-accent) 58%, transparent);
+}
+
+.saved-detail-btn:hover,
+.saved-detail-btn:focus-visible {
+    color: var(--payment-primary);
+    background:
+        linear-gradient(transparent 52%, color-mix(in srgb, var(--payment-warm) 50%, transparent) 52%),
+        transparent;
+}
+
+.otp-send-btn,
+.pay-btn {
+    border-color: color-mix(in srgb, var(--payment-accent) 42%, var(--payment-border));
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--payment-primary), var(--payment-accent));
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--payment-primary) 20%, transparent);
+}
+
+.cancel-btn {
+    border-color: color-mix(in srgb, var(--payment-danger) 34%, var(--payment-border));
+    color: var(--payment-danger);
+    background: color-mix(in srgb, var(--payment-danger) 12%, var(--payment-card-bg));
+}
+
+.validation-message.error {
+    border: 1px solid color-mix(in srgb, var(--payment-danger) 28%, var(--payment-border));
+    color: var(--payment-danger);
+    background: color-mix(in srgb, var(--payment-danger) 12%, var(--payment-card-bg));
+}
+
+.payment-status-track {
+    background: color-mix(in srgb, var(--payment-page-text) 10%, transparent);
+}
+
+#qrImage {
+    border: 1px solid color-mix(in srgb, var(--payment-border) 82%, transparent);
+    background: #ffffff;
+    box-shadow: 0 16px 34px color-mix(in srgb, #000000 12%, transparent);
+}
+
+.live-card-face {
+    border-color: color-mix(in srgb, #ffffff 34%, var(--payment-accent));
+    color: #ffffff;
+    box-shadow: 0 22px 48px color-mix(in srgb, #000000 25%, transparent);
+}
+
+.live-card-face::before {
+    background: radial-gradient(circle, color-mix(in srgb, var(--payment-warm) 55%, transparent), transparent 68%);
+}
+
+.live-card-front {
+    background:
+        radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--payment-warm) 34%, transparent), transparent 30%),
+        radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--payment-accent) 48%, transparent), transparent 34%),
+        linear-gradient(135deg, color-mix(in srgb, #101826 80%, var(--payment-primary) 20%) 0%, var(--payment-primary) 50%, color-mix(in srgb, var(--payment-accent) 80%, #101826 20%) 100%);
+}
+
+.live-card-back {
+    background:
+        radial-gradient(circle at 16% 24%, color-mix(in srgb, var(--payment-danger) 34%, transparent), transparent 30%),
+        radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--payment-accent) 42%, transparent), transparent 34%),
+        linear-gradient(135deg, #101826 0%, color-mix(in srgb, var(--payment-primary) 52%, #101826 48%) 55%, color-mix(in srgb, var(--payment-accent) 76%, #101826 24%) 100%);
+}
+
+.live-card-network {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.live-card-strip {
+    background: color-mix(in srgb, #000000 84%, var(--payment-primary) 16%);
+}
+
+.live-card-signature span,
+.live-card-cvv {
+    color: #172033;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+@@media (prefers-reduced-motion: reduce) {
+    .payment-card,
+    .payment-card::before,
+    .payment-option,
+    .method-details,
+    .amount,
+    #qrImage,
+    .live-card-face::before,
+    .live-card-face::after,
+    .live-card-inner {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 </style>
 
 
