@@ -1871,7 +1871,7 @@ html[data-theme="cinema"] .admin-topbar {
 @media print {
     @page {
         size: A4 landscape;
-        margin: 8mm;
+        margin: 0;
     }
 
     body[data-capture-allowed="false"] * {
@@ -1902,6 +1902,17 @@ html[data-theme="cinema"] .admin-topbar {
         display: none !important;
     }
 
+    a,
+    a:visited {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    a[href]::after,
+    abbr[title]::after {
+        content: none !important;
+    }
+
     .print-page-header,
     .print-page-footer,
     .print-page-watermark {
@@ -1909,24 +1920,45 @@ html[data-theme="cinema"] .admin-topbar {
         position: fixed !important;
         left: 0 !important;
         right: 0 !important;
+        box-sizing: border-box !important;
         pointer-events: none !important;
     }
 
     .print-page-header {
         top: 0 !important;
-        z-index: 2147483001 !important;
+        height: 18mm !important;
+        padding: 4mm 8mm 2mm !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        z-index: 2147483003 !important;
     }
 
     .print-page-footer {
         bottom: 0 !important;
-        z-index: 2147483001 !important;
+        height: 12mm !important;
+        padding: 2mm 8mm 3mm !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        z-index: 2147483003 !important;
+    }
+
+    .print-page-header-inner {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+        align-items: center !important;
+        gap: 12px !important;
+        height: 100% !important;
+    }
+
+    .print-page-footer-inner {
+        display: flex !important;
+        height: 100% !important;
     }
 
     .print-page-watermark {
         display: flex !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        z-index: 2147483000 !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 2147483002 !important;
         align-items: center !important;
         justify-content: center !important;
     }
@@ -1941,7 +1973,7 @@ html[data-theme="cinema"] .admin-topbar {
         height: auto !important;
         max-height: 120mm !important;
         object-fit: contain !important;
-        opacity: 0.10 !important;
+        opacity: 0.16 !important;
         transform: rotate(-18deg) !important;
     }
 
@@ -1949,7 +1981,7 @@ html[data-theme="cinema"] .admin-topbar {
         background: #fff !important;
         color: #111 !important;
         margin: 0 !important;
-        min-height: 297mm;
+        min-height: 210mm;
         overflow: visible !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -1962,8 +1994,10 @@ html[data-theme="cinema"] .admin-topbar {
     }
 
     .admin-main {
-        padding: 18mm 0 11mm !important;
+        padding: 21mm 8mm 14mm !important;
         overflow: visible !important;
+        position: relative !important;
+        z-index: 1 !important;
     }
 
     .print-brand-sheet {
@@ -2058,7 +2092,13 @@ html[data-theme="cinema"] .admin-topbar {
     font-size: 8pt;
 }
 
-.print-page-header-inner,
+.print-page-header-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+}
+
 .print-page-footer-inner {
     display: flex;
     align-items: center;
@@ -2108,6 +2148,29 @@ html[data-theme="cinema"] .admin-topbar {
     color: #475569;
     font-size: 7.5pt;
     font-weight: 700;
+}
+
+.print-page-meta {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    color: #334155;
+    font-size: 7.5pt;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.print-page-meta strong {
+    color: #111827;
+    font-weight: 900;
+}
+
+.print-page-meta-center {
+    text-align: center;
+}
+
+.print-page-meta-right {
+    text-align: right;
 }
 
 .app-info {

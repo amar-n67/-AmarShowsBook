@@ -2516,7 +2516,7 @@ main,
 @@media print {
     @@page {
         size: A4 landscape;
-        margin: 8mm;
+        margin: 0;
     }
 
     body[data-capture-allowed="false"] * {
@@ -2551,6 +2551,17 @@ main,
         display: none !important;
     }
 
+    a,
+    a:visited {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    a[href]::after,
+    abbr[title]::after {
+        content: none !important;
+    }
+
     .print-page-header,
     .print-page-footer,
     .print-page-watermark {
@@ -2558,24 +2569,45 @@ main,
         position: fixed !important;
         left: 0 !important;
         right: 0 !important;
+        box-sizing: border-box !important;
         pointer-events: none !important;
     }
 
     .print-page-header {
         top: 0 !important;
-        z-index: 2147483001 !important;
+        height: 18mm !important;
+        padding: 4mm 8mm 2mm !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        z-index: 2147483003 !important;
     }
 
     .print-page-footer {
         bottom: 0 !important;
-        z-index: 2147483001 !important;
+        height: 12mm !important;
+        padding: 2mm 8mm 3mm !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        z-index: 2147483003 !important;
+    }
+
+    .print-page-header-inner {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+        align-items: center !important;
+        gap: 12px !important;
+        height: 100% !important;
+    }
+
+    .print-page-footer-inner {
+        display: flex !important;
+        height: 100% !important;
     }
 
     .print-page-watermark {
         display: flex !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        z-index: 2147483000 !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 2147483002 !important;
         align-items: center !important;
         justify-content: center !important;
     }
@@ -2590,7 +2622,7 @@ main,
         height: auto !important;
         max-height: 120mm !important;
         object-fit: contain !important;
-        opacity: 0.10 !important;
+        opacity: 0.16 !important;
         transform: rotate(-18deg) !important;
     }
 
@@ -2599,7 +2631,7 @@ main,
         background: #fff !important;
         color: #111 !important;
         margin: 0 !important;
-        min-height: 297mm;
+        min-height: 210mm;
         overflow: visible !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -2609,8 +2641,10 @@ main,
         width: 100% !important;
         max-width: none !important;
         margin: 0 !important;
-        padding: 18mm 0 11mm !important;
+        padding: 21mm 8mm 14mm !important;
         overflow: visible !important;
+        position: relative !important;
+        z-index: 1 !important;
     }
 
     .print-brand-sheet {
@@ -2711,12 +2745,18 @@ main,
     font-size: 8pt;
 }
 
-.print-page-header-inner,
-.print-page-footer-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    .print-page-header-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+    }
+
+    .print-page-footer-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
 }
 
 .print-page-header-inner {
@@ -2755,13 +2795,37 @@ main,
     line-height: 1;
 }
 
-.print-page-brand span {
-    display: block;
-    margin-top: 2px;
-    color: #475569;
-    font-size: 7.5pt;
-    font-weight: 700;
-}
+    .print-page-brand span {
+        display: block;
+        margin-top: 2px;
+        color: #475569;
+        font-size: 7.5pt;
+        font-weight: 700;
+    }
+
+    .print-page-meta {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+        color: #334155;
+        font-size: 7.5pt;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .print-page-meta strong {
+        color: #111827;
+        font-weight: 900;
+    }
+
+    .print-page-meta-center {
+        text-align: center;
+    }
+
+    .print-page-meta-right {
+        text-align: right;
+    }
+
 </style>
 
 </head>
@@ -2776,13 +2840,17 @@ main,
     var globalSupportEmailSubject = "showTime Support Request";
     var globalSupportEmailText = $"Hi showTime Team, I'm {normalizedGlobalSupportDisplayName}. I need support. Please help me with my request.";
     var globalSupportEmailUrl = $"mailto:support@showtime.com?subject={Uri.EscapeDataString(globalSupportEmailSubject)}&body={Uri.EscapeDataString(globalSupportEmailText)}";
+    var publicPrintPageTitle = ViewData["Title"]?.ToString();
+    publicPrintPageTitle = string.IsNullOrWhiteSpace(publicPrintPageTitle)
+        ? "showTime"
+        : publicPrintPageTitle.Trim();
     var hasProtectedCaptureUserId = int.TryParse(Context.Session.GetString("UserId"), out var protectedCaptureUserId);
     var canUseProtectedCapture =
         hasProtectedCaptureUserId &&
         RbacService.HasAnyActiveRole(protectedCaptureUserId, "AMAR_SUPER_ADMIN", "AMAR_ADMIN");
 }
 
-<body data-capture-allowed="@canUseProtectedCapture.ToString().ToLowerInvariant()">
+<body data-capture-allowed="@canUseProtectedCapture.ToString().ToLowerInvariant()" data-print-user="@normalizedGlobalSupportDisplayName">
     <div class="capture-protection-overlay no-print" data-capture-protection-overlay aria-hidden="true">
         <div>
             <strong>Protected Screen</strong>
@@ -2798,7 +2866,9 @@ main,
                     <span>showTime</span>
                 </div>
             </div>
-            <div>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</div>
+            <div class="print-page-meta print-page-meta-center">
+                <strong data-print-title>@publicPrintPageTitle</strong>
+            </div>
         </div>
     </div>
     <div class="print-page-watermark" aria-hidden="true">
@@ -2806,8 +2876,8 @@ main,
     </div>
     <div class="print-page-footer" aria-hidden="true">
         <div class="print-page-footer-inner">
-            <span>showTime</span>
-            <span>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</span>
+            <span>User: @normalizedGlobalSupportDisplayName</span>
+            <span>Printed: <span data-print-now>@DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</span></span>
         </div>
     </div>
     <div id="cinemaPopup" class="cinema-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="cinemaPopupTitle">
@@ -3690,6 +3760,31 @@ updateDateTime();
 </script>
 
 <script>
+function updateShowTimePrintMetadata() {
+    const now = new Date();
+    const formatted = now.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    document.querySelectorAll("[data-print-now]").forEach(element => {
+        element.textContent = formatted;
+    });
+
+    const fallbackTitle = document.querySelector("h1")?.textContent?.trim() ||
+        document.title.replace(/\s+-\s+.*$/, "").trim() ||
+        "showTime";
+
+    document.querySelectorAll("[data-print-title]").forEach(element => {
+        element.textContent = fallbackTitle;
+    });
+}
+
+window.addEventListener("beforeprint", updateShowTimePrintMetadata);
+
 window.showCaptureProtection = window.showCaptureProtection || function (message) {
     const overlay = document.querySelector("[data-capture-protection-overlay]");
     if (!overlay) {

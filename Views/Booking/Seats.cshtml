@@ -53,11 +53,6 @@ string.IsNullOrWhiteSpace(Model.ShowDay)
 
 var selectedStartLocal =
 ShowTimeFormatter.ToAppLocal(Model.StartTime);
-
-var seatLimitLabel =
-User.IsInRole("Admin")
-? "Admin booking"
-: "Up to 6 seats";
 }
 
 <section class="booking-page">
@@ -93,7 +88,7 @@ Seat Shot
 <div class="booking-hero-actions no-print">
     @if(canUsePrintTools)
     {
-    <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+    <button type="button" class="btn btn-primary" onclick="printSeatLayout()">Print</button>
     }
     <a
     href="/Home/ShowTime?type=@Model.Type"
@@ -104,25 +99,6 @@ Seat Shot
     </a>
 </div>
 
-	</div>
-	
-	<div class="show-facts" aria-label="Selected show details">
-	    <div>
-	        <span>Experience</span>
-	        <strong>@Model.Type</strong>
-	    </div>
-	    <div>
-	        <span>Date</span>
-	        <strong>@selectedStartLocal.ToString("dd MMM yyyy")</strong>
-	    </div>
-	    <div>
-	        <span>Time</span>
-	        <strong>@selectedStartLocal.ToString("hh:mm tt")</strong>
-	    </div>
-	    <div>
-	        <span>Seats</span>
-	        <strong>@seatLimitLabel</strong>
-	    </div>
 	</div>
 
 	@{
@@ -165,6 +141,8 @@ availableDates
 
 </div>
 }
+<div class="seat-print-area" id="seatPrintArea" aria-label="Printable seat layout">
+
 <div class="screen-line @(string.IsNullOrWhiteSpace(trailerUrl) ? "" : "has-trailer")"
      data-trailer-url="@trailerUrl"
      data-trailer-start="@trailerStartSeconds">
@@ -234,6 +212,11 @@ allowfullscreen>
                     cssClass=(seat.Category ?? "Silver").ToLowerInvariant();
                 }
 
+                var seatCategoryLabel =
+                    string.IsNullOrWhiteSpace(seat.Category)
+                    ? "Standard"
+                    : seat.Category;
+
                 var lockExpiryIso = seat.LockExpiresAt.HasValue
                     ? seat.LockExpiresAt.Value.ToUniversalTime().ToString("o")
                     : "";
@@ -256,7 +239,7 @@ allowfullscreen>
                 data-category="@seat.Category"
                 data-lock-expires="@lockExpiryIso"
                 onclick="toggleSeat(this)"
-                aria-label="Seat @seat.Row@seat.Number, @(seat.Category ?? "Standard"), ₹@seat.Price, @seatStateLabel"
+                aria-label="Seat @seat.Row@seat.Number, @seatCategoryLabel, ₹@seat.Price, @seatStateLabel"
                 aria-disabled="@(seat.IsBooked||seat.IsLocked?"true":"false")">
 
                     <span class="chair-back" aria-hidden="true"></span>
@@ -343,6 +326,8 @@ Gold available
 <div class="legend-box premium"></div>
 Premium available
 </div>
+</div>
+
 </div>
 
 </div>
@@ -1844,12 +1829,12 @@ padding-bottom:15px;
 overflow-x:auto;
 }
 
-	.receipt-col{
-	
-	min-width:90px;
-	}
-	
-	}
+		.receipt-col{
+
+		min-width:90px;
+		}
+
+		}
 
 	/* Responsive seat booking redesign tied to the active app theme. */
 	:root{
@@ -1955,39 +1940,6 @@ overflow-x:auto;
 	border:1px solid var(--seat-border);
 	background:var(--seat-soft-bg);
 	color:var(--seat-page-text);
-	}
-
-	.show-facts{
-	display:grid;
-	grid-template-columns:repeat(4,minmax(0,1fr));
-	gap:12px;
-	margin:16px 0 8px;
-	}
-
-	.show-facts div{
-	min-width:0;
-	padding:14px;
-	border:1px solid var(--seat-border);
-	border-radius:18px;
-	background:var(--seat-card-bg);
-	box-shadow:0 12px 28px color-mix(in srgb, #000000 9%, transparent);
-	}
-
-	.show-facts span{
-	display:block;
-	margin-bottom:5px;
-	color:var(--seat-muted);
-	font-size:.72rem;
-	font-weight:950;
-	text-transform:uppercase;
-	}
-
-	.show-facts strong{
-	display:block;
-	color:var(--seat-page-text);
-	font-size:.98rem;
-	font-weight:950;
-	overflow-wrap:anywhere;
 	}
 
 	.show-dates{
@@ -2308,10 +2260,6 @@ overflow-x:auto;
 	min-width:0;
 	}
 
-	.show-facts{
-	grid-template-columns:repeat(2,minmax(0,1fr));
-	}
-
 	.seat-scroll-cue{
 	display:block;
 	}
@@ -2423,10 +2371,6 @@ overflow-x:auto;
 	}
 
 	@@media(max-width:480px){
-	.show-facts{
-	grid-template-columns:1fr;
-	}
-
 	.seat-board{
 	padding:12px 8px 18px;
 	}
@@ -2488,9 +2432,368 @@ overflow-x:auto;
 	transform:none;
 	}
 	}
+
+	.seat-print-area{
+	width:100%;
+	}
+
+	@@media print{
+	@@page{
+	size:A4 landscape;
+	margin:0;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .booking-hero,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .show-dates,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .booking-summary,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-scroll-cue,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-lock-tooltip{
+	display:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]),
+	body.seat-layout-printing:not([data-capture-allowed="false"]) main,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .container,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .booking-page{
+	background:#ffffff!important;
+	color:#111827!important;
+	margin:0!important;
+	padding:0!important;
+	min-height:0!important;
+	height:200mm!important;
+	max-height:200mm!important;
+	overflow:visible!important;
+	-webkit-print-color-adjust:exact;
+	print-color-adjust:exact;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]){
+	overflow:hidden!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .print-page-watermark{
+	display:flex!important;
+	z-index:2147483002!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .print-page-watermark img{
+	width:110mm!important;
+	max-height:110mm!important;
+	opacity:.16!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .booking-page{
+	display:block!important;
+	width:100%!important;
+	max-width:none!important;
+	height:200mm!important;
+	max-height:200mm!important;
+	overflow:hidden!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .booking-page > :not(.seat-print-area){
+	display:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-print-area,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-print-area *{
+	-webkit-print-color-adjust:exact!important;
+	print-color-adjust:exact!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-print-area{
+	display:block!important;
+	width:100%!important;
+	max-width:none!important;
+	height:200mm!important;
+	max-height:200mm!important;
+	margin:0!important;
+	padding:16mm 0 12mm!important;
+	box-sizing:border-box!important;
+	background:transparent!important;
+	color:#111827!important;
+	overflow:hidden!important;
+	position:relative!important;
+	z-index:1!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .screen-line{
+	display:flex!important;
+	width:82%!important;
+	max-width:230mm!important;
+	min-height:16mm!important;
+	height:auto!important;
+	margin:0 auto 3mm!important;
+	border:1.2px solid #64748b!important;
+	border-bottom:0!important;
+	border-radius:100% 100% 0 0!important;
+	background:linear-gradient(180deg,#e0f2fe 0%,#ffffff 78%)!important;
+	box-shadow:none!important;
+	overflow:visible!important;
+	animation:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .screen-line::before,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .screen-line::after,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .screen-line iframe{
+	display:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .screen-line span,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .screen-line.has-trailer span{
+	display:block!important;
+	position:relative!important;
+	left:auto!important;
+	right:auto!important;
+	bottom:auto!important;
+	transform:none!important;
+	padding:0!important;
+	background:transparent!important;
+	color:#111827!important;
+	font-size:16pt!important;
+	font-weight:950!important;
+	letter-spacing:.16em!important;
+	text-shadow:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-board{
+	display:block!important;
+	width:100%!important;
+	max-width:none!important;
+	margin:0 auto!important;
+	padding:2mm 1mm!important;
+	border:1px solid #cbd5e1!important;
+	border-radius:4mm!important;
+	background:rgba(255,255,255,.92)!important;
+	box-shadow:none!important;
+	overflow:visible!important;
+	scrollbar-width:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-orientation{
+	display:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-row{
+	display:grid!important;
+	grid-template-columns:6mm repeat(5,8mm) 3.5mm repeat(5,8mm)!important;
+	gap:.8mm!important;
+	align-items:center!important;
+	justify-content:center!important;
+	width:max-content!important;
+	min-width:0!important;
+	max-width:none!important;
+	margin:0 auto .7mm!important;
+	padding:0!important;
+	background:transparent!important;
+	box-shadow:none!important;
+	animation:none!important;
+	break-inside:avoid!important;
+	page-break-inside:avoid!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .row-label{
+	width:6mm!important;
+	color:#111827!important;
+	font-size:7pt!important;
+	font-weight:950!important;
+	text-shadow:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-gap{
+	width:3.5mm!important;
+	height:1px!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-btn{
+	display:flex!important;
+	width:8mm!important;
+	min-width:8mm!important;
+	max-width:none!important;
+	height:9.5mm!important;
+	min-height:9.5mm!important;
+	padding:0!important;
+	border:0!important;
+	background:transparent!important;
+	box-shadow:none!important;
+	transform:none!important;
+	filter:none!important;
+	animation:none!important;
+	overflow:visible!important;
+	cursor:default!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-btn::after{
+	display:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .chair-back{
+	left:1mm!important;
+	right:1mm!important;
+	top:.4mm!important;
+	height:5.4mm!important;
+	border-radius:2.2mm 2.2mm 1.2mm 1.2mm!important;
+	box-shadow:inset 0 1mm 1.5mm rgba(255,255,255,.35), inset 0 -1.5mm 1.8mm rgba(0,0,0,.22)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .chair-cushion{
+	left:1.2mm!important;
+	right:1.2mm!important;
+	bottom:1.6mm!important;
+	height:3.8mm!important;
+	border-radius:1.4mm 1.4mm 2mm 2mm!important;
+	box-shadow:inset 0 .8mm 1.2mm rgba(255,255,255,.28), inset 0 -1mm 1.5mm rgba(0,0,0,.24)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .chair-arm{
+	display:block!important;
+	top:4.3mm!important;
+	width:1.1mm!important;
+	height:4.4mm!important;
+	border-radius:1.1mm!important;
+	box-shadow:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .chair-arm-left{
+	left:.3mm!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .chair-arm-right{
+	right:.3mm!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .chair-base{
+	left:2.8mm!important;
+	right:2.8mm!important;
+	bottom:.2mm!important;
+	height:1.2mm!important;
+	border-radius:.6mm!important;
+	background:#111827!important;
+	box-shadow:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-name{
+	z-index:6!important;
+	margin:0!important;
+	padding:0 .7mm!important;
+	border-radius:999px!important;
+	background:rgba(255,255,255,.86)!important;
+	color:#111827!important;
+	font-size:4.2pt!important;
+	line-height:1.15!important;
+	box-shadow:none!important;
+	white-space:nowrap!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-price{
+	display:none!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .available,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .silver{
+	--seat-back:linear-gradient(180deg,#ffffff,#d8dde7 58%,#aab3c2)!important;
+	--seat-cushion:linear-gradient(180deg,#f8fafc,#cbd5e1)!important;
+	--seat-side:linear-gradient(180deg,#e5e7eb,#94a3b8)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .selected,
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .seat-btn.selected{
+	--seat-back:linear-gradient(180deg,#7cff9f,#20d655 58%,#0f8d36)!important;
+	--seat-cushion:linear-gradient(180deg,#55ff88,#10b943)!important;
+	--seat-side:linear-gradient(180deg,#33ff77,#078b31)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .booked{
+	--seat-back:linear-gradient(180deg,#ff8a8a,#e11d48 58%,#8f0a20)!important;
+	--seat-cushion:linear-gradient(180deg,#ff5a5a,#b80023)!important;
+	--seat-side:linear-gradient(180deg,#ef4444,#7f1d1d)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .locked{
+	--seat-back:linear-gradient(180deg,#c4b5fd,#8b5cf6 58%,#5b21b6)!important;
+	--seat-cushion:linear-gradient(180deg,#a78bfa,#6d28d9)!important;
+	--seat-side:linear-gradient(180deg,#8b5cf6,#4c1d95)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .gold{
+	--seat-back:linear-gradient(180deg,#ffd08a,#f59e0b 58%,#b45309)!important;
+	--seat-cushion:linear-gradient(180deg,#fbbf24,#c66a14)!important;
+	--seat-side:linear-gradient(180deg,#f59e0b,#92400e)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .premium{
+	--seat-back:linear-gradient(180deg,#fff3a8,#facc15 52%,#b7791f)!important;
+	--seat-cushion:linear-gradient(180deg,#ffe88a,#d49b2a 62%,#9c650d)!important;
+	--seat-side:linear-gradient(180deg,#facc15,#a16207)!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .legend{
+	display:grid!important;
+	grid-template-columns:repeat(2,minmax(0,1fr))!important;
+	gap:2mm!important;
+	width:100%!important;
+	max-width:220mm!important;
+	margin:2.5mm auto 0!important;
+	padding:2mm 3mm!important;
+	border:1px solid #cbd5e1!important;
+	border-radius:4mm!important;
+	background:rgba(255,255,255,.9)!important;
+	color:#111827!important;
+	box-shadow:none!important;
+	break-inside:avoid!important;
+	page-break-inside:avoid!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .legend-group{
+	display:grid!important;
+	grid-template-columns:repeat(2,minmax(0,1fr))!important;
+	gap:1mm 3mm!important;
+	padding:0!important;
+	border:0!important;
+	background:transparent!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .legend-title{
+	grid-column:1/-1!important;
+	color:#111827!important;
+	font-size:7pt!important;
+	font-weight:950!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .legend-item{
+	display:flex!important;
+	align-items:center!important;
+	gap:1.4mm!important;
+	color:#111827!important;
+	font-size:6.4pt!important;
+	font-weight:800!important;
+	}
+
+	body.seat-layout-printing:not([data-capture-allowed="false"]) .legend-box{
+	display:block!important;
+	width:3.8mm!important;
+	height:3.8mm!important;
+	border-radius:1mm!important;
+	box-shadow:none!important;
+	flex:0 0 auto!important;
+	}
+	}
 	</style>
 
 <script>
+
+function printSeatLayout()
+{
+    document.body.classList.add("seat-layout-printing");
+
+    window.addEventListener("afterprint", function cleanupSeatPrint()
+    {
+        document.body.classList.remove("seat-layout-printing");
+        window.removeEventListener("afterprint", cleanupSeatPrint);
+    });
+
+    window.print();
+}
 
 function getYoutubeId(url)
 {

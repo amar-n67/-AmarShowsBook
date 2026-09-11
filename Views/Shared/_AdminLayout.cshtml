@@ -301,6 +301,10 @@
     var supportEmailSubject = "showTime Support Request";
     var supportEmailText = $"Hi showTime Team, I'm {normalizedAdminDisplayName}. I need support. Please help me with my request.";
     var supportEmailUrl = $"mailto:support@showtime.com?subject={Uri.EscapeDataString(supportEmailSubject)}&body={Uri.EscapeDataString(supportEmailText)}";
+    var adminPrintPageTitle = ViewData["Title"]?.ToString();
+    adminPrintPageTitle = string.IsNullOrWhiteSpace(adminPrintPageTitle)
+        ? "Admin Panel"
+        : adminPrintPageTitle.Trim();
     var hasUserId = int.TryParse(userIdText, out var currentUserId);
     var isDashboardOnlyAdmin = hasUserId &&
         RbacService.HasAnyActiveRole(currentUserId, "DUM_ADMIN") &&
@@ -487,7 +491,7 @@
             : 0;
 }
 
-<body data-capture-allowed="@canUseProtectedCapture.ToString().ToLowerInvariant()">
+<body data-capture-allowed="@canUseProtectedCapture.ToString().ToLowerInvariant()" data-print-user="@normalizedAdminDisplayName">
 
 <div class="capture-protection-overlay no-print" data-capture-protection-overlay aria-hidden="true">
     <div>
@@ -505,7 +509,9 @@
                 <span>showTime Admin</span>
             </div>
         </div>
-        <div>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</div>
+        <div class="print-page-meta print-page-meta-center">
+            <strong data-print-title>@adminPrintPageTitle</strong>
+        </div>
     </div>
 </div>
 <div class="print-page-watermark" aria-hidden="true">
@@ -513,8 +519,8 @@
 </div>
 <div class="print-page-footer" aria-hidden="true">
     <div class="print-page-footer-inner">
-        <span>showTime</span>
-        <span>Printed @DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</span>
+        <span>User: @normalizedAdminDisplayName</span>
+        <span>Printed: <span data-print-now>@DateTime.Now.ToString("dd MMM yyyy hh:mm tt")</span></span>
     </div>
 </div>
 
@@ -1027,6 +1033,31 @@ window.showCaptureProtection = window.showCaptureProtection || function (message
         overlay.classList.remove("is-visible");
     }, 1800);
 };
+
+function updateShowTimePrintMetadata() {
+    const now = new Date();
+    const formatted = now.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    document.querySelectorAll("[data-print-now]").forEach(element => {
+        element.textContent = formatted;
+    });
+
+    const fallbackTitle = document.querySelector("h1")?.textContent?.trim() ||
+        document.title.replace(/\s+-\s+.*$/, "").trim() ||
+        "Admin Panel";
+
+    document.querySelectorAll("[data-print-title]").forEach(element => {
+        element.textContent = fallbackTitle;
+    });
+}
+
+window.addEventListener("beforeprint", updateShowTimePrintMetadata);
 
 (function () {
     const canCapture = document.body?.dataset.captureAllowed === "true";

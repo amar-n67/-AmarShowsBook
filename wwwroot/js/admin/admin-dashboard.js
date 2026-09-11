@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const clear = document.getElementById("adminSearchClear");
     const exportButton = document.querySelector("[data-admin-export]");
 
-    // This script is shared by admin pages for sidebar state, page search, and CSV export.
+    // This script is shared by admin pages for sidebar state, page search, and watermarked exports.
     if (shell && toggle) {
         const refreshToggleLabel = () => {
             const icon = toggle.querySelector(".admin-sidebar-toggle-icon");
@@ -72,12 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
         .replace(/\s+/g, " ")
         .trim();
 
-    const csvCell = (value) => {
-        const text = normalizeExportText(value);
-        return /[",\n]/.test(text)
-            ? `"${text.replace(/"/g, '""')}"`
-            : text;
-    };
+    const escapeHtml = (value) => normalizeExportText(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 
     const isVisibleExportElement = (element) => {
         if (!element || element.hidden) {
@@ -97,16 +97,145 @@ document.addEventListener("DOMContentLoaded", () => {
             .toLowerCase() || "admin-data";
     };
 
-    const downloadCsv = (rows) => {
+    const getExportWatermark = async () => {
+        const fallback = `${window.location.origin}/images/brand/showtime-export-watermark.png`;
+
+        try {
+            const response = await fetch("/images/brand/showtime-export-watermark.png", { cache: "force-cache" });
+
+            if (!response.ok) {
+                return fallback;
+            }
+
+            const blob = await response.blob();
+
+            return await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result || fallback);
+                reader.onerror = () => resolve(fallback);
+                reader.readAsDataURL(blob);
+            });
+        }
+        catch {
+            return fallback;
+        }
+    };
+
+    const buildWatermarkedWorkbookHtml = (rows, watermarkSource) => {
+        const pageName = escapeHtml(getAdminPageName().replace(/-/g, " "));
+        const msoPageName = normalizeExportText(getAdminPageName().replace(/-/g, " "))
+            .replace(/&/g, "&&")
+            .replace(/"/g, "'")
+            .replace(/[\\\r\n]/g, " ");
+        const msoPrintedBy = normalizeExportText(document.body?.dataset.printUser || "User")
+            .replace(/&/g, "&&")
+            .replace(/"/g, "'")
+            .replace(/[\\\r\n]/g, " ");
+        const columnCount = Math.max(1, ...rows.map((row) => row.length));
+        const tableRows = rows.map((row, index) => {
+            const isBlank = row.every((cell) => !normalizeExportText(cell));
+            const previousBlank = index === 0 || rows[index - 1].every((cell) => !normalizeExportText(cell));
+            const isHeader = !isBlank && previousBlank;
+
+            if (isBlank) {
+                return `<tr class="export-gap"><td colspan="${columnCount}"></td></tr>`;
+            }
+
+            const cells = row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
+            return `<tr class="${isHeader ? "export-heading" : ""}">${cells}</tr>`;
+        }).join("");
+
+        return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page {
+    mso-page-orientation: landscape;
+    margin: .35in;
+    mso-header-data: "&LshowTime&C${msoPageName}&RWatermarked Export";
+    mso-footer-data: "&LUser: ${msoPrintedBy}&CPage &P of &N&RPrinted: &D &T";
+}
+body {
+    margin: 0;
+    color: #111827;
+    font-family: Arial, sans-serif;
+}
+.export-sheet {
+    position: relative;
+    min-height: 720px;
+    padding: 24px;
+}
+.export-watermark {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 430px;
+    max-width: 56%;
+    transform: translate(-50%, -50%) rotate(-18deg);
+    opacity: .16;
+    z-index: 0;
+}
+.export-content {
+    position: relative;
+    z-index: 1;
+}
+h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+}
+.export-meta {
+    margin: 0 0 18px;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+}
+td {
+    border: 1px solid #cbd5e1;
+    padding: 7px 9px;
+    vertical-align: top;
+    font-size: 12px;
+    mso-number-format: "\\@";
+}
+.export-heading td {
+    background: #111827;
+    color: #ffffff;
+    font-weight: 700;
+    text-align: center;
+}
+.export-gap td {
+    height: 18px;
+    border: 0;
+    background: transparent;
+}
+</style>
+</head>
+<body>
+<div class="export-sheet">
+    <img class="export-watermark" src="${watermarkSource}" alt="">
+    <div class="export-content">
+        <h1>showTime ${pageName}</h1>
+        <table>${tableRows}</table>
+    </div>
+</div>
+</body>
+</html>`;
+    };
+
+    const downloadWatermarkedWorkbook = async (rows) => {
         const timestamp = new Date()
             .toISOString()
             .slice(0, 19)
             .replace(/[-:T]/g, "");
-        const filename = `${getAdminPageName()}-${timestamp}.csv`;
-        const csv = rows
-            .map((row) => row.map(csvCell).join(","))
-            .join("\n");
-        const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+        const filename = `${getAdminPageName()}-${timestamp}.xls`;
+        const watermarkSource = await getExportWatermark();
+        const workbookHtml = buildWatermarkedWorkbookHtml(rows, watermarkSource);
+        const blob = new Blob([`\uFEFF${workbookHtml}`], { type: "application/vnd.ms-excel;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
 
@@ -174,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ];
     };
 
-    exportButton?.addEventListener("click", () => {
+    exportButton?.addEventListener("click", async () => {
         const previousLabel = exportButton.textContent;
         const serverExportUrl = exportButton.dataset.adminExportUrl || "";
 
@@ -205,8 +334,22 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        downloadCsv(exportRows);
-        exportButton.textContent = "Exported";
+        exportButton.textContent = "Exporting...";
+        exportButton.setAttribute("aria-busy", "true");
+        exportButton.disabled = true;
+
+        try {
+            await downloadWatermarkedWorkbook(exportRows);
+            exportButton.textContent = "Exported";
+        }
+        catch {
+            exportButton.textContent = "Export failed";
+        }
+        finally {
+            exportButton.removeAttribute("aria-busy");
+            exportButton.disabled = false;
+        }
+
         window.setTimeout(() => {
             exportButton.textContent = previousLabel;
         }, 1400);

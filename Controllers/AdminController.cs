@@ -952,17 +952,7 @@ DO UPDATE SET
             AddDataSheet(workbook, "All Notifications", allNotifications);
             AddDataSheet(workbook, "Ticket Security", securityRows);
 
-            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-login-logo.png");
-            var watermarkPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-export-watermark.png");
-            foreach (var worksheet in workbook.Worksheets)
-            {
-                AddLogoIfAvailable(worksheet, logoPath);
-                AddWatermarkIfAvailable(worksheet, watermarkPath);
-                worksheet.SheetView.FreezeRows(5);
-                worksheet.PageSetup.PageOrientation = XLPageOrientation.Landscape;
-                worksheet.PageSetup.PagesWide = 1;
-                worksheet.PageSetup.PagesTall = 0;
-            }
+            ApplyWorkbookBranding(workbook, GetCurrentPrintUserName());
 
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
@@ -994,7 +984,7 @@ DO UPDATE SET
             sheet.Cell(2, 2).Style.Font.Bold = true;
             sheet.Cell(2, 2).Style.Font.FontColor = XLColor.FromHtml("#475569");
 
-            sheet.Cell(3, 2).Value = $"Generated: {DateTime.Now:dd MMM yyyy hh:mm tt}";
+            sheet.Cell(3, 2).Value = "Watermarked export report";
             sheet.Cell(3, 2).Style.Font.FontColor = XLColor.FromHtml("#64748b");
         }
 
@@ -1010,6 +1000,53 @@ DO UPDATE SET
                 .WithSize(54, 54);
         }
 
+        private string GetCurrentPrintUserName()
+        {
+            var displayName = HttpContext.Session.GetString("UserName") ??
+                HttpContext.Session.GetString("UserEmail") ??
+                "User";
+
+            return string.IsNullOrWhiteSpace(displayName)
+                ? "User"
+                : displayName.Trim();
+        }
+
+        private static void ApplyWorkbookBranding(XLWorkbook workbook, string printedBy)
+        {
+            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-login-logo.png");
+            var watermarkPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "brand", "showtime-export-watermark.png");
+            var safePrintedBy = CleanHeaderFooterText(printedBy);
+
+            foreach (var worksheet in workbook.Worksheets)
+            {
+                AddLogoIfAvailable(worksheet, logoPath);
+                AddWatermarkIfAvailable(worksheet, watermarkPath);
+                AddPrintHeaderFooter(worksheet, safePrintedBy);
+                worksheet.SheetView.FreezeRows(5);
+                worksheet.PageSetup.PageOrientation = XLPageOrientation.Landscape;
+                worksheet.PageSetup.PagesWide = 1;
+                worksheet.PageSetup.PagesTall = 0;
+                worksheet.PageSetup.CenterHorizontally = true;
+            }
+        }
+
+        private static void AddPrintHeaderFooter(IXLWorksheet worksheet, string printedBy)
+        {
+            worksheet.PageSetup.Header.Left.AddText("showTime");
+            worksheet.PageSetup.Header.Center.AddText(worksheet.Name);
+            worksheet.PageSetup.Header.Right.AddText("Watermarked Export");
+            worksheet.PageSetup.Footer.Left.AddText($"User {printedBy}");
+            worksheet.PageSetup.Footer.Center.AddText("Page &P of &N");
+            worksheet.PageSetup.Footer.Right.AddText("Printed &D &T");
+        }
+
+        private static string CleanHeaderFooterText(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? "User"
+                : value.Replace("&", "&&").Replace("\r", " ").Replace("\n", " ").Trim();
+        }
+
         private static void AddWatermarkIfAvailable(IXLWorksheet sheet, string watermarkPath)
         {
             if (!System.IO.File.Exists(watermarkPath))
@@ -1017,9 +1054,17 @@ DO UPDATE SET
                 return;
             }
 
+            var usedRange = sheet.RangeUsed();
+            var lastColumn = usedRange?.RangeAddress.LastAddress.ColumnNumber ?? 8;
+            var lastRow = usedRange?.RangeAddress.LastAddress.RowNumber ?? 22;
+            var printableColumns = Math.Min(Math.Max(lastColumn, 6), 12);
+            var printableRows = Math.Min(Math.Max(lastRow, 18), 30);
+            var centerColumn = Math.Max(2, (printableColumns / 2) - 1);
+            var centerRow = Math.Max(7, (printableRows / 2) - 4);
+
             sheet.AddPicture(watermarkPath)
-                .MoveTo(sheet.Cell(9, 5))
-                .WithSize(360, 360);
+                .MoveTo(sheet.Cell(centerRow, centerColumn))
+                .WithSize(420, 420);
         }
 
         private static void StyleHeaderRow(IXLRange range)
@@ -4668,37 +4713,62 @@ public IActionResult ExportRefunds()
 {
     var refunds = _context.VwRefundSummaries
         .AsNoTracking()
+        .OrderByDescending(x => x.RequestedAt)
         .ToList();
 
-    var builder =
-        new System.Text.StringBuilder();
+    using var workbook = new XLWorkbook();
+    var sheet = workbook.Worksheets.Add("Refunds");
+    AddDashboardHeader(sheet, "Refunds Export");
 
-
-    builder.AppendLine(
-        "RefundRef,BookingRef,TransactionRef,UserName,UserEmail,RefundAmount,RefundStatus,RefundMethod,RequestedAt");
-
-
-    foreach (var item in refunds)
+    var headers = new[]
     {
-        builder.AppendLine(
-            $"{item.RefundRef}," +
-            $"{item.BookingRef}," +
-            $"{item.TransactionRef}," +
-            $"{item.UserName}," +
-            $"{item.UserEmail}," +
-            $"{item.RefundAmount}," +
-            $"{item.RefundStatus}," +
-            $"{item.RefundMethod}," +
-            $"{item.RequestedAt}"
-        );
+        "Refund Ref",
+        "Booking Ref",
+        "Transaction Ref",
+        "User Name",
+        "User Email",
+        "Refund Amount",
+        "Refund Status",
+        "Refund Method",
+        "Requested At"
+    };
+
+    for (var column = 0; column < headers.Length; column++)
+    {
+        sheet.Cell(5, column + 1).Value = headers[column];
     }
+
+    StyleHeaderRow(sheet.Range(5, 1, 5, headers.Length));
+
+    for (var index = 0; index < refunds.Count; index++)
+    {
+        var row = index + 6;
+        var item = refunds[index];
+
+        sheet.Cell(row, 1).Value = item.RefundRef;
+        sheet.Cell(row, 2).Value = item.BookingRef;
+        sheet.Cell(row, 3).Value = item.TransactionRef;
+        sheet.Cell(row, 4).Value = item.UserName;
+        sheet.Cell(row, 5).Value = item.UserEmail;
+        sheet.Cell(row, 6).Value = item.RefundAmount;
+        sheet.Cell(row, 7).Value = item.RefundStatus;
+        sheet.Cell(row, 8).Value = item.RefundMethod;
+        sheet.Cell(row, 9).Value = item.RequestedAt;
+    }
+
+    sheet.Column(6).Style.NumberFormat.Format = "#,##0.00";
+    sheet.Column(9).Style.DateFormat.Format = "dd mmm yyyy hh:mm";
+    StyleUsedRange(sheet);
+    ApplyWorkbookBranding(workbook, GetCurrentPrintUserName());
+
+    using var stream = new MemoryStream();
+    workbook.SaveAs(stream);
 
 
     return File(
-        System.Text.Encoding.UTF8.GetBytes(
-            builder.ToString()),
-        "text/csv",
-        $"refunds_{DateTime.Now:yyyyMMddHHmmss}.csv"
+        stream.ToArray(),
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        $"refunds_{DateTime.Now:yyyyMMddHHmmss}.xlsx"
     );
 }
 
