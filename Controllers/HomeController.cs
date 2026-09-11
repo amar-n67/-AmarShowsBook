@@ -35,10 +35,68 @@ namespace AmarShowsBook.Controllers
             return RedirectToAction(nameof(ShowTime), new { type });
         }
 
-        // This startup intro is intentionally static, so the first screen does not wait for show data.
-        public IActionResult Intro()
+        // The intro reads developer contact details when available, with a fallback so startup still opens cleanly.
+        public async Task<IActionResult> Intro()
         {
-            return View();
+            try
+            {
+                var developer =
+                    await _context.DeveloperProfiles
+                    .AsNoTracking()
+                    .OrderBy(profile => profile.DeveloperId)
+                    .FirstOrDefaultAsync();
+
+                return View(BuildIntroDeveloperProfile(developer));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Developer contact details could not be loaded for the intro page.");
+                return View(BuildIntroDeveloperProfile(null));
+            }
+        }
+
+        private static DeveloperVM BuildIntroDeveloperProfile(DeveloperVM? developer)
+        {
+            developer ??= new DeveloperVM();
+
+            developer.FullName = "Amar ChaudharY";
+
+            developer.DeveloperEmail = FirstFilled(
+                developer.DeveloperEmail,
+                developer.Email,
+                developer.SupportEmail,
+                "example@gmail.com");
+
+            developer.Phone = FirstFilled(
+                developer.Phone,
+                developer.SupportPhone,
+                developer.DeveloperWhatsAppPhone,
+                "+91 9651698863");
+
+            developer.DeveloperWhatsAppPhone = FirstFilled(
+                developer.DeveloperWhatsAppPhone,
+                developer.SupportWhatsAppPhone,
+                developer.Phone,
+                "+91 9651698863");
+
+            developer.DeveloperEmailSubject = FirstFilled(
+                developer.DeveloperEmailSubject,
+                "showTime Developer Contact");
+
+            developer.DeveloperEmailText = FirstFilled(
+                developer.DeveloperEmailText,
+                "Hi showTime Team, I'm {user}. I would like to connect with the developer.");
+
+            developer.TopWhatsAppText = FirstFilled(
+                developer.TopWhatsAppText,
+                "Hi showTime Team, I'm {user}. I visited showTime and would like to connect with you.");
+
+            return developer;
+        }
+
+        private static string FirstFilled(params string?[] values)
+        {
+            return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? "";
         }
 
         // The public landing page is the showTime feed: it reads the SQL view, enriches venue text, then logs the visit.
