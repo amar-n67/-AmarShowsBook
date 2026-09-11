@@ -2949,7 +2949,7 @@ z-index:9999;">
     @RenderBody()
 </div>
 
-<div class="amaro-widget no-print" data-amaro-widget>
+<div class="amaro-widget no-print" data-amaro-widget data-amaro-logged-in="@(isLoggedIn.ToString().ToLowerInvariant())">
         <button class="amaro-launcher" type="button" data-amaro-toggle aria-expanded="false" aria-controls="amaroPanel">
             <span>A</span>
             <strong>Amaro</strong>
@@ -2958,32 +2958,54 @@ z-index:9999;">
             <div class="amaro-header">
                 <div>
                     <span>Amaro</span>
-                    <strong data-amaro-greeting>Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows, booking help, page search, or print.</strong>
+                    <strong data-amaro-greeting>
+                        @(isLoggedIn
+                            ? $"Hey {normalizedDisplayName}, I'm Amaro. Ask me for today's shows, booking help, page search, or print."
+                            : "Hey guest, I'm Amaro. I can help with shows now. Login unlocks the rest.")
+                    </strong>
                 </div>
                 <button type="button" data-amaro-close aria-label="Close Amaro">×</button>
             </div>
             <div class="amaro-command-deck" data-amaro-command-deck>
-                <button type="button" data-amaro-prompt="Book a movie">Book</button>
-                <button type="button" data-amaro-prompt="Show prices and available seats">Seats</button>
-                <button type="button" data-amaro-prompt="My upcoming bookings">Upcoming</button>
-                @if (canUseProtectedCapture)
+                @if (isLoggedIn)
                 {
-                    <button type="button" data-amaro-prompt="print this page">Print</button>
+                    <button type="button" data-amaro-prompt="Book a movie">Book</button>
+                    <button type="button" data-amaro-prompt="Show prices and available seats">Seats</button>
+                    <button type="button" data-amaro-prompt="My upcoming bookings">Upcoming</button>
+                    @if (canUseProtectedCapture)
+                    {
+                        <button type="button" data-amaro-prompt="print this page">Print</button>
+                    }
+                    <button type="button" data-amaro-prompt="go back">Back</button>
+                    <button type="button" data-amaro-prompt="Change theme">Theme</button>
+                    <button type="button" data-amaro-prompt="Change cursor">Cursor</button>
+                    <button type="button" data-amaro-prompt="Contact support"><span class="action-icon-inline" aria-hidden="true"><svg class="contact-svg-icon" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span>Help</button>
                 }
-                <button type="button" data-amaro-prompt="go back">Back</button>
-                <button type="button" data-amaro-prompt="Change theme">Theme</button>
-                <button type="button" data-amaro-prompt="Change cursor">Cursor</button>
-                <button type="button" data-amaro-prompt="Contact support"><span class="action-icon-inline" aria-hidden="true"><svg class="contact-svg-icon" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></svg></span>Help</button>
+                else
+                {
+                    <button type="button" data-amaro-prompt="today shows">Shows</button>
+                    <button type="button" data-amaro-prompt="movies">Movies</button>
+                    <button type="button" data-amaro-prompt="standup shows">Standup</button>
+                    <button type="button" data-amaro-prompt="live streams">Live</button>
+                    <button type="button" data-amaro-prompt="available seats and prices">Seats</button>
+                    <button type="button" data-amaro-prompt="login">Login</button>
+                }
             </div>
             <div class="amaro-options" data-amaro-options></div>
             <div class="amaro-thread" data-amaro-thread>
                 <div class="amaro-message amaro-message-reply">
-                    Hey @(isLoggedIn ? normalizedDisplayName : "guest"), I'm Amaro. Ask me for today's shows, show times, support, page actions, or how to book.
+                    @(isLoggedIn
+                        ? $"Hey {normalizedDisplayName}, I'm Amaro. Ask me for today's shows, show times, support, page actions, or how to book."
+                        : "Hey guest, I'm Amaro. Ask me about today's shows, movies, standup, live streams, seats, or prices.")
                 </div>
             </div>
             <form class="amaro-form" data-amaro-form>
                 @Html.AntiForgeryToken()
-                <input data-amaro-input type="text" maxlength="300" placeholder="Ask Amaro to book, filter, open, print, switch, or check" autocomplete="off" />
+                <input data-amaro-input
+                       type="text"
+                       maxlength="300"
+                       placeholder="@(isLoggedIn ? "Ask Amaro to book, filter, open, print, switch, or check" : "Ask about shows, movies, standup, live, seats, or prices")"
+                       autocomplete="off" />
                 <button type="submit">Send</button>
             </form>
         </section>
@@ -4320,6 +4342,55 @@ document.addEventListener("DOMContentLoaded", function () {
     const token = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
     const submitButton = form.querySelector("button[type='submit']");
     const canCapture = document.body?.dataset.captureAllowed === "true";
+    const amaroUserLoggedIn = widget.dataset.amaroLoggedIn === "true";
+
+    function publicShowOptions() {
+        return [
+            { label: "Today's Shows", url: "/Home/ShowTime" },
+            { label: "Movies", command: "filter-type:Movie" },
+            { label: "Standup", command: "filter-type:Standup" },
+            { label: "Live Streams", command: "filter-type:Live" },
+            { label: "Seat Prices", command: "ask:available seats and prices" },
+            { label: "Login", url: "/Auth/Login" }
+        ];
+    }
+
+    function isGuestShowMessage(text) {
+        const lower = String(text || "").toLowerCase();
+        const blocked = ["my booking", "my bookings", "my ticket", "wallet", "transaction", "profile", "admin", "support", "theme", "cursor", "print", "export"];
+
+        if (blocked.some(term => lower.includes(term))) {
+            return false;
+        }
+
+        return ["show", "movie", "standup", "live", "seat", "price", "available", "time", "venue", "today", "tomorrow", "weekend", "book"]
+            .some(term => lower.includes(term));
+    }
+
+    function isGuestAllowedUrl(url) {
+        const value = String(url || "");
+        return value.startsWith("/Home/ShowTime") ||
+            value.startsWith("/Booking/Seats/") ||
+            value === "/Auth/Login" ||
+            value === "/Auth/Signup";
+    }
+
+    function isGuestAllowedCommand(command) {
+        const value = String(command || "");
+
+        if (!value) return true;
+        if (value.startsWith("filter-type:")) return true;
+        if (value === "show-suggestions") return true;
+        if (value.startsWith("ask:")) return isGuestShowMessage(value.slice(4));
+        if (value.startsWith("open:")) return isGuestAllowedUrl(value.slice(5));
+
+        return false;
+    }
+
+    function showGuestLoginNeeded() {
+        addMessage("Please login for that. As a guest, Amaro can help only with shows, show times, seats, and prices.", "reply");
+        renderOptions(publicShowOptions());
+    }
 
     function addMessage(text, kind) {
         const bubble = document.createElement("div");
@@ -4377,6 +4448,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (lower === "top" || lower === "go top" || lower === "scroll top") return "scroll-top";
         if (lower === "bottom" || lower === "go bottom" || lower === "scroll bottom") return "scroll-bottom";
         if (lower === "reload" || lower === "refresh" || lower === "refresh page") return "reload-page";
+        if (lower === "login" || lower === "log in" || lower === "signin" || lower === "sign in") return "open:/Auth/Login";
+        if (lower === "signup" || lower === "sign up" || lower === "register") return "open:/Auth/Signup";
         if (lower === "home" || lower === "open home" || lower === "go home") return "open:/Home/ShowTime";
         if (lower === "wallet" || lower === "open wallet" || lower === "my wallet") return "open:/Wallet/MyWallet";
         if (lower === "transactions" || lower === "transaction" || lower === "my transactions") return "open:/Transaction/History";
@@ -4454,6 +4527,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function runCommand(command, label) {
         const value = String(command || "");
+
+        if (!amaroUserLoggedIn && !isGuestAllowedCommand(value)) {
+            showGuestLoginNeeded();
+            return true;
+        }
 
         if (value === "theme-options") {
             renderOptions([
@@ -4667,6 +4745,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (option.url && (option.url.startsWith("/") || option.url.startsWith("mailto:") || option.url.startsWith("tel:") || option.url.startsWith("https://wa.me/"))) {
+                    if (!amaroUserLoggedIn && !isGuestAllowedUrl(option.url)) {
+                        showGuestLoginNeeded();
+                        return;
+                    }
+
                     window.location.href = option.url;
                     return;
                 }
@@ -4693,7 +4776,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 renderOptions(data.options || []);
             })
-            .catch(() => renderOptions(["My Bookings", "Wallet", "Browse Shows"]));
+            .catch(() => renderOptions(amaroUserLoggedIn ? ["My Bookings", "Wallet", "Browse Shows"] : publicShowOptions()));
     }
 
     toggle.addEventListener("click", function () {

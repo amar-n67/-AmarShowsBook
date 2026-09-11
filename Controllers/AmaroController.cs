@@ -31,16 +31,8 @@ public class AmaroController : Controller
             return Json(new
             {
                 isLoggedIn = false,
-                greeting = "Hey guest, I'm Amaro. I can find today's shows now; login is needed only when you book or view account details.",
-                options = new[]
-                {
-                    new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
-                    new AmaroQuickOption("Movies", "", "filter-type:Movie"),
-                    new AmaroQuickOption("Standup", "", "filter-type:Standup"),
-                    new AmaroQuickOption("Live Streams", "", "filter-type:Live"),
-                    new AmaroQuickOption("Help", "", "support-options"),
-                    new AmaroQuickOption("Login", "/Auth/Login")
-                }
+                greeting = "Hey guest, I'm Amaro. I can help with shows now. Login unlocks booking history, wallet, support, profile, admin, print, theme, and cursor actions.",
+                options = BuildPublicShowOptions()
             });
         }
 
@@ -65,14 +57,23 @@ public class AmaroController : Controller
         // Guests can get show and support help; account, booking, wallet, and admin answers require login.
         var message = (request.Message ?? string.Empty).Trim();
 
+        var isLoggedIn = TryGetCurrentUserId(out var userId);
+
         if (string.IsNullOrWhiteSpace(message))
         {
+            if (!isLoggedIn)
+            {
+                return Json(new AmaroAskResponse(
+                    "As a guest, I can help with show times, movies, standup, live streams, and seat availability. Please login for the rest of Amaro.",
+                    BuildPublicShowOptions()));
+            }
+
             return Json(new AmaroAskResponse(
                 "Ask me about bookings, tickets, wallet, transactions, profile, admin access, support, or available menus.",
                 BuildSupportOptions()));
         }
 
-        if (!TryGetCurrentUserId(out var userId))
+        if (!isLoggedIn)
         {
             var publicReply = await BuildPublicReply(message);
             if (publicReply != null)
@@ -81,10 +82,10 @@ public class AmaroController : Controller
                 return Json(publicReply);
             }
 
-            await SaveConversation(null, message, "Login is required for booking, tickets, wallet, transactions, profile, and account details.");
+            await SaveConversation(null, message, "Login is required for full Amaro actions.");
 
             return Json(new AmaroAskResponse(
-                "You can browse shows without login. For booking, tickets, wallet, transactions, or profile details, please login first.",
+                "As a guest, Amaro is limited to show-related help. Please login for booking history, wallet, support, profile, admin, print, theme, cursor, and account actions.",
                 new[]
                 {
                     new AmaroQuickOption("Login", "/Auth/Login"),
@@ -472,73 +473,17 @@ public class AmaroController : Controller
         if (IsHelpIntent(normalized))
         {
             return new AmaroAskResponse(
-                "I'm Amaro. I can find today's shows, filter movies/standup/live streams, show times and venues, help start booking, search this page, go back, and connect you to support. Print and capture tools are admin-only.",
-                new[]
-                {
-                    new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
-                    new AmaroQuickOption("Go Back", "", "go-back"),
-                    new AmaroQuickOption("Help", "", "support-options"),
-                    new AmaroQuickOption("Login", "/Auth/Login")
-                });
+                "Guest Amaro can help with shows only: today's shows, movies, standup, live streams, show times, venues, seats, and prices. Login unlocks the rest.",
+                BuildPublicShowOptions());
         }
 
-        if (IsSupportIntent(normalized))
+        if (normalized.Contains("available") || normalized.Contains("price") || normalized.Contains("prices") || normalized.Contains("seat map"))
         {
-            return BuildSupportReply();
-        }
-
-        if (IsThemeIntent(normalized))
-        {
-            return new AmaroAskResponse(
-                "Choose a theme and I will switch it instantly.",
-                new[]
-                {
-                    new AmaroQuickOption("Cinema Theme", "", "theme:cinema"),
-                    new AmaroQuickOption("Dark Theme", "", "theme:dark"),
-                    new AmaroQuickOption("White Theme", "", "theme:white"),
-                    new AmaroQuickOption("System Theme", "", "theme:system")
-                });
-        }
-
-        if (IsCursorIntent(normalized))
-        {
-            return new AmaroAskResponse(
-                "Choose a cursor style. The same cursor will be used across the application.",
-                new[]
-                {
-                    new AmaroQuickOption("Native Cursor", "", "cursor:native"),
-                    new AmaroQuickOption("Liquid Cursor", "", "cursor:liquid"),
-                    new AmaroQuickOption("Precision Cursor", "", "cursor:precision"),
-                    new AmaroQuickOption("Spotlight Cursor", "", "cursor:spotlight")
-                });
-        }
-
-        var pageSearchTerm = ExtractPageSearchTerm(message);
-        if (pageSearchTerm != null)
-        {
-            return new AmaroAskResponse(
-                string.IsNullOrWhiteSpace(pageSearchTerm)
-                    ? "I can focus the search box on this page. Type what you want to filter, or tell me: search this page for movie, standup, live, or any visible text."
-                    : $"I will search this page for \"{pageSearchTerm}\".",
-                new[]
-                {
-                    new AmaroQuickOption("Search This Page", "", $"page-search:{pageSearchTerm}"),
-                    new AmaroQuickOption("Clear Search", "", "clear-page-search")
-                });
-        }
-
-        if (IsPrintIntent(normalized))
-        {
-            return new AmaroAskResponse(
-                "Print is allowed only for Admin and Super Admin.",
-                Array.Empty<AmaroQuickOption>());
-        }
-
-        if (IsBackIntent(normalized))
-        {
-            return new AmaroAskResponse(
-                "I can take you back to the previous page.",
-                new[] { new AmaroQuickOption("Go Back", "", "go-back") });
+            var seatReply = await BuildSeatAndPriceReply(normalized);
+            if (seatReply != null)
+            {
+                return seatReply;
+            }
         }
 
         if (IsShowDiscoveryIntent(normalized) || IsBookShowIntent(normalized))
@@ -547,6 +492,19 @@ public class AmaroController : Controller
         }
 
         return null;
+    }
+
+    private static AmaroQuickOption[] BuildPublicShowOptions()
+    {
+        return new[]
+        {
+            new AmaroQuickOption("Today's Shows", "/Home/ShowTime"),
+            new AmaroQuickOption("Movies", "", "filter-type:Movie"),
+            new AmaroQuickOption("Standup", "", "filter-type:Standup"),
+            new AmaroQuickOption("Live Streams", "", "filter-type:Live"),
+            new AmaroQuickOption("Seat Prices", "", "ask:available seats and prices"),
+            new AmaroQuickOption("Login", "/Auth/Login")
+        };
     }
 
     private async Task<AmaroAskResponse?> BuildShowReply(string normalized, bool requireLoginToBook)
