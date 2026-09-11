@@ -162,6 +162,7 @@
         .intro-shell {
             position: relative;
             width: min(1180px, calc(100% - 32px));
+            max-width: 100%;
             margin: 0 auto;
             padding: 28px 0 40px;
         }
@@ -210,6 +211,24 @@
             flex-wrap: wrap;
             justify-content: flex-end;
             gap: 8px;
+        }
+
+        .screen-advice {
+            display: none;
+            margin: 14px 0 0;
+            padding: 10px 14px;
+            border: 1px solid rgba(22, 143, 152, 0.24);
+            border-radius: 14px;
+            color: var(--ink);
+            background: rgba(255, 253, 248, 0.86);
+            box-shadow: 0 14px 32px rgba(23, 32, 51, 0.10);
+            font-size: 0.86rem;
+            font-weight: 850;
+            line-height: 1.35;
+            text-align: center;
+            overflow-wrap: anywhere;
+            white-space: normal;
+            backdrop-filter: blur(14px);
         }
 
         .btn {
@@ -284,9 +303,11 @@
             align-items: center;
             min-height: calc(100vh - 102px);
             padding: clamp(34px, 7vw, 86px) 0 48px;
+            min-width: 0;
         }
 
         .hero-copy {
+            min-width: 0;
             animation: copyIn 0.9s ease both;
         }
 
@@ -317,6 +338,7 @@
             font-size: clamp(2.7rem, 8vw, 6.7rem);
             line-height: 0.95;
             letter-spacing: 0;
+            overflow-wrap: anywhere;
         }
 
         .lead {
@@ -325,6 +347,7 @@
             color: #445066;
             font-size: clamp(1rem, 2.1vw, 1.28rem);
             line-height: 1.65;
+            overflow-wrap: anywhere;
         }
 
         .hero-actions {
@@ -345,12 +368,14 @@
         .ad-strip span {
             position: relative;
             overflow: hidden;
+            min-width: 0;
             padding: 8px 12px;
             border: 1px solid rgba(255, 255, 255, 0.82);
             border-radius: 999px;
             color: #20364a;
             font-size: 0.8rem;
             font-weight: 900;
+            overflow-wrap: anywhere;
             background: rgba(255, 255, 255, 0.62);
             box-shadow: 0 12px 24px rgba(23, 32, 51, 0.08);
             animation: adPop 0.7s ease both, adBreathe 3.8s ease-in-out infinite;
@@ -1407,7 +1432,8 @@
 
         @@media (max-width: 680px) {
             .intro-shell {
-                width: min(100% - 22px, 1180px);
+                width: min(calc(100vw - 22px), 1180px);
+                max-width: calc(100vw - 22px);
                 padding-top: 12px;
             }
 
@@ -1419,8 +1445,14 @@
 
             .top-actions {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
                 width: 100%;
+            }
+
+            .screen-advice {
+                display: block;
+                width: min(330px, 100%);
+                max-width: calc(100vw - 22px);
             }
 
             .btn {
@@ -1432,6 +1464,31 @@
 
             .hero {
                 padding-top: 30px;
+                max-width: 100%;
+            }
+
+            h1 {
+                font-size: clamp(2.15rem, 12vw, 3.35rem);
+                width: min(340px, 100%);
+                max-width: calc(100vw - 22px);
+            }
+
+            .lead,
+            .hero-actions,
+            .ad-strip {
+                width: min(340px, 100%);
+                max-width: calc(100vw - 22px);
+            }
+
+            .hero-actions {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .ad-strip {
+                display: grid;
+                grid-template-columns: 1fr;
+                max-width: 100%;
             }
 
             .mini-metrics,
@@ -1515,6 +1572,10 @@
                 <a class="btn btn-primary" href="/Home/ShowTime">Enter Shows</a>
             </nav>
         </header>
+
+        <div class="screen-advice intro-screen-advice" role="note">
+            Use a large screen, laptop, or desktop for the best experience.
+        </div>
 
         <section class="hero" aria-labelledby="introTitle">
             <div class="hero-copy">
