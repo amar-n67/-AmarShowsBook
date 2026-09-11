@@ -61,16 +61,29 @@
 
 <section class="showtime-page">
     <div class="showtime-hero">
-        <div>
+        <div class="showtime-hero-copy">
             <span class="showtime-kicker">NOW SHOWING</span>
             <h1 class="showtime-title">showTime</h1>
             <p>@userName, find a show near you.</p>
+            <div class="showtime-hero-tags" aria-label="Available show categories">
+                <span>Movies</span>
+                <span>Live</span>
+                <span>Standup</span>
+                <span>News</span>
+            </div>
         </div>
-        <div class="showtime-summary">
-            <span>Available Shows</span>
-            <strong>@Model.HomeShows.Count</strong>
-            <small>@selectedTypeLabel</small>
+        <div class="showtime-hero-card" aria-label="showTime listing summary">
+            <img class="showtime-hero-logo" src="@Url.Content("~/images/brand/showtime-login-logo-tight.png")" alt="" />
+            <div class="showtime-summary">
+                <span>Available Shows</span>
+                <strong>@Model.HomeShows.Count</strong>
+                <small>@selectedTypeLabel</small>
+            </div>
         </div>
+    </div>
+
+    <div class="screen-advice showtime-screen-advice" role="note">
+        Best on laptop or desktop.
     </div>
 
 <div class="showtime-controls @(platformMode ? "platform-mode" : "")">
@@ -1804,7 +1817,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login to book this show")">
 .location-field select,
 .location-field input,
 .location-choice-btn {
-    width: 100%;
+    width: auto;
     appearance: none;
     padding: 0 26px 0 9px;
     font-size: 0.78rem;
@@ -2060,7 +2073,7 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login to book this show")">
 
 .showtime-tabs strong {
     display: block;
-    max-width: 100%;
+    max-width: 1180px;
     overflow: hidden;
     font-size: 0.78rem;
     line-height: 1.1;
@@ -2353,6 +2366,617 @@ aria-label="@(isLoggedIn ? "Book Ticket" : "Login to book this show")">
         min-height: 44px;
         padding: 9px 8px;
         font-size: 0.82rem;
+    }
+}
+
+/* Final ShowTime pass: this keeps the existing filter scripts intact and only reshapes the page surface. */
+.showtime-page {
+    --showtime-line: color-mix(in srgb, var(--app-input-border) 78%, transparent);
+    --showtime-soft: color-mix(in srgb, var(--app-card) 88%, var(--app-bg) 12%);
+    --showtime-quiet: color-mix(in srgb, var(--app-input) 84%, var(--app-card) 16%);
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 16px 0 52px;
+    color: var(--app-text);
+    overflow-x: hidden;
+}
+
+.showtime-page,
+.showtime-page * {
+    box-sizing: border-box;
+}
+
+.showtime-hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 310px);
+    align-items: center;
+    gap: 18px;
+    min-height: auto;
+    margin: 0 0 14px;
+    padding: clamp(18px, 2.8vw, 28px);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 22%, var(--showtime-line));
+    border-radius: 8px;
+    background:
+        linear-gradient(120deg, color-mix(in srgb, var(--app-card) 96%, var(--app-accent) 4%), color-mix(in srgb, var(--app-bg) 68%, var(--app-card) 32%)),
+        var(--app-card);
+    color: var(--app-card-text);
+    box-shadow: 0 22px 48px color-mix(in srgb, var(--app-text) 12%, transparent);
+}
+
+.showtime-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        repeating-linear-gradient(90deg, color-mix(in srgb, var(--app-text) 7%, transparent) 0 1px, transparent 1px 18px),
+        linear-gradient(90deg, color-mix(in srgb, var(--app-primary) 13%, transparent), transparent 45%, color-mix(in srgb, var(--app-accent-strong) 12%, transparent));
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.showtime-hero-copy {
+    min-width: 0;
+}
+
+.showtime-kicker {
+    margin-bottom: 8px;
+    color: var(--app-accent-strong);
+    letter-spacing: 0.06em;
+}
+
+.showtime-title,
+.showtime-hero h1 {
+    max-width: 100%;
+    margin: 0 0 8px;
+    color: var(--app-card-text);
+    font-size: clamp(2.35rem, 5vw, 4.65rem);
+    line-height: 0.92;
+    overflow-wrap: anywhere;
+}
+
+.showtime-hero p {
+    max-width: 640px;
+    color: var(--app-muted);
+    font-size: clamp(0.98rem, 1.45vw, 1.12rem);
+    font-weight: 750;
+}
+
+.showtime-hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.showtime-hero-tags span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 22%, var(--showtime-line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-input) 78%, transparent);
+    color: var(--app-card-text);
+    font-size: 0.76rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.showtime-hero-card {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--app-primary) 24%, var(--showtime-line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 78%, transparent);
+    backdrop-filter: blur(14px);
+}
+
+.showtime-hero-logo {
+    width: 74px;
+    height: 74px;
+    object-fit: contain;
+    padding: 6px;
+    border: 1px solid var(--showtime-line);
+    border-radius: 8px;
+    background: var(--app-input);
+    box-shadow: 0 14px 26px color-mix(in srgb, var(--app-text) 14%, transparent);
+}
+
+.showtime-summary {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+}
+
+.showtime-summary span,
+.showtime-summary small {
+    color: var(--app-muted);
+}
+
+.showtime-summary strong {
+    color: var(--app-card-text);
+    font-size: clamp(1.9rem, 4vw, 2.8rem);
+}
+
+.showtime-screen-advice {
+    display: none;
+    width: min(100%, 620px);
+    margin: 0 auto 14px;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, var(--app-accent-strong) 26%, var(--showtime-line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 88%, transparent);
+    color: var(--app-card-text);
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--app-text) 9%, transparent);
+    font-size: 0.86rem;
+    font-weight: 850;
+    line-height: 1.35;
+    text-align: center;
+    overflow-wrap: anywhere;
+    backdrop-filter: blur(14px);
+}
+
+.showtime-controls {
+    display: grid;
+    grid-template-columns: minmax(210px, 1.55fr) minmax(120px, 0.72fr) minmax(184px, 1fr) minmax(92px, 0.55fr) minmax(146px, 0.82fr) minmax(132px, 0.78fr) minmax(82px, auto);
+    gap: 10px;
+    align-items: end;
+    margin: 0 0 18px;
+    padding: 12px;
+    border: 1px solid var(--showtime-line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 92%, transparent);
+    box-shadow: 0 16px 36px color-mix(in srgb, var(--app-text) 10%, transparent);
+    backdrop-filter: blur(12px);
+}
+
+.showtime-controls.platform-mode {
+    grid-template-columns: minmax(180px, 310px);
+    width: min(100%, 330px);
+    max-width: 100%;
+}
+
+.showtime-controls .location-field,
+.showtime-controls .location-picker {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+}
+
+.showtime-controls .location-field label,
+.showtime-controls .location-picker label {
+    color: var(--app-muted);
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+}
+
+.showtime-controls .location-field select,
+.showtime-controls .location-field input,
+.showtime-controls .location-choice-btn,
+.showtime-controls .location-current-btn,
+.showtime-controls .location-reset-btn,
+.showtime-controls .showtime-clear-btn {
+    width: 100%;
+    min-height: 42px;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--showtime-line);
+    background: var(--app-input) !important;
+    color: var(--app-input-text) !important;
+    font-size: 0.84rem;
+    font-weight: 800;
+    box-shadow: none;
+}
+
+.showtime-controls .location-field select,
+.showtime-controls .location-field input {
+    padding: 0 30px 0 10px;
+}
+
+.showtime-controls .location-choice-btn {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.showtime-controls .location-choice-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.showtime-controls .location-choice-symbol,
+.showtime-controls .location-toggle-symbol,
+.showtime-controls .location-field:not(.location-actions):not(.filter-clear-field):not(.search-filter-field)::after {
+    color: var(--app-accent-strong);
+}
+
+.showtime-controls .location-field.is-filter-active select,
+.showtime-controls .location-field.is-filter-active input,
+.showtime-controls .location-picker.is-filter-active .location-choice-btn {
+    background: color-mix(in srgb, var(--app-accent) 18%, var(--app-input)) !important;
+    border-color: color-mix(in srgb, var(--app-accent) 68%, var(--showtime-line)) !important;
+    color: var(--app-input-text) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-accent) 18%, transparent) !important;
+}
+
+.showtime-controls .location-panel {
+    grid-column: 1 / -1;
+    margin-top: 2px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--app-accent-strong) 20%, var(--showtime-line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-input) 62%, var(--app-card) 38%);
+}
+
+.showtime-controls .location-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr)) minmax(162px, auto);
+    gap: 8px;
+    align-items: end;
+}
+
+.showtime-controls .location-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-self: end;
+}
+
+.showtime-controls .location-current-btn,
+.showtime-controls .showtime-clear-btn {
+    color: var(--app-primary) !important;
+}
+
+.showtime-controls .location-current-btn:hover,
+.showtime-controls .location-current-btn:focus-visible,
+.showtime-controls .location-reset-btn:hover,
+.showtime-controls .location-reset-btn:focus-visible,
+.showtime-controls .showtime-clear-btn:hover,
+.showtime-controls .showtime-clear-btn:focus-visible {
+    border-color: var(--app-primary);
+    background: var(--app-primary) !important;
+    color: #fff !important;
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.showtime-controls .location-status {
+    grid-column: 1 / -1;
+    min-height: 0;
+    margin: 0;
+    color: var(--app-muted);
+    font-size: 0.76rem;
+    font-weight: 750;
+}
+
+.schedule-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+
+.show-card {
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--showtime-line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 94%, transparent);
+    color: var(--app-card-text);
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--app-text) 10%, transparent);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.show-card:hover {
+    border-color: color-mix(in srgb, var(--app-primary) 42%, var(--showtime-line));
+    box-shadow: 0 20px 42px color-mix(in srgb, var(--app-text) 14%, transparent);
+    transform: translateY(-3px);
+}
+
+.show-card .card-body {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 12px;
+    height: 100%;
+    padding: 14px;
+}
+
+.movie-title {
+    display: -webkit-box;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--app-card-text);
+    font-size: 1.2rem;
+    font-weight: 950;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.image-strip {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 172px;
+    margin: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    border: 1px solid var(--showtime-line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-input-disabled) 86%, var(--app-card));
+    box-shadow: none;
+}
+
+.swap-image {
+    border-radius: 0;
+}
+
+.movie-details {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.detail-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--showtime-line);
+}
+
+.detail-row span {
+    min-width: 0;
+    color: var(--app-muted);
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.detail-row span:first-child,
+.detail-row span:last-child {
+    min-width: 0;
+    text-align: left;
+}
+
+.imdb-rating {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    min-height: 30px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-accent) 86%, #ffffff);
+    color: #231f20;
+    font-size: 0.78rem;
+    font-weight: 950;
+    box-shadow: none;
+}
+
+.venue-row {
+    padding: 0;
+    color: var(--app-muted);
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    margin-top: 2px;
+}
+
+.card-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    box-shadow: none;
+}
+
+.card-actions .btn:hover,
+.card-actions .btn:focus-visible {
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.trailer-btn {
+    background: var(--app-input) !important;
+    border: 1px solid var(--showtime-line) !important;
+    color: var(--app-input-text) !important;
+}
+
+.btn-primary {
+    background: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+    color: #fff !important;
+}
+
+.empty-slate {
+    border: 1px solid var(--showtime-line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 94%, transparent);
+    color: var(--app-card-text);
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--app-text) 10%, transparent);
+}
+
+html[data-theme="dark"] .showtime-hero,
+html[data-theme="dark"] .show-card,
+html[data-theme="dark"] .empty-slate,
+html[data-theme="dark"] .showtime-controls {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
+}
+
+html[data-theme="dark"] .showtime-hero-logo,
+html[data-theme="dark"] .showtime-hero-tags span {
+    background: color-mix(in srgb, var(--app-input) 86%, #ffffff 4%);
+}
+
+@@media (max-width: 1100px) {
+    .showtime-controls {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .showtime-controls .filter-clear-field {
+        align-self: end;
+    }
+}
+
+@@media (max-width: 820px) {
+    .showtime-page {
+        width: auto;
+        max-width: 100%;
+        padding-top: 8px;
+    }
+
+    .showtime-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .showtime-hero-card {
+        grid-template-columns: 58px minmax(0, 1fr);
+    }
+
+    .showtime-hero-logo {
+        width: 58px;
+        height: 58px;
+    }
+
+    .showtime-screen-advice {
+        display: block;
+    }
+
+    .showtime-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .showtime-controls .search-filter-field,
+    .showtime-controls .location-picker,
+    .showtime-controls .location-panel,
+    .showtime-controls .location-status {
+        grid-column: 1 / -1;
+    }
+
+    .showtime-controls .location-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .showtime-controls .location-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@@media (max-width: 560px) {
+    .showtime-page {
+        width: auto;
+        max-width: 100%;
+    }
+
+    .showtime-hero,
+    .showtime-controls,
+    .showtime-screen-advice,
+    .schedule-board {
+        width: auto;
+        max-width: 100%;
+    }
+
+    .showtime-screen-advice {
+        margin-left: 0;
+        margin-right: 0;
+        padding: 9px 10px;
+        font-size: 0.78rem;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+    }
+
+    .showtime-hero {
+        padding: 16px;
+    }
+
+    .showtime-title,
+    .showtime-hero h1 {
+        font-size: clamp(2.1rem, 14vw, 3.2rem);
+    }
+
+    .showtime-hero-tags {
+        gap: 6px;
+    }
+
+    .showtime-hero-tags span {
+        min-height: 28px;
+        font-size: 0.72rem;
+    }
+
+    .showtime-hero-card,
+    .showtime-controls,
+    .showtime-controls .location-strip,
+    .showtime-controls .location-actions,
+    .card-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .showtime-hero-card {
+        align-items: start;
+    }
+
+    .showtime-hero-logo {
+        width: 62px;
+        height: 62px;
+    }
+
+    .showtime-controls.platform-mode,
+    .showtime-controls {
+        width: 100%;
+    }
+
+    .detail-row {
+        grid-template-columns: 1fr;
+    }
+
+    .imdb-rating {
+        justify-self: start;
+    }
+
+    .image-strip {
+        min-height: 188px;
+        aspect-ratio: 4 / 3;
     }
 }
 </style>
