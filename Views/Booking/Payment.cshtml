@@ -1708,6 +1708,268 @@ body {
     outline: none;
 }
 
+.real-card-stage {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    perspective: 1200px;
+    margin: 4px 0 18px;
+}
+
+.live-card-preview {
+    width: min(100%, 410px);
+    aspect-ratio: 1.585;
+    perspective: 1200px;
+}
+
+.live-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.72s cubic-bezier(0.2, 0.9, 0.22, 1);
+}
+
+.live-card-preview.is-flipped .live-card-inner {
+    transform: rotateY(180deg);
+}
+
+.live-card-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: clamp(18px, 4vw, 24px);
+    border: 1px solid rgba(255, 255, 255, 0.48);
+    border-radius: 24px;
+    color: #fffefa;
+    backface-visibility: hidden;
+    box-shadow: 0 22px 48px rgba(23, 32, 51, 0.22);
+}
+
+.live-card-face::before {
+    position: absolute;
+    inset: -40% -22% auto auto;
+    width: 78%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    content: "";
+    background: radial-gradient(circle, rgba(240, 189, 79, 0.55), transparent 68%);
+    animation: liveCardAura 6s ease-in-out infinite;
+}
+
+.live-card-face::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background:
+        linear-gradient(115deg, transparent 0 34%, rgba(255, 255, 255, 0.18) 45%, transparent 56%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 18px);
+    opacity: 0.55;
+    transform: translateX(-42%);
+    animation: liveCardShine 4.8s ease-in-out infinite;
+}
+
+.live-card-front {
+    background:
+        radial-gradient(circle at 18% 22%, rgba(240, 189, 79, 0.34), transparent 30%),
+        radial-gradient(circle at 88% 18%, rgba(22, 143, 152, 0.48), transparent 34%),
+        linear-gradient(135deg, #172033 0%, #3758d6 50%, #8a3c6b 100%);
+}
+
+.live-card-back {
+    transform: rotateY(180deg);
+    background:
+        radial-gradient(circle at 16% 24%, rgba(228, 93, 72, 0.34), transparent 30%),
+        radial-gradient(circle at 88% 10%, rgba(22, 143, 152, 0.42), transparent 34%),
+        linear-gradient(135deg, #101826 0%, #20364a 55%, #0f766e 100%);
+}
+
+.live-card-top,
+.live-card-chip-row,
+.live-card-meta,
+.live-card-signature,
+.live-card-back-note {
+    position: relative;
+    z-index: 1;
+}
+
+.live-card-top,
+.live-card-chip-row,
+.live-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.live-card-bank {
+    font-size: 0.9rem;
+    font-weight: 950;
+    letter-spacing: 0;
+}
+
+.live-card-network {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 0.72rem;
+    font-weight: 950;
+}
+
+.live-card-chip {
+    width: 48px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.44);
+    border-radius: 10px;
+    background:
+        linear-gradient(90deg, transparent 31%, rgba(23, 32, 51, 0.24) 32% 34%, transparent 35% 64%, rgba(23, 32, 51, 0.24) 65% 67%, transparent 68%),
+        linear-gradient(180deg, transparent 45%, rgba(23, 32, 51, 0.22) 46% 50%, transparent 51%),
+        linear-gradient(135deg, #f9e58c, #d6a53c);
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.34), 0 10px 18px rgba(23, 32, 51, 0.18);
+}
+
+.live-card-contactless {
+    position: relative;
+    width: 38px;
+    height: 28px;
+}
+
+.live-card-contactless::before,
+.live-card-contactless::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    border: 2px solid rgba(255, 255, 255, 0.70);
+    border-left-color: transparent;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    transform: rotate(45deg);
+}
+
+.live-card-contactless::after {
+    inset: 6px;
+}
+
+.live-card-number {
+    position: relative;
+    z-index: 1;
+    min-height: 38px;
+    font-size: clamp(1.28rem, 5vw, 1.9rem);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+    font-variant-numeric: tabular-nums;
+    transition: transform 0.24s ease, color 0.24s ease;
+}
+
+.live-card-number.is-changing,
+.live-card-meta strong.is-changing,
+.live-card-cvv.is-changing {
+    animation: cardValuePop 0.36s ease;
+}
+
+.live-card-meta small,
+.live-card-signature span,
+.live-card-back-note {
+    display: block;
+    color: rgba(255, 255, 255, 0.70);
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.live-card-meta strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.96rem;
+    font-weight: 950;
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
+}
+
+.live-card-strip {
+    position: relative;
+    z-index: 1;
+    height: 46px;
+    margin: 12px -24px 0;
+    background: rgba(5, 10, 18, 0.82);
+}
+
+.live-card-signature {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 86px;
+    align-items: center;
+    gap: 10px;
+}
+
+.live-card-signature span {
+    display: flex;
+    align-items: flex-end;
+    height: 42px;
+    padding: 0 10px 6px;
+    border-radius: 8px;
+    color: rgba(23, 32, 51, 0.58);
+    background:
+        repeating-linear-gradient(-8deg, rgba(23, 32, 51, 0.18) 0 8px, transparent 8px 16px),
+        rgba(255, 255, 255, 0.86);
+    font-size: 0.58rem;
+    text-transform: uppercase;
+}
+
+.live-card-cvv {
+    display: grid;
+    place-items: center;
+    min-height: 42px;
+    border-radius: 8px;
+    color: #172033;
+    background: rgba(255, 255, 255, 0.92);
+    font-size: 1.05rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.live-card-back-note {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.76);
+    line-height: 1.45;
+    text-transform: none;
+}
+
+@@keyframes liveCardAura {
+    50% {
+        transform: translate(-16px, 14px) scale(1.08);
+        opacity: 0.78;
+    }
+}
+
+@@keyframes liveCardShine {
+    50% {
+        transform: translateX(42%);
+    }
+}
+
+@@keyframes cardValuePop {
+    0% {
+        transform: translateY(4px);
+        opacity: 0.62;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 .otp-send-btn {
     background: linear-gradient(135deg, #168f98, #0f766e);
 }
@@ -2110,6 +2372,45 @@ QR Scan
 <div id="cardDetails" class="method-details" data-method-panel="CARD">
     <h3 class="method-title">Card Details</h3>
     <div class="field-grid">
+        <div class="real-card-stage" aria-label="Live card preview">
+            <div id="liveCardPreview" class="live-card-preview">
+                <div class="live-card-inner">
+                    <div class="live-card-face live-card-front">
+                        <div class="live-card-top">
+                            <span class="live-card-bank">showTime Pay</span>
+                            <span id="cardPreviewBrand" class="live-card-network">CARD</span>
+                        </div>
+                        <div class="live-card-chip-row">
+                            <span class="live-card-chip" aria-hidden="true"></span>
+                            <span class="live-card-contactless" aria-hidden="true"></span>
+                        </div>
+                        <div id="cardPreviewNumber" class="live-card-number">•••• •••• •••• ••••</div>
+                        <div class="live-card-meta">
+                            <span>
+                                <small>Valid Thru</small>
+                                <strong id="cardPreviewExpiry">MM/YY</strong>
+                            </span>
+                            <span>
+                                <small>Holder</small>
+                                <strong>SHOWTIME GUEST</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="live-card-face live-card-back">
+                        <div class="live-card-top">
+                            <span class="live-card-bank">showTime Pay</span>
+                            <span class="live-card-network">SECURE</span>
+                        </div>
+                        <div class="live-card-strip" aria-hidden="true"></div>
+                        <div class="live-card-signature">
+                            <span>Authorized signature</span>
+                            <strong id="cardPreviewCvv" class="live-card-cvv">•••</strong>
+                        </div>
+                        <p class="live-card-back-note">CVV appears here while you type it.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         @if(savedCard!=null)
         {
             <button type="button" class="saved-detail-btn payment-field full" onclick="fillLastPaymentDetails('CARD')">
@@ -2271,10 +2572,29 @@ document.addEventListener("DOMContentLoaded",function(){
         this.value=this.value.toLowerCase().replace(/[^a-z0-9._@@-]/g,"");
         toggleUpiBankOptions();
     });
-    document.getElementById("cardNumber")?.addEventListener("input",formatCardNumber);
-    document.getElementById("cardExpiry")?.addEventListener("input",formatCardExpiry);
+    document.getElementById("cardNumber")?.addEventListener("input",function(){
+        formatCardNumber.call(this);
+        updateCardPreview("number");
+    });
+    document.getElementById("cardNumber")?.addEventListener("focus",function(){
+        setCardPreviewFlipped(false);
+    });
+    document.getElementById("cardExpiry")?.addEventListener("input",function(){
+        formatCardExpiry.call(this);
+        updateCardPreview("expiry");
+    });
+    document.getElementById("cardExpiry")?.addEventListener("focus",function(){
+        setCardPreviewFlipped(false);
+    });
     document.getElementById("cardCvv")?.addEventListener("input",function(){
         this.value=this.value.replace(/\D/g,"").slice(0,4);
+        updateCardPreview("cvv");
+    });
+    document.getElementById("cardCvv")?.addEventListener("focus",function(){
+        setCardPreviewFlipped(true);
+    });
+    document.getElementById("cardCvv")?.addEventListener("blur",function(){
+        setCardPreviewFlipped(false);
     });
     document.getElementById("upiOtp")?.addEventListener("input",handleOtpInput);
     document.getElementById("cardOtp")?.addEventListener("input",function(){
@@ -2287,6 +2607,7 @@ document.addEventListener("DOMContentLoaded",function(){
     });
     toggleUpiBankOptions();
     toggleQR();
+    updateCardPreview();
     startPaymentTimer();
 });
 
@@ -2474,6 +2795,124 @@ function currentPaymentMethod()
     return document.querySelector('input[name="pay"]:checked')?.value || "UPI";
 }
 
+function setCardPreviewFlipped(isFlipped)
+{
+    document
+    .getElementById("liveCardPreview")
+    ?.classList
+    .toggle("is-flipped",isFlipped);
+}
+
+function animateCardPreviewValue(element)
+{
+    if(!element)
+    {
+        return;
+    }
+
+    element.classList.remove("is-changing");
+    void element.offsetWidth;
+    element.classList.add("is-changing");
+
+    setTimeout(function(){
+        element.classList.remove("is-changing");
+    },420);
+}
+
+function detectCardBrand(cardDigits)
+{
+    if(/^4/.test(cardDigits))
+    {
+        return "VISA";
+    }
+
+    if(/^(5[1-5]|2[2-7])/.test(cardDigits))
+    {
+        return "MASTER";
+    }
+
+    if(/^3[47]/.test(cardDigits))
+    {
+        return "AMEX";
+    }
+
+    if(/^(60|65|81|82|508|353|356)/.test(cardDigits))
+    {
+        return "RUPAY";
+    }
+
+    return "CARD";
+}
+
+function formatCardPreviewNumber(rawValue)
+{
+    const raw=rawValue || "";
+    const digits=raw.replace(/\D/g,"").slice(0,16);
+
+    if(raw.includes("*") && digits.length>0)
+    {
+        return "•••• •••• •••• " + digits.slice(-4).padStart(4,"•");
+    }
+
+    const padded=(digits + "••••••••••••••••").slice(0,16);
+    return padded.replace(/(.{4})/g,"$1 ").trim();
+}
+
+function formatCardPreviewCvv(rawValue)
+{
+    const digits=(rawValue || "").replace(/\D/g,"").slice(0,4);
+    const visibleLength=digits.length===4 ? 4 : 3;
+    return (digits + "••••").slice(0,visibleLength);
+}
+
+function updateCardPreview(changedPart)
+{
+    const cardInput=document.getElementById("cardNumber");
+    const expiryInput=document.getElementById("cardExpiry");
+    const cvvInput=document.getElementById("cardCvv");
+    const number=document.getElementById("cardPreviewNumber");
+    const expiry=document.getElementById("cardPreviewExpiry");
+    const cvv=document.getElementById("cardPreviewCvv");
+    const brand=document.getElementById("cardPreviewBrand");
+    const cardDigits=(cardInput?.value || "").replace(/\D/g,"").slice(0,16);
+
+    if(number)
+    {
+        number.textContent=formatCardPreviewNumber(cardInput?.value || "");
+    }
+
+    if(expiry)
+    {
+        expiry.textContent=(expiryInput?.value || "").trim() || "MM/YY";
+    }
+
+    if(cvv)
+    {
+        cvv.textContent=formatCardPreviewCvv(cvvInput?.value || "");
+    }
+
+    if(brand)
+    {
+        brand.textContent=detectCardBrand(cardDigits);
+    }
+
+    if(changedPart==="number")
+    {
+        animateCardPreviewValue(number);
+        animateCardPreviewValue(brand);
+    }
+
+    if(changedPart==="expiry")
+    {
+        animateCardPreviewValue(expiry);
+    }
+
+    if(changedPart==="cvv")
+    {
+        animateCardPreviewValue(cvv);
+    }
+}
+
 function fillLastPaymentDetails(method)
 {
     clearPaymentMessage();
@@ -2496,6 +2935,9 @@ function fillLastPaymentDetails(method)
         document.getElementById("cardNumber").value=last4 ? `**** **** **** ${last4}` : "";
         document.getElementById("cardExpiry").value=savedPaymentDetails.card.expiry || "";
         document.getElementById("cardCvv").value="";
+        updateCardPreview("number");
+        updateCardPreview("expiry");
+        updateCardPreview("cvv");
         document.getElementById("cardCvv").focus();
         showPaymentMessage("Saved card reference filled. Enter CVV to continue.","success");
         return;
@@ -2822,6 +3264,11 @@ async function toggleQR()
     document.getElementById("netOtpRow")?.classList.remove("active");
     document.getElementById("upiOtpRow")?.classList.remove("active");
 
+    if(paymentMethod==="CARD")
+    {
+        setCardPreviewFlipped(false);
+        updateCardPreview();
+    }
 
     if(paymentMethod==="QR")
     {
