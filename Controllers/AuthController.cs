@@ -45,16 +45,38 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)
         {
+            var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+            ViewBag.ReturnUrl = safeReturnUrl;
+
+            if (!string.IsNullOrWhiteSpace(HttpContext.Session.GetString("UserEmail")))
+            {
+                if (!string.IsNullOrWhiteSpace(safeReturnUrl))
+                {
+                    return Redirect(safeReturnUrl);
+                }
+
+                if (int.TryParse(HttpContext.Session.GetString("UserId"), out var currentUserId) &&
+                    IsDashboardHomeUser(currentUserId))
+                {
+                    return RedirectToAction("Dashboard", "Admin");
+                }
+
+                return RedirectToAction("ShowTime", "Home");
+            }
+
             return View();
         }
 
        [HttpPost]
-public async Task<IActionResult> Login(string email, string password)
+public async Task<IActionResult> Login(string email, string password, string? returnUrl = null)
 {
     try
     {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        ViewBag.ReturnUrl = safeReturnUrl;
+
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
             // Previous wording: "Missing credentials. The show cannot start without email and password."
@@ -85,7 +107,7 @@ public async Task<IActionResult> Login(string email, string password)
             {
                 if (IsArchivePasswordValid(password, archivedAccount.PasswordHash))
                 {
-                    PrepareRecoveryView(archivedAccount, email);
+                    PrepareRecoveryView(archivedAccount, email, safeReturnUrl);
                     await _activityLogger.LogAsync(
                         userId: archivedAccount.UserId > int.MaxValue ? null : (int)archivedAccount.UserId,
                         action: "DELETED_ACCOUNT_LOGIN",
@@ -126,7 +148,7 @@ if (!user.is_active || user.is_deleted)
     {
         if (IsArchivePasswordValid(password, archivedAccount.PasswordHash))
         {
-            PrepareRecoveryView(archivedAccount, email);
+            PrepareRecoveryView(archivedAccount, email, safeReturnUrl);
             await _activityLogger.LogAsync(
                 userId: user.Id,
                 action: "DELETED_ACCOUNT_LOGIN",
@@ -190,6 +212,11 @@ HttpContext.Session.SetString(
                 status: "SUCCESS",
                 isError: 0
             );
+
+            if (!string.IsNullOrWhiteSpace(safeReturnUrl))
+            {
+                return Redirect(safeReturnUrl);
+            }
 
             if (IsDashboardHomeUser(user.Id))
             {
@@ -292,10 +319,12 @@ HttpContext.Session.SetString(
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RecoverDeletedAccount(long archiveId, string recoveryChoice)
+        public async Task<IActionResult> RecoverDeletedAccount(long archiveId, string recoveryChoice, string? returnUrl = null)
         {
             try
             {
+                var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+                ViewBag.ReturnUrl = safeReturnUrl;
                 recoveryChoice = recoveryChoice?.Trim() ?? "";
                 var pendingArchiveId = HttpContext.Session.GetString("PendingRecoveryArchiveId");
                 var pendingEmail = HttpContext.Session.GetString("PendingRecoveryEmail");
@@ -367,6 +396,11 @@ HttpContext.Session.SetString(
                     isError: 0);
 
                 TempData["Success"] = "Account recovered. Your saved data is available again.";
+                if (!string.IsNullOrWhiteSpace(safeReturnUrl))
+                {
+                    return Redirect(safeReturnUrl);
+                }
+
                 return RedirectToAction("MyProfile", "Profile");
             }
             catch (PostgresException ex)
@@ -425,14 +459,31 @@ HttpContext.Session.SetString(
             }
         }
 
-        private void PrepareRecoveryView(RecoverableAccount archivedAccount, string email)
+        private void PrepareRecoveryView(RecoverableAccount archivedAccount, string email, string? returnUrl)
         {
             ViewBag.RecoverArchiveId = archivedAccount.ArchiveId;
             ViewBag.RecoverEmail = email;
             ViewBag.RecoverUntil = archivedAccount.RecoverUntil.ToLocalTime().ToString("dd MMM yyyy hh:mm tt");
+            ViewBag.ReturnUrl = returnUrl;
             HttpContext.Session.SetString("PendingRecoveryArchiveId", archivedAccount.ArchiveId.ToString());
             HttpContext.Session.SetString("PendingRecoveryEmail", email);
             HttpContext.Session.SetString("PendingRecoveryExpiresUtc", DateTime.UtcNow.AddMinutes(10).ToString("O"));
+        }
+
+        private string? GetSafeReturnUrl(string? returnUrl)
+        {
+            if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
+            {
+                return null;
+            }
+
+            if (returnUrl.StartsWith("/Auth/Login", StringComparison.OrdinalIgnoreCase) ||
+                returnUrl.StartsWith("/Auth/Logout", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return returnUrl;
         }
 
         private void ClearPendingRecovery()

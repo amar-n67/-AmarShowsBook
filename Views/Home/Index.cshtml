@@ -426,6 +426,12 @@ data-time="@showStart.TimeOfDay.TotalMinutes.ToString(System.Globalization.Cultu
 
 </div>
 
+@{
+    var seatMapUrl = $"/Booking/Seats/{item.ScheduleId}";
+    var bookingActionUrl = isLoggedIn
+        ? seatMapUrl
+        : $"/Auth/Login?returnUrl={System.Uri.EscapeDataString(seatMapUrl)}";
+}
 
 <div class="card-actions">
 <a
@@ -440,9 +446,9 @@ onclick="event.preventDefault();event.stopPropagation();">
 
 <a
 class="btn btn-primary"
-href="/Booking/Seats/@item.ScheduleId"
-title="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")"
-aria-label="@(isLoggedIn ? "Book Ticket" : "Login required to book tickets")">
+href="@bookingActionUrl"
+title="@(isLoggedIn ? "Book Ticket" : "Login to book this show")"
+aria-label="@(isLoggedIn ? "Book Ticket" : "Login to book this show")">
 
 <span class="action-icon" aria-hidden="true">🎟</span>
 <span>@(isLoggedIn ? "Book" : "Login")</span>

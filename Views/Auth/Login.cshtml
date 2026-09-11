@@ -32,6 +32,7 @@
             </div>
 
             <form method="post" novalidate onsubmit="return validateLoginForm()">
+                <input type="hidden" name="returnUrl" value="@(ViewBag.ReturnUrl ?? "")" />
                 <div class="auth-field mb-3">
                     <label>Email</label>
                     <input name="email" type="email" class="form-control" placeholder="artist@gmail.com" required />
@@ -79,6 +80,7 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="archiveId" value="@ViewBag.RecoverArchiveId" />
                     <input type="hidden" name="recoveryChoice" value="recover" />
+                    <input type="hidden" name="returnUrl" value="@(ViewBag.ReturnUrl ?? "")" />
                     <div class="recovery-actions">
                         <a href="/Auth/Login" class="btn btn-secondary btn-sm">Cancel</a>
                         <button type="submit" class="btn btn-success btn-sm">Recover Account</button>

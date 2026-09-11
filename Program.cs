@@ -120,7 +120,7 @@ async (context, next) =>
 app.MapControllerRoute(
 name:"default",
 pattern:
-"{controller=Auth}/{action=Login}/{id?}"
+"{controller=Home}/{action=ShowTime}/{id?}"
 );
 
 // Startup keeps old databases usable by creating the small tables and views that newer pages depend on.
