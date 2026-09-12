@@ -1201,13 +1201,34 @@
 
         .final-note {
             grid-template-columns: 1fr;
-            justify-items: center;
-            text-align: center;
+            justify-items: stretch;
+            text-align: left;
+        }
+
+        .final-ready-content {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
+            grid-template-areas:
+                "title actions"
+                "copy copy";
+            align-items: center;
+            column-gap: 16px;
+            row-gap: 12px;
+            width: 100%;
+        }
+
+        .final-ready-content h2 {
+            grid-area: title;
+        }
+
+        .final-ready-content p {
+            grid-area: copy;
         }
 
         .final-cta h2 {
-            margin: 0 0 10px;
+            margin: 0;
             font-size: clamp(1.55rem, 4vw, 2.7rem);
+            line-height: 1.05;
         }
 
         .final-cta p {
@@ -1218,20 +1239,27 @@
         }
 
         .final-note p {
-            margin: 0 auto;
+            margin: 0;
         }
 
         .final-actions {
+            grid-area: actions;
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             justify-content: flex-end;
-            gap: 12px;
-            width: min(100%, 430px);
-            margin: 20px 0 0 auto;
+            gap: clamp(6px, 2vw, 12px);
+            width: min(100%, 360px);
+            margin: 0 0 0 auto;
         }
 
         .final-actions .btn {
-            flex: 1 1 170px;
+            flex: 1 1 0;
+            width: auto;
+            min-width: 0;
+            padding-inline: clamp(8px, 2.5vw, 16px);
+            font-size: clamp(0.78rem, 3.2vw, 0.95rem);
+            overflow-wrap: normal;
+            white-space: nowrap;
         }
 
         .final-cta .btn-soft {
@@ -1569,7 +1597,7 @@
             }
 
             .final-note {
-                justify-items: center;
+                justify-items: stretch;
             }
         }
 
@@ -1712,6 +1740,27 @@
             .contact-arrow {
                 display: none;
             }
+
+            .final-ready-content {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "title"
+                    "copy"
+                    "actions";
+                row-gap: 10px;
+            }
+
+            .final-actions {
+                width: 100%;
+                margin: 4px 0 0;
+            }
+
+            .final-actions .btn {
+                width: auto;
+                min-height: 38px;
+                padding-inline: 10px;
+                font-size: 0.8rem;
+            }
         }
 
         @@media (max-width: 420px) {
@@ -1795,6 +1844,12 @@
             .final-cta {
                 border-radius: 20px;
                 padding: 22px 16px;
+            }
+
+            .final-actions .btn {
+                min-height: 36px;
+                padding-inline: 7px;
+                font-size: clamp(0.68rem, 2.8vw, 0.8rem);
             }
         }
 
@@ -2060,7 +2115,7 @@
         </section>
 
         <section class="final-cta final-note" aria-labelledby="readyTitle">
-            <div>
+            <div class="final-ready-content">
                 <h2 id="readyTitle">Ready for the show list?</h2>
                 <p>Continue to the public home listing, pick a show, and login only when booking is needed.</p>
                 <div class="final-actions" aria-label="Final intro actions">
