@@ -26,53 +26,109 @@ namespace AmarShowsBook.Migrations
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("action");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<long?>("EntityId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("entity_id");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("entity_type");
 
                     b.Property<string>("ErrorCode")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("error_code");
 
                     b.Property<string>("ErrorMessage")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("error_message");
 
                     b.Property<int>("IsError")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("is_error");
 
                     b.Property<string>("Module")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("module");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("status");
 
                     b.Property<long?>("UserId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
                     b.ToTable("activity_logs", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.Admin.ApplicationVersion", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_current");
+
+                    b.Property<string>("ReleaseNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("release_notes");
+
+                    b.Property<string>("ReleaseTitle")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("release_title");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VersionNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("version_number");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("application_versions", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Admin.DeletedUser", b =>
@@ -192,6 +248,85 @@ namespace AmarShowsBook.Migrations
                     b.ToTable("refund_action_logs");
                 });
 
+            modelBuilder.Entity("AmarShowsBook.Models.Admin.VwCouponUsage", b =>
+                {
+                    b.Property<long?>("BookingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("booking_id");
+
+                    b.Property<string>("BookingRef")
+                        .HasColumnType("text")
+                        .HasColumnName("booking_ref");
+
+                    b.Property<string>("CouponCode")
+                        .HasColumnType("text")
+                        .HasColumnName("coupon_code");
+
+                    b.Property<long>("CouponId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("coupon_id");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("discount_amount");
+
+                    b.Property<decimal?>("FinalAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("final_amount");
+
+                    b.Property<decimal?>("OriginalAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("original_amount");
+
+                    b.Property<string>("ShowName")
+                        .HasColumnType("text")
+                        .HasColumnName("show_name");
+
+                    b.Property<DateTime?>("ShowTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("show_time");
+
+                    b.Property<string>("ShowType")
+                        .HasColumnType("text")
+                        .HasColumnName("show_type");
+
+                    b.Property<long?>("TransactionId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("transaction_id");
+
+                    b.Property<string>("TransactionRef")
+                        .HasColumnType("text")
+                        .HasColumnName("transaction_ref");
+
+                    b.Property<long>("UsageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("usage_id");
+
+                    b.Property<string>("UsageStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("usage_status");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<string>("UserEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("user_email");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("text")
+                        .HasColumnName("user_name");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_coupon_usage_admin", (string)null);
+                });
+
             modelBuilder.Entity("AmarShowsBook.Models.Admin.VwEnterpriseActivityLog", b =>
                 {
                     b.Property<string>("action")
@@ -236,66 +371,72 @@ namespace AmarShowsBook.Migrations
             modelBuilder.Entity("AmarShowsBook.Models.Admin.VwNotificationCenter", b =>
                 {
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("delivered_at");
 
                     b.Property<string>("FailureReason")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("failure_reason");
 
                     b.Property<int>("IsError")
                         .HasColumnType("integer")
                         .HasColumnName("is_error");
 
                     b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("message");
 
                     b.Property<long>("NotificationId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("notification_id");
 
                     b.Property<string>("NotificationType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("notification_type");
 
                     b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("priority");
 
                     b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_at");
 
                     b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("retry_count");
 
                     b.Property<DateTime?>("SentAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
 
                     b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("status");
 
                     b.Property<string>("TemplateCode")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("template_code");
 
                     b.Property<string>("TemplateName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("template_name");
 
                     b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("title");
 
                     b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_email");
 
                     b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_name");
 
                     b.ToTable((string)null);
 
@@ -415,8 +556,8 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_transaction_at");
 
-                    b.Property<int>("LoyaltyPoints")
-                        .HasColumnType("integer")
+                    b.Property<long>("LoyaltyPoints")
+                        .HasColumnType("bigint")
                         .HasColumnName("loyalty_points");
 
                     b.Property<decimal>("TotalCredits")
@@ -427,8 +568,8 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("numeric")
                         .HasColumnName("total_debits");
 
-                    b.Property<int>("TotalWalletTransactions")
-                        .HasColumnType("integer")
+                    b.Property<long>("TotalWalletTransactions")
+                        .HasColumnType("bigint")
                         .HasColumnName("total_wallet_transactions");
 
                     b.Property<string>("UserEmail")
@@ -458,6 +599,240 @@ namespace AmarShowsBook.Migrations
                     b.ToTable("vw_wallet_summary");
 
                     b.ToView("vw_wallet_summary", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.ApplicationMenu", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<string>("IconName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("icon_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsVisible")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_visible");
+
+                    b.Property<string>("MenuCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("menu_code");
+
+                    b.Property<int>("MenuLevel")
+                        .HasColumnType("integer")
+                        .HasColumnName("menu_level");
+
+                    b.Property<string>("MenuName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("menu_name");
+
+                    b.Property<long?>("ModuleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("module_id");
+
+                    b.Property<long?>("ParentMenuId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("parent_menu_id");
+
+                    b.Property<string>("RoutePath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("route_path");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("application_menus", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.ApplicationModule", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<string>("IconName")
+                        .HasColumnType("text")
+                        .HasColumnName("icon_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("ModuleCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("module_code");
+
+                    b.Property<string>("ModuleDescription")
+                        .HasColumnType("text")
+                        .HasColumnName("module_description");
+
+                    b.Property<string>("ModuleName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("module_name");
+
+                    b.Property<string>("RoutePath")
+                        .HasColumnType("text")
+                        .HasColumnName("route_path");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("application_modules", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.Booking", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("BookedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("booked_at");
+
+                    b.Property<string>("BookingRef")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("booking_ref");
+
+                    b.Property<string>("BookingSource")
+                        .HasColumnType("text")
+                        .HasColumnName("booking_source");
+
+                    b.Property<string>("BookingStatus")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("booking_status");
+
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("text")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<decimal?>("ConvenienceFee")
+                        .HasColumnType("numeric")
+                        .HasColumnName("convenience_fee");
+
+                    b.Property<long?>("CouponId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("coupon_id");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("discount_amount");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<decimal?>("OriginalAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("original_amount");
+
+                    b.Property<decimal?>("PayableAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("payable_amount");
+
+                    b.Property<string>("PaymentStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("payment_status");
+
+                    b.Property<string>("RefundStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("refund_status");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("integer")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<decimal?>("TaxAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("tax_amount");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_amount");
+
+                    b.Property<int>("TotalTickets")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_tickets");
+
+                    b.Property<long?>("TransactionId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("transaction_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<decimal?>("WalletAmountUsed")
+                        .HasColumnType("numeric")
+                        .HasColumnName("wallet_amount_used");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("bookings", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.BookingDraft", b =>
@@ -491,6 +866,98 @@ namespace AmarShowsBook.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("booking_drafts", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.BookingItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AttendeeEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("attendee_email");
+
+                    b.Property<string>("AttendeeMobile")
+                        .HasColumnType("text")
+                        .HasColumnName("attendee_mobile");
+
+                    b.Property<string>("AttendeeName")
+                        .HasColumnType("text")
+                        .HasColumnName("attendee_name");
+
+                    b.Property<long>("BookingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("booking_id");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("TicketType")
+                        .HasColumnType("text")
+                        .HasColumnName("ticket_type");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_price");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("booking_items", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.BookingSeat", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("BookingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("booking_id");
+
+                    b.Property<long?>("BookingItemId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("booking_item_id");
+
+                    b.Property<string>("BookingStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("booking_status");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("QrCode")
+                        .HasColumnType("text")
+                        .HasColumnName("qr_code");
+
+                    b.Property<long>("ScreenSeatId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("screen_seat_id");
+
+                    b.Property<decimal?>("SeatPrice")
+                        .HasColumnType("numeric")
+                        .HasColumnName("seat_price");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("booking_seats", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.BookingTransaction", b =>
@@ -610,6 +1077,10 @@ namespace AmarShowsBook.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("Description");
+
                     b.Property<int>("Duration")
                         .HasColumnType("integer");
 
@@ -617,13 +1088,25 @@ namespace AmarShowsBook.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Images")
+                        .HasColumnType("text")
+                        .HasColumnName("Images");
+
+                    b.Property<string>("PosterUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("PosterUrl");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TrailerUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("TrailerUrl");
+
                     b.HasKey("Id");
 
-                    b.ToTable("LiveStreams");
+                    b.ToTable("LiveStreams", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Location", b =>
@@ -663,11 +1146,27 @@ namespace AmarShowsBook.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("Description");
+
                     b.Property<string>("Director")
                         .HasColumnType("text");
 
                     b.Property<int>("Duration")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Images")
+                        .HasColumnType("text")
+                        .HasColumnName("Images");
+
+                    b.Property<decimal?>("ImdbRating")
+                        .HasColumnType("numeric")
+                        .HasColumnName("ImdbRating");
+
+                    b.Property<string>("PosterUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("PosterUrl");
 
                     b.Property<string>("Producer")
                         .IsRequired()
@@ -677,9 +1176,40 @@ namespace AmarShowsBook.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TrailerUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("TrailerUrl");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Movies");
+                    b.ToTable("Movies", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.PaymentSession", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("BookingId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SessionToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PaymentSessions");
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.Permission", b =>
@@ -904,6 +1434,36 @@ namespace AmarShowsBook.Migrations
                     b.ToTable("roles");
                 });
 
+            modelBuilder.Entity("AmarShowsBook.Models.RolePermission", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("granted_at");
+
+                    b.Property<long?>("GrantedBy")
+                        .HasColumnType("bigint")
+                        .HasColumnName("granted_by");
+
+                    b.Property<long>("PermissionId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("permission_id");
+
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("role_permissions", (string)null);
+                });
+
             modelBuilder.Entity("AmarShowsBook.Models.ScreenSeat", b =>
                 {
                     b.Property<long>("Id")
@@ -916,6 +1476,10 @@ namespace AmarShowsBook.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ScheduleId");
 
                     b.Property<long>("ScreenId")
                         .HasColumnType("bigint")
@@ -941,6 +1505,10 @@ namespace AmarShowsBook.Migrations
                         .HasColumnName("seat_row");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ScheduleId");
+
+                    b.HasIndex("ScreenId");
 
                     b.ToTable("screen_seats", (string)null);
                 });
@@ -1004,6 +1572,10 @@ namespace AmarShowsBook.Migrations
                     b.Property<int?>("MovieId")
                         .HasColumnType("integer");
 
+                    b.Property<long?>("ScreenId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("screen_id");
+
                     b.Property<int?>("StandupShowId")
                         .HasColumnType("integer");
 
@@ -1022,9 +1594,11 @@ namespace AmarShowsBook.Migrations
 
                     b.HasIndex("MovieId");
 
+                    b.HasIndex("ScreenId");
+
                     b.HasIndex("StandupShowId");
 
-                    b.ToTable("ShowSchedules");
+                    b.ToTable("ShowSchedules", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.StandupShow", b =>
@@ -1039,16 +1613,32 @@ namespace AmarShowsBook.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("Description");
+
                     b.Property<int>("Duration")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Images")
+                        .HasColumnType("text")
+                        .HasColumnName("Images");
+
+                    b.Property<string>("PosterUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("PosterUrl");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TrailerUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("TrailerUrl");
+
                     b.HasKey("Id");
 
-                    b.ToTable("StandupShows");
+                    b.ToTable("StandupShows", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.State", b =>
@@ -1071,6 +1661,191 @@ namespace AmarShowsBook.Migrations
                     b.HasIndex("CountryId");
 
                     b.ToTable("States");
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.Ticket", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AttendeeName")
+                        .HasColumnType("text")
+                        .HasColumnName("attendee_name");
+
+                    b.Property<long>("BookingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("booking_id");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("IssuedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("issued_at");
+
+                    b.Property<string>("QrCode")
+                        .HasColumnType("text")
+                        .HasColumnName("qr_code");
+
+                    b.Property<DateTime?>("QrGeneratedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("qr_generated_at");
+
+                    b.Property<string>("SeatNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("seat_number");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ticket_number");
+
+                    b.Property<string>("TicketStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("ticket_status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("ValidationStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("validation_status");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("tickets", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.Transaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("amount");
+
+                    b.Property<long?>("BookingId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("booking_id");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DeviceFingerprint")
+                        .HasColumnType("text")
+                        .HasColumnName("device_fingerprint");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("text")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<decimal?>("FraudScore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("fraud_score");
+
+                    b.Property<string>("GatewayName")
+                        .HasColumnType("text")
+                        .HasColumnName("gateway_name");
+
+                    b.Property<string>("GatewayStatusCode")
+                        .HasColumnType("text")
+                        .HasColumnName("gateway_status_code");
+
+                    b.Property<string>("GatewayTransactionId")
+                        .HasColumnType("text")
+                        .HasColumnName("gateway_transaction_id");
+
+                    b.Property<DateTime?>("InitiatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("initiated_at");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text")
+                        .HasColumnName("ip_address");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<bool?>("IsSuspicious")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_suspicious");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("text")
+                        .HasColumnName("payment_method");
+
+                    b.Property<string>("PaymentSource")
+                        .HasColumnType("text")
+                        .HasColumnName("payment_source");
+
+                    b.Property<string>("ReconciliationStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("reconciliation_status");
+
+                    b.Property<string>("RefundStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("refund_status");
+
+                    b.Property<decimal?>("RefundedAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("refunded_amount");
+
+                    b.Property<int?>("RetryCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("retry_count");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TransactionRef")
+                        .HasColumnType("text")
+                        .HasColumnName("transaction_ref");
+
+                    b.Property<string>("TransactionType")
+                        .HasColumnType("text")
+                        .HasColumnName("transaction_type");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("text")
+                        .HasColumnName("user_agent");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("transactions", (string)null);
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.User", b =>
@@ -1178,6 +1953,78 @@ namespace AmarShowsBook.Migrations
                     b.ToTable("user_role_mappings");
                 });
 
+            modelBuilder.Entity("AmarShowsBook.Models.Venue", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text")
+                        .HasColumnName("address");
+
+                    b.Property<string>("City")
+                        .HasColumnType("text")
+                        .HasColumnName("city");
+
+                    b.Property<string>("ContactEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("contact_email");
+
+                    b.Property<string>("ContactMobile")
+                        .HasColumnType("text")
+                        .HasColumnName("contact_mobile");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("text")
+                        .HasColumnName("country");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("PostalCode")
+                        .HasColumnType("text")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("State")
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.Property<int>("TotalScreens")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_screens");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VenueCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("venue_code");
+
+                    b.Property<string>("VenueName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("venue_name");
+
+                    b.Property<string>("VenueType")
+                        .HasColumnType("text")
+                        .HasColumnName("venue_type");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("venues", (string)null);
+                });
+
             modelBuilder.Entity("AmarShowsBook.Models.ViewModels.AdminTransactionViewModel", b =>
                 {
                     b.Property<decimal>("Amount")
@@ -1236,37 +2083,198 @@ namespace AmarShowsBook.Migrations
                     b.ToView("vw_admin_transaction_complete", (string)null);
                 });
 
+            modelBuilder.Entity("AmarShowsBook.Models.ViewModels.DeveloperVM", b =>
+                {
+                    b.Property<string>("Achievements")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DeveloperId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Education")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ExperienceYears")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FacebookUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FullName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GitHubUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("InstagramUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LinkedInUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfileImage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Projects")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResumeUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Skills")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Technologies")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TwitterUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("YoutubeUrl")
+                        .HasColumnType("text");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vwDeveloperProfile", (string)null);
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.ViewModels.HomeShowViewModel", b =>
+                {
+                    b.Property<string>("Cast")
+                        .HasColumnType("text")
+                        .HasColumnName("cast");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("country");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("Description");
+
+                    b.Property<string>("Director")
+                        .HasColumnType("text")
+                        .HasColumnName("director");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_time");
+
+                    b.Property<string>("Images")
+                        .HasColumnType("text")
+                        .HasColumnName("Images");
+
+                    b.Property<decimal?>("ImdbRating")
+                        .HasColumnType("numeric")
+                        .HasColumnName("imdb_rating");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("location");
+
+                    b.Property<string>("PosterUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("PosterUrl");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("integer")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<string>("ScreenName")
+                        .HasColumnType("text")
+                        .HasColumnName("screen_name");
+
+                    b.Property<int>("ShowId")
+                        .HasColumnType("integer")
+                        .HasColumnName("show_id");
+
+                    b.Property<string>("ShowType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("show_type");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_time");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("title");
+
+                    b.Property<string>("TrailerUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("TrailerUrl");
+
+                    b.Property<string>("VenueName")
+                        .HasColumnType("text")
+                        .HasColumnName("venue_name");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_home_show_listing", (string)null);
+                });
+
             modelBuilder.Entity("AmarShowsBook.Models.VwAdminUserManagement", b =>
                 {
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
 
-                    b.Property<int>("TotalBookings")
-                        .HasColumnType("integer");
+                    b.Property<long>("TotalBookings")
+                        .HasColumnType("bigint")
+                        .HasColumnName("total_bookings");
 
-                    b.Property<decimal>("TotalSpent")
-                        .HasColumnType("numeric");
+                    b.Property<decimal?>("TotalSpent")
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_spent");
 
                     b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_email");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
 
                     b.Property<string>("UserMobile")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_mobile");
 
                     b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_name");
 
                     b.ToTable((string)null);
 
@@ -1293,6 +2301,26 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("text")
                         .HasColumnName("booking_status");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("discount_amount");
+
+                    b.Property<string>("GatewayName")
+                        .HasColumnType("text")
+                        .HasColumnName("gateway_name");
+
                     b.Property<int>("IsError")
                         .HasColumnType("integer")
                         .HasColumnName("is_error");
@@ -1300,6 +2328,10 @@ namespace AmarShowsBook.Migrations
                     b.Property<string>("LocationName")
                         .HasColumnType("text")
                         .HasColumnName("location_name");
+
+                    b.Property<decimal?>("PayableAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("payable_amount");
 
                     b.Property<string>("PaymentMethod")
                         .HasColumnType("text")
@@ -1327,9 +2359,25 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("start_time");
 
+                    b.Property<decimal?>("TaxAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("tax_amount");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric")
                         .HasColumnName("total_amount");
+
+                    b.Property<int>("TotalTickets")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_tickets");
+
+                    b.Property<string>("TransactionRef")
+                        .HasColumnType("text")
+                        .HasColumnName("transaction_ref");
+
+                    b.Property<string>("TransactionStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("transaction_status");
 
                     b.Property<string>("UserEmail")
                         .HasColumnType("text")
@@ -1354,8 +2402,8 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("booking_created_at");
 
-                    b.Property<int>("BookingId")
-                        .HasColumnType("integer")
+                    b.Property<long>("BookingId")
+                        .HasColumnType("bigint")
                         .HasColumnName("booking_id");
 
                     b.Property<string>("BookingRef")
@@ -1414,8 +2462,8 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("numeric")
                         .HasColumnName("transaction_amount");
 
-                    b.Property<int?>("TransactionId")
-                        .HasColumnType("integer")
+                    b.Property<long?>("TransactionId")
+                        .HasColumnType("bigint")
                         .HasColumnName("transaction_id");
 
                     b.Property<string>("TransactionRef")
@@ -1433,8 +2481,8 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("text")
                         .HasColumnName("user_email");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
                         .HasColumnName("user_id");
 
                     b.Property<string>("UserName")
@@ -1449,19 +2497,81 @@ namespace AmarShowsBook.Migrations
 
             modelBuilder.Entity("AmarShowsBook.Models.VwInvoiceSummary", b =>
                 {
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("integer");
+                    b.Property<string>("BookingRef")
+                        .HasColumnType("text")
+                        .HasColumnName("booking_ref");
+
+                    b.Property<decimal?>("CgstAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("cgst_amount");
+
+                    b.Property<string>("Currency")
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("CustomerEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("customer_email");
+
+                    b.Property<string>("CustomerName")
+                        .HasColumnType("text")
+                        .HasColumnName("customer_name");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("discount_amount");
+
+                    b.Property<string>("Gstin")
+                        .HasColumnType("text")
+                        .HasColumnName("gstin");
+
+                    b.Property<decimal?>("IgstAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("igst_amount");
+
+                    b.Property<DateTime?>("InvoiceDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invoice_date");
+
+                    b.Property<long>("InvoiceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<string>("InvoiceNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("invoice_number");
+
+                    b.Property<string>("InvoicePdfUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("invoice_pdf_url");
 
                     b.Property<string>("InvoiceStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("invoice_status");
+
+                    b.Property<string>("InvoiceType")
+                        .HasColumnType("text")
+                        .HasColumnName("invoice_type");
 
                     b.Property<int>("IsInvoiceError")
                         .HasColumnType("integer")
                         .HasColumnName("is_invoice_error");
 
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("numeric");
+                    b.Property<decimal?>("SgstAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("sgst_amount");
+
+                    b.Property<decimal?>("SubtotalAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("subtotal_amount");
+
+                    b.Property<decimal?>("TotalAmount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_amount");
+
+                    b.Property<string>("TransactionRef")
+                        .HasColumnType("text")
+                        .HasColumnName("transaction_ref");
 
                     b.ToTable((string)null);
 
@@ -1470,16 +2580,65 @@ namespace AmarShowsBook.Migrations
 
             modelBuilder.Entity("AmarShowsBook.Models.VwTicketValidationSummary", b =>
                 {
+                    b.Property<string>("BookingRef")
+                        .HasColumnType("text")
+                        .HasColumnName("booking_ref");
+
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("text")
+                        .HasColumnName("device_id");
+
+                    b.Property<string>("GateName")
+                        .HasColumnType("text")
+                        .HasColumnName("gate_name");
+
                     b.Property<int>("IsSecurityIssue")
                         .HasColumnType("integer")
                         .HasColumnName("is_security_issue");
 
-                    b.Property<int>("ValidationLogId")
-                        .HasColumnType("integer");
+                    b.Property<DateTime?>("LastScannedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_scanned_at");
+
+                    b.Property<string>("ScannerUser")
+                        .HasColumnType("text")
+                        .HasColumnName("scanner_user");
+
+                    b.Property<long>("TicketId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<string>("TicketNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("ticket_number");
+
+                    b.Property<string>("UserEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("user_email");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("text")
+                        .HasColumnName("user_name");
+
+                    b.Property<DateTime?>("ValidatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scanned_at");
+
+                    b.Property<int>("ValidationCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("validation_count");
+
+                    b.Property<long>("ValidationLogId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("validation_log_id");
 
                     b.Property<string>("ValidationResult")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("validation_result");
+
+                    b.Property<string>("ValidationStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("validation_status");
 
                     b.ToTable((string)null);
 
@@ -1491,6 +2650,10 @@ namespace AmarShowsBook.Migrations
                     b.Property<string>("ActionType")
                         .HasColumnType("text")
                         .HasColumnName("action_type");
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assigned_at");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -1567,8 +2730,8 @@ namespace AmarShowsBook.Migrations
                         .HasColumnType("text")
                         .HasColumnName("menu_code");
 
-                    b.Property<int>("MenuId")
-                        .HasColumnType("integer")
+                    b.Property<long>("MenuId")
+                        .HasColumnType("bigint")
                         .HasColumnName("menu_id");
 
                     b.Property<int>("MenuLevel")
@@ -1578,6 +2741,14 @@ namespace AmarShowsBook.Migrations
                     b.Property<string>("MenuName")
                         .HasColumnType("text")
                         .HasColumnName("menu_name");
+
+                    b.Property<long?>("ParentMenuId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("parent_menu_id");
+
+                    b.Property<string>("ParentMenuName")
+                        .HasColumnType("text")
+                        .HasColumnName("parent_menu_name");
 
                     b.Property<string>("RoleCode")
                         .HasColumnType("text")
@@ -1600,6 +2771,60 @@ namespace AmarShowsBook.Migrations
                     b.ToView("vw_user_application_menus", (string)null);
                 });
 
+            modelBuilder.Entity("Screen", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AudioSystem")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("audio_system");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("ScreenCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("screen_code");
+
+                    b.Property<string>("ScreenName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("screen_name");
+
+                    b.Property<string>("ScreenType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("screen_type");
+
+                    b.Property<int>("TotalSeats")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_seats");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("VenueId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("venue_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("screens", (string)null);
+                });
+
             modelBuilder.Entity("AmarShowsBook.Models.District", b =>
                 {
                     b.HasOne("AmarShowsBook.Models.State", "State")
@@ -1609,6 +2834,25 @@ namespace AmarShowsBook.Migrations
                         .IsRequired();
 
                     b.Navigation("State");
+                });
+
+            modelBuilder.Entity("AmarShowsBook.Models.ScreenSeat", b =>
+                {
+                    b.HasOne("AmarShowsBook.Models.ShowSchedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Screen", "Screen")
+                        .WithMany()
+                        .HasForeignKey("ScreenId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("Screen");
                 });
 
             modelBuilder.Entity("AmarShowsBook.Models.ShowSchedule", b =>
@@ -1621,12 +2865,17 @@ namespace AmarShowsBook.Migrations
                     b.HasOne("AmarShowsBook.Models.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("AmarShowsBook.Models.Movie", "Movie")
                         .WithMany()
                         .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Screen", "Screen")
+                        .WithMany()
+                        .HasForeignKey("ScreenId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AmarShowsBook.Models.StandupShow", "StandupShow")
@@ -1639,6 +2888,8 @@ namespace AmarShowsBook.Migrations
                     b.Navigation("Location");
 
                     b.Navigation("Movie");
+
+                    b.Navigation("Screen");
 
                     b.Navigation("StandupShow");
                 });

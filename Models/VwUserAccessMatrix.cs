@@ -36,6 +36,9 @@ namespace AmarShowsBook.Models
         [Column("action_type")]
         public string? ActionType { get; set; }
 
+        [Column("assigned_at")]
+        public DateTime? AssignedAt { get; set; }
+
         [Column("is_active")]
         public bool IsActive { get; set; }
     }

@@ -1,0 +1,1461 @@
+@model AmarShowsBook.Models.ViewModels.AdminCancellationsViewModel
+@using AmarShowsBook.Helpers
+@using System.Globalization
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Ticket Cancellations";
+    var showTypeOptions = Model.Bookings.Select(x => x.ShowType)
+        .Concat(Model.Shows.Select(x => x.ShowType))
+        .Concat(Model.RecentCancellations.Select(x => x.ShowType ?? string.Empty))
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Select(x => x.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(x => x)
+        .ToArray();
+    var showGroups = Model.Shows
+        .GroupBy(x => string.IsNullOrWhiteSpace(x.VenueName) ? "Venue not mapped" : x.VenueName)
+        .OrderBy(x => x.Key)
+        .ToList();
+    var relaunchGroups = Model.RelaunchableShows
+        .GroupBy(x => string.IsNullOrWhiteSpace(x.VenueName) ? "Venue not mapped" : x.VenueName)
+        .OrderBy(x => x.Key)
+        .ToList();
+    var theaterHistoryGroups = Model.TheaterCancellationHistory
+        .GroupBy(x => string.IsNullOrWhiteSpace(x.VenueName) ? "Venue not mapped" : x.VenueName)
+        .OrderBy(x => x.Key)
+        .ToList();
+    var recordTypeOptions = new List<string>();
+    if (Model.Bookings.Any())
+    {
+        recordTypeOptions.Add("Individual Booking");
+    }
+    if (Model.Shows.Any(x => !x.IsCancelled))
+    {
+        recordTypeOptions.Add("Future Show");
+    }
+    if (Model.Shows.Any(x => x.IsCancelled))
+    {
+        recordTypeOptions.Add("Cancelled Future Show");
+    }
+    if (Model.RelaunchableShows.Any())
+    {
+        recordTypeOptions.Add("Relaunchable Show");
+    }
+    if (Model.IndividualCancellationHistory.Any())
+    {
+        recordTypeOptions.Add("History Individual");
+    }
+    if (Model.TheaterCancellationHistory.Any())
+    {
+        recordTypeOptions.Add("History Theater");
+    }
+    ViewData["AdminFilterTarget"] = "[data-admin-filter-row]";
+    ViewData["AdminStatusLabel"] = "Record Types";
+    ViewData["AdminStatusOptions"] = recordTypeOptions;
+    ViewData["AdminMethodLabel"] = "Show Type";
+    ViewData["AdminMethodOptions"] = showTypeOptions;
+    ViewData["AdminSortOptions"] = new[]
+    {
+        "oldest|Soonest / Oldest First",
+        "newest|Latest First",
+        "title|Show / Booking A-Z",
+        "tickets|Tickets High-Low",
+        "amount|Amount High-Low"
+    };
+
+    long SortTime(DateTime value)
+    {
+        return ShowTimeFormatter.SortTicks(value);
+    }
+
+    string SortAmount(decimal value) => value.ToString(CultureInfo.InvariantCulture);
+
+    string DateTimeLocalInput(DateTime value)
+    {
+        return ShowTimeFormatter.InputValue(value);
+    }
+
+    string ShowDateTime(DateTime value) =>
+        ShowTimeFormatter.Format(value, "dd MMM yyyy, hh:mm tt");
+
+    string HistoryDateTime(DateTime? value) =>
+        value.HasValue
+            ? value.Value.ToString("dd MMM yyyy, hh:mm tt", CultureInfo.InvariantCulture)
+            : "Not saved in DB";
+
+    string HistoryTimeRange(DateTime? start, DateTime? end)
+    {
+        if (!start.HasValue && !end.HasValue)
+        {
+            return "Not saved in DB";
+        }
+
+        return $"{HistoryDateTime(start)} - {HistoryDateTime(end)}";
+    }
+}
+
+<section class="admin-page cancellation-admin-page">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="admin-page-header">
+        <div>
+            <h1 class="page-title">Ticket Cancellations</h1>
+            <p class="page-subtitle">
+                Manage individual cancellations, all future shows, theater relaunches, and cancellation history in one place.
+            </p>
+        </div>
+        <div class="admin-actions">
+            <a href="/Admin/Dashboard" class="admin-back-btn admin-page-back">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Individual Bookings</span>
+            <strong>@Model.Bookings.Count</strong>
+        </div>
+        <div class="stat-card">
+            <span>All Future Shows</span>
+            <strong>@Model.Shows.Count</strong>
+        </div>
+        <div class="stat-card">
+            <span>Relaunchable Shows</span>
+            <strong>@Model.RelaunchableShows.Count</strong>
+        </div>
+        <div class="stat-card">
+            <span>Cancelled History</span>
+            <strong>@Model.RecentCancellations.Count</strong>
+        </div>
+    </div>
+
+    <div class="cancellation-filter-anchor" data-page-filter-anchor></div>
+
+    <div class="content-tabs cancellation-content-tabs">
+        <button type="button" data-content-target="cancellation-individual" aria-expanded="false" aria-controls="cancellation-individual">
+            <span>Individual Bookings</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="cancellation-shows" aria-expanded="false" aria-controls="cancellation-shows">
+            <span>Future Shows</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="cancellation-relaunch" aria-expanded="false" aria-controls="cancellation-relaunch">
+            <span>Relaunch</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+        <button type="button" data-content-target="cancellation-history" aria-expanded="false" aria-controls="cancellation-history">
+            <span>History</span>
+            <span class="content-toggle-arrow" aria-hidden="true">↓</span>
+        </button>
+    </div>
+
+    <div class="cancellation-grid">
+        <article id="cancellation-individual" class="cancellation-panel content-section" hidden>
+            <div class="cancellation-panel-head">
+                <div>
+                    <span>Part 1</span>
+                    <h2>All Individual Bookings</h2>
+                    <p>Cancel a single user booking. Refund follows the normal cancellation flow.</p>
+                </div>
+                <button type="button" class="content-section-toggle" data-content-collapse="cancellation-individual" aria-label="Hide Individual Bookings">
+                    ↑
+                </button>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="table admin-table cancellation-table booking-cancel-table">
+                    <colgroup>
+                        <col class="booking-info-col" />
+                        <col class="booking-user-col" />
+                        <col class="booking-show-col" />
+                        <col class="cancel-form-col" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Booking</th>
+                            <th>User</th>
+                            <th>Show</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Bookings.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="empty-state">No individual active bookings found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var booking in Model.Bookings)
+                            {
+                                <tr class="cancellation-data-row"
+                                    data-admin-searchable
+                                    data-admin-filter-row
+                                    data-filter-status="Individual Booking"
+                                    data-filter-method="@booking.ShowType"
+                                    data-sort-time="@SortTime(booking.StartTime)"
+                                    data-sort-title="@($"{booking.ShowTitle} {booking.BookingRef}")"
+                                    data-sort-tickets="@booking.TotalTickets"
+                                    data-sort-amount="@SortAmount(booking.Amount)">
+                                    <td>
+                                        <div class="primary-text">@booking.BookingRef</div>
+                                        <div class="sub-text">@CurrencyFormatter.FormatRupees(booking.Amount) | @booking.TotalTickets ticket(s)</div>
+                                        <div class="sub-text seat-list">Seats: @booking.SeatNumbers</div>
+                                    </td>
+                                    <td>
+                                        <div class="primary-text">@booking.UserName</div>
+                                        <div class="sub-text email-cell">@booking.UserEmail</div>
+                                    </td>
+                                    <td>
+                                        <div class="primary-text">@booking.ShowTitle</div>
+                                        <div class="sub-text">@booking.ShowType | @ShowDateTime(booking.StartTime)</div>
+                                    </td>
+                                    <td class="cancel-action-cell">
+                                        <form asp-action="CancelIndividualBooking" method="post" class="cancel-inline-form" data-cancellation-submit-form>
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="bookingId" value="@booking.BookingId" />
+                                            <textarea name="cancellationReason" rows="2" maxlength="500" required placeholder="Reason"></textarea>
+                                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article id="cancellation-shows" class="cancellation-panel content-section" hidden>
+            <div class="cancellation-panel-head danger-zone">
+                <div>
+                    <span>Part 2</span>
+                    <h2>All Future Shows - Theater Wise</h2>
+                    <p>Shows start from the next second onward. Cancelled shows stay visible here with their status.</p>
+                </div>
+                <button type="button" class="content-section-toggle" data-content-collapse="cancellation-shows" aria-label="Hide Future Shows">
+                    ↑
+                </button>
+            </div>
+
+            @if (!Model.Shows.Any())
+            {
+                <div class="empty-state">No future theater shows found.</div>
+            }
+            else
+            {
+                <div class="theater-show-groups">
+                    @foreach (var theaterGroup in showGroups)
+                    {
+                        <section class="theater-show-group" data-cancellation-group>
+                            <div class="theater-group-box">
+                                <div>
+                                    <span class="theater-chip">Theater</span>
+                                    <strong>@theaterGroup.Key</strong>
+                                </div>
+                                <div class="sub-text">
+                                    @theaterGroup.Count() future show(s) | @theaterGroup.Count(x => x.IsCancelled) cancelled | @theaterGroup.Sum(x => x.BookingCount) booking(s) | @theaterGroup.Sum(x => x.TicketCount) ticket(s)
+                                </div>
+                            </div>
+
+                            <div class="table-wrapper theater-table-wrapper">
+                                <table class="table admin-table cancellation-table show-cancel-table">
+                                    <colgroup>
+                                        <col class="show-info-col" />
+                                        <col class="show-theater-col" />
+                                        <col class="show-ticket-col" />
+                                        <col class="cancel-form-col" />
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th>Show</th>
+                                            <th>Screen</th>
+                                            <th>Booked Tickets</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var show in theaterGroup.OrderBy(x => x.ScreenName).ThenBy(x => x.StartTime))
+                                        {
+                                            var showRecordType = show.IsCancelled ? "Cancelled Future Show" : "Future Show";
+                                            <tr class="cancellation-data-row"
+                                                data-admin-searchable
+                                                data-admin-filter-row
+                                                data-filter-status="@showRecordType"
+                                                data-filter-method="@show.ShowType"
+                                                data-sort-time="@SortTime(show.StartTime)"
+                                                data-sort-title="@show.ShowTitle"
+                                                data-sort-tickets="@show.TicketCount"
+                                                data-sort-amount="@SortAmount(show.Amount)">
+                                                <td>
+                                                    <div class="primary-text">@show.ShowTitle</div>
+                                                    <div class="sub-text">@show.ShowType | @ShowDateTime(show.StartTime)</div>
+                                                    @if (show.IsCancelled)
+                                                    {
+                                                        <span class="badge danger status-badge">Cancelled</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="primary-text">@show.VenueName</div>
+                                                    <div class="sub-text"><span class="screen-pill">@show.ScreenName</span></div>
+                                                </td>
+                                                <td>
+                                                    <div class="primary-text">@show.BookingCount booking(s)</div>
+                                                    <div class="sub-text">@show.TicketCount ticket(s) | @CurrencyFormatter.FormatRupees(show.Amount)</div>
+                                                </td>
+                                                <td class="cancel-action-cell">
+                                                    @if (show.IsCancelled)
+                                                    {
+                                                        <div class="cancelled-note">
+                                                            <strong>@show.CancellationRef</strong>
+                                                            <span>@show.CancellationReason</span>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <form asp-action="CancelWholeTheater" method="post" class="cancel-inline-form theater-cancel-form" data-cancellation-submit-form data-confirm-text="CANCEL SHOW">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="scheduleId" value="@show.ScheduleId" />
+                                                            <textarea name="cancellationReason" rows="2" maxlength="500" required placeholder="Reason"></textarea>
+                                                            <input name="confirmationText" maxlength="20" required placeholder="CANCEL SHOW" />
+                                                            <button type="submit" class="btn btn-danger btn-sm">Cancel Show</button>
+                                                        </form>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    }
+                </div>
+            }
+        </article>
+    </div>
+
+    <article id="cancellation-relaunch" class="cancellation-panel content-section mt-4" hidden>
+        <div class="cancellation-panel-head relaunch-zone">
+            <div>
+                <span>Part 3</span>
+                <h2>Relaunch Future Cancelled Shows</h2>
+                <p>Only theater cancellations can be relaunched. Individual cancelled tickets stay cancelled.</p>
+            </div>
+            <button type="button" class="content-section-toggle" data-content-collapse="cancellation-relaunch" aria-label="Hide Relaunch">
+                ↑
+            </button>
+        </div>
+
+        @if (!Model.RelaunchableShows.Any())
+        {
+            <div class="empty-state">No future cancelled theater shows available for relaunch.</div>
+        }
+        else
+        {
+            <div class="theater-show-groups relaunch-groups">
+                @foreach (var theaterGroup in relaunchGroups)
+                {
+                    <section class="theater-show-group relaunch-group" data-cancellation-group>
+                        <div class="theater-group-box">
+                            <div>
+                                <span class="theater-chip">Relaunch</span>
+                                <strong>@theaterGroup.Key</strong>
+                            </div>
+                            <div class="sub-text">@theaterGroup.Count() future cancelled show(s)</div>
+                        </div>
+
+                        <div class="table-wrapper theater-table-wrapper">
+                            <table class="table admin-table cancellation-table show-cancel-table">
+                                <colgroup>
+                                    <col class="show-info-col" />
+                                    <col class="show-theater-col" />
+                                    <col class="show-ticket-col" />
+                                    <col class="cancel-form-col" />
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>Show</th>
+                                        <th>Screen</th>
+                                        <th>Cancelled</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var show in theaterGroup.OrderBy(x => x.ScreenName).ThenBy(x => x.StartTime))
+                                    {
+                                        <tr class="cancellation-data-row"
+                                            data-admin-searchable
+                                            data-admin-filter-row
+                                            data-filter-status="Relaunchable Show"
+                                            data-filter-method="@show.ShowType"
+                                            data-sort-time="@SortTime(show.StartTime)"
+                                            data-sort-title="@show.ShowTitle"
+                                            data-sort-tickets="@show.TicketCount"
+                                            data-sort-amount="@SortAmount(show.Amount)">
+                                            <td>
+                                                <div class="primary-text">@show.ShowTitle</div>
+                                                <div class="sub-text">@show.ShowType | @ShowDateTime(show.StartTime)</div>
+                                            </td>
+                                            <td>
+                                                <div class="primary-text">@show.VenueName</div>
+                                                <div class="sub-text"><span class="screen-pill">@show.ScreenName</span></div>
+                                            </td>
+                                            <td>
+                                                <div class="primary-text">@show.CancellationRef</div>
+                                                <div class="sub-text">@show.CancelledAt</div>
+                                                <div class="sub-text cancellation-reason">@show.CancellationReason</div>
+                                            </td>
+                                            <td class="cancel-action-cell">
+                                                <form asp-action="RelaunchTheaterShow" method="post" class="cancel-inline-form theater-cancel-form relaunch-form" data-cancellation-submit-form data-confirm-text="RELAUNCH">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="cancellationId" value="@show.CancellationId" />
+                                                    <textarea name="relaunchReason" rows="2" maxlength="500" required placeholder="Relaunch reason"></textarea>
+                                                    <label class="relaunch-time-check">
+                                                        <input type="checkbox" name="relaunchSameTime" value="true" checked data-relaunch-same-time />
+                                                        Same previous time
+                                                    </label>
+                                                    <input type="hidden" name="relaunchSameTime" value="false" />
+                                                    <input type="datetime-local" name="relaunchStartTime" value="@DateTimeLocalInput(show.StartTime)" data-relaunch-start-time disabled />
+                                                    <input name="confirmationText" maxlength="20" required placeholder="RELAUNCH" />
+                                                    <button type="submit" class="btn btn-success btn-sm">Relaunch</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                }
+            </div>
+        }
+    </article>
+
+    <article id="cancellation-history" class="cancellation-panel content-section mt-4" hidden>
+        <div class="cancellation-panel-head">
+            <div>
+                <span>Part 4</span>
+                <h2>Cancelled History</h2>
+                <p>All admin cancellations are separated into individual booking and theater show history.</p>
+            </div>
+            <button type="button" class="content-section-toggle" data-content-collapse="cancellation-history" aria-label="Hide Cancelled History">
+                ↑
+            </button>
+        </div>
+
+        <div class="history-sections">
+            <section class="history-section">
+                <div class="history-section-head">
+                    <h3>Individual Booking Cancellations</h3>
+                    <span>@Model.IndividualCancellationHistory.Count item(s)</span>
+                </div>
+
+                <div class="table-wrapper history-table-wrapper">
+                    <table class="table admin-table cancellation-table history-cancel-table">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Show</th>
+                                <th>Schedule Details</th>
+                                <th>Reason</th>
+                                <th>Impact</th>
+                                <th>Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.IndividualCancellationHistory.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="empty-state">No individual booking cancellations saved yet.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.IndividualCancellationHistory)
+                                {
+                                    var individualScheduleRange = HistoryTimeRange(item.RelaunchOriginalStartTime, item.RelaunchOriginalEndTime);
+                                    <tr class="cancellation-data-row"
+                                        data-admin-searchable
+                                        data-admin-filter-row
+                                        data-filter-status="History Individual"
+                                        data-filter-method="@item.ShowType"
+                                        data-sort-time="@SortTime(item.CreatedAt)"
+                                        data-sort-title="@(item.ShowTitle ?? item.CancellationRef)"
+                                        data-sort-tickets="@item.AffectedTickets"
+                                        data-sort-amount="0">
+                                        <td>
+                                            <div class="primary-text">@item.CancellationRef</div>
+                                            <div class="sub-text">@item.CreatedAt</div>
+                                        </td>
+                                        <td>
+                                            <div class="primary-text">@(item.ShowTitle ?? "Untitled Show")</div>
+                                            <div class="sub-text">@(item.VenueName ?? "Venue not mapped") | @(item.ScreenName ?? "Screen not mapped")</div>
+                                        </td>
+                                        <td class="schedule-history-cell">
+                                            <div class="primary-text">Previous show</div>
+                                            <div class="sub-text">@individualScheduleRange</div>
+                                            <div class="sub-text">Booking #@(item.BookingId?.ToString() ?? "N/A") | Schedule #@(item.ScheduleId?.ToString() ?? "N/A")</div>
+                                        </td>
+                                        <td>
+                                            <div class="sub-text cancellation-reason">@item.Reason</div>
+                                        </td>
+                                        <td>
+                                            <div class="primary-text">@item.AffectedBookings booking(s)</div>
+                                            <div class="sub-text">@item.AffectedTickets ticket(s)</div>
+                                        </td>
+                                        <td>
+                                            <div class="primary-text">@(item.RequestedByName ?? "Admin")</div>
+                                            <div class="sub-text">@item.CreatedAt</div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="history-section">
+                <div class="history-section-head">
+                    <h3>Theater Show Cancellations</h3>
+                    <span>@Model.TheaterCancellationHistory.Count item(s)</span>
+                </div>
+
+                @if (!Model.TheaterCancellationHistory.Any())
+                {
+                    <div class="empty-state">No theater show cancellations saved yet.</div>
+                }
+                else
+                {
+                    <div class="theater-show-groups history-theater-groups">
+                        @foreach (var theaterGroup in theaterHistoryGroups)
+                        {
+                            <section class="theater-show-group" data-cancellation-group>
+                                <div class="theater-group-box">
+                                    <div>
+                                        <span class="theater-chip">History</span>
+                                        <strong>@theaterGroup.Key</strong>
+                                    </div>
+                                    <div class="sub-text">@theaterGroup.Count() cancellation record(s)</div>
+                                </div>
+
+                                <div class="table-wrapper theater-table-wrapper">
+                                    <table class="table admin-table cancellation-table history-cancel-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Reference</th>
+                                                <th>Show</th>
+                                                <th>Status</th>
+                                                <th>Schedule Details</th>
+                                                <th>Reason</th>
+                                                <th>Impact</th>
+                                                <th>Admin</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in theaterGroup.OrderByDescending(x => x.CreatedAt))
+                                            {
+                                                var theaterStatusLabel = item.IsRevoked ? "Relaunched" : "Cancelled";
+                                                var originalScheduleRange = HistoryTimeRange(item.RelaunchOriginalStartTime, item.RelaunchOriginalEndTime);
+                                                var newScheduleRange = HistoryTimeRange(item.RelaunchNewStartTime, item.RelaunchNewEndTime);
+                                                var relaunchMode = item.RelaunchSameTime ? "Same previous time" : "Changed time";
+                                                var scheduleChanged = item.IsRevoked &&
+                                                    item.RelaunchOriginalStartTime.HasValue &&
+                                                    item.RelaunchNewStartTime.HasValue &&
+                                                    (item.RelaunchOriginalStartTime.Value != item.RelaunchNewStartTime.Value ||
+                                                     item.RelaunchOriginalEndTime != item.RelaunchNewEndTime);
+                                                <tr class="cancellation-data-row"
+                                                    data-admin-searchable
+                                                    data-admin-filter-row
+                                                    data-filter-status="History Theater"
+                                                    data-filter-method="@item.ShowType"
+                                                    data-sort-time="@SortTime(item.CreatedAt)"
+                                                    data-sort-title="@(item.ShowTitle ?? item.CancellationRef)"
+                                                    data-sort-tickets="@item.AffectedTickets"
+                                                    data-sort-amount="0">
+                                                    <td>
+                                                        <div class="primary-text">@item.CancellationRef</div>
+                                                        <div class="sub-text">@item.CreatedAt</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="primary-text">@(item.ShowTitle ?? "Untitled Show")</div>
+                                                        <div class="sub-text">@((item.ShowType ?? "Show")) | @(item.VenueName ?? "Venue not mapped")</div>
+                                                        <div class="sub-text">@(item.ScreenName ?? "Screen not mapped") | Schedule #@(item.ScheduleId?.ToString() ?? "N/A")</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge @(item.IsRevoked ? "success" : "danger")">@theaterStatusLabel</span>
+                                                        @if (item.IsRevoked)
+                                                        {
+                                                            <div class="sub-text">Relaunched: @HistoryDateTime(item.RevokedAt)</div>
+                                                            <div class="sub-text">By @(item.RevokedByName ?? "Not saved in DB")</div>
+                                                        }
+                                                    </td>
+                                                    <td class="schedule-history-cell">
+                                                        @if (item.IsRevoked)
+                                                        {
+                                                            <div class="primary-text">@relaunchMode</div>
+                                                            <div class="schedule-history-line previous @(scheduleChanged ? "schedule-changed" : "")">
+                                                                <span>Previous show</span>
+                                                                <strong>@originalScheduleRange</strong>
+                                                            </div>
+                                                            <div class="schedule-history-line relaunch @(scheduleChanged ? "schedule-changed" : "")">
+                                                                <span>Relaunch show</span>
+                                                                <strong>@newScheduleRange</strong>
+                                                            </div>
+                                                            <div class="sub-text cancellation-reason">@(item.RelaunchReason ?? "Relaunch reason not saved in DB")</div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="primary-text">Cancelled schedule</div>
+                                                            <div class="sub-text">Previous show: @originalScheduleRange</div>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <div class="sub-text cancellation-reason">@item.Reason</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="primary-text">@item.AffectedBookings booking(s)</div>
+                                                        <div class="sub-text">@item.AffectedTickets ticket(s)</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="primary-text">@(item.RequestedByName ?? "Admin")</div>
+                                                        <div class="sub-text">@item.CreatedAt</div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+    </article>
+</section>
+
+<style>
+    .cancellation-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+    }
+
+    .admin-filter-panel {
+        position: relative;
+        z-index: 2;
+        margin-bottom: 22px;
+    }
+
+    .admin-filter-panel + .cancellation-admin-page {
+        margin-top: 4px;
+    }
+
+    .cancellation-filter-anchor {
+        min-height: 1px;
+        margin-bottom: 14px;
+        overflow: visible;
+        scroll-margin-top: 96px;
+    }
+
+    .content-tabs {
+        display: flex;
+        gap: 8px;
+        row-gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .cancellation-content-tabs {
+        position: relative;
+        z-index: 1;
+        clear: both;
+        margin-top: 16px;
+        margin-bottom: 18px;
+    }
+
+    .content-tabs button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 38px;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        padding: 8px 14px;
+        background: var(--admin-panel);
+        color: var(--admin-ink);
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .content-tabs button:hover,
+    .content-tabs button:focus-visible,
+    .content-tabs button.is-active {
+        border-color: var(--admin-rose);
+        background: var(--admin-night);
+        color: #ffffff;
+    }
+
+    .content-toggle-arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        font-weight: 950;
+    }
+
+    .content-section {
+        margin-bottom: 18px;
+    }
+
+    .content-section-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 38px;
+        height: 38px;
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: var(--admin-night);
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 950;
+    }
+
+    .content-section-toggle:hover,
+    .content-section-toggle:focus-visible {
+        background: var(--admin-rose);
+        color: #ffffff;
+    }
+
+    .cancellation-panel {
+        background: var(--admin-panel, #ffffff);
+        border: 1px solid var(--admin-line, rgba(17, 24, 39, .12));
+        border-radius: 8px;
+        box-shadow: var(--admin-shadow, 0 16px 40px rgba(15, 23, 42, .08));
+        overflow: hidden;
+    }
+
+    .cancellation-panel > .table-wrapper {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .cancellation-table {
+        table-layout: fixed;
+        min-width: 1040px;
+    }
+
+    .cancellation-table th,
+    .cancellation-table td {
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .cancellation-table th:first-child,
+    .cancellation-table td:first-child,
+    .cancellation-table th:last-child,
+    .cancellation-table td:last-child,
+    .cancellation-table td:has(.btn),
+    .cancellation-table td:has(form) {
+        width: auto !important;
+    }
+
+    .booking-cancel-table {
+        min-width: 1180px;
+    }
+
+    .show-cancel-table {
+        min-width: 1240px;
+    }
+
+    .history-cancel-table {
+        min-width: 1320px;
+    }
+
+    .booking-cancel-table .booking-info-col {
+        width: 230px;
+    }
+
+    .booking-cancel-table .booking-user-col {
+        width: 240px;
+    }
+
+    .booking-cancel-table .booking-show-col {
+        width: 280px;
+    }
+
+    .booking-cancel-table .cancel-form-col {
+        width: 430px;
+    }
+
+    .show-cancel-table .show-info-col {
+        width: 330px;
+    }
+
+    .show-cancel-table .show-theater-col {
+        width: 230px;
+    }
+
+    .show-cancel-table .show-ticket-col {
+        width: 190px;
+    }
+
+    .show-cancel-table .cancel-form-col {
+        width: 490px;
+    }
+
+    .history-cancel-table th:nth-child(1),
+    .history-cancel-table td:nth-child(1) {
+        width: 170px;
+    }
+
+    .history-cancel-table th:nth-child(2),
+    .history-cancel-table td:nth-child(2) {
+        width: 280px;
+    }
+
+    .history-cancel-table th:nth-child(3),
+    .history-cancel-table td:nth-child(3) {
+        width: 180px;
+    }
+
+    .history-cancel-table th:nth-child(4),
+    .history-cancel-table td:nth-child(4) {
+        width: 280px;
+    }
+
+    .history-cancel-table th:nth-child(5),
+    .history-cancel-table td:nth-child(5) {
+        width: 230px;
+    }
+
+    .history-cancel-table th:nth-child(6),
+    .history-cancel-table td:nth-child(6) {
+        width: 180px;
+    }
+
+    .history-cancel-table th:nth-child(7),
+    .history-cancel-table td:nth-child(7) {
+        width: 190px;
+    }
+
+    .cancel-action-cell {
+        min-width: 0;
+        width: auto !important;
+        white-space: normal;
+    }
+
+    .cancellation-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--admin-line, rgba(17, 24, 39, .12));
+        background: var(--admin-panel-strong, #f8fafc);
+    }
+
+    .cancellation-panel-head span {
+        color: var(--admin-gold, #b58224);
+        font-size: .76rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .cancellation-panel-head h2 {
+        margin: 2px 0 0;
+        color: var(--admin-ink, #111827);
+        font-size: 1.05rem;
+        font-weight: 800;
+    }
+
+    .cancellation-panel-head p {
+        margin: 4px 0 0;
+        color: var(--admin-muted, #64748b);
+        font-size: .86rem;
+        font-weight: 600;
+    }
+
+    .danger-zone span {
+        color: #dc2626;
+    }
+
+    .relaunch-zone span {
+        color: #15803d;
+    }
+
+    .status-badge {
+        margin-top: 8px;
+    }
+
+    .cancelled-note {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+        padding: 10px 12px;
+        border: 1px solid rgba(220, 38, 38, .24);
+        border-radius: 8px;
+        background: rgba(254, 226, 226, .74);
+        color: #7f1d1d;
+        font-size: .82rem;
+        font-weight: 750;
+    }
+
+    .cancelled-note span {
+        overflow-wrap: anywhere;
+        font-weight: 650;
+    }
+
+    .theater-show-groups {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .theater-show-group {
+        border: 1px solid color-mix(in srgb, var(--admin-gold, #b58224) 26%, var(--admin-line, rgba(17, 24, 39, .12)));
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--admin-panel, #ffffff);
+    }
+
+    .theater-show-group[hidden] {
+        display: none;
+    }
+
+    .theater-table-wrapper {
+        border-width: 1px 0 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .theater-group-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 16px;
+        color: var(--admin-ink, #111827);
+        background: color-mix(in srgb, var(--admin-gold, #b58224) 12%, var(--admin-panel, #ffffff));
+    }
+
+    .theater-group-box strong {
+        display: block;
+        margin-top: 3px;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .theater-chip,
+    .screen-pill {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 900;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .theater-chip {
+        padding: 5px 8px;
+        color: #7c2d12;
+        background: #fed7aa;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .screen-pill {
+        padding: 5px 9px;
+        color: var(--admin-ink, #111827);
+        background: color-mix(in srgb, var(--admin-line, rgba(17, 24, 39, .16)) 36%, transparent);
+    }
+
+    .cancel-inline-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(88px, auto);
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .theater-cancel-form {
+        grid-template-columns: minmax(0, 1fr) 118px minmax(104px, auto);
+        min-width: 0;
+    }
+
+    .relaunch-form {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+    }
+
+    .relaunch-time-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 38px;
+        margin: 0;
+        color: var(--admin-ink, #111827);
+        font-size: .82rem;
+        font-weight: 850;
+    }
+
+    .relaunch-time-check input {
+        width: auto;
+        min-height: auto;
+    }
+
+    .relaunch-form button {
+        background: #15803d;
+        border-color: #15803d;
+        color: #fff;
+    }
+
+    .cancel-inline-form textarea,
+    .cancel-inline-form input {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--admin-line, rgba(17, 24, 39, .16));
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--admin-ink, #111827);
+        background: var(--admin-panel, #ffffff);
+        font-size: .86rem;
+        resize: vertical;
+        min-width: 0;
+    }
+
+    .cancel-inline-form button {
+        white-space: nowrap;
+        border-radius: 999px;
+        font-weight: 800;
+        min-height: 38px;
+    }
+
+    .seat-list,
+    .cancellation-reason {
+        max-width: 380px;
+        white-space: normal;
+    }
+
+    .schedule-history-cell {
+        min-width: 240px;
+        max-width: 360px;
+    }
+
+    .schedule-history-cell .primary-text,
+    .schedule-history-cell .sub-text {
+        white-space: normal;
+    }
+
+    .schedule-history-line {
+        display: grid;
+        gap: 2px;
+        margin-top: 7px;
+        padding: 9px 10px;
+        border: 1px solid var(--admin-line, rgba(17, 24, 39, .12));
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--admin-panel-strong, #f8fafc) 86%, transparent);
+    }
+
+    .schedule-history-line span {
+        color: var(--admin-muted, #64748b);
+        font-size: .7rem;
+        font-weight: 900;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .schedule-history-line strong {
+        color: var(--admin-ink, #111827);
+        font-size: .78rem;
+        font-weight: 850;
+        line-height: 1.35;
+    }
+
+    .schedule-history-line.previous.schedule-changed {
+        border-color: #fbbf24;
+        background: #fffbeb;
+    }
+
+    .schedule-history-line.previous.schedule-changed span,
+    .schedule-history-line.previous.schedule-changed strong {
+        color: #92400e;
+    }
+
+    .schedule-history-line.relaunch.schedule-changed {
+        border-color: #86efac;
+        background: #ecfdf5;
+    }
+
+    .schedule-history-line.relaunch.schedule-changed span,
+    .schedule-history-line.relaunch.schedule-changed strong {
+        color: #166534;
+    }
+
+    .history-sections {
+        display: grid;
+        gap: 18px;
+        padding: 16px;
+    }
+
+    .history-section {
+        border: 1px solid var(--admin-line, rgba(17, 24, 39, .12));
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--admin-panel, #fff);
+    }
+
+    .history-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--admin-line, rgba(17, 24, 39, .12));
+        background: var(--admin-panel-strong, #f8fafc);
+    }
+
+    .history-section-head h3 {
+        margin: 0;
+        color: var(--admin-ink, #111827);
+        font-size: .98rem;
+        font-weight: 900;
+    }
+
+    .history-section-head span {
+        color: var(--admin-muted, #64748b);
+        font-size: .78rem;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    .history-table-wrapper {
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    html[data-theme="dark"] .cancellation-panel,
+    html[data-theme="dark"] .theater-show-group,
+    html[data-theme="dark"] .history-section,
+    html[data-theme="dark"] .cancel-inline-form textarea,
+    html[data-theme="dark"] .cancel-inline-form input {
+        background: #111827;
+        color: #f8fafc;
+        border-color: rgba(248, 250, 252, .18);
+    }
+
+    html[data-theme="dark"] .cancellation-panel-head {
+        background: #1f2937;
+    }
+
+    html[data-theme="dark"] .cancellation-panel-head h2 {
+        color: #f8fafc;
+    }
+
+    html[data-theme="dark"] .cancellation-panel-head p {
+        color: #cbd5e1;
+    }
+
+    html[data-theme="dark"] .theater-group-box {
+        background: rgba(180, 131, 39, .16);
+    }
+
+    html[data-theme="dark"] .theater-group-box,
+    html[data-theme="dark"] .screen-pill {
+        color: #f8fafc;
+    }
+
+    html[data-theme="dark"] .screen-pill {
+        background: rgba(248, 250, 252, .12);
+    }
+
+    html[data-theme="dark"] .cancelled-note {
+        background: rgba(127, 29, 29, .34);
+        color: #fecaca;
+        border-color: rgba(248, 113, 113, .32);
+    }
+
+    html[data-theme="dark"] .history-section-head {
+        background: #1f2937;
+    }
+
+    html[data-theme="dark"] .history-section-head h3 {
+        color: #f8fafc;
+    }
+
+    html[data-theme="dark"] .schedule-history-line {
+        background: rgba(248, 250, 252, .08);
+        border-color: rgba(248, 250, 252, .18);
+    }
+
+    html[data-theme="dark"] .schedule-history-line strong {
+        color: #f8fafc;
+    }
+
+    html[data-theme="dark"] .schedule-history-line.previous.schedule-changed {
+        background: rgba(251, 191, 36, .16);
+        border-color: rgba(251, 191, 36, .52);
+    }
+
+    html[data-theme="dark"] .schedule-history-line.relaunch.schedule-changed {
+        background: rgba(34, 197, 94, .14);
+        border-color: rgba(134, 239, 172, .46);
+    }
+
+    @@media (max-width: 1100px) {
+        .booking-cancel-table {
+            min-width: 1040px;
+        }
+
+        .show-cancel-table {
+            min-width: 1080px;
+        }
+
+        .history-cancel-table {
+            min-width: 1180px;
+        }
+
+        .theater-cancel-form {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @@media (max-width: 720px) {
+        .theater-group-box {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .theater-show-groups {
+            padding: 12px;
+        }
+
+        .history-sections {
+            padding: 12px;
+        }
+
+        .history-section-head {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .content-tabs {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .content-tabs button {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .cancel-inline-form,
+        .theater-cancel-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (() => {
+            const page = document.querySelector(".cancellation-admin-page");
+            if (!page) {
+                return;
+            }
+
+            const buttons = [...page.querySelectorAll("[data-content-target]")];
+            const sections = [...page.querySelectorAll(".content-section")];
+            const groups = [...page.querySelectorAll("[data-cancellation-group]")];
+            const activeSectionStorageKey = "showTime.admin.cancellations.activeSection";
+            const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
+            const isPageRefresh = navigationEntry?.type === "reload";
+
+            if (isPageRefresh) {
+                sessionStorage.removeItem(activeSectionStorageKey);
+            }
+
+            const refreshGroups = () => {
+                groups.forEach((group) => {
+                    const rows = [...group.querySelectorAll("[data-admin-filter-row]")];
+                    group.hidden = rows.length > 0 && rows.every((row) => row.hidden);
+                });
+            };
+
+            const rememberActiveSection = (targetId) => {
+                if (targetId) {
+                    sessionStorage.setItem(activeSectionStorageKey, targetId);
+                } else {
+                    sessionStorage.removeItem(activeSectionStorageKey);
+                }
+            };
+
+            const cleanPageHash = () => {
+                if (window.location.hash) {
+                    history.replaceState(null, "", window.location.pathname + window.location.search);
+                }
+            };
+
+            const setActiveSection = (targetId, remember) => {
+                const targetSection = targetId ? document.getElementById(targetId) : null;
+
+                sections.forEach((section) => {
+                    section.hidden = section !== targetSection;
+                });
+
+                buttons.forEach((button) => {
+                    const isActive = button.dataset.contentTarget === targetId && Boolean(targetSection);
+                    button.classList.toggle("is-active", isActive);
+                    button.setAttribute("aria-expanded", isActive ? "true" : "false");
+
+                    const arrow = button.querySelector(".content-toggle-arrow");
+                    if (arrow) {
+                        arrow.textContent = isActive ? "↑" : "↓";
+                    }
+                });
+
+                refreshGroups();
+
+                if (remember) {
+                    rememberActiveSection(targetSection ? targetId : "");
+                }
+
+                cleanPageHash();
+            };
+
+            buttons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    const targetId = button.dataset.contentTarget;
+                    const isOpen = button.getAttribute("aria-expanded") === "true";
+                    setActiveSection(isOpen ? "" : targetId, true);
+                });
+            });
+
+            page.querySelectorAll("[data-content-collapse]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    setActiveSection("", true);
+                });
+            });
+
+            page.querySelectorAll("[data-relaunch-same-time]").forEach((checkbox) => {
+                const form = checkbox.closest("form");
+                const timeInput = form?.querySelector("[data-relaunch-start-time]");
+                const syncTimeInput = () => {
+                    if (!timeInput) {
+                        return;
+                    }
+
+                    timeInput.disabled = checkbox.checked;
+                    timeInput.required = !checkbox.checked;
+                    if (checkbox.checked) {
+                        timeInput.setCustomValidity("");
+                    }
+                };
+
+                checkbox.addEventListener("change", syncTimeInput);
+                syncTimeInput();
+            });
+
+            page.querySelectorAll("[data-cancellation-submit-form]").forEach((form) => {
+                const fields = [...form.querySelectorAll("textarea, input")];
+                const submitButton = form.querySelector("button[type='submit']");
+
+                const clearValidation = () => {
+                    fields.forEach((field) => field.setCustomValidity(""));
+                };
+
+                fields.forEach((field) => {
+                    field.addEventListener("input", clearValidation);
+                });
+
+                form.addEventListener("submit", (event) => {
+                    clearValidation();
+
+                    const reasonField = form.querySelector("textarea[name='cancellationReason'], textarea[name='relaunchReason']");
+                    if (reasonField && reasonField.value.trim().length < 5) {
+                        reasonField.setCustomValidity("Enter at least 5 characters.");
+                    }
+
+                    const expectedConfirmation = form.dataset.confirmText || "";
+                    const confirmationField = form.querySelector("input[name='confirmationText']");
+                    if (confirmationField && expectedConfirmation &&
+                        confirmationField.value.trim().toUpperCase() !== expectedConfirmation.toUpperCase()) {
+                        confirmationField.setCustomValidity(`Type ${expectedConfirmation} to continue.`);
+                    }
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        window.hideShowTimeProgressCursor?.();
+                        form.reportValidity();
+                        form.querySelector(":invalid")?.focus();
+                        return;
+                    }
+
+                    const section = form.closest(".content-section");
+                    if (section?.id) {
+                        rememberActiveSection(section.id);
+                    }
+
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.textContent = form.classList.contains("relaunch-form")
+                            ? "Launching..."
+                            : "Working...";
+                    }
+
+                    window.showTimeProgressCursor?.();
+                });
+            });
+
+            const hashTarget = window.location.hash.replace("#", "");
+            const storedTarget = isPageRefresh ? "" : sessionStorage.getItem(activeSectionStorageKey);
+            if (!isPageRefresh && hashTarget && sections.some((section) => section.id === hashTarget)) {
+                setActiveSection(hashTarget, false);
+            } else if (storedTarget && sections.some((section) => section.id === storedTarget)) {
+                setActiveSection(storedTarget, false);
+            } else {
+                setActiveSection("", false);
+            }
+
+            if (groups.length > 0) {
+                const observer = new MutationObserver(refreshGroups);
+                observer.observe(page, {
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ["hidden"]
+                });
+            }
+
+            refreshGroups();
+        })();
+    </script>
+}

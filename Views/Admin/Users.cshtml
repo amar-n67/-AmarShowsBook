@@ -31,9 +31,18 @@
 
     </div>
 
-    <div class="table-wrapper">
+    <div class="table-wrapper users-table-wrapper">
 
-        <table class="table admin-table">
+        <table class="table admin-table users-table">
+
+            <colgroup>
+                <col class="users-col-name" />
+                <col class="users-col-email" />
+                <col class="users-col-mobile" />
+                <col class="users-col-status" />
+                <col class="users-col-delete-status" />
+                <col class="users-col-actions" />
+            </colgroup>
 
             <thead>
 
@@ -52,7 +61,7 @@
 
                 @foreach (var user in Model)
                 {
-                    <tr>
+                    <tr data-filter-status="@($"{(user.is_active ? "ACTIVE" : "DISABLED")}|{(user.is_deleted ? "DELETED" : "NORMAL")}")">
 
                         <td>@user.Name</td>
 
@@ -94,11 +103,10 @@
 
                         </td>
 
-                        <td>
+                        <td class="user-actions-cell">
 
-                            <div class="admin-actions">
+                            <div class="admin-actions user-row-actions">
 
-                                <!-- DETAILS -->
 
                                 <a href="/Admin/UserDetails/@user.Id"
                                    class="btn btn-primary">
@@ -107,7 +115,6 @@
 
                                 </a>
 
-                                <!-- ENABLE / DISABLE -->
 
                                 @if (user.is_active)
                                 {
@@ -138,7 +145,6 @@
                                     </form>
                                 }
 
-                                <!-- DELETE / REVOKE -->
 
                                 @if (user.is_deleted)
                                 {
@@ -177,19 +183,121 @@
 
     </div>
 
-    <!-- Human Comment: Admin tables show 50 rows per page and share the transaction pagination style. -->
-    <div class="pagination-area">
-
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a class="page-btn @(i == currentPage ? "active" : "")"
-               href="/Admin/Users?page=@i">
-
-                @i
-
-            </a>
-        }
-
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Users"
+    })
 
 </section>
+
+<style>
+    .users-table-wrapper {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        scrollbar-gutter: stable both-edges;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table.table.admin-table.users-table {
+        width: max-content !important;
+        min-width: 100% !important;
+        max-width: none !important;
+        table-layout: auto !important;
+    }
+
+    .users-col-name {
+        width: max-content;
+        min-width: 180px;
+    }
+
+    .users-col-email {
+        width: max-content;
+        min-width: 260px;
+    }
+
+    .users-col-mobile {
+        width: max-content;
+        min-width: 150px;
+    }
+
+    .users-col-status,
+    .users-col-delete-status {
+        width: max-content;
+        min-width: 120px;
+    }
+
+    .users-col-actions {
+        width: 1%;
+        min-width: 300px;
+    }
+
+    table.table.admin-table.users-table th,
+    table.table.admin-table.users-table td {
+        max-width: none !important;
+        white-space: nowrap;
+    }
+
+    table.table.admin-table.users-table th:nth-child(1),
+    table.table.admin-table.users-table td:nth-child(1) {
+        min-width: 180px !important;
+    }
+
+    table.table.admin-table.users-table th:nth-child(2),
+    table.table.admin-table.users-table td:nth-child(2) {
+        min-width: 260px !important;
+    }
+
+    table.table.admin-table.users-table th:nth-child(3),
+    table.table.admin-table.users-table td:nth-child(3) {
+        min-width: 150px !important;
+    }
+
+    table.table.admin-table.users-table th:nth-child(4),
+    table.table.admin-table.users-table td:nth-child(4),
+    table.table.admin-table.users-table th:nth-child(5),
+    table.table.admin-table.users-table td:nth-child(5) {
+        min-width: 120px !important;
+    }
+
+    table.table.admin-table.users-table th:last-child,
+    table.table.admin-table.users-table td:last-child,
+    table.table.admin-table.users-table td.user-actions-cell {
+        width: 1% !important;
+        min-width: 300px !important;
+    }
+
+    .user-row-actions {
+        display: inline-flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center;
+        gap: 8px;
+        width: max-content;
+        white-space: nowrap;
+    }
+
+    .user-row-actions form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    .user-row-actions .btn {
+        min-width: 72px;
+        padding-inline: 12px;
+        white-space: nowrap;
+    }
+
+    @@media (max-width: 720px) {
+        table.table.admin-table.users-table {
+            min-width: 920px !important;
+        }
+
+        table.table.admin-table.users-table th:last-child,
+        table.table.admin-table.users-table td:last-child,
+        table.table.admin-table.users-table td.user-actions-cell {
+            width: 300px !important;
+            min-width: 300px !important;
+        }
+    }
+</style>

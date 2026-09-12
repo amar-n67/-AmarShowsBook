@@ -1,6 +1,8 @@
 <div class="card p-4 mx-auto auth-mini">
-<h3 class="text-center mb-2">Enter Secret Code</h3>
-<p class="text-center text-muted">Lock the scene before resetting password.</p>
+@* Previous wording: "Enter Secret Code" *@
+<h3 class="text-center mb-2">Enter OTP</h3>
+@* Previous wording: "Lock the scene before resetting password." *@
+<p class="text-center text-muted">Verify the OTP before resetting your password.</p>
 
 <form method="post" action="/Auth/VerifyOTP">
 
@@ -8,7 +10,8 @@
 
     <div class="d-flex justify-content-between">
         <button class="btn btn-primary">Verify</button>
-        <a href="/Auth/Login" class="btn btn-secondary">Back To Gate</a>
+        @* Previous wording: "Back To Gate" *@
+        <a href="/Auth/Login" class="btn btn-secondary">Back To Login</a>
     </div>
 
 </form>
@@ -25,7 +28,19 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const error = "@ViewBag.Error";
+            const message = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Message as string ?? ""));
+            const devOtp = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DevOtp as string ?? ""));
             if (error) showCinemaPopup(error, "error");
+            if (message) {
+                const popupMessage = devOtp
+                    ? `${message}\nDevelopment OTP: ${devOtp}`
+                    : message;
+                showCinemaPopup(popupMessage, "success", {
+                    // Previous wording: "Secret Code Sent"
+                    title: "OTP Sent",
+                    okText: "Enter Code"
+                });
+            }
         });
     </script>
 }

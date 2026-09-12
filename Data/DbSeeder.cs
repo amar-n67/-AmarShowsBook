@@ -1,14 +1,18 @@
 using AmarShowsBook.Models;
-using System;
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace AmarShowsBook.Data
 {
     public static class DbSeeder
     {
+        private static string DayName(DateTime date)
+        {
+            return date.ToString("dddd", CultureInfo.InvariantCulture);
+        }
+
         public static void Seed(ApplicationDbContext context)
         {
-            // ================= MOVIES =================
             if (!context.Movies.Any())
             {
                 context.Movies.AddRange(
@@ -25,7 +29,6 @@ namespace AmarShowsBook.Data
                 );
             }
 
-            // ================= STANDUP =================
             if (!context.StandupShows.Any())
             {
                 context.StandupShows.AddRange(
@@ -36,7 +39,6 @@ namespace AmarShowsBook.Data
                 );
             }
 
-            // ================= LIVE STREAM =================
             if (!context.LiveStreams.Any())
             {
                 for (int i = 1; i <= 20; i++)
@@ -50,7 +52,6 @@ namespace AmarShowsBook.Data
                 }
             }
 
-            // ================= LOCATION (MANDATORY) =================
             if (!context.Locations.Any())
             {
                 context.Locations.Add(new Location
@@ -63,7 +64,6 @@ namespace AmarShowsBook.Data
 
             context.SaveChanges();
 
-            // ================= AUTO GENERATE 100+ SCHEDULES =================
 if (!context.ShowSchedules.Any())
 {
     var movies = context.Movies.ToList();
@@ -72,14 +72,13 @@ if (!context.ShowSchedules.Any())
 
     var location = context.Locations.First();
 
-    DateTime baseTime = DateTime.UtcNow.Date.AddHours(9); // 9 AM start
+    DateTime baseTime = DateTime.UtcNow.Date.AddHours(9);
 
     int totalShows = 0;
 
-    // 🎬 MOVIES (repeat across day)
     foreach (var movie in movies)
     {
-        for (int i = 0; i < 2; i++) // repeat each movie twice
+        for (int i = 0; i < 2; i++)
         {
             context.ShowSchedules.Add(new ShowSchedule
             {
@@ -87,7 +86,8 @@ if (!context.ShowSchedules.Any())
                 MovieId = movie.Id,
                 LocationId = location.Id,
                 StartTime = baseTime,
-                EndTime = baseTime.AddMinutes(movie.Duration)
+                EndTime = baseTime.AddMinutes(movie.Duration),
+                ShowDay = DayName(baseTime)
             });
 
             baseTime = baseTime.AddMinutes(movie.Duration + 15);
@@ -95,7 +95,6 @@ if (!context.ShowSchedules.Any())
         }
     }
 
-    // 🎤 STANDUP (NO OVERLAP)
     foreach (var standup in standups)
     {
         context.ShowSchedules.Add(new ShowSchedule
@@ -104,35 +103,35 @@ if (!context.ShowSchedules.Any())
             StandupShowId = standup.Id,
             LocationId = location.Id,
             StartTime = baseTime,
-            EndTime = baseTime.AddMinutes(standup.Duration)
+            EndTime = baseTime.AddMinutes(standup.Duration),
+            ShowDay = DayName(baseTime)
         });
 
         baseTime = baseTime.AddMinutes(standup.Duration + 30);
         totalShows++;
     }
 
-    // 📡 LIVE (parallel allowed)
     for (int i = 0; i < 100; i++)
     {
         var live = lives[i % lives.Count];
+
+        var liveStart = DateTime.UtcNow.AddMinutes(i * 10);
 
         context.ShowSchedules.Add(new ShowSchedule
         {
             Type = "Live",
             LiveStreamId = live.Id,
             LocationId = location.Id,
-            StartTime = DateTime.UtcNow.AddMinutes(i * 10),
-            EndTime = DateTime.UtcNow.AddMinutes(i * 10 + live.Duration)
+            StartTime = liveStart,
+            EndTime = liveStart.AddMinutes(live.Duration),
+            ShowDay = DayName(liveStart)
         });
 
         totalShows++;
     }
 
-    Console.WriteLine($"✅ Generated {totalShows} shows");
-
     context.SaveChanges();
 }
-// COUNTRIES
 if (!context.Countries.Any())
 {
     context.Countries.AddRange(
@@ -142,7 +141,6 @@ if (!context.Countries.Any())
     context.SaveChanges();
 }
 
-// STATES
 if (!context.States.Any())
 {
     var india = context.Countries.First(c => c.Code == "IN");
@@ -154,7 +152,6 @@ if (!context.States.Any())
     context.SaveChanges();
 }
 
-// DISTRICTS
 if (!context.Districts.Any())
 {
     var delhi = context.States.First(s => s.Name == "Delhi");
@@ -167,8 +164,157 @@ if (!context.Districts.Any())
         new District { Name = "Mumbai", StateId = mh.Id },
         new District { Name = "Pune", StateId = mh.Id }
     );
-    context.SaveChanges();
+context.SaveChanges();
 }
+
+context.Database.ExecuteSqlRaw(@"
+INSERT INTO public.coupons
+(
+    coupon_code,
+    coupon_name,
+    description,
+    discount_type,
+    discount_value,
+    minimum_booking_amount,
+    maximum_discount_amount,
+    usage_limit,
+    usage_per_user,
+    valid_from,
+    valid_to,
+    coupon_status,
+    created_by,
+    updated_by
+)
+VALUES
+(
+    'WELCOME10',
+    'Welcome 10 Percent',
+    '10 percent off on any booking',
+    'PERCENTAGE',
+    10,
+    100,
+    300,
+    10000,
+    5,
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    CURRENT_TIMESTAMP + INTERVAL '365 days',
+    'ACTIVE',
+    'SYSTEM',
+    'SYSTEM'
+),
+(
+    'FLAT100',
+    'Flat 100 Off',
+    'Flat 100 rupees off on bookings above 300',
+    'FLAT',
+    100,
+    300,
+    100,
+    10000,
+    3,
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    CURRENT_TIMESTAMP + INTERVAL '365 days',
+    'ACTIVE',
+    'SYSTEM',
+    'SYSTEM'
+),
+(
+    'MOVIE25',
+    'Movie 25 Percent',
+    '25 percent off on movie bookings',
+    'PERCENTAGE',
+    25,
+    500,
+    250,
+    10000,
+    2,
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    CURRENT_TIMESTAMP + INTERVAL '365 days',
+    'ACTIVE',
+    'SYSTEM',
+    'SYSTEM'
+)
+ON CONFLICT (coupon_code) DO UPDATE
+SET coupon_name=EXCLUDED.coupon_name,
+    description=EXCLUDED.description,
+    discount_type=EXCLUDED.discount_type,
+    discount_value=EXCLUDED.discount_value,
+    minimum_booking_amount=EXCLUDED.minimum_booking_amount,
+    maximum_discount_amount=EXCLUDED.maximum_discount_amount,
+    usage_limit=EXCLUDED.usage_limit,
+    usage_per_user=EXCLUDED.usage_per_user,
+    valid_to=EXCLUDED.valid_to,
+    coupon_status='ACTIVE',
+    updated_at=CURRENT_TIMESTAMP,
+    updated_by='SYSTEM';
+
+INSERT INTO public.user_wallets
+(
+    user_id,
+    wallet_balance,
+    blocked_balance,
+    loyalty_points,
+    wallet_status
+)
+SELECT u.""Id"", 0, 0, 0, 'ACTIVE'
+FROM public.""Users"" u
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO public.wallet_transactions
+(
+    wallet_id,
+    user_id,
+    transaction_ref,
+    transaction_type,
+    entry_type,
+    amount,
+    opening_balance,
+    closing_balance,
+    remarks,
+    transaction_status,
+    created_at,
+    created_by,
+    description,
+    status,
+    reference_type,
+    reference_id,
+    balance_before,
+    balance_after,
+    payment_method,
+    gateway_name,
+    gateway_reference,
+    is_deleted
+)
+SELECT
+    uw.id,
+    uw.user_id,
+    'EXISTING-USER-1000-' || uw.user_id,
+    'BONUS',
+    'CREDIT',
+    1000,
+    uw.wallet_balance,
+    uw.wallet_balance + 1000,
+    'Existing registered user bonus',
+    'SUCCESS',
+    CURRENT_TIMESTAMP,
+    'SYSTEM',
+    'One-time existing user wallet credit',
+    'SUCCESS',
+    'USER',
+    uw.user_id,
+    uw.wallet_balance,
+    uw.wallet_balance + 1000,
+    'SYSTEM',
+    'SYSTEM',
+    'EXISTING-USER-1000-' || uw.user_id,
+    false
+FROM public.user_wallets uw
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM public.wallet_transactions wt
+    WHERE wt.transaction_ref = 'EXISTING-USER-1000-' || uw.user_id
+);");
         }
     }
 }

@@ -1,0 +1,289 @@
+showTime RBAC notes
+Updated: 2026-08-24
+
+Purpose
+RBAC means Role Based Access Control.
+In simple words, the user's role decides which pages, buttons, reports, and actions they can use.
+
+The application uses only four roles
+1. AMAR_SUPER_ADMIN
+2. AMAR_ADMIN
+3. AMAR_DEVELOPER
+4. AMAR_USER
+
+Do not add more roles.
+Old role names from earlier versions are legacy values. Startup code maps old roles into these four roles and removes non-standard roles.
+
+Role 1: AMAR_SUPER_ADMIN
+Meaning
+- This is the owner-level role.
+- It has the highest access in the application.
+
+What this role can do
+- Open all admin pages.
+- Manage users.
+- Assign and remove roles.
+- View roles and permissions.
+- Manage shows and schedules.
+- Manage bookings.
+- View payments and transactions.
+- Manage refunds.
+- View and update wallets.
+- View coupon usage and manage coupons where the page supports it.
+- View notifications.
+- View scanner/security pages.
+- View activity logs and versions.
+- Access developer tools.
+- Use admin export buttons.
+- Ask showTime Assistant for admin summaries, search, export, and developer help.
+
+Limits
+- This role should be given only to the application owner or a fully trusted admin.
+- This role should not be disabled from the UI.
+
+Role 2: AMAR_ADMIN
+Meaning
+- This is the normal admin role for daily operations.
+
+What this role can do
+- Open the admin dashboard.
+- Manage users and user access.
+- Work with the fixed four-role system.
+- Manage shows and schedules.
+- Manage bookings.
+- View transactions and payments.
+- Manage refund workflows.
+- View wallets and wallet operations.
+- View coupon usage.
+- View notifications.
+- Use scanner/security pages.
+- View reports, activity logs, and versions.
+- Use admin export buttons.
+- Ask showTime Assistant for admin summaries, admin search, export, refund, booking, wallet, coupon, notification, and scanner help.
+
+Limits
+- Cannot use developer editor tools unless the user also has AMAR_DEVELOPER or AMAR_SUPER_ADMIN.
+- Cannot create random custom roles.
+- Should not bypass RBAC checks in controllers or views.
+
+Role 3: AMAR_DEVELOPER
+Meaning
+- This role is for developer/editor tools only.
+
+What this role can do
+- Open developer profile/editor pages.
+- Update developer profile data where the developer page allows it.
+- Ask showTime Assistant about developer tools.
+
+Limits
+- Does not automatically get admin dashboard access.
+- Cannot manage users.
+- Cannot manage bookings.
+- Cannot manage payments or refunds.
+- Cannot manage wallets.
+- Cannot manage coupons.
+- Cannot manage notifications.
+- Cannot use scanner/security pages.
+- Cannot export admin reports unless another admin role is also assigned.
+
+Role 4: AMAR_USER
+Meaning
+- This is the normal customer role.
+- It is assigned automatically when a user signs up.
+
+What this role can do
+- Browse showTime.
+- View movies, standup shows, and live streams.
+- Select seats.
+- Book tickets.
+- Use coupons where the booking page allows it.
+- Pay using allowed payment methods.
+- View own bookings.
+- View own tickets.
+- View own transaction history.
+- View own wallet.
+- Edit own profile.
+- Contact support.
+- Ask showTime Assistant for show, booking, ticket, wallet, profile, transaction, support, theme, and cursor help.
+
+Limits
+- Cannot open /Admin/Dashboard.
+- Cannot open /Admin/Users.
+- Cannot open /Admin/Roles.
+- Cannot open /Admin/UserAccess.
+- Cannot open /Admin/ManageShows.
+- Cannot manage bookings for other users.
+- Cannot view all payments or refunds.
+- Cannot update wallets for other users.
+- Cannot manage coupons or notifications.
+- Cannot use scanner/security validation pages.
+- Cannot open developer editor pages.
+- Cannot use admin export buttons.
+
+Main permission idea
+Permissions use this format:
+MODULE_ACTION
+
+Examples:
+- ADMIN_VIEW
+- USER_GRANT_ACCESS
+- SHOW_CREATE
+- BOOKING_PRINT
+- REFUND_APPROVE
+- WALLET_UPDATE
+- SCANNER_VALIDATE
+- DEVELOPER_EDIT
+
+Where permission checks happen
+- Services/RbacService.cs checks permissions.
+- Helpers/RbacAuthorizationHelper.cs helps controllers and views ask, "Can this user do this?"
+- AdminController checks important admin actions.
+- Views should hide or disable buttons when the current role is not allowed.
+- showTime Assistant also checks RBAC before showing admin actions.
+
+Important modules
+ADMIN
+- VIEW: open admin dashboard and general admin pages.
+
+USER
+- VIEW: view users.
+- UPDATE: update user admin data.
+- DISABLE: disable, enable, delete, restore, or revoke users.
+- GRANT_ACCESS: assign or remove user roles.
+
+ROLE
+- VIEW: view the four roles.
+- CREATE: not used for custom roles because custom roles are disabled.
+- UPDATE: update allowed system role details.
+- DELETE: not used for deleting system roles.
+
+PERMISSION
+- VIEW: view permissions.
+- CREATE: seed or create permission records.
+- ASSIGN: assign permissions to roles.
+
+SHOW
+- VIEW: view managed shows.
+- CREATE: create movies, standup shows, live streams, and schedules.
+- UPDATE: update show records.
+- DELETE: delete show records.
+
+BOOKING
+- VIEW: view booking admin pages.
+- PRINT: print or download tickets where allowed.
+- CANCEL: cancel bookings where allowed.
+
+PAYMENT
+- VIEW: view transaction/payment admin pages.
+- REFUND: manage refund actions connected to payments.
+
+REFUND
+- VIEW: view refunds.
+- APPROVE: approve refunds.
+- REJECT: reject refunds.
+- RETRY: retry failed refunds.
+- UPDATE: update refund notes/status.
+
+WALLET
+- VIEW: view wallets.
+- UPDATE: perform wallet adjustment/update workflows.
+
+COUPON
+- VIEW: view coupon usage and coupon records.
+- CREATE: create coupons.
+- UPDATE: update coupons.
+- DELETE: delete or deactivate coupons.
+
+NOTIFICATION
+- VIEW: view notifications.
+- UPDATE: update notification status or templates.
+
+ANALYTICS
+- VIEW: view dashboard/reporting data.
+
+SUPPORT
+- VIEW: view support/customer investigation pages.
+
+SCANNER
+- VIEW: open scanner/security pages.
+- VALIDATE: validate tickets at venue entry.
+
+DEVELOPER
+- EDIT: open and edit developer profile tools.
+
+Booking and ticket rules
+Normal user cancellation
+- A user can cancel only their own booking.
+- Cancellation is blocked after show start time.
+- Cancellation is blocked if the booking is already cancelled.
+- Cancellation is blocked if the booking is not confirmed/paid.
+- When cancellation is accepted, a refund row is created.
+- Wallet amount used is credited back through wallet_transactions.
+- Some local payment methods can become SUCCESS automatically.
+- Card/net banking/bank-like refunds can remain PENDING for admin review.
+
+Ticket access
+- AMAR_USER should only view their own tickets.
+- AMAR_ADMIN can view tickets through booking admin permissions.
+- AMAR_SUPER_ADMIN can view all tickets.
+
+Startup behavior
+Program.cs calls RBAC setup code when the application starts.
+
+Startup setup does these things:
+- Creates the four standard roles.
+- Creates application modules.
+- Creates permissions.
+- Maps old roles to the four current roles.
+- Gives AMAR_USER to users with no active role.
+- Rebuilds role_permissions.
+- Deletes role records outside the four-role system.
+- Recreates vw_user_access_matrix.
+- Recreates vw_user_application_menus.
+- Updates fn_assign_default_role so new users receive AMAR_USER.
+
+Admin page behavior
+/Admin/Roles
+- Shows only the four fixed roles.
+- Custom role creation is disabled.
+- AMAR_SUPER_ADMIN stays active.
+
+/Admin/UserAccess
+- Assigns and removes only the four fixed roles.
+
+/Admin/ManageShows
+- Creates show content and schedules.
+- Generates seats.
+- Makes schedules appear on /Home/ShowTime.
+
+/Admin/Refunds
+- Shows refund requests and refund status.
+- Admin actions must follow refund permissions.
+
+/Admin/Security
+- Shows scanner activity, validation issues, and scanner devices.
+
+Export behavior
+- Export buttons are role-aware.
+- Admin export should appear only on admin pages where the user has access.
+- showTime Assistant can trigger Export This Page only if the page has an export button.
+
+Assistant behavior with roles
+- AMAR_USER gets customer help only.
+- AMAR_ADMIN gets admin operation help, search, summaries, and export.
+- AMAR_DEVELOPER gets developer help.
+- AMAR_SUPER_ADMIN gets all admin and developer help.
+- showTime Assistant should never offer a role action that the user cannot actually open.
+
+Developer checklist for new protected pages or buttons
+1. Choose the module.
+2. Choose the action.
+3. Add permission as MODULE_ACTION if it does not exist.
+4. Grant it only to the correct role.
+5. In the controller, call RbacAuthorizationHelper.CanAccess.
+6. In the view, hide or disable the button using the same permission.
+7. Do not create a new role code.
+8. Test with AMAR_USER, AMAR_ADMIN, AMAR_DEVELOPER, and AMAR_SUPER_ADMIN.
+
+Golden rule
+If a button changes data, checks money, changes access, exports data, validates tickets, or opens admin data, it must be protected by RBAC.

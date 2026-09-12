@@ -1,13 +1,11 @@
 let isEmailVerified = false;
 let isMobileVerified = false;
 let isPasswordEmailVerified = false;
-// ================= REGEX =================
+let isDeleteEmailVerified = false;
+let deleteSubmissionConfirmed = false;
 const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com)$/;
 const mobileRegex = /^[0-9]{10}$/;
 
-// =====================================================
-// 🔐 EMAIL
-// =====================================================
 
 function editEmail(oldVal) {
     let field = document.getElementById("emailField");
@@ -20,7 +18,6 @@ function editEmail(oldVal) {
     document.getElementById("emailCancel").classList.remove("d-none");
     document.getElementById("emailOtpSection").classList.remove("d-none");
 
-    // hide old tick
     document.getElementById("emailVerifiedTick")?.classList.add("d-none");
 }
 
@@ -156,9 +153,6 @@ function verifyPasswordEmailOtp() {
     });
 }
 
-// =====================================================
-// 📱 MOBILE
-// =====================================================
 
 function editMobile(oldVal) {
     let field = document.getElementById("mobileField");
@@ -253,9 +247,6 @@ function verifyMobileOtp() {
     });
 }
 
-// =====================================================
-// 🏠 ADDRESS
-// =====================================================
 
 function editAddress(oldVal) {
     let field = document.getElementById("addressField");
@@ -264,9 +255,9 @@ function editAddress(oldVal) {
     document.querySelectorAll(".address-part").forEach(el => {
         el.removeAttribute("disabled");
         el.removeAttribute("readonly");
-        el.style.backgroundColor = "#fff";
-        el.style.color = "#000";
-        el.style.borderColor = "#ccc";
+        el.style.backgroundColor = "var(--app-input)";
+        el.style.color = "var(--app-input-text)";
+        el.style.borderColor = "var(--app-input-border)";
     });
 
     document.getElementById("addressCancel").classList.remove("d-none");
@@ -297,18 +288,15 @@ function cancelAddress(oldVal) {
     document.querySelectorAll(".dropdown-icon").forEach(icon => icon.classList.add("d-none"));
 }
 
-// =====================================================
-// 🎬 DROPDOWN
-// =====================================================
 
 function enableProfileSelect(id) {
     let el = document.getElementById(id);
     let wrapper = el.closest(".position-relative");
 
     el.removeAttribute("disabled");
-    el.style.backgroundColor = "#fff";
-    el.style.color = "#000";
-    el.style.borderColor = "#ccc";
+    el.style.backgroundColor = "var(--app-input)";
+    el.style.color = "var(--app-input-text)";
+    el.style.borderColor = "var(--app-input-border)";
     wrapper?.querySelector(".dropdown-icon")?.classList.remove("d-none");
     el.focus();
 }
@@ -336,15 +324,15 @@ function cancelSelect(id, value, cancelBtn) {
     document.getElementById(cancelBtn).classList.add("d-none");
 }
 
-// =====================================================
-// 🖼 IMAGE
-// =====================================================
 
 let oldImageSrc = "";
 
 function prepareImageChange() {
     if (!oldImageSrc) {
-        oldImageSrc = document.getElementById("profilePreview").src;
+        const preview = document.getElementById("profilePreview");
+        oldImageSrc = preview.tagName === "IMG"
+            ? preview.src
+            : "";
     }
 
     document.getElementById("imageCancel").classList.remove("d-none");
@@ -365,13 +353,28 @@ function previewProfileImage() {
 
     let reader = new FileReader();
     reader.onload = function (e) {
-        document.getElementById("profilePreview").src = e.target.result;
+        let preview = document.getElementById("profilePreview");
+
+        if (preview.tagName !== "IMG") {
+            const image = document.createElement("img");
+            image.id = "profilePreview";
+            image.className = "profile-poster";
+            preview.replaceWith(image);
+            preview = image;
+        }
+
+        preview.src = e.target.result;
     };
     reader.readAsDataURL(file);
 }
 
 function cancelImage() {
-    document.getElementById("profilePreview").src = oldImageSrc;
+    const preview = document.getElementById("profilePreview");
+
+    if (oldImageSrc && preview.tagName === "IMG") {
+        preview.src = oldImageSrc;
+    }
+
     document.getElementById("profileImage").value = "";
     document.getElementById("imageCancel").classList.add("d-none");
     oldImageSrc = "";
@@ -410,7 +413,6 @@ function validateProfileForm() {
 
     let image = document.getElementById("profileImage").value;
 
-    // ================= EMPTY CHECK =================
     if (!name || !email || !mobile) {
         showPopup("Stage name, email, and mobile are required.");
         return false;
@@ -436,7 +438,6 @@ function validateProfileForm() {
         return false;
     }
 
-    // ================= CHANGE CHECK =================
     let isChanged =
         email !== oldEmail ||
         mobile !== oldMobile ||
@@ -488,6 +489,148 @@ function validateChangePasswordForm() {
 
     return true;
 }
+
+function openDeleteAccountModal() {
+    isDeleteEmailVerified = false;
+    deleteSubmissionConfirmed = false;
+
+    const modal = document.getElementById("deleteAccountModal");
+    const otp = document.getElementById("deleteOtpInput");
+    const status = document.getElementById("deleteOtpStatus");
+
+    if (otp) {
+        otp.value = "";
+        otp.removeAttribute("readonly");
+    }
+
+    if (status) {
+        status.textContent = "OTP verification required.";
+        status.classList.remove("verified");
+    }
+
+    if (modal) {
+        modal.hidden = false;
+        document.getElementById("deletePassword")?.focus();
+    }
+}
+
+function closeDeleteAccountModal() {
+    const modal = document.getElementById("deleteAccountModal");
+    if (modal) {
+        modal.hidden = true;
+    }
+}
+
+function notifyProfile(message, type) {
+    if (typeof showCinemaPopup === "function") {
+        showCinemaPopup(message, type || "error");
+        return;
+    }
+
+    showPopup(message);
+}
+
+function sendDeleteAccountOtp() {
+    const email = document.getElementById("deleteEmailField")?.value.trim() || "";
+
+    if (!emailRegex.test(email)) {
+        notifyProfile("Only @gmail.com or @outlook.com email is allowed.");
+        return;
+    }
+
+    fetch('/Otp/SendEmailOtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `email=${encodeURIComponent(email)}&purpose=${encodeURIComponent("account deletion verification")}`
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.success) {
+            notifyProfile(res.devOtp ? `OTP sent. Development OTP: ${res.devOtp}` : "OTP sent to your email.", "success");
+        } else {
+            notifyProfile(res.message || "Email OTP could not be sent.");
+        }
+    })
+    .catch(() => {
+        notifyProfile("Email OTP could not be sent. Please try again.");
+    });
+}
+
+function verifyDeleteAccountOtp() {
+    const email = document.getElementById("deleteEmailField")?.value.trim() || "";
+    const otp = document.getElementById("deleteOtpInput")?.value.trim() || "";
+    const status = document.getElementById("deleteOtpStatus");
+
+    if (!otp) {
+        notifyProfile("Enter the OTP before verifying.");
+        return;
+    }
+
+    fetch('/Otp/VerifyEmailOtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.success) {
+            isDeleteEmailVerified = true;
+            document.getElementById("deleteOtpInput")?.setAttribute("readonly", true);
+            if (status) {
+                status.textContent = "Email OTP verified.";
+                status.classList.add("verified");
+            }
+            notifyProfile("Email verified for account deletion.", "success");
+        } else {
+            notifyProfile("Invalid email OTP.");
+        }
+    })
+    .catch(() => {
+        notifyProfile("Email OTP verification failed. Please try again.");
+    });
+}
+
+function validateDeleteAccountForm() {
+    const password = document.getElementById("deletePassword")?.value || "";
+    const confirmation = document.getElementById("deleteConfirmationText")?.value.trim() || "";
+    const form = document.getElementById("deleteAccountForm");
+
+    if (deleteSubmissionConfirmed) {
+        return true;
+    }
+
+    if (!isDeleteEmailVerified) {
+        notifyProfile("Verify your email OTP before deleting the account.");
+        return false;
+    }
+
+    if (!password) {
+        notifyProfile("Enter your current password.");
+        return false;
+    }
+
+    if (confirmation !== "DELETE MY ACCOUNT") {
+        notifyProfile("Type DELETE MY ACCOUNT exactly to confirm.");
+        return false;
+    }
+
+    if (typeof showCinemaPopup === "function") {
+        showCinemaPopup("Delete this account now? Data can be recovered only for 30 days after deletion.", "confirm", {
+            title: "Final Confirmation",
+            okText: "Delete Account",
+            cancelText: "Cancel",
+            onOk: function () {
+                deleteSubmissionConfirmed = true;
+                form?.requestSubmit();
+            }
+        });
+        return false;
+    }
+
+    deleteSubmissionConfirmed = window.confirm("Delete this account now? Data can be recovered only for 30 days after deletion.");
+    return deleteSubmissionConfirmed;
+}
+
 function showPopup(message) {
     alert(message);
 }

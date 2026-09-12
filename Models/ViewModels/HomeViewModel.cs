@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-
 namespace AmarShowsBook.Models.ViewModels
 {
     public class HomeViewModel
     {
-        //public List<ShowSchedule> Schedules { get; set; } //comment to handle nullability in the database
-        public List<ShowSchedule> Schedules { get; set; } = new();
+        public List<HomeShowViewModel> HomeShows { get; set; }
+            = new();
+            public string Description { get; set; }
+public string PosterUrl { get; set; }
     }
 }

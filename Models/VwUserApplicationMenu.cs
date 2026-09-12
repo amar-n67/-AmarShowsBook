@@ -3,8 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AmarShowsBook.Models
 {
-    // SQL VIEW:
-    // vw_user_application_menus
     [Keyless]
     public class VwUserApplicationMenu
     {
@@ -18,13 +16,19 @@ namespace AmarShowsBook.Models
         public string? RoleCode { get; set; }
 
         [Column("menu_id")]
-        public int MenuId { get; set; }
+        public long MenuId { get; set; }
 
         [Column("menu_code")]
         public string? MenuCode { get; set; }
 
         [Column("menu_name")]
         public string? MenuName { get; set; }
+
+        [Column("parent_menu_id")]
+        public long? ParentMenuId { get; set; }
+
+        [Column("parent_menu_name")]
+        public string? ParentMenuName { get; set; }
 
         [Column("route_path")]
         public string? RoutePath { get; set; }
@@ -38,7 +42,6 @@ namespace AmarShowsBook.Models
         [Column("display_order")]
         public int DisplayOrder { get; set; }
 
-        // PostgreSQL uses snake_case column names
         [Column("can_view")]
         public bool CanView { get; set; }
 

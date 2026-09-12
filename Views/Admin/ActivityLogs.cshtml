@@ -10,13 +10,23 @@
     int totalPages = ViewBag.TotalPages ?? 1;
 
     int totalRecords = ViewBag.TotalRecords ?? Model.Count;
+
+    string ResolveActionName(AmarShowsBook.Models.Admin.VwEnterpriseActivityLog item)
+    {
+        if(string.Equals(item.action,"PAGE_VIEW",StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(item.description))
+        {
+            return item.description;
+        }
+
+        return string.IsNullOrWhiteSpace(item.action)
+            ? "NA"
+            : item.action;
+    }
 }
 
 <section class="admin-page">
 
-    <!-- ===================================================== -->
-    <!-- PAGE HEADER -->
-    <!-- ===================================================== -->
 
     <div class="admin-page-header">
 
@@ -40,9 +50,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- STATS -->
-    <!-- ===================================================== -->
 
     <div class="stats-grid">
 
@@ -66,9 +73,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- TABLE -->
-    <!-- ===================================================== -->
 
     <div class="table-wrapper">
 
@@ -102,23 +106,19 @@
                 {
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-filter-status="@item.status">
 
-                            <!-- TIME -->
 
                             <td>
                                 <div class="log-date">
                                     @item.activity_time
-                                        .ToString("dd MMM yyyy")
                                 </div>
 
                                 <div class="sub-text">
                                     @item.activity_time
-                                        .ToString("hh:mm tt")
                                 </div>
                             </td>
 
-                            <!-- MODULE -->
 
                             <td>
                                 <span class="badge warning">
@@ -128,15 +128,11 @@
                                 </span>
                             </td>
 
-                            <!-- ACTION -->
 
                             <td class="text-wrap">
-                                @(string.IsNullOrWhiteSpace(item.action)
-                                    ? "NA"
-                                    : item.action)
+                                @ResolveActionName(item)
                             </td>
 
-                            <!-- USER -->
 
                             <td class="text-wrap">
                                 @(string.IsNullOrWhiteSpace(item.user_name)
@@ -144,7 +140,6 @@
                                     : item.user_name)
                             </td>
 
-                            <!-- EMAIL -->
 
                             <td class="email-cell">
                                 @(string.IsNullOrWhiteSpace(item.user_email)
@@ -152,7 +147,6 @@
                                     : item.user_email)
                             </td>
 
-                            <!-- REFERENCE -->
 
                             <td class="text-wrap">
                                 @(string.IsNullOrWhiteSpace(item.reference_no)
@@ -160,7 +154,6 @@
                                     : item.reference_no)
                             </td>
 
-                            <!-- STATUS -->
 
                             <td>
 
@@ -187,7 +180,6 @@
 
                             </td>
 
-                            <!-- DESCRIPTION -->
 
                             <td class="description-cell">
                                 @(string.IsNullOrWhiteSpace(item.description)
@@ -195,7 +187,6 @@
                                     : item.description)
                             </td>
 
-                            <!-- ERROR -->
 
                             <td class="error-cell">
 
@@ -233,32 +224,23 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- PAGINATION -->
-    <!-- ===================================================== -->
 
-    <div class="pagination-area">
-
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a href="/Admin/ActivityLogs?page=@i"
-               class="page-btn @(i == currentPage ? "active" : "")">
-                @i
-            </a>
-        }
-
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/ActivityLogs"
+    })
 
 </section>
 
-<!-- ===================================================== -->
-<!-- PAGE CSS -->
-<!-- ===================================================== -->
 
 <style>
 
     .activity-table {
-        width: 100%;
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
         border-collapse: collapse;
     }
 
@@ -277,6 +259,8 @@
         vertical-align: top;
         border-bottom: 1px solid #e5e7eb;
         font-size: 14px;
+        min-width: auto !important;
+        white-space: nowrap;
     }
 
     .activity-table tbody tr:hover {
@@ -357,38 +341,6 @@
         font-size: 15px;
     }
 
-    .pagination-area {
-        margin-top: 24px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .page-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        background: white;
-        color: #111827;
-        border: 1px solid #d1d5db;
-        transition: 0.2s;
-    }
-
-    .page-btn:hover {
-        background: #111827;
-        color: white;
-    }
-
-    .page-btn.active {
-        background: #111827;
-        color: white;
-        border-color: #111827;
-    }
-
     .empty-state {
         text-align: center;
         padding: 40px;
@@ -397,6 +349,8 @@
     }
 
     .text-wrap {
+        max-width: 320px;
+        white-space: normal !important;
         word-break: break-word;
     }
 
@@ -405,13 +359,17 @@
     }
 
     .description-cell {
-        min-width: 280px;
+        min-width: auto !important;
+        max-width: 360px;
+        white-space: normal !important;
         word-break: break-word;
         line-height: 1.5;
     }
 
     .error-cell {
-        min-width: 280px;
+        min-width: auto !important;
+        max-width: 360px;
+        white-space: normal !important;
         word-break: break-word;
         line-height: 1.5;
     }

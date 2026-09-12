@@ -1,11 +1,13 @@
 @model List<AmarShowsBook.Models.VwBookingTransactionSummary>
 @using AmarShowsBook.Helpers
+@inject AmarShowsBook.Services.RbacService RbacService
 
 @{
     ViewData["Title"] = "Transaction History";
     var totalAmount = Model.Sum(x => x.TransactionAmount);
     var successCount = Model.Count(x => x.TransactionStatus == "SUCCESS");
     var pendingCount = Model.Count(x => x.CompletedAt == null);
+    var canUsePrintTools = RbacAuthorizationHelper.CanUsePrintTools(Context, RbacService);
 }
 
 <section class="transaction-page">
@@ -13,7 +15,15 @@
         <div>
             <span class="transaction-kicker">Payment Ledger</span>
             <h1>My Transactions</h1>
-            <p>Every ticket payment, gateway result, and completed show payment in one polished reel.</p>
+            @* Previous wording: "Every ticket payment, gateway result, and completed show payment in one polished reel." *@
+            <p>Review every ticket payment, gateway result, and completed show payment in one place.</p>
+        </div>
+        <div class="transaction-actions no-print">
+            @if(canUsePrintTools)
+            {
+            <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+            }
+            <a class="btn btn-secondary" href="/Home/ShowTime">Back</a>
         </div>
     </div>
 
@@ -44,6 +54,16 @@
     {
         <div class="transaction-table-wrap">
             <table class="table transaction-table">
+                <colgroup>
+                    <col class="transaction-col-booking" />
+                    <col class="transaction-col-show" />
+                    <col class="transaction-col-amount" />
+                    <col class="transaction-col-method" />
+                    <col class="transaction-col-status" />
+                    <col class="transaction-col-gateway" />
+                    <col class="transaction-col-completed" />
+                    <col class="transaction-col-action" />
+                </colgroup>
                 <thead>
                     <tr>
                         <th>Booking Ref</th>
@@ -53,13 +73,15 @@
                         <th>Status</th>
                         <th>Gateway</th>
                         <th>Completed</th>
+                        <th class="no-print">Action</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr>
+                        <tr data-filter-status="@item.TransactionStatus"
+                            data-filter-method="@item.PaymentMethod">
                             <td>
                                 <strong>@item.BookingRef</strong>
                             </td>
@@ -75,7 +97,17 @@
                                 }
                                 else
                                 {
-                                    <span class="transaction-badge failed">FAILED</span>
+                                    <span class="transaction-badge failed">
+                                        @(string.IsNullOrWhiteSpace(item.TransactionStatus) ? "FAILED" : item.TransactionStatus)
+                                    </span>
+                                    <span class="app-info app-info-left">
+                                        <button type="button" class="app-info-btn" aria-label="Show transaction status details">i</button>
+                                        <span class="app-info-popover" role="tooltip">
+                                            <b>Status</b> @(string.IsNullOrWhiteSpace(item.TransactionStatus) ? "FAILED" : item.TransactionStatus)<br />
+                                            <b>Reason</b> @(string.IsNullOrWhiteSpace(item.FailureReason) ? "Payment is not marked successful yet." : item.FailureReason)<br />
+                                            <b>When</b> @(item.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                                        </span>
+                                    </span>
                                 }
                             </td>
                             <td>
@@ -87,6 +119,16 @@
                             </td>
                             <td>
                                 @(item.CompletedAt?.ToString("dd MMM yyyy hh:mm tt") ?? "Pending")
+                            </td>
+                            <td class="no-print">
+                                @if (item.TransactionId.HasValue)
+                                {
+                                    <a class="transaction-view-btn" href="/Transaction/Details/@item.TransactionId.Value">View</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">NA</span>
+                                }
                             </td>
                         </tr>
                     }
@@ -102,6 +144,10 @@
 }
 
 .transaction-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
     min-height: 220px;
     padding: 32px;
     border-radius: 8px;
@@ -111,6 +157,13 @@
         repeating-linear-gradient(90deg, rgba(35,31,32,0.08) 0 10px, transparent 10px 24px);
     color: #231f20;
     box-shadow: 0 22px 64px rgba(35,31,32,0.22);
+}
+
+.transaction-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .transaction-kicker,
@@ -174,7 +227,7 @@
 
 .transaction-table {
     margin: 0;
-    min-width: 860px;
+    min-width: 980px;
 }
 
 .transaction-table th {
@@ -219,11 +272,32 @@
     background: var(--app-danger);
 }
 
+.transaction-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    border-radius: 8px;
+    padding: 6px 12px;
+    background: var(--app-primary);
+    color: #fff !important;
+    text-decoration: none;
+    font-weight: 850;
+}
+
 .transaction-failure {
-    display: block;
-    margin-top: 4px;
+    display: inline-flex;
+    margin-top: 0;
+    margin-left: 8px;
     color: var(--app-danger);
     font-weight: 750;
+    white-space: nowrap;
+}
+
+.transaction-failure::before {
+    content: "-";
+    margin-right: 8px;
+    color: var(--app-muted);
 }
 
 .transaction-empty {
@@ -243,6 +317,8 @@
 
 @@media (max-width: 760px) {
     .transaction-hero {
+        align-items: flex-start;
+        flex-direction: column;
         padding: 24px;
     }
 
@@ -250,4 +326,462 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Intro-style payment ledger refresh. */
+.transaction-page {
+    --transaction-page-line: color-mix(in srgb, var(--app-input-border) 76%, transparent);
+    --transaction-page-glass: color-mix(in srgb, var(--app-card) 82%, transparent);
+    --transaction-page-soft: color-mix(in srgb, var(--app-input) 68%, transparent);
+    position: relative;
+    isolation: isolate;
+    padding: clamp(10px, 2vw, 20px) clamp(0px, 1vw, 6px) 44px;
+}
+
+.transaction-page::before {
+    content: "";
+    position: absolute;
+    inset: -18px -16px auto;
+    z-index: -1;
+    height: 360px;
+    border-radius: 8px;
+    background:
+        radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--app-accent) 22%, transparent), transparent 28%),
+        radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--app-primary) 16%, transparent), transparent 26%),
+        linear-gradient(135deg, color-mix(in srgb, var(--app-bg) 78%, var(--app-card) 22%), transparent);
+    pointer-events: none;
+}
+
+.transaction-hero {
+    position: relative;
+    overflow: hidden;
+    min-height: auto;
+    align-items: center;
+    padding: clamp(22px, 4vw, 40px);
+    border: 1px solid color-mix(in srgb, var(--app-accent-strong) 24%, var(--transaction-page-line));
+    background:
+        radial-gradient(circle at 80% 28%, color-mix(in srgb, var(--app-primary) 18%, transparent), transparent 30%),
+        radial-gradient(circle at 12% 90%, color-mix(in srgb, var(--app-accent) 22%, transparent), transparent 34%),
+        linear-gradient(135deg, color-mix(in srgb, var(--app-card) 94%, transparent), color-mix(in srgb, var(--app-input) 66%, transparent));
+    color: var(--app-card-text);
+    box-shadow:
+        0 24px 64px color-mix(in srgb, var(--app-text) 14%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #ffffff 58%, transparent);
+    animation: transactionPageRise 0.56s ease both;
+}
+
+.transaction-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        linear-gradient(color-mix(in srgb, var(--app-text) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--app-text) 6%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 72%);
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 72%);
+    pointer-events: none;
+}
+
+.transaction-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.transaction-hero h1 {
+    color: var(--app-card-text);
+    line-height: 0.95;
+}
+
+.transaction-hero p,
+.transaction-kicker {
+    color: color-mix(in srgb, var(--app-card-text) 74%, var(--app-muted));
+}
+
+.transaction-actions .btn {
+    border-radius: 8px;
+    box-shadow: 0 12px 26px color-mix(in srgb, var(--app-text) 12%, transparent);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.transaction-actions .btn:hover,
+.transaction-actions .btn:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px color-mix(in srgb, var(--app-text) 16%, transparent);
+}
+
+.transaction-stat,
+.transaction-empty,
+.transaction-table-wrap {
+    border-color: var(--transaction-page-line);
+    background: var(--transaction-page-glass);
+    box-shadow: 0 18px 44px color-mix(in srgb, var(--app-text) 10%, transparent);
+    backdrop-filter: blur(14px);
+}
+
+.transaction-stat {
+    --motion-x: 50%;
+    --motion-y: 50%;
+    --motion-tilt-x: 0deg;
+    --motion-tilt-y: 0deg;
+    min-height: 116px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at var(--motion-x) var(--motion-y), color-mix(in srgb, var(--app-accent-strong) 9%, transparent), transparent 32%),
+        linear-gradient(180deg, color-mix(in srgb, var(--app-card) 94%, transparent), color-mix(in srgb, var(--app-input) 52%, transparent)),
+        var(--app-card);
+    transform: perspective(900px) rotateX(var(--motion-tilt-x)) rotateY(var(--motion-tilt-y)) translateY(0);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    animation: transactionCardIn 0.46s ease both;
+}
+
+.transaction-stat:nth-child(2) {
+    animation-delay: 0.05s;
+}
+
+.transaction-stat:nth-child(3) {
+    animation-delay: 0.1s;
+}
+
+.transaction-stat:hover,
+.transaction-stat:focus-within,
+.transaction-stat.is-soft-active {
+    border-color: color-mix(in srgb, var(--app-primary) 38%, var(--transaction-page-line));
+    box-shadow: 0 24px 54px color-mix(in srgb, var(--app-text) 14%, transparent);
+    transform: perspective(900px) rotateX(var(--motion-tilt-x)) rotateY(var(--motion-tilt-y)) translateY(-3px);
+}
+
+.transaction-table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-primary) color-mix(in srgb, var(--app-input-disabled) 72%, transparent);
+}
+
+.transaction-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: max-content !important;
+    min-width: 1540px !important;
+    max-width: none !important;
+    table-layout: auto !important;
+}
+
+.transaction-col-booking {
+    width: 170px;
+}
+
+.transaction-col-show {
+    width: 320px;
+}
+
+.transaction-col-amount {
+    width: 140px;
+}
+
+.transaction-col-method {
+    width: 150px;
+}
+
+.transaction-col-status {
+    width: 170px;
+}
+
+.transaction-col-gateway {
+    width: 310px;
+}
+
+.transaction-col-completed {
+    width: 200px;
+}
+
+.transaction-col-action {
+    width: 80px;
+}
+
+.transaction-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--app-card) 94%, transparent), color-mix(in srgb, var(--app-input) 72%, transparent)) !important;
+}
+
+.transaction-table th,
+.transaction-table td {
+    width: auto !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    text-overflow: clip !important;
+}
+
+.transaction-table td {
+    transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.transaction-table th *,
+.transaction-table td * {
+    max-width: none !important;
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+}
+
+.transaction-table .app-info-popover {
+    min-width: 260px !important;
+    max-width: min(320px, 82vw) !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+}
+
+.transaction-table-wrap::-webkit-scrollbar {
+    height: 10px;
+}
+
+.transaction-table-wrap::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-input-disabled) 72%, transparent);
+}
+
+.transaction-table-wrap::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--app-primary);
+}
+
+.transaction-table tbody tr:hover td {
+    background: color-mix(in srgb, var(--app-accent-strong) 8%, var(--app-card)) !important;
+}
+
+.transaction-view-btn {
+    border: 1px solid color-mix(in srgb, var(--app-primary) 70%, #ffffff);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--app-primary) 92%, #ffffff 8%), color-mix(in srgb, var(--app-accent-strong) 86%, var(--app-primary) 14%));
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--app-primary) 22%, transparent);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.transaction-view-btn:hover,
+.transaction-view-btn:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--app-primary) 28%, transparent);
+}
+
+html[data-theme="dark"] .transaction-stat,
+html[data-theme="dark"] .transaction-empty,
+html[data-theme="dark"] .transaction-table-wrap {
+    box-shadow: 0 18px 44px color-mix(in srgb, #000000 34%, transparent);
+}
+
+@@media (max-width: 760px) {
+    .transaction-hero {
+        align-items: flex-start;
+    }
+
+    .transaction-actions,
+    .transaction-actions .btn {
+        width: 100%;
+    }
+}
+
+@@media (max-width: 520px) {
+    .transaction-hero {
+        padding: 18px;
+    }
+
+}
+
+@@media (prefers-reduced-motion: reduce) {
+    .transaction-hero,
+    .transaction-stat {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+@@keyframes transactionPageRise {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@@keyframes transactionCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@@media print {
+    @@page {
+        size: A4 landscape;
+        margin: 0;
+    }
+
+    .transaction-actions,
+    .transaction-table th.no-print,
+    .transaction-table td.no-print,
+    .transaction-table th:last-child,
+    .transaction-table td:last-child {
+        display: none !important;
+    }
+
+    .transaction-page {
+        padding-bottom: 0 !important;
+    }
+
+    .transaction-page::before,
+    .transaction-hero::before {
+        display: none !important;
+    }
+
+    .transaction-hero {
+        min-height: 0 !important;
+        padding: 12px 14px !important;
+        margin-bottom: 8px !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+
+    .transaction-hero h1 {
+        margin: 4px 0 !important;
+        font-size: 18pt !important;
+        line-height: 1.1 !important;
+    }
+
+    .transaction-hero p {
+        font-size: 8.5pt !important;
+    }
+
+    .transaction-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .transaction-stat {
+        padding: 8px !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+
+    .transaction-stat strong {
+        font-size: 11pt !important;
+    }
+
+    .transaction-table-wrap {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    .transaction-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        font-size: 7pt !important;
+        line-height: 1.18 !important;
+    }
+
+    .transaction-table th,
+    .transaction-table td,
+    .transaction-table td * {
+        max-width: 100% !important;
+        padding: 4px 5px !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+        text-overflow: clip !important;
+    }
+
+    .transaction-table th:nth-child(1),
+    .transaction-table td:nth-child(1) {
+        width: 15% !important;
+    }
+
+    .transaction-table th:nth-child(2),
+    .transaction-table td:nth-child(2) {
+        width: 22% !important;
+    }
+
+    .transaction-table th:nth-child(3),
+    .transaction-table td:nth-child(3),
+    .transaction-table th:nth-child(4),
+    .transaction-table td:nth-child(4),
+    .transaction-table th:nth-child(5),
+    .transaction-table td:nth-child(5) {
+        width: 10% !important;
+    }
+
+    .transaction-table th:nth-child(6),
+    .transaction-table td:nth-child(6) {
+        width: 18% !important;
+    }
+
+    .transaction-table th:nth-child(7),
+    .transaction-table td:nth-child(7) {
+        width: 15% !important;
+    }
+
+    .transaction-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .transaction-badge {
+        min-height: 0 !important;
+        padding: 2px 4px !important;
+        border-radius: 4px !important;
+        font-size: 6.5pt !important;
+    }
+
+    .transaction-failure {
+        margin-top: 2px !important;
+        font-size: 6.5pt !important;
+    }
+}
 </style>
+
+<script>
+(function () {
+    if (!window.matchMedia || !window.matchMedia("(pointer: fine)").matches) return;
+
+    document.querySelectorAll(".transaction-stat").forEach(card => {
+        card.addEventListener("mousemove", event => {
+            const rect = card.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const tiltX = ((y / rect.height) - 0.5) * -2;
+            const tiltY = ((x / rect.width) - 0.5) * 2;
+
+            card.style.setProperty("--motion-x", `${x}px`);
+            card.style.setProperty("--motion-y", `${y}px`);
+            card.style.setProperty("--motion-tilt-x", `${tiltX.toFixed(2)}deg`);
+            card.style.setProperty("--motion-tilt-y", `${tiltY.toFixed(2)}deg`);
+            card.classList.add("is-soft-active");
+        });
+
+        card.addEventListener("mouseleave", () => {
+            card.classList.remove("is-soft-active");
+            card.style.setProperty("--motion-tilt-x", "0deg");
+            card.style.setProperty("--motion-tilt-y", "0deg");
+        });
+    });
+})();
+</script>

@@ -1,114 +1,64 @@
-// =========================================================
-// Activity Logger Service for .NET Web Application
-// Movie Booking System
-// =========================================================
 namespace AmarShowsBook.Services
 {
-using NpgsqlTypes;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Npgsql;
+    using AmarShowsBook.Helpers;
+    using Microsoft.AspNetCore.Http;
+    using Npgsql;
+    using NpgsqlTypes;
+    using System.Text.Json;
 
-public class ActivityLogger : IActivityLogger
-{
-    private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public ActivityLogger(
-        IConfiguration configuration,
-        IHttpContextAccessor httpContextAccessor)
+    // Writes activity rows directly with Npgsql so logging remains usable even when EF mappings are changing.
+    public class ActivityLogger : IActivityLogger
     {
-        _configuration = configuration;
-        _httpContextAccessor = httpContextAccessor;
-    }
+        private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<ActivityLogger> _logger;
 
-    // public async Task LogAsync(
-    //     long? userId,
-    //     string action,
-    //     string module,
-    //     string entityType = null,
-    //     long? entityId = null,
-    //     string description = null,
-    //     string status = "SUCCESS",
-    //     object oldValue = null,
-    //     object newValue = null,
-    //     object metadata = null
-     public async Task LogAsync(
-    int? userId,
-    string action,
-    string module,
-    string entityType,
-    int? entityId = null,
-    string description = null,
-    object oldValue = null,
-    object newValue = null,
-    string status = "SUCCESS",
-
-    string? errorCode = null,
-    string? errorMessage = null,
-    string? errorSource = null,
-    string? stackTrace = null,
-    int isError = 0,
-
-    object metadata = null
-)
-    {
-        try
+        public ActivityLogger(
+            IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor,
+            ILogger<ActivityLogger> logger)
         {
-            Console.WriteLine("LOGGER STARTED");
-            var context = _httpContextAccessor.HttpContext;
+            _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
+        }
 
-            var requestMethod = context?.Request?.Method;
-           // var endpoint = context?.Request?.Path;
-           var endpoint = context?.Request?.Path.ToString();
-            var ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
-            var userAgent = context?.Request?.Headers["User-Agent"].ToString();
+        // Controllers pass business context here; the method adds request context before saving the row.
+        public async Task LogAsync(
+            int? userId,
+            string action,
+            string module,
+            string entityType,
+            int? entityId = null,
+            string? description = null,
+            object? oldValue = null,
+            object? newValue = null,
+            string status = "SUCCESS",
+            string? errorCode = null,
+            string? errorMessage = null,
+            string? errorSource = null,
+            string? stackTrace = null,
+            int isError = 0,
+            object? metadata = null)
+        {
+            try
+            {
+                var context = _httpContextAccessor.HttpContext;
 
-            var connectionString =
-                _configuration.GetConnectionString("DefaultConnection");
+                // These request fields make a plain activity row useful during admin investigation.
+                var requestMethod = context?.Request?.Method;
+                var endpoint = context?.Request?.Path.ToString();
+                var ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
+                var userAgent = context?.Request?.Headers["User-Agent"].ToString();
 
-            await using var connection = new NpgsqlConnection(connectionString);
+                var connectionString =
+                    DatabaseConnectionStringResolver.GetDatabaseConnectionString(_configuration);
 
-            await connection.OpenAsync();
+                await using var connection = new NpgsqlConnection(connectionString);
 
-            //var query = @"
-                // INSERT INTO activity_logs
-                // (
-                //     user_id,
-                //     action,
-                //     module,
-                //     entity_type,
-                //     entity_id,
-                //     description,
-                //     request_method,
-                //     endpoint,
-                //     ip_address,
-                //     user_agent,
-                //     status,
-                //     old_value,
-                //     new_value,
-                //     metadata
-                // )
-                // VALUES
-                // (
-                //     @user_id,
-                //     @action,
-                //     @module,
-                //     @entity_type,
-                //     @entity_id,
-                //     @description,
-                //     @request_method,
-                //     @endpoint,
-                //     @ip_address,
-                //     @user_agent,
-                //     @status,
-                //     CAST(@old_value AS JSONB),
-                //     CAST(@new_value AS JSONB),
-                //     CAST(@metadata AS JSONB)
-                // );
-                
-            //";
-var query = @"
+                await connection.OpenAsync();
+
+                const string query = @"
 INSERT INTO activity_logs
 (
     user_id,
@@ -151,119 +101,55 @@ VALUES
 @is_error,
 @old_value,
 @new_value,
-@metadata
+    @metadata
 );
 ";
-            await using var command = new NpgsqlCommand(query, connection);
 
-            // command.Parameters.AddWithValue("@user_id",
-            //     (object?)userId ?? DBNull.Value);
-            command.Parameters.AddWithValue(
-    "@user_id",
-    userId.HasValue ? userId.Value : DBNull.Value
-);
+                await using var command = new NpgsqlCommand(query, connection);
 
-            command.Parameters.AddWithValue("@action", action);
+                AddValue(command, "@user_id", userId.HasValue ? userId.Value : DBNull.Value);
+                AddValue(command, "@action", action);
+                AddValue(command, "@module", module);
+                AddValue(command, "@entity_type", entityType ?? (object)DBNull.Value);
+                AddValue(command, "@entity_id", entityId.HasValue ? entityId.Value : DBNull.Value);
+                AddValue(command, "@description", description ?? (object)DBNull.Value);
+                AddValue(command, "@request_method", requestMethod ?? (object)DBNull.Value);
+                AddValue(command, "@endpoint", endpoint ?? (object)DBNull.Value);
+                AddValue(command, "@ip_address", ipAddress ?? (object)DBNull.Value);
+                AddValue(command, "@user_agent", userAgent ?? (object)DBNull.Value);
+                AddValue(command, "@status", status);
+                AddValue(command, "@error_code", errorCode ?? (object)DBNull.Value);
+                AddValue(command, "@error_message", errorMessage ?? (object)DBNull.Value);
+                AddValue(command, "@error_source", errorSource ?? (object)DBNull.Value);
+                AddValue(command, "@stack_trace", stackTrace ?? (object)DBNull.Value);
+                AddValue(command, "@is_error", isError);
 
-            command.Parameters.AddWithValue("@module", module);
+                AddJsonValue(command, "@old_value", oldValue);
+                AddJsonValue(command, "@new_value", newValue);
+                AddJsonValue(command, "@metadata", metadata);
 
-            // command.Parameters.AddWithValue("@entity_type",
-            //     (object?)entityType ?? DBNull.Value);
-            command.Parameters.AddWithValue(
-    "@entity_type",
-    entityType ?? (object)DBNull.Value
-);
-
-            // command.Parameters.AddWithValue("@entity_id",
-            //     (object?)entityId ?? DBNull.Value);
-            command.Parameters.AddWithValue(
-    "@entity_id",
-    entityId.HasValue ? entityId.Value : DBNull.Value
-);
-
-            command.Parameters.AddWithValue("@description",
-                (object?)description ?? DBNull.Value);
-
-            command.Parameters.AddWithValue("@request_method",
-                (object?)requestMethod ?? DBNull.Value);
-
-            command.Parameters.AddWithValue("@endpoint",
-                (object?)endpoint ?? DBNull.Value);
-
-            command.Parameters.AddWithValue("@ip_address",
-                (object?)ipAddress ?? DBNull.Value);
-
-            command.Parameters.AddWithValue("@user_agent",
-                (object?)userAgent ?? DBNull.Value);
-
-            command.Parameters.AddWithValue("@status", status);
-command.Parameters.AddWithValue("@error_code",
-    (object?)errorCode ?? DBNull.Value);
-
-command.Parameters.AddWithValue("@error_message",
-    (object?)errorMessage ?? DBNull.Value);
-
-command.Parameters.AddWithValue("@error_source",
-    (object?)errorSource ?? DBNull.Value);
-
-command.Parameters.AddWithValue("@stack_trace",
-    (object?)stackTrace ?? DBNull.Value);
-
-command.Parameters.AddWithValue("@is_error", isError);
-            // command.Parameters.AddWithValue("@old_value",
-            //     JsonSerializer.Serialize(oldValue));
-
-            // command.Parameters.AddWithValue("@new_value",
-            //     JsonSerializer.Serialize(newValue));
-
-            // command.Parameters.AddWithValue("@metadata",
-            //     JsonSerializer.Serialize(metadata));
-command.Parameters.AddWithValue(
-    "@old_value",
-    NpgsqlTypes.NpgsqlDbType.Jsonb,
-    oldValue != null
-        ? JsonSerializer.Serialize(oldValue)
-        : "{}"
-);
-
-command.Parameters.AddWithValue(
-    "@new_value",
-    NpgsqlTypes.NpgsqlDbType.Jsonb,
-    newValue != null
-        ? JsonSerializer.Serialize(newValue)
-        : "{}"
-);
-
-command.Parameters.AddWithValue(
-    "@metadata",
-    NpgsqlTypes.NpgsqlDbType.Jsonb,
-    metadata != null
-        ? JsonSerializer.Serialize(metadata)
-        : "{}"
-);
-
-           // await command.ExecuteNonQueryAsync();
-           Console.WriteLine("EXECUTING INSERT");
-
-await command.ExecuteNonQueryAsync();
-
-Console.WriteLine("INSERT SUCCESS");
+                await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                // Audit logging is best effort. A logging failure should never block login, booking, or admin work.
+                _logger.LogWarning(ex, "Activity log skipped for {Module}/{Action}.", module, action);
+            }
         }
-        // catch
-        // {
-        //     // Optional:
-        //     // Store internal logger exception into file/serilog
-        // }
-//         catch (Exception ex)
-// {
-//     Console.WriteLine(ex.ToString());
-// }
-catch (Exception ex)
-{
-    Console.WriteLine("LOGGER ERROR:");
-    Console.WriteLine(ex.Message);
-    Console.WriteLine(ex.StackTrace);
-}
+
+        private static void AddValue(NpgsqlCommand command, string parameterName, object value)
+        {
+            command.Parameters.AddWithValue(parameterName, value);
+        }
+
+        private static void AddJsonValue(NpgsqlCommand command, string parameterName, object? value)
+        {
+            command.Parameters.AddWithValue(
+                parameterName,
+                NpgsqlDbType.Jsonb,
+                value != null
+                    ? JsonSerializer.Serialize(value)
+                    : "{}");
+        }
     }
-}
 }

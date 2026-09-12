@@ -49,9 +49,6 @@ namespace AmarShowsBook.Models
         [Column("updated_at")]
         public DateTime? updated_at { get; set; }
 
-        // =====================================================
-        // ADMIN WORKFLOW TRACKING
-        // =====================================================
 
         [Column("workflow_action")]
         public string? workflow_action { get; set; }
