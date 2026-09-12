@@ -86,7 +86,18 @@
         Best on laptop or desktop.
     </div>
 
-<div class="showtime-controls @(platformMode ? "platform-mode" : "")">
+<div class="showtime-controls @(platformMode ? "platform-mode" : "is-filter-collapsed")" data-showtime-filter-shell>
+    <button type="button"
+            class="showtime-filter-toggle"
+            id="showtimeFilterToggle"
+            aria-expanded="false"
+            onclick="toggleShowtimeFilters()">
+        <span>
+            <strong>Search & filters</strong>
+            <small>Refine shows, dates, location, and sort order</small>
+        </span>
+        <span class="showtime-filter-arrow" aria-hidden="true">&#9660;</span>
+    </button>
     <div class="location-field search-filter-field">
         <label for="showtimeSearch">Search</label>
         <input id="showtimeSearch"
@@ -3991,6 +4002,91 @@ html[data-theme="dark"] .showtime-stage-screen {
         transition: transform 0.18s ease;
     }
 }
+
+.showtime-filter-toggle {
+    display: none;
+}
+
+@@media (max-width: 820px) {
+    .showtime-filter-toggle {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        min-height: 46px;
+        padding: 9px 11px;
+        border: 1px solid color-mix(in srgb, var(--app-accent-strong) 28%, var(--showtime-line));
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--app-input) 78%, var(--app-card) 22%);
+        color: var(--app-card-text);
+        box-shadow: 0 12px 24px color-mix(in srgb, var(--app-text) 8%, transparent);
+        text-align: left;
+    }
+
+    .showtime-filter-toggle strong,
+    .showtime-filter-toggle small {
+        display: block;
+    }
+
+    .showtime-filter-toggle strong {
+        font-size: 0.88rem;
+        font-weight: 900;
+        line-height: 1.1;
+    }
+
+    .showtime-filter-toggle small {
+        margin-top: 2px;
+        color: var(--app-muted);
+        font-size: 0.72rem;
+        font-weight: 750;
+        line-height: 1.2;
+    }
+
+    .showtime-filter-arrow {
+        flex: 0 0 34px;
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--app-primary);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 950;
+        line-height: 1;
+        transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .showtime-filter-toggle:hover,
+    .showtime-filter-toggle:focus-visible {
+        border-color: var(--app-primary);
+        outline: none;
+        box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--app-primary) 18%, transparent);
+    }
+
+    .showtime-controls.platform-mode .showtime-filter-toggle {
+        display: none !important;
+    }
+
+    .showtime-controls:not(.platform-mode).is-filter-collapsed > .location-field,
+    .showtime-controls:not(.platform-mode).is-filter-collapsed > .location-picker,
+    .showtime-controls:not(.platform-mode).is-filter-collapsed > .location-panel,
+    .showtime-controls:not(.platform-mode).is-filter-collapsed > .location-status {
+        display: none !important;
+    }
+
+    .showtime-controls:not(.platform-mode).is-filter-expanded .showtime-filter-arrow {
+        transform: rotate(180deg);
+    }
+}
+
+@@media (min-width: 821px) {
+    .showtime-filter-toggle {
+        display: none !important;
+    }
+}
 </style>
 
 <script>
@@ -4002,6 +4098,61 @@ let currentLocationFilter=null;
 let isRestoringShowtimeFilters=false;
 const isPlatformMode=@(platformMode.ToString().ToLowerInvariant());
 const isOttMode=@(string.Equals(selectedType, "OTT", StringComparison.OrdinalIgnoreCase).ToString().ToLowerInvariant());
+
+function isSmallShowtimeFilterScreen()
+{
+    return window.matchMedia("(max-width: 820px)").matches;
+}
+
+function setShowtimeFilterToggleState(isExpanded)
+{
+    const toggle=document.getElementById("showtimeFilterToggle");
+    if(!toggle)
+    {
+        return;
+    }
+
+    toggle.setAttribute("aria-expanded",String(Boolean(isExpanded)));
+}
+
+function toggleShowtimeFilters()
+{
+    const controls=document.querySelector("[data-showtime-filter-shell]");
+    if(!controls || controls.classList.contains("platform-mode") || !isSmallShowtimeFilterScreen())
+    {
+        return;
+    }
+
+    const shouldExpand=controls.classList.contains("is-filter-collapsed");
+    controls.classList.toggle("is-filter-collapsed",!shouldExpand);
+    controls.classList.toggle("is-filter-expanded",shouldExpand);
+    setShowtimeFilterToggleState(shouldExpand);
+}
+
+function setupShowtimeFilterCollapse()
+{
+    const controls=document.querySelector("[data-showtime-filter-shell]");
+    if(!controls || controls.classList.contains("platform-mode"))
+    {
+        return;
+    }
+
+    const syncFilterLayout=()=>{
+        if(isSmallShowtimeFilterScreen())
+        {
+            const isExpanded=controls.classList.contains("is-filter-expanded");
+            controls.classList.toggle("is-filter-collapsed",!isExpanded);
+            setShowtimeFilterToggleState(isExpanded);
+            return;
+        }
+
+        controls.classList.remove("is-filter-collapsed","is-filter-expanded");
+        setShowtimeFilterToggleState(true);
+    };
+
+    syncFilterLayout();
+    window.addEventListener("resize",syncFilterLayout);
+}
 
 function formatOttTime(seconds)
 {
@@ -5464,6 +5615,8 @@ async function clearAllShowtimeFilters()
 document.addEventListener(
 "DOMContentLoaded",
 async ()=>{
+
+setupShowtimeFilterCollapse();
 
 if(isPlatformMode)
 {

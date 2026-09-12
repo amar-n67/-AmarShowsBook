@@ -1221,6 +1221,19 @@
             margin: 0 auto;
         }
 
+        .final-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 12px;
+            width: min(100%, 430px);
+            margin: 20px 0 0 auto;
+        }
+
+        .final-actions .btn {
+            flex: 1 1 170px;
+        }
+
         .final-cta .btn-soft {
             color: #172033;
             background: #fffefa;
@@ -2050,6 +2063,10 @@
             <div>
                 <h2 id="readyTitle">Ready for the show list?</h2>
                 <p>Continue to the public home listing, pick a show, and login only when booking is needed.</p>
+                <div class="final-actions" aria-label="Final intro actions">
+                    <a class="btn btn-soft" href="/Auth/Login?returnUrl=%2FHome%2FShowTime">Login</a>
+                    <a class="btn btn-soft" href="/Home/ShowTime">Browse Shows</a>
+                </div>
             </div>
         </section>
     </main>
