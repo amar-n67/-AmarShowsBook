@@ -556,7 +556,7 @@ INSERT INTO public.developer_profiles
 )
 SELECT
     1,
-    'showTime Team',
+    'Amar ChaudharY',
     'example@gmail.com',
     'Developer Profile',
     0,
@@ -588,6 +588,12 @@ WHERE NOT EXISTS
 
 UPDATE public.developer_profiles
 SET
+    full_name =
+        CASE
+            WHEN full_name IS NULL OR btrim(full_name) = '' OR lower(btrim(full_name)) IN ('showtime team', 'amar')
+                THEN 'Amar ChaudharY'
+            ELSE full_name
+        END,
     twitter_url = COALESCE(NULLIF(twitter_url, ''), ''),
     support_phone = COALESCE(NULLIF(support_phone, ''), '+91 9651698863'),
     support_email = COALESCE(NULLIF(support_email, ''), 'support@showtime.com'),

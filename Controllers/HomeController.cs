@@ -32,7 +32,7 @@ namespace AmarShowsBook.Controllers
 
         public IActionResult Index(string type = "All")
         {
-            return RedirectToAction(nameof(ShowTime), new { type });
+            return RedirectToAction(nameof(Intro));
         }
 
         // The intro reads developer contact details when available, with a fallback so startup still opens cleanly.

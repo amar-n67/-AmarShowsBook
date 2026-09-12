@@ -494,6 +494,14 @@
             animation-delay: 0.24s, 1.5s;
         }
 
+        .ad-strip span:nth-child(5) {
+            animation-delay: 0.32s, 2s;
+        }
+
+        .ad-strip span:nth-child(6) {
+            animation-delay: 0.4s, 2.5s;
+        }
+
         .mini-metrics {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -745,6 +753,14 @@
         .feature:nth-child(4) .feature-icon {
             color: #192235;
             background: var(--sun);
+        }
+
+        .feature:nth-child(5) .feature-icon {
+            background: var(--plum);
+        }
+
+        .feature:nth-child(6) .feature-icon {
+            background: var(--teal);
         }
 
         .feature h3 {
@@ -1812,7 +1828,7 @@
                 <h1 id="introTitle">Book shows with a smoother showTime.</h1>
                 <p class="lead">
                     A clean ticket booking experience for movies, standup, events, news viewing, secure payments,
-                    refunds, wallet history, admin controls, and role-based management.
+                    refunds, wallet history, Amaro assistance, quick theme switching, admin controls, and role-based management.
                 </p>
 
                 <div class="hero-actions">
@@ -1825,6 +1841,8 @@
                     <span>Secure payment flow</span>
                     <span>Clean ticket experience</span>
                     <span>Admin-ready control</span>
+                    <span>Double-click themes</span>
+                    <span>Amaro assistant</span>
                 </div>
 
                 <div class="mini-metrics" aria-label="Application highlights">
@@ -1886,6 +1904,16 @@
                     <div class="feature-icon">04</div>
                     <h3>Admin workspace</h3>
                     <p>Role access, user management, show control, cancellation history, relaunch tools, and audit logs.</p>
+                </article>
+                <article class="feature">
+                    <div class="feature-icon">05</div>
+                    <h3>Theme switching</h3>
+                    <p>Double-click on desktop or double-tap on touch devices to change themes anywhere in the application.</p>
+                </article>
+                <article class="feature">
+                    <div class="feature-icon">06</div>
+                    <h3>Amaro assistant</h3>
+                    <p>Amaro helps visitors explore shows, seats, prices, support options, and logged-in page actions.</p>
                 </article>
             </div>
         </section>
@@ -2047,20 +2075,37 @@
                 document.documentElement.dataset.theme = theme;
             }
 
-            function isMobileThemeTapTarget(target) {
+            function isThemeGestureTarget(target) {
                 const element = target instanceof Element ? target : target?.parentElement;
                 return !element?.closest("a,button,input,select,textarea,label,summary,[role='button'],[contenteditable='true'],[data-no-theme-double-tap]");
             }
 
-            function enableMobileThemeDoubleTap() {
+            function cycleIntroTheme() {
+                const currentTheme = localStorage.getItem("showTimeTheme") || "cinema";
+                const currentIndex = themeOrder.indexOf(currentTheme);
+                const nextTheme = themeOrder[(currentIndex + 1 + themeOrder.length) % themeOrder.length];
+
+                setIntroTheme(nextTheme);
+                navigator.vibrate?.(18);
+            }
+
+            function enableThemeDoubleGesture() {
                 const isTouchDevice = window.matchMedia("(hover: none), (pointer: coarse)").matches ||
                     navigator.maxTouchPoints > 0;
-
-                if (!isTouchDevice) return;
-
+                let lastTouchThemeChangeAt = 0;
                 let lastTapTime = 0;
                 let lastTapX = 0;
                 let lastTapY = 0;
+
+                document.addEventListener("dblclick", function (event) {
+                    if (Date.now() - lastTouchThemeChangeAt < 500) return;
+                    if (!isThemeGestureTarget(event.target)) return;
+
+                    event.preventDefault();
+                    cycleIntroTheme();
+                });
+
+                if (!isTouchDevice) return;
 
                 document.addEventListener("touchend", function (event) {
                     if (event.changedTouches.length !== 1 || event.touches.length > 0) return;
@@ -2082,15 +2127,11 @@
 
                     lastTapTime = 0;
 
-                    if (!isMobileThemeTapTarget(event.target)) return;
+                    if (!isThemeGestureTarget(event.target)) return;
 
                     event.preventDefault();
-                    const currentTheme = localStorage.getItem("showTimeTheme") || "cinema";
-                    const currentIndex = themeOrder.indexOf(currentTheme);
-                    const nextTheme = themeOrder[(currentIndex + 1 + themeOrder.length) % themeOrder.length];
-
-                    setIntroTheme(nextTheme);
-                    navigator.vibrate?.(18);
+                    lastTouchThemeChangeAt = Date.now();
+                    cycleIntroTheme();
                 }, { passive: false });
             }
 
@@ -2159,7 +2200,7 @@
             updateTabIcon();
             window.setIntroTheme = setIntroTheme;
             setIntroTheme(localStorage.getItem("showTimeTheme") || "cinema");
-            enableMobileThemeDoubleTap();
+            enableThemeDoubleGesture();
             setInterval(updateTabTitle, 1400);
             setInterval(updateTabIcon, 420);
 

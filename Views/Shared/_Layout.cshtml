@@ -3790,21 +3790,38 @@ updateDateTime();
         markThemeButton(committedTheme);
     }
 
-    function isMobileThemeTapTarget(target) {
+    function isThemeGestureTarget(target) {
         const element = target instanceof Element ? target : target?.parentElement;
         return !element?.closest("a,button,input,select,textarea,label,summary,[role='button'],[contenteditable='true'],[data-no-theme-double-tap]");
     }
 
-    function enableMobileThemeDoubleTap() {
+    function cycleAppTheme() {
+        const themeOrder = ["cinema", "dark", "white", "system"];
+        const currentTheme = localStorage.getItem("showTimeTheme") || committedTheme || "cinema";
+        const currentIndex = themeOrder.indexOf(currentTheme);
+        const nextTheme = themeOrder[(currentIndex + 1 + themeOrder.length) % themeOrder.length];
+
+        window.setAppTheme(nextTheme);
+        navigator.vibrate?.(18);
+    }
+
+    function enableThemeDoubleGesture() {
         const isTouchDevice = window.matchMedia("(hover: none), (pointer: coarse)").matches ||
             navigator.maxTouchPoints > 0;
-
-        if (!isTouchDevice) return;
-
-        const themeOrder = ["cinema", "dark", "white", "system"];
+        let lastTouchThemeChangeAt = 0;
         let lastTapTime = 0;
         let lastTapX = 0;
         let lastTapY = 0;
+
+        document.addEventListener("dblclick", function (event) {
+            if (Date.now() - lastTouchThemeChangeAt < 500) return;
+            if (!isThemeGestureTarget(event.target)) return;
+
+            event.preventDefault();
+            cycleAppTheme();
+        });
+
+        if (!isTouchDevice) return;
 
         document.addEventListener("touchend", function (event) {
             if (event.changedTouches.length !== 1 || event.touches.length > 0) return;
@@ -3826,15 +3843,11 @@ updateDateTime();
 
             lastTapTime = 0;
 
-            if (!isMobileThemeTapTarget(event.target)) return;
+            if (!isThemeGestureTarget(event.target)) return;
 
             event.preventDefault();
-            const currentTheme = localStorage.getItem("showTimeTheme") || committedTheme || "cinema";
-            const currentIndex = themeOrder.indexOf(currentTheme);
-            const nextTheme = themeOrder[(currentIndex + 1 + themeOrder.length) % themeOrder.length];
-
-            window.setAppTheme(nextTheme);
-            navigator.vibrate?.(18);
+            lastTouchThemeChangeAt = Date.now();
+            cycleAppTheme();
         }, { passive: false });
     }
 
@@ -3861,7 +3874,7 @@ updateDateTime();
             button.addEventListener("blur", restoreThemePreview);
         });
 
-        enableMobileThemeDoubleTap();
+        enableThemeDoubleGesture();
     });
 })();
 </script>

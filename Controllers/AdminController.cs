@@ -486,7 +486,7 @@ INSERT INTO public.developer_profiles
 VALUES
 (
     1,
-    'showTime Team',
+    'Amar ChaudharY',
     'example@gmail.com',
     'Developer Profile',
     0,
