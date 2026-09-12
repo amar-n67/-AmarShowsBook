@@ -1339,6 +1339,25 @@ html[data-theme="dark"] [style*="color: black"] {
     outline: none;
 }
 
+.film-guest-login-btn {
+    margin-left: 8px;
+    border-color: color-mix(in srgb, var(--app-accent) 62%, transparent);
+    color: #231f20 !important;
+    background: linear-gradient(135deg, var(--app-accent), color-mix(in srgb, var(--app-accent) 76%, #ffffff));
+    box-shadow: 0 10px 22px rgba(0,0,0,0.16);
+}
+
+.film-guest-login-btn .film-nav-icon {
+    color: currentColor;
+    background: transparent;
+}
+
+.film-guest-login-btn:hover,
+.film-guest-login-btn:focus-visible {
+    color: #231f20 !important;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--app-accent) 84%, #ffffff), var(--app-accent));
+}
+
 	.film-nav-icon {
 	    display: inline-flex;
 	    align-items: center;
@@ -2380,6 +2399,12 @@ main,
     -webkit-overflow-scrolling: touch;
 }
 
+@@media (max-width: 768px) {
+    .film-navbar-login {
+        display: none;
+    }
+}
+
 @@media (max-width: 760px) {
     .film-navbar {
         margin: 8px;
@@ -2404,6 +2429,19 @@ main,
     .film-brand-logo {
         width: 36px;
         height: 36px;
+    }
+
+    .film-guest-login-btn {
+        min-height: 38px;
+        padding: 7px 10px;
+        gap: 6px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+    }
+
+    .film-guest-login-btn .film-nav-icon {
+        width: 24px;
+        height: 24px;
     }
 
     .film-mobile-menu-btn {
@@ -2968,7 +3006,7 @@ z-index:9999;">
 </div>
 
 <header>
-<nav class="navbar navbar-expand-sm film-navbar @(Context.Session.GetString("UserEmail") != null ? "film-navbar-home" : "") mb-3">
+<nav class="navbar navbar-expand-sm film-navbar @(Context.Session.GetString("UserEmail") != null ? "film-navbar-home" : "") @((ViewContext.RouteData.Values["controller"]?.ToString() == "Auth" && ViewContext.RouteData.Values["action"]?.ToString() == "Login") ? "film-navbar-login" : "") mb-3">
 <div class="container-fluid">
 
 @{
@@ -3023,6 +3061,7 @@ z-index:9999;">
 	        "chart" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4\" y=\"4\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"14\" y=\"4\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"4\" y=\"14\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"6\" height=\"6\" rx=\"1.5\"/></svg>",
 	        "user" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4.5 20c1.7-4 13.3-4 15 0\"/></svg>",
 	        "code" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"4.5\" width=\"17\" height=\"15\" rx=\"2\"/><path d=\"m9 10-3 2 3 2\"/><path d=\"m15 10 3 2-3 2\"/><path d=\"m13 8-2 8\"/></svg>",
+	        "login" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M14 5h3.5A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5H14\"/><path d=\"M4 12h10\"/><path d=\"m10 8 4 4-4 4\"/></svg>",
 	        "logout" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10\"/><path d=\"M13 12h7\"/><path d=\"m17 8 4 4-4 4\"/></svg>",
 	        "menu" => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 7h16\"/><path d=\"M4 12h16\"/><path d=\"M4 17h16\"/></svg>",
 	        _ => "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><path d=\"M12 8v8\"/><path d=\"M8 12h8\"/></svg>"
@@ -3151,6 +3190,19 @@ z-index:9999;">
                 </div>
             }
         </div>
+    }
+
+    @if (!isLoggedIn &&
+         currentController.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
+         currentAction.Equals("ShowTime", StringComparison.OrdinalIgnoreCase))
+    {
+        <a class="film-nav-btn film-guest-login-btn"
+           href="/Auth/Login?returnUrl=%2FHome%2FShowTime"
+           title="Login"
+           aria-label="Login">
+            <span class="film-nav-icon">@Html.Raw(navIcon("login"))</span>
+            <span class="film-nav-label">Login</span>
+        </a>
     }
 </div>
 </nav>
