@@ -958,6 +958,247 @@
         height: 132px;
     }
 }
+
+/* Intro-style visual refresh for the customer booking ledger. */
+.my-bookings-page {
+    --booking-page-line: color-mix(in srgb, var(--app-input-border) 76%, transparent);
+    --booking-page-glass: color-mix(in srgb, var(--app-card) 82%, transparent);
+    --booking-page-soft: color-mix(in srgb, var(--app-input) 68%, transparent);
+    position: relative;
+    isolation: isolate;
+    padding: clamp(10px, 2vw, 20px) clamp(0px, 1vw, 6px) 44px;
+}
+
+.my-bookings-page::before {
+    content: "";
+    position: absolute;
+    inset: -18px -16px auto;
+    z-index: -1;
+    height: 360px;
+    border-radius: 8px;
+    background:
+        radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--app-accent) 22%, transparent), transparent 28%),
+        radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--app-accent-strong) 18%, transparent), transparent 26%),
+        linear-gradient(135deg, color-mix(in srgb, var(--app-bg) 78%, var(--app-card) 22%), transparent);
+    pointer-events: none;
+}
+
+.booking-header {
+    position: relative;
+    overflow: hidden;
+    min-height: auto;
+    align-items: center;
+    padding: clamp(22px, 4vw, 40px);
+    border: 1px solid color-mix(in srgb, var(--app-accent-strong) 24%, var(--booking-page-line));
+    background:
+        radial-gradient(circle at 80% 28%, color-mix(in srgb, var(--app-accent-strong) 18%, transparent), transparent 30%),
+        radial-gradient(circle at 12% 92%, color-mix(in srgb, var(--app-accent) 22%, transparent), transparent 34%),
+        linear-gradient(135deg, color-mix(in srgb, var(--app-card) 94%, transparent), color-mix(in srgb, var(--app-input) 66%, transparent));
+    color: var(--app-card-text);
+    box-shadow:
+        0 24px 64px color-mix(in srgb, var(--app-text) 14%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #ffffff 58%, transparent);
+    animation: bookingPageRise 0.56s ease both;
+}
+
+.booking-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        linear-gradient(color-mix(in srgb, var(--app-text) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--app-text) 6%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 72%);
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.5), transparent 72%);
+    pointer-events: none;
+}
+
+.booking-header > * {
+    position: relative;
+    z-index: 1;
+}
+
+.booking-header h1 {
+    color: var(--app-card-text);
+    line-height: 0.95;
+}
+
+.booking-header p,
+.booking-kicker {
+    color: color-mix(in srgb, var(--app-card-text) 74%, var(--app-muted));
+}
+
+.booking-summary {
+    border-color: color-mix(in srgb, var(--app-accent-strong) 30%, var(--booking-page-line));
+    background: color-mix(in srgb, var(--app-card) 62%, transparent);
+    color: var(--app-card-text);
+    box-shadow: 0 18px 38px color-mix(in srgb, var(--app-text) 10%, transparent);
+    backdrop-filter: blur(16px);
+}
+
+.booking-summary span,
+.booking-summary strong,
+.booking-summary small {
+    color: var(--app-card-text);
+}
+
+.booking-refund-rule,
+.booking-category-tabs,
+.booking-category-head,
+.empty-booking {
+    border-color: var(--booking-page-line);
+    background: var(--booking-page-glass);
+    box-shadow: 0 18px 44px color-mix(in srgb, var(--app-text) 10%, transparent);
+    backdrop-filter: blur(14px);
+}
+
+.booking-category-tab {
+    border-color: color-mix(in srgb, var(--app-accent-strong) 18%, var(--booking-page-line));
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--app-card) 92%, transparent), color-mix(in srgb, var(--app-input) 42%, transparent));
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.booking-category-tab:hover,
+.booking-category-tab:focus-visible,
+.booking-category-tab.active {
+    border-color: color-mix(in srgb, var(--app-primary) 52%, var(--booking-page-line));
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--app-primary) 16%, transparent);
+}
+
+.booking-section-list {
+    padding-block: 2px 8px;
+}
+
+.booking-card {
+    --motion-x: 50%;
+    --motion-y: 50%;
+    --motion-tilt-x: 0deg;
+    --motion-tilt-y: 0deg;
+    overflow: visible;
+    border-color: color-mix(in srgb, var(--app-accent-strong) 18%, var(--booking-page-line));
+    background:
+        radial-gradient(circle at var(--motion-x) var(--motion-y), color-mix(in srgb, var(--app-accent-strong) 8%, transparent), transparent 30%),
+        linear-gradient(180deg, color-mix(in srgb, var(--app-card) 94%, transparent), color-mix(in srgb, var(--app-input) 52%, transparent)),
+        var(--app-card);
+    box-shadow: 0 18px 42px color-mix(in srgb, var(--app-text) 11%, transparent);
+    transform: perspective(900px) rotateX(var(--motion-tilt-x)) rotateY(var(--motion-tilt-y)) translateY(0);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    animation: bookingPageCardIn 0.46s ease both;
+}
+
+.booking-card:nth-child(2n) {
+    animation-delay: 0.05s;
+}
+
+.booking-card:hover,
+.booking-card:focus-within,
+.booking-card.is-soft-active {
+    z-index: 5;
+    border-color: color-mix(in srgb, var(--app-primary) 38%, var(--booking-page-line));
+    box-shadow: 0 24px 54px color-mix(in srgb, var(--app-text) 14%, transparent);
+    transform: perspective(900px) rotateX(var(--motion-tilt-x)) rotateY(var(--motion-tilt-y)) translateY(-3px);
+}
+
+.booking-card-cancelled {
+    background:
+        radial-gradient(circle at var(--motion-x) var(--motion-y), color-mix(in srgb, #dc2626 10%, transparent), transparent 30%),
+        linear-gradient(135deg, color-mix(in srgb, #dc2626 12%, var(--app-card)), color-mix(in srgb, var(--app-card) 88%, transparent));
+}
+
+.booking-main,
+.booking-meta div {
+    border: 1px solid color-mix(in srgb, var(--app-input-border) 70%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--app-card) 58%, transparent);
+}
+
+.booking-main {
+    padding: 12px;
+}
+
+.booking-actions .btn,
+.refund-status-btn {
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.booking-actions .btn:hover,
+.booking-actions .btn:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--app-text) 14%, transparent);
+}
+
+html[data-theme="dark"] .booking-summary,
+html[data-theme="dark"] .booking-refund-rule,
+html[data-theme="dark"] .booking-category-tabs,
+html[data-theme="dark"] .booking-category-head,
+html[data-theme="dark"] .booking-card,
+html[data-theme="dark"] .empty-booking {
+    box-shadow: 0 18px 44px color-mix(in srgb, #000000 34%, transparent);
+}
+
+@@media (max-width: 760px) {
+    .booking-header {
+        align-items: stretch;
+    }
+
+    .booking-category-tabs {
+        position: relative;
+        top: auto;
+    }
+}
+
+@@media (max-width: 520px) {
+    .booking-header {
+        padding: 18px;
+    }
+
+    .booking-top,
+    .booking-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .booking-actions .btn,
+    .booking-actions form,
+    .booking-actions button,
+    .refund-status-btn {
+        width: 100%;
+    }
+}
+
+@@media (prefers-reduced-motion: reduce) {
+    .booking-header,
+    .booking-card {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+@@keyframes bookingPageRise {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@@keyframes bookingPageCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 </style>
 
 <script>
@@ -1024,5 +1265,31 @@ document.querySelectorAll(".cancel-form").forEach(form => {
     });
 
     showCategory("booked", false);
+})();
+
+(function () {
+    if (!window.matchMedia || !window.matchMedia("(pointer: fine)").matches) return;
+
+    document.querySelectorAll(".booking-card").forEach(card => {
+        card.addEventListener("mousemove", event => {
+            const rect = card.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const tiltX = ((y / rect.height) - 0.5) * -2;
+            const tiltY = ((x / rect.width) - 0.5) * 2;
+
+            card.style.setProperty("--motion-x", `${x}px`);
+            card.style.setProperty("--motion-y", `${y}px`);
+            card.style.setProperty("--motion-tilt-x", `${tiltX.toFixed(2)}deg`);
+            card.style.setProperty("--motion-tilt-y", `${tiltY.toFixed(2)}deg`);
+            card.classList.add("is-soft-active");
+        });
+
+        card.addEventListener("mouseleave", () => {
+            card.classList.remove("is-soft-active");
+            card.style.setProperty("--motion-tilt-x", "0deg");
+            card.style.setProperty("--motion-tilt-y", "0deg");
+        });
+    });
 })();
 </script>

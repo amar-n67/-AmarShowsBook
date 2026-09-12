@@ -93,7 +93,7 @@
                class="form-control"
                type="search"
                data-app-search-input
-               placeholder="Search title, venue, city..."
+               placeholder="Title, venue, city..."
                autocomplete="off"
                oninput="applyLocationFilter()" />
     </div>
@@ -118,13 +118,7 @@
         </button>
     </div>
     <div class="location-field compact-filter-field">
-        <label for="ratingFilter">Rating <span aria-hidden="true">★</span></label>
-        <select id="ratingFilter" class="form-control" onchange="applyLocationFilter()">
-            <option value="">Any</option>
-        </select>
-    </div>
-    <div class="location-field compact-filter-field">
-        <label for="dateFilter">Available Dates</label>
+        <label for="dateFilter">Date</label>
         <select id="dateFilter" class="form-control" onchange="applyLocationFilter()">
             <option value="">Any date</option>
         </select>
@@ -134,7 +128,8 @@
         <select id="sortShows" class="form-control" onchange="applyLocationFilter()">
             <option value="upcoming">Upcoming first</option>
             <option value="today">Today first</option>
-            <option value="rating">Highest rating</option>
+            <option value="rating">Rating high to low</option>
+            <option value="ratingLow">Rating low to high</option>
             <option value="time">Earliest time</option>
             <option value="title">Name A-Z</option>
             <option value="location">Location A-Z</option>
@@ -3312,13 +3307,36 @@ html[data-theme="dark"] .showtime-hero-tags span {
 .showtime-controls {
     position: relative;
     overflow: hidden;
-    margin-top: -24px;
+    grid-template-columns: minmax(230px, 1.7fr) minmax(112px, 0.72fr) minmax(168px, 1fr) minmax(124px, 0.78fr) minmax(150px, 0.9fr) minmax(68px, auto);
+    gap: 8px;
+    align-items: end;
+    margin-top: 18px;
+    padding: 8px;
     border-color: color-mix(in srgb, var(--app-accent-strong) 22%, var(--showtime-line));
     background:
         linear-gradient(180deg, color-mix(in srgb, var(--app-card) 88%, transparent), color-mix(in srgb, var(--app-input) 72%, transparent)),
         var(--app-card);
     box-shadow: 0 22px 48px color-mix(in srgb, var(--app-text) 12%, transparent);
     animation: showtimeConsoleIn 0.72s ease 0.1s both;
+}
+
+.showtime-controls .location-field,
+.showtime-controls .location-picker {
+    gap: 3px;
+}
+
+.showtime-controls .search-filter-field,
+.showtime-controls .compact-filter-field,
+.showtime-controls #showTypeFilter,
+.showtime-controls #dateFilter,
+.showtime-controls #sortShows {
+    min-width: 0;
+}
+
+.showtime-controls .location-field label,
+.showtime-controls .location-picker label {
+    font-size: 0.58rem;
+    line-height: 1;
 }
 
 .showtime-controls::before {
@@ -3337,7 +3355,8 @@ html[data-theme="dark"] .showtime-hero-tags span {
 .showtime-controls .location-current-btn,
 .showtime-controls .location-reset-btn,
 .showtime-controls .showtime-clear-btn {
-    min-height: 44px;
+    min-height: 38px;
+    font-size: 0.78rem;
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
@@ -3347,6 +3366,37 @@ html[data-theme="dark"] .showtime-hero-tags span {
     border-color: color-mix(in srgb, var(--app-accent-strong) 48%, var(--showtime-line));
     box-shadow: 0 10px 20px color-mix(in srgb, var(--app-text) 7%, transparent);
     transform: translateY(-1px);
+}
+
+@@media (max-width: 1100px) {
+    .showtime-controls {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@@media (max-width: 820px) {
+    .showtime-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .showtime-controls .search-filter-field,
+    .showtime-controls .location-picker,
+    .showtime-controls .location-panel,
+    .showtime-controls .location-status {
+        grid-column: 1 / -1;
+    }
+}
+
+@@media (max-width: 560px) {
+    .showtime-controls {
+        grid-template-columns: 1fr;
+        gap: 7px;
+        padding: 8px;
+    }
+
+    .showtime-controls .filter-clear-field {
+        grid-column: 1 / -1;
+    }
 }
 
 .schedule-board {
@@ -3843,6 +3893,79 @@ html[data-theme="dark"] .showtime-stage-screen {
     transform: translateY(-3px);
 }
 
+.schedule-board {
+    --show-card-gap: 16px;
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--show-card-gap);
+    justify-content: stretch;
+    align-items: stretch;
+    grid-auto-rows: 1fr;
+}
+
+.show-card {
+    width: 100%;
+    max-width: none;
+    min-height: 560px;
+    justify-self: stretch;
+}
+
+.show-card .card-body {
+    grid-template-rows: auto auto minmax(168px, 1fr) auto;
+}
+
+.movie-details {
+    align-content: start;
+    min-height: 168px;
+}
+
+.venue-row {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+@@media (max-width: 1200px) {
+    .schedule-board {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@@media (max-width: 900px) {
+    .schedule-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@@media (max-width: 560px) {
+    .schedule-board {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr);
+        justify-content: stretch;
+        grid-auto-rows: auto;
+    }
+
+    .show-card {
+        max-width: none;
+        min-height: auto;
+    }
+
+    .show-card .card-body {
+        grid-template-rows: auto auto auto auto;
+    }
+
+    .movie-details {
+        min-height: 0;
+    }
+
+    .venue-row {
+        display: block;
+        overflow: visible;
+        -webkit-line-clamp: unset;
+    }
+}
+
 @@media (pointer: fine) {
     .show-card {
         --card-x: 50%;
@@ -4253,7 +4376,6 @@ function updateFilterFieldStyles()
     toggleFilterActive("country",Boolean(document.getElementById("country")?.value));
     toggleFilterActive("state",Boolean(document.getElementById("state")?.value));
     toggleFilterActive("district",Boolean(document.getElementById("district")?.value));
-    toggleFilterActive("ratingFilter",Boolean(document.getElementById("ratingFilter")?.value));
     toggleFilterActive("dateFilter",Boolean(document.getElementById("dateFilter")?.value));
     toggleFilterActive("sortShows",(document.getElementById("sortShows")?.value || "upcoming") !== "upcoming");
 }
@@ -4271,7 +4393,6 @@ function getShowtimeFilterState()
         country:document.getElementById("country")?.value || "",
         state:document.getElementById("state")?.value || "",
         district:document.getElementById("district")?.value || "",
-        rating:document.getElementById("ratingFilter")?.value || "",
         date:document.getElementById("dateFilter")?.value || "",
         sort:document.getElementById("sortShows")?.value || "upcoming",
         locationDisplayOverride,
@@ -4295,7 +4416,6 @@ function saveShowtimeFilters()
             (state.type && state.type!=="All") ||
             state.state ||
             state.district ||
-            state.rating ||
             state.date ||
             (state.sort && state.sort!=="upcoming") ||
             state.locationDisplayOverride ||
@@ -4516,14 +4636,6 @@ function populateDynamicFilters()
 {
     const cards=Array.from(document.querySelectorAll(".show-card"));
 
-    const ratings=[...new Set(cards
-    .map(card=>card.dataset.rating)
-    .filter(Boolean))]
-    .sort((a,b)=>Number(b)-Number(a))
-    .map(value=>({value,label:value}));
-
-    setSimpleOptions("ratingFilter",ratings,"Any");
-
     const dates=[...new Map(cards
     .map(card=>({
         value:card.dataset.date || "",
@@ -4554,7 +4666,6 @@ async function restoreSavedShowtimeFilters()
         (saved.type && saved.type!=="All") ||
         saved.state ||
         saved.district ||
-        saved.rating ||
         saved.date ||
         (saved.sort && saved.sort!=="upcoming") ||
         saved.locationDisplayOverride ||
@@ -4588,7 +4699,6 @@ async function restoreSavedShowtimeFilters()
         }
 
         setControlValue("showtimeSearch",saved.search || "");
-        setControlValue("ratingFilter",saved.rating || "");
         setControlValue("dateFilter",saved.date || "");
         setControlValue("sortShows",saved.sort || "upcoming");
         setControlValue("showTypeFilter",saved.type || "All");
@@ -5005,9 +5115,6 @@ function applyLocationFilter()
     const district=
     document.getElementById("district")?.value.toLowerCase() || "";
 
-    const ratingValue=
-    document.getElementById("ratingFilter")?.value || "";
-
     const dateValue=
     document.getElementById("dateFilter")?.value || "";
 
@@ -5019,7 +5126,6 @@ function applyLocationFilter()
         const cardState=(card.dataset.state || "").toLowerCase();
         const cardRegion=(card.dataset.region || "").toLowerCase();
         const cardLocation=(card.dataset.location || card.innerText || "").toLowerCase();
-        const cardRating=card.dataset.rating || "";
         const cardDate=card.dataset.date || "";
         const cardType=card.dataset.showType || "";
         const cardSearch=normalizeLocationText(card.dataset.filterSearch || card.innerText || "");
@@ -5045,11 +5151,10 @@ function applyLocationFilter()
             matchesDistrict=matchesCurrentRegion;
         }
 
-        const matchesRating=!ratingValue || cardRating===ratingValue;
         const matchesDate=!dateValue || cardDate===dateValue;
         const matchesType=typeValue==="All" || cardType===typeValue;
         const matchesSearch=!searchValue || cardSearch.includes(searchValue);
-        card.hidden=!(matchesSearch && matchesCountry && matchesState && matchesDistrict && matchesRating && matchesDate && matchesType);
+        card.hidden=!(matchesSearch && matchesCountry && matchesState && matchesDistrict && matchesDate && matchesType);
     });
 
     updateLocationSummary();
@@ -5088,11 +5193,9 @@ function updateFilterEmptyState()
     {
         const locationName=getSelectedLocationName();
         const search=document.getElementById("showtimeSearch")?.value?.trim() || "";
-        const rating=document.getElementById("ratingFilter")?.value || "";
         const date=document.getElementById("dateFilter")?.value || "";
         const filterText=[
             search ? `"${search}"` : "",
-            rating ? `rating ${rating}` : "",
             date ? date : ""
         ].filter(Boolean).join(", ");
         const locationText=locationName !== "All locations" ? ` at ${locationName}` : "";
@@ -5228,6 +5331,11 @@ function sortShows()
             return readNumber(b,"rating") - readNumber(a,"rating") || readDate(a) - readDate(b);
         }
 
+        if(sortValue==="ratingLow")
+        {
+            return readNumber(a,"rating") - readNumber(b,"rating") || readDate(a) - readDate(b);
+        }
+
         if(sortValue==="today")
         {
             const today=new Date();
@@ -5278,7 +5386,7 @@ function resetLocationFilter()
 
     clearCurrentLocationFilter();
 
-    ["showtimeSearch","ratingFilter","dateFilter","sortShows"].forEach(id=>{
+    ["showtimeSearch","dateFilter","sortShows"].forEach(id=>{
         const field=document.getElementById(id);
         if(field)
         {
@@ -5319,7 +5427,7 @@ async function clearAllShowtimeFilters()
         return;
     }
 
-    ["showtimeSearch","ratingFilter","dateFilter"].forEach(id=>{
+    ["showtimeSearch","dateFilter"].forEach(id=>{
         const field=document.getElementById(id);
         if(field)
         {
