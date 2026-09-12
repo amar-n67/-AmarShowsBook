@@ -3790,6 +3790,54 @@ updateDateTime();
         markThemeButton(committedTheme);
     }
 
+    function isMobileThemeTapTarget(target) {
+        const element = target instanceof Element ? target : target?.parentElement;
+        return !element?.closest("a,button,input,select,textarea,label,summary,[role='button'],[contenteditable='true'],[data-no-theme-double-tap]");
+    }
+
+    function enableMobileThemeDoubleTap() {
+        const isTouchDevice = window.matchMedia("(hover: none), (pointer: coarse)").matches ||
+            navigator.maxTouchPoints > 0;
+
+        if (!isTouchDevice) return;
+
+        const themeOrder = ["cinema", "dark", "white", "system"];
+        let lastTapTime = 0;
+        let lastTapX = 0;
+        let lastTapY = 0;
+
+        document.addEventListener("touchend", function (event) {
+            if (event.changedTouches.length !== 1 || event.touches.length > 0) return;
+
+            const touch = event.changedTouches[0];
+            const now = Date.now();
+            const isDoubleTap =
+                now - lastTapTime > 60 &&
+                now - lastTapTime < 360 &&
+                Math.abs(touch.clientX - lastTapX) < 42 &&
+                Math.abs(touch.clientY - lastTapY) < 42;
+
+            if (!isDoubleTap) {
+                lastTapTime = now;
+                lastTapX = touch.clientX;
+                lastTapY = touch.clientY;
+                return;
+            }
+
+            lastTapTime = 0;
+
+            if (!isMobileThemeTapTarget(event.target)) return;
+
+            event.preventDefault();
+            const currentTheme = localStorage.getItem("showTimeTheme") || committedTheme || "cinema";
+            const currentIndex = themeOrder.indexOf(currentTheme);
+            const nextTheme = themeOrder[(currentIndex + 1 + themeOrder.length) % themeOrder.length];
+
+            window.setAppTheme(nextTheme);
+            navigator.vibrate?.(18);
+        }, { passive: false });
+    }
+
     window.setAppTheme = function (choice) {
         const themeChoice = choice || "cinema";
         committedTheme = themeChoice;
@@ -3812,6 +3860,8 @@ updateDateTime();
             button.addEventListener("mouseleave", restoreThemePreview);
             button.addEventListener("blur", restoreThemePreview);
         });
+
+        enableMobileThemeDoubleTap();
     });
 })();
 </script>
