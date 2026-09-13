@@ -6,7 +6,7 @@
     var profileImage = string.IsNullOrWhiteSpace(Model.ProfileImage)
         ? "/images/default-user.png"
         : Model.ProfileImage;
-    var roleLabel = canEdit ? "Developer editor access" : "Profile viewer access";
+    var roleLabel = canEdit ? "Developer editor access" : "Profile sections";
     var defaultSkills = "ASP.NET Core MVC, Entity Framework Core, PostgreSQL, Razor Views, Bootstrap, JavaScript, RBAC, Session Authentication, Payment Flow, QR Ticketing";
     var defaultTechnologies = ".NET 10, C#, Npgsql, PostgreSQL Views, MVC Controllers, Razor, Bootstrap, jQuery, HTML5, CSS3, Docker, Render Deployment";
     var skillsText = string.IsNullOrWhiteSpace(Model.Skills) ? defaultSkills : Model.Skills;
@@ -71,6 +71,16 @@
         new { Label = "Write Us", Url = supportEmailUrl, Tone = "mail" },
         new { Label = "WhatsApp Us", Url = supportWhatsApp, Tone = "whatsapp" }
     };
+    var displayName = string.IsNullOrWhiteSpace(Model.FullName) ? "Amar ChaudharY" : Model.FullName.Trim();
+    var displayBio = string.IsNullOrWhiteSpace(Model.Bio)
+        ? "Full stack developer building dependable booking, payment, admin, and support experiences."
+        : Model.Bio.Trim();
+    var deliveryHighlights = new[]
+    {
+        new { Title = "Booking Experience", Body = "Public show discovery, seat selection, ticket confirmation, QR ticketing, and responsive user flows." },
+        new { Title = "Business Operations", Body = "Admin dashboards, cancellation controls, refunds, wallet history, coupon usage, activity logs, and release details." },
+        new { Title = "Security Shape", Body = "Session authorization, RBAC permission checks, scanner controls, audit logging, and protected developer updates." }
+    };
     var socialIcon = (string label) => label switch
     {
         "GitHub" => "<svg class='social-app-logo' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 .7A11.3 11.3 0 0 0 8.4 22.7c.6.1.8-.3.8-.6v-2.1c-3.4.7-4.1-1.5-4.1-1.5-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.3 11.3 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.3 2.9.1 3.2.8.9 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.3 11.3 0 0 0 12 .7Z'/></svg>",
@@ -104,15 +114,13 @@
 <img class="profile-image"
 id="developerProfilePreview"
 src="@profileImage"
-alt="@Model.FullName profile image" />
+alt="@displayName profile image" />
 
-<span class="developer-kicker">DEVELOPER PROFILE</span>
-
-<h1>@Model.FullName</h1>
+<h1>@displayName</h1>
 
 <p class="bio">
 
-@(Model.Bio ?? "Creative Full Stack Developer")
+@displayBio
 
 </p>
 
@@ -174,12 +182,24 @@ alt="@Model.FullName profile image" />
 {
 <button type="button" class="developer-edit-toggle" onclick="toggleDeveloperEditor()">Edit Profile</button>
 }
-else
-{
-<span class="developer-readonly-pill">Read only</span>
-}
 </div>
 </nav>
+
+<section class="developer-story-board" aria-label="Developer delivery focus">
+<div>
+<span>Built around real product flow</span>
+<h2>Profile, support, booking, and admin work in one connected application surface.</h2>
+</div>
+<div class="developer-story-grid">
+@foreach (var item in deliveryHighlights)
+{
+    <article>
+        <strong>@item.Title</strong>
+        <p>@item.Body</p>
+    </article>
+}
+</div>
+</section>
 
 
 
@@ -554,16 +574,6 @@ color:#231f20;
 font-size:clamp(2rem, 5vw, 3.8rem);
 font-weight:900;
 line-height:.92;
-}
-
-.developer-kicker{
-display:block;
-align-self:end;
-text-transform:uppercase;
-font-size:.74rem;
-font-weight:900;
-letter-spacing:.08em;
-color:#34303a;
 }
 
 .bio{
@@ -1300,7 +1310,6 @@ line-height:.96;
 text-wrap:balance;
 }
 
-.developer-kicker,
 .bio {
 color:color-mix(in srgb, var(--app-card-text) 74%, var(--app-muted));
 }
@@ -1617,6 +1626,250 @@ transform:translateY(12px) scale(.99);
 to {
 opacity:1;
 transform:translateY(0) scale(1);
+}
+}
+
+/* Final developer profile presentation layer. */
+.developer-page {
+padding:clamp(14px, 2.4vw, 34px);
+overflow:hidden;
+}
+
+.developer-page::before {
+height:520px;
+background:
+radial-gradient(circle at 8% 6%, color-mix(in srgb, var(--app-primary) 20%, transparent), transparent 32%),
+radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--app-accent-strong) 20%, transparent), transparent 30%),
+linear-gradient(135deg, color-mix(in srgb, var(--app-card) 42%, transparent), transparent 68%);
+}
+
+.developer-hero {
+display:grid;
+grid-template-columns:minmax(0, 1.08fr) minmax(320px, .92fr);
+align-items:stretch;
+gap:clamp(16px, 3vw, 28px);
+margin-bottom:18px;
+padding:clamp(18px, 3.4vw, 36px);
+border-radius:18px;
+background:
+radial-gradient(circle at 16% 16%, color-mix(in srgb, var(--app-primary) 18%, transparent), transparent 30%),
+radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--app-accent) 20%, transparent), transparent 28%),
+linear-gradient(135deg, color-mix(in srgb, var(--app-card) 94%, transparent), color-mix(in srgb, var(--app-input) 74%, transparent));
+}
+
+.developer-hero::after {
+content:"";
+position:absolute;
+right:clamp(20px, 6vw, 84px);
+bottom:-42px;
+width:180px;
+height:180px;
+border:1px solid color-mix(in srgb, var(--app-accent-strong) 22%, transparent);
+border-radius:999px;
+background:radial-gradient(circle, color-mix(in srgb, var(--app-accent-strong) 15%, transparent), transparent 66%);
+pointer-events:none;
+}
+
+.profile-left {
+width:100%;
+grid-template-columns:clamp(104px, 15vw, 172px) minmax(0, 1fr);
+gap:clamp(14px, 2.3vw, 24px);
+align-content:center;
+}
+
+.profile-image {
+width:clamp(104px, 15vw, 172px);
+height:clamp(104px, 15vw, 172px);
+border-radius:26px;
+border:1px solid color-mix(in srgb, var(--app-primary) 40%, var(--app-input-border));
+background:var(--app-card);
+box-shadow:
+0 24px 48px color-mix(in srgb, var(--app-primary) 16%, transparent),
+0 0 0 10px color-mix(in srgb, var(--app-card) 44%, transparent);
+}
+
+.profile-left h1 {
+max-width:720px;
+margin:0;
+font-size:clamp(2rem, 5.8vw, 5.2rem);
+letter-spacing:0;
+}
+
+.bio {
+max-width:720px;
+font-size:clamp(.98rem, 1.45vw, 1.14rem);
+line-height:1.62;
+}
+
+.experience-badge {
+justify-self:start;
+min-height:42px;
+display:inline-flex;
+align-items:center;
+gap:8px;
+}
+
+.profile-right {
+display:grid;
+align-content:center;
+gap:16px;
+}
+
+.developer-story-board > div:first-child > span {
+display:block;
+color:var(--app-muted);
+font-size:.76rem;
+font-weight:950;
+letter-spacing:.09em;
+text-transform:uppercase;
+}
+
+.developer-story-board,
+.developer-story-grid article {
+border:1px solid var(--developer-page-line);
+border-radius:14px;
+background:var(--developer-page-glass);
+box-shadow:0 16px 34px color-mix(in srgb, var(--app-text) 9%, transparent);
+backdrop-filter:blur(14px);
+}
+
+.developer-story-board {
+display:grid;
+grid-template-columns:minmax(230px, .7fr) minmax(0, 1.3fr);
+gap:16px;
+align-items:stretch;
+margin:0 0 20px;
+padding:clamp(16px, 2.6vw, 24px);
+}
+
+.developer-story-board h2 {
+margin:8px 0 0;
+font-size:clamp(1.45rem, 3.4vw, 2.7rem);
+line-height:1.05;
+color:var(--app-card-text);
+}
+
+.developer-story-grid {
+display:grid;
+grid-template-columns:repeat(3, minmax(0, 1fr));
+gap:12px;
+}
+
+.developer-story-grid article {
+padding:14px;
+box-shadow:none;
+}
+
+.developer-story-grid strong {
+display:block;
+color:var(--app-primary);
+font-size:1rem;
+}
+
+.developer-story-grid p {
+margin:8px 0 0;
+color:var(--app-muted);
+font-weight:700;
+line-height:1.48;
+}
+
+.developer-grid {
+grid-template-columns:repeat(3, minmax(0, 1fr));
+}
+
+.dev-card {
+min-height:100%;
+border-radius:14px;
+}
+
+.dev-card h2 {
+font-size:1rem;
+letter-spacing:.01em;
+}
+
+.detail-item strong,
+.detail-item span,
+.dev-card p {
+font-size:.95rem;
+line-height:1.56;
+}
+
+.resume-section {
+margin-top:26px;
+}
+
+@@media(max-width:1080px) {
+.developer-hero,
+.developer-story-board {
+grid-template-columns:1fr;
+}
+
+.developer-story-grid,
+.developer-grid {
+grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+}
+
+@@media(max-width:700px) {
+.developer-page {
+padding:12px;
+}
+
+.developer-hero {
+border-radius:14px;
+}
+
+.profile-left {
+grid-template-columns:82px minmax(0, 1fr);
+}
+
+.profile-image {
+grid-row:auto;
+width:82px;
+height:82px;
+border-radius:20px;
+}
+
+.profile-left h1 {
+font-size:clamp(1.7rem, 8.5vw, 2.8rem);
+}
+
+.developer-story-grid,
+.developer-grid,
+.developer-application-grid,
+.developer-support-grid {
+grid-template-columns:1fr;
+}
+
+.developer-command-bar {
+border-radius:14px;
+}
+
+.social-grid {
+grid-template-columns:repeat(5, minmax(0, 1fr));
+}
+}
+
+@@media(max-width:440px) {
+.profile-left {
+grid-template-columns:1fr;
+justify-items:start;
+text-align:left;
+}
+
+.profile-image {
+width:96px;
+height:96px;
+}
+
+.resume-section {
+display:grid;
+grid-template-columns:1fr;
+width:100%;
+}
+
+.social-grid {
+grid-template-columns:repeat(3, minmax(0, 1fr));
 }
 }
 
