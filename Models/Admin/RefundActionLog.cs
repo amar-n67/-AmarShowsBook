@@ -15,7 +15,7 @@ namespace AmarShowsBook.Models.Admin
         public string? refund_ref { get; set; }
 
         [Column("action_name")]
-        public string action_name { get; set; }
+        public string action_name { get; set; } = string.Empty;
 
         [Column("action_by")]
         public string? action_by { get; set; }

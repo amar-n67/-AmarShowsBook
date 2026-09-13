@@ -1,0 +1,73 @@
+@{
+    ViewData["Title"] = "Payment Link Expired";
+}
+
+<section class="mobile-ticket-page">
+    <div class="ticket">
+        <div class="header">Payment Link Expired</div>
+        <div class="content">
+            <div class="ticket-stub">
+                <div class="row">
+                    <span>Status</span>
+                    <span>Expired</span>
+                </div>
+            </div>
+            <p style="margin-top:20px;font-weight:800;color:var(--app-muted);">
+                This QR payment link is no longer active. Please return to the payment page and generate a fresh QR code.
+            </p>
+        </div>
+    </div>
+</section>
+
+<style>
+.mobile-ticket-page{
+display:flex;
+justify-content:center;
+align-items:flex-start;
+padding:24px 12px 48px;
+background:var(--app-bg);
+color:var(--app-text);
+}
+.ticket{
+width:100%;
+max-width:420px;
+background:var(--app-card);
+color:var(--app-card-text);
+border-radius:8px;
+border:1px solid var(--app-input-border);
+overflow:hidden;
+box-shadow:0 15px 35px rgba(0,0,0,.1);
+}
+.header{
+padding:18px;
+text-align:center;
+font-size:24px;
+font-weight:900;
+color:white;
+background:var(--app-primary);
+}
+.content{
+padding:25px;
+}
+.ticket-stub{
+border:1px dashed var(--app-input-border);
+border-radius:8px;
+padding:18px;
+background:color-mix(in srgb, var(--app-card) 86%, var(--app-primary));
+}
+.row{
+display:flex;
+justify-content:space-between;
+gap:16px;
+padding:14px 0;
+}
+.row span:first-child{
+color:var(--app-muted);
+font-weight:800;
+white-space:nowrap;
+}
+.row span:last-child{
+text-align:right;
+font-weight:900;
+}
+</style>

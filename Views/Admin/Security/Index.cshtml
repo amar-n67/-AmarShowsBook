@@ -1,0 +1,637 @@
+@model List<AmarShowsBook.Models.VwTicketValidationSummary>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Security";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count;
+    int securityIssueCount = ViewBag.SecurityIssueCount ?? Model.Count(x => x.IsSecurityIssue == 1);
+    int validatedCount = ViewBag.ValidatedCount ?? Model.Count(x => x.IsSecurityIssue == 0);
+    int activeDeviceCount = ViewBag.ActiveDeviceCount ?? 0;
+    var scannerDevices = ViewBag.ScannerDevices as List<AmarShowsBook.Models.Admin.ScannerDevice>
+        ?? new List<AmarShowsBook.Models.Admin.ScannerDevice>();
+
+    string Clean(string? value) => string.IsNullOrWhiteSpace(value) ? "NA" : value;
+    string DateText(DateTime? value) => value.HasValue
+        ? value.Value.ToString("dd MMM yyyy, hh:mm tt")
+        : "NA";
+    string StatusClass(AmarShowsBook.Models.VwTicketValidationSummary item)
+    {
+        if (item.IsSecurityIssue == 1)
+        {
+            return "danger";
+        }
+
+        var status = (item.ValidationStatus ?? item.ValidationResult ?? string.Empty).ToUpperInvariant();
+
+        return status.Contains("VALID") || status.Contains("SUCCESS")
+            ? "success"
+            : status.Contains("PENDING")
+                ? "warning"
+                : "neutral";
+    }
+}
+
+<section class="admin-page security-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="page-title">Ticket Security Center</h1>
+            <p class="page-subtitle">
+                Review ticket scans, duplicate usage, invalid validation attempts,
+                gate/device activity, and scanner audit signals.
+            </p>
+        </div>
+
+        <div class="admin-actions">
+            <a href="/Admin/Dashboard" class="admin-back-btn admin-page-back">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="security-message success">
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="security-message danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="stats-grid">
+        <div class="stat-card security-alert-stat">
+            <span>Security Alerts</span>
+            <strong>@securityIssueCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Validated Tickets</span>
+            <strong>@validatedCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Total Scans</span>
+            <strong>@totalRecords</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Visible Rows</span>
+            <strong>@Model.Count</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Active Devices</span>
+            <strong>@activeDeviceCount</strong>
+        </div>
+    </div>
+
+    <div class="security-admin-grid">
+        <div class="admin-detail-panel security-work-panel">
+            <h2>Manual Ticket Validation</h2>
+            <form method="post" action="/Admin/AddSecurityValidation" class="security-form-grid">
+                @Html.AntiForgeryToken()
+                <input name="ticketNumber" class="form-control" placeholder="Ticket number" required />
+                <select name="validationResult" class="form-select">
+                    <option value="SUCCESS">Success</option>
+                    <option value="DUPLICATE_SCAN">Duplicate scan</option>
+                    <option value="INVALID_QR">Invalid QR</option>
+                    <option value="EXPIRED_TICKET">Expired ticket</option>
+                    <option value="CANCELLED_TICKET">Cancelled ticket</option>
+                    <option value="ADMIN_BLOCKED">Admin blocked</option>
+                </select>
+                <select name="validationStatus" class="form-select">
+                    <option value="SCANNED">Scanned</option>
+                    <option value="BLOCKED">Blocked</option>
+                    <option value="EXPIRED">Expired</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+                <input name="gateName" class="form-control" placeholder="Gate name" />
+                <input name="deviceId" class="form-control" placeholder="Device code" />
+                <input name="remarks" class="form-control" placeholder="Admin remarks" />
+                <button type="submit" class="admin-back-btn">Add Validation</button>
+            </form>
+        </div>
+
+        <div class="admin-detail-panel security-work-panel">
+            <h2>Scanner Device</h2>
+            <form method="post" action="/Admin/RegisterScannerDevice" class="security-form-grid">
+                @Html.AntiForgeryToken()
+                <input name="deviceCode" class="form-control" placeholder="Device code" required />
+                <input name="deviceName" class="form-control" placeholder="Device name" />
+                <input name="gateName" class="form-control" placeholder="Gate name" />
+                <button type="submit" class="admin-back-btn">Save Device</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-detail-panel security-review-panel">
+        <div>
+            <h2>Security Review</h2>
+            <p>
+                Alerts are created from ticket validation logs. Clear a row only after
+                confirming it is a valid scan, or block the ticket from future scanner validation.
+            </p>
+        </div>
+
+        <form method="post" action="/Admin/AcknowledgeSecurityAlerts">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="admin-back-btn">
+                Mark Reviewed
+            </button>
+        </form>
+    </div>
+
+    <details class="admin-detail-panel security-device-panel" data-page-filter-anchor>
+        <summary>
+            <span>Scanner Devices</span>
+            <strong>@scannerDevices.Count</strong>
+        </summary>
+
+        <div class="security-device-list">
+            @if (!scannerDevices.Any())
+            {
+                <div class="security-device-card">
+                    No scanner devices found
+                </div>
+            }
+            else
+            {
+                foreach (var device in scannerDevices)
+                {
+                    <div class="security-device-card">
+                        <strong>@Clean(device.DeviceCode)</strong>
+                        <span>@Clean(device.DeviceName)</span>
+                        <em>@Clean(device.GateName) | @Clean(device.DeviceStatus) | @DateText(device.LastActiveAt)</em>
+                    </div>
+                }
+            }
+        </div>
+    </details>
+
+    <div class="table-wrapper security-table-wrapper">
+        <table class="table admin-table security-table">
+            <thead>
+                <tr>
+                    <th style="min-width:220px;">Ticket</th>
+                    <th style="min-width:240px;">User</th>
+                    <th style="min-width:220px;">Validation</th>
+                    <th style="min-width:240px;">Gate / Device</th>
+                    <th style="min-width:140px;">Scans</th>
+                    <th style="min-width:180px;">Last Scan</th>
+                    <th style="min-width:220px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            No ticket validation records found
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in Model)
+                    {
+                        var statusText = item.IsSecurityIssue == 1
+                            ? "SECURITY ISSUE"
+                            : Clean(item.ValidationStatus ?? item.ValidationResult);
+                        var priority = item.IsSecurityIssue == 1 ? "HIGH" : "NORMAL";
+                        var method = $"{Clean(item.GateName)} {Clean(item.DeviceId)}";
+                        var canClear = item.IsSecurityIssue == 1;
+
+                        <tr class="@(item.IsSecurityIssue == 1 ? "security-row-alert" : "")"
+                            data-admin-searchable
+                            data-filter-search="@($"{item.TicketNumber} {item.BookingRef} {item.UserName} {item.UserEmail} {item.ValidationStatus} {item.ValidationResult} {item.GateName} {item.DeviceId} {item.ScannerUser}")"
+                            data-filter-status="@statusText"
+                            data-filter-method="@method"
+                            data-filter-priority="@priority"
+                            data-sort-time="@((item.LastScannedAt ?? item.ValidatedAt ?? DateTime.MinValue).Ticks)">
+                            <td>
+                                <div class="security-ticket-number">@Clean(item.TicketNumber)</div>
+                                <div class="sub-text">Booking: @Clean(item.BookingRef)</div>
+                                <div class="sub-text">Ticket ID: @item.TicketId</div>
+                            </td>
+                            <td>
+                                <div class="security-user-name">@Clean(item.UserName)</div>
+                                <div class="sub-text">@Clean(item.UserEmail)</div>
+                            </td>
+                            <td>
+                                <span class="badge @StatusClass(item)">
+                                    @statusText
+                                </span>
+                                <div class="sub-text">@Clean(item.ValidationResult)</div>
+                            </td>
+                            <td>
+                                <div>@Clean(item.GateName)</div>
+                                <div class="sub-text">Device: @Clean(item.DeviceId)</div>
+                                <div class="sub-text">Scanner: @Clean(item.ScannerUser)</div>
+                            </td>
+                            <td>
+                                <strong>@item.ValidationCount</strong>
+                            </td>
+                            <td>
+                                <div>@DateText(item.LastScannedAt ?? item.ValidatedAt)</div>
+                                <div class="sub-text">Log: @item.ValidationLogId</div>
+                            </td>
+                            <td>
+                                <div class="security-row-actions">
+                                    @if (canClear)
+                                    {
+                                        <form method="post" action="/Admin/ClearSecurityAlert">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="validationLogId" value="@item.ValidationLogId" />
+                                            <button type="submit" class="security-action clear">Clear</button>
+                                        </form>
+                                    }
+                                    <form method="post" action="/Admin/BlockTicketFromSecurity">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="ticketId" value="@item.TicketId" />
+                                        <button type="submit" class="security-action block">Block</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Security"
+    })
+</section>
+
+<style>
+    .security-page .security-alert-stat::before,
+    .security-page .security-row-alert {
+        background: linear-gradient(90deg, rgba(254, 226, 226, 0.94), rgba(255, 255, 255, 0.98));
+    }
+
+    .security-page .security-row-alert {
+        box-shadow: inset 5px 0 0 #dc2626;
+    }
+
+    .security-page .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .security-page .stat-card {
+        min-width: 0;
+        padding: 18px;
+    }
+
+    .security-page .stat-card span,
+    .security-page .stat-card strong {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .security-page .security-review-panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px;
+        margin-bottom: 16px;
+    }
+
+    .security-page .security-review-panel h2 {
+        margin: 0;
+        color: var(--admin-ink);
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .security-page .security-review-panel p {
+        margin: 6px 0 0;
+        color: var(--admin-muted);
+        font-size: 0.88rem;
+    }
+
+    .security-message {
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        font-weight: 800;
+    }
+
+    .security-message.success {
+        background: #dcfce7;
+        color: #065f46;
+        border: 1px solid #86efac;
+    }
+
+    .security-message.danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+    }
+
+    .security-admin-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 18px;
+        margin-bottom: 16px;
+    }
+
+    .security-work-panel {
+        min-width: 0;
+        padding: 18px;
+    }
+
+    .security-work-panel h2 {
+        margin: 0 0 12px;
+        color: var(--admin-ink);
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .security-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .security-form-grid .form-control,
+    .security-form-grid .form-select {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .security-form-grid button {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
+    }
+
+    .security-device-panel {
+        margin-bottom: 16px;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .security-device-panel summary {
+        align-items: center;
+        background: linear-gradient(135deg, var(--admin-night), var(--admin-teal));
+        color: white;
+        cursor: pointer;
+        display: flex;
+        font-weight: 900;
+        justify-content: space-between;
+        list-style: none;
+        padding: 16px 18px;
+    }
+
+    .security-device-panel summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .security-device-panel summary::after {
+        content: "Expand";
+        border-radius: 999px;
+        background: rgba(255,255,255,0.16);
+        padding: 6px 10px;
+        font-size: 0.75rem;
+    }
+
+    .security-device-panel[open] summary::after {
+        content: "Hide";
+    }
+
+    .security-device-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        padding: 16px;
+    }
+
+    .security-device-card {
+        border: 1px solid var(--admin-line);
+        border-radius: 8px;
+        background: var(--admin-panel-strong);
+        padding: 12px;
+    }
+
+    .security-device-card strong,
+    .security-device-card span,
+    .security-device-card em {
+        display: block;
+    }
+
+    .security-device-card em {
+        color: var(--admin-muted);
+        font-size: 0.78rem;
+        font-style: normal;
+        margin-top: 5px;
+    }
+
+    .security-table-wrapper {
+        max-height: 520px;
+        overflow: auto;
+        scrollbar-gutter: stable both-edges;
+        scrollbar-color: var(--admin-gold, #d9a441) rgba(148, 163, 184, 0.28);
+        scrollbar-width: thin;
+    }
+
+    .security-table {
+        min-width: 1460px;
+        table-layout: fixed;
+    }
+
+    .security-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: var(--admin-panel-strong);
+        border-bottom: 3px solid var(--admin-gold);
+    }
+
+    .security-table th,
+    .security-table td {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    .security-table th {
+        white-space: nowrap;
+    }
+
+    .security-ticket-number,
+    .security-user-name {
+        color: var(--admin-ink);
+        font-weight: 900;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .security-row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .security-row-actions form {
+        flex: 1 1 76px;
+        min-width: 76px;
+    }
+
+    .security-action {
+        border: 0;
+        border-radius: 999px;
+        color: white;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.15;
+        min-height: 34px;
+        padding: 7px 12px;
+        width: 100%;
+        white-space: nowrap;
+    }
+
+    .security-action.clear {
+        background: #059669;
+    }
+
+    .security-action.block {
+        background: #dc2626;
+    }
+
+    .badge.success,
+    .badge.danger,
+    .badge.warning,
+    .badge.neutral {
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        font-weight: 900;
+        line-height: 1.15;
+        max-width: 100%;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .badge.success {
+        background: #dcfce7;
+        color: #065f46;
+    }
+
+    .badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .badge.warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge.neutral {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
+    #adminContextFilter {
+        clear: both;
+        margin-bottom: 18px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    #adminContextFilter .row {
+        display: grid;
+        grid-template-columns:
+            minmax(220px, 1.5fr)
+            repeat(4, minmax(150px, 1fr))
+            minmax(96px, 0.55fr);
+        gap: 12px;
+        margin: 0;
+        min-width: 1040px;
+    }
+
+    #adminContextFilter .row > [class*="col-"] {
+        max-width: none;
+        min-width: 0;
+        padding: 0;
+        width: auto;
+    }
+
+    #adminContextFilter .form-control,
+    #adminContextFilter .form-select,
+    #adminContextFilter .btn {
+        min-height: 40px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    #adminContextFilter .form-control {
+        text-overflow: ellipsis;
+    }
+
+    #adminContextFilter .form-select {
+        padding-right: 2.25rem;
+        text-overflow: ellipsis;
+    }
+
+    #adminContextFilter .btn {
+        white-space: nowrap;
+    }
+
+    @@media(max-width: 760px) {
+        .security-page .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .security-admin-grid,
+        .security-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .security-page .security-review-panel {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .security-page .security-review-panel form,
+        .security-page .security-review-panel button {
+            width: 100%;
+        }
+
+        #adminContextFilter .row {
+            grid-template-columns:
+                minmax(220px, 1.5fr)
+                repeat(4, minmax(150px, 1fr))
+                minmax(96px, 0.55fr);
+        }
+    }
+
+    @@media(max-width: 1100px) {
+        .security-admin-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+</style>

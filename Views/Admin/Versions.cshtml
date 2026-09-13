@@ -1,0 +1,264 @@
+@model IEnumerable<AmarShowsBook.Models.Admin.ApplicationVersion>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Application Versions";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    var latestVersion =
+        Model.OrderByDescending(x => x.IsCurrent)
+        .ThenByDescending(x => x.UpdatedAt)
+        .FirstOrDefault()?.VersionNumber ?? "1.0.0";
+    var versionParts =
+        latestVersion.Split('.',StringSplitOptions.RemoveEmptyEntries)
+        .Select(part => int.TryParse(part,out var number) ? number : 0)
+        .ToList();
+    while(versionParts.Count < 3)
+    {
+        versionParts.Add(0);
+    }
+    versionParts[2]++;
+    if(versionParts[2] > 9)
+    {
+        versionParts[2] = 0;
+        versionParts[1]++;
+    }
+    if(versionParts[1] > 9)
+    {
+        versionParts[1] = 0;
+        versionParts[0]++;
+    }
+    var nextVersion = $"{versionParts[0]}.{versionParts[1]}.{versionParts[2]}";
+    var versionNote = $"Created {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Application Versions</h1>
+            <p>Developer managed release notes shown from the database.</p>
+        </div>
+        <a class="admin-back-btn admin-page-back" href="/Admin/Dashboard">Back to Dashboard</a>
+    </div>
+
+    @if(TempData["Success"]!=null){<div class="alert alert-success">@TempData["Success"]</div>}
+    @if(TempData["Error"]!=null){<div class="alert alert-danger">@TempData["Error"]</div>}
+
+    <div class="admin-detail-panel mb-4">
+        <div class="d-flex justify-content-between align-items-center gap-3 mb-3 flex-wrap">
+            <h2 class="h5 mb-0">Add Version</h2>
+            <form asp-action="CreateNextVersion" method="post">
+                @Html.AntiForgeryToken()
+                <button class="btn btn-dark rounded-pill px-4" type="submit">
+                    + Add @nextVersion
+                </button>
+            </form>
+        </div>
+        <form asp-action="CreateVersion" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-md-2">
+                <label class="form-label">Version</label>
+                <input name="versionNumber" class="form-control" value="@nextVersion" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Title</label>
+                <input name="releaseTitle" class="form-control" value="Release @nextVersion" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Notes</label>
+                <input name="releaseNotes" class="form-control" value="@versionNote" />
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <label class="form-check">
+                    <input name="isCurrent" value="true" class="form-check-input" type="checkbox" checked />
+                    <span class="form-check-label">Current</span>
+                </label>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button class="btn btn-primary w-100" type="submit">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="table admin-table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Title</th>
+                    <th>Notes</th>
+                    <th>Updated</th>
+                    <th>Current</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach(var item in Model)
+            {
+                <tr data-admin-searchable data-version-row data-filter-status="@(item.IsCurrent ? "CURRENT" : "PREVIOUS")">
+                    <td colspan="6">
+                        <form asp-action="UpdateVersion" method="post" class="version-row-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <div class="version-grid">
+                                <div>
+                                    <label class="form-label">Version</label>
+                                    <input name="versionNumber" class="form-control" value="@item.VersionNumber" required readonly data-version-editable />
+                                </div>
+                                <div>
+                                    <label class="form-label">Title</label>
+                                    <input name="releaseTitle" class="form-control" value="@item.ReleaseTitle" required readonly data-version-editable />
+                                </div>
+                                <div>
+                                    <label class="form-label">Notes</label>
+                                    <textarea name="releaseNotes" class="form-control" rows="2" readonly data-version-editable>@item.ReleaseNotes</textarea>
+                                </div>
+                                <div>
+                                    <label class="form-label">Updated</label>
+                                    <div class="version-muted">@item.UpdatedAt.ToString("dd MMM yyyy hh:mm tt")</div>
+                                </div>
+                                <label class="version-current">
+                                    <input name="isCurrent" value="true" type="checkbox" @(item.IsCurrent ? "checked" : "") disabled data-version-check />
+                                    <span>Current</span>
+                                </label>
+                                <div class="version-actions">
+                                    <button class="btn btn-outline-primary btn-sm" type="button" data-version-edit>Edit</button>
+                                    <button class="btn btn-primary btn-sm d-none" type="submit" data-version-save>Save</button>
+                                    <button class="btn btn-secondary btn-sm d-none" type="button" data-version-cancel>Cancel</button>
+                                    <button class="btn btn-danger btn-sm"
+                                            type="submit"
+                                            form="delete-version-@item.Id"
+                                            onclick="return confirm('Delete version @item.VersionNumber?')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <form id="delete-version-@item.Id" asp-action="DeleteVersion" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Versions"
+    })
+</section>
+
+<style>
+.version-row-form {
+    margin: 0;
+}
+
+.version-row-form input[readonly],
+.version-row-form textarea[readonly] {
+    background: var(--admin-soft);
+    color: var(--admin-muted);
+    cursor: default;
+}
+
+.version-grid {
+    display: grid;
+    grid-template-columns: minmax(110px, 0.7fr) minmax(180px, 1.1fr) minmax(240px, 1.6fr) minmax(150px, 0.8fr) minmax(95px, auto) minmax(150px, auto);
+    gap: 12px;
+    align-items: end;
+}
+
+.version-grid .form-label {
+    margin-bottom: 5px;
+    color: var(--admin-muted);
+    font-size: 0.76rem;
+    font-weight: 850;
+}
+
+.version-muted {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    color: var(--admin-muted);
+    font-size: 0.9rem;
+}
+
+.version-current,
+.version-actions {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.version-current {
+    font-weight: 850;
+}
+
+.version-actions {
+    justify-content: flex-end;
+}
+
+@@media (max-width: 1100px) {
+    .version-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@@media (max-width: 680px) {
+    .version-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .version-actions {
+        justify-content: stretch;
+    }
+
+    .version-actions .btn {
+        flex: 1;
+    }
+}
+</style>
+
+<script>
+document.querySelectorAll("[data-version-row]").forEach(row => {
+    const editButton = row.querySelector("[data-version-edit]");
+    const saveButton = row.querySelector("[data-version-save]");
+    const cancelButton = row.querySelector("[data-version-cancel]");
+    const fields = Array.from(row.querySelectorAll("[data-version-editable]"));
+    const currentCheck = row.querySelector("[data-version-check]");
+    const originals = fields.map(field => field.value);
+    const originalChecked = currentCheck ? currentCheck.checked : false;
+
+    function setEditing(isEditing) {
+        fields.forEach(field => {
+            field.readOnly = !isEditing;
+        });
+
+        if (currentCheck) {
+            currentCheck.disabled = !isEditing;
+        }
+
+        editButton.classList.toggle("d-none", isEditing);
+        saveButton.classList.toggle("d-none", !isEditing);
+        cancelButton.classList.toggle("d-none", !isEditing);
+    }
+
+    editButton.addEventListener("click", () => setEditing(true));
+
+    cancelButton.addEventListener("click", () => {
+        fields.forEach((field, index) => {
+            field.value = originals[index];
+        });
+
+        if (currentCheck) {
+            currentCheck.checked = originalChecked;
+        }
+
+        setEditing(false);
+    });
+});
+</script>

@@ -1,18 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using AmarShowsBook.Data;
 using AmarShowsBook.Services;
-using System.Linq;
 
 namespace AmarShowsBook.Controllers
 {
+    // Customer wallet pages read the wallet summary view; balance changes are written by booking and admin flows.
     public class WalletController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IActivityLogger _activityLogger;
 
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
 
         public WalletController(
             ApplicationDbContext context,
@@ -22,17 +19,17 @@ namespace AmarShowsBook.Controllers
             _activityLogger = activityLogger;
         }
 
-        // =====================================================
-        // WALLET DASHBOARD
-        // =====================================================
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            // Get logged in user email
+            return RedirectToAction(nameof(MyWallet));
+        }
+
+        public async Task<IActionResult> MyWallet()
+        {
             var userEmail =
                 HttpContext.Session.GetString("UserEmail");
 
-            // Redirect guest users
             if (string.IsNullOrWhiteSpace(userEmail))
             {
                 return RedirectToAction(
@@ -41,25 +38,22 @@ namespace AmarShowsBook.Controllers
                 );
             }
 
-            // Get wallet summary from view
             var wallet = _context
                 .VwWalletSummaries
                 .FirstOrDefault(x =>
                     x.UserEmail == userEmail);
 
-            // Wallet not found
             if (wallet == null)
             {
                 TempData["Error"] =
                     "Wallet information not found.";
 
                 return RedirectToAction(
-                    "Index",
+                    "ShowTime",
                     "Home"
                 );
             }
 
-            // Store activity log
             await _activityLogger.LogAsync(
                 userId: (int)wallet.UserId,
                 action: "VIEW_WALLET",
@@ -72,8 +66,7 @@ namespace AmarShowsBook.Controllers
                 isError: 0
             );
 
-            // Return wallet page
-            return View(wallet);
+            return View("Index", wallet);
         }
     }
 }

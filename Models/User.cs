@@ -6,10 +6,6 @@ namespace AmarShowsBook.Models
     {
         public int Id { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // BASIC USER DETAILS
-        // =====================================================
 
         [Required(ErrorMessage = "Name is required")]
         public string Name { get; set; } = string.Empty;
@@ -22,10 +18,6 @@ namespace AmarShowsBook.Models
 
         public string? ProfileImagePath { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // ADDRESS BREAKDOWN
-        // =====================================================
 
         public string? Country { get; set; }
 
@@ -35,10 +27,6 @@ namespace AmarShowsBook.Models
 
         public string? Pincode { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // AUDIT FIELDS
-        // =====================================================
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -48,22 +36,11 @@ namespace AmarShowsBook.Models
 
         public string? UpdatedBy { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // ADMIN USER CONTROL FLAGS
-        // IMPORTANT:
-        // KEEP ONLY THESE TWO PROPERTIES
-        // DO NOT CREATE DUPLICATES
-        // =====================================================
 
         public bool is_active { get; set; } = true;
 
         public bool is_deleted { get; set; } = false;
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // EMAIL VALIDATION
-        // =====================================================
 
         [Required]
         [RegularExpression(
@@ -71,10 +48,6 @@ namespace AmarShowsBook.Models
             ErrorMessage = "Only Gmail or Outlook allowed")]
         public string Email { get; set; } = string.Empty;
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // PASSWORD VALIDATION
-        // =====================================================
 
         [Required(ErrorMessage = "Password is required")]
         [MinLength(8,
@@ -84,10 +57,6 @@ namespace AmarShowsBook.Models
             ErrorMessage = "Password must contain uppercase, lowercase and special character")]
         public string Password { get; set; } = string.Empty;
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // MOBILE VALIDATION
-        // =====================================================
 
         [Required(ErrorMessage = "Mobile is required")]
         [RegularExpression(

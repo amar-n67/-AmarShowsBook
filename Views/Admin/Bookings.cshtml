@@ -12,13 +12,12 @@
     int totalPages = ViewBag.TotalPages ?? 1;
 
     int totalRecords = ViewBag.TotalRecords ?? Model.Count();
+    var walletAmounts = ViewBag.BookingWalletAmounts as Dictionary<long, decimal>
+        ?? new Dictionary<long, decimal>();
 }
 
 <section class="admin-page">
 
-    <!-- ===================================================== -->
-    <!-- PAGE HEADER -->
-    <!-- ===================================================== -->
 
     <div class="admin-page-header">
 
@@ -47,9 +46,6 @@
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- STATS -->
-    <!-- ===================================================== -->
 
     <div class="stats-grid">
 
@@ -79,220 +75,139 @@
 
             <strong>
                 @CurrencyFormatter.FormatRupees(
-                    Model.Sum(x => x.TotalAmount))
+                    (decimal)(ViewBag.TotalBookingValue ?? 0m))
             </strong>
 
         </div>
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- TABLE -->
-    <!-- ===================================================== -->
 
     <div class="table-wrapper">
 
         <table class="table admin-table booking-table">
 
             <thead>
-
                 <tr>
-
-                    <th style="min-width:220px;">
-                        Booking
-                    </th>
-
-                    <th style="min-width:250px;">
-                        User
-                    </th>
-
-                    <th style="min-width:250px;">
-                        Show
-                    </th>
-
-                    <th style="min-width:180px;">
-                        Amount
-                    </th>
-
-                    <th style="min-width:180px;">
-                        Status
-                    </th>
-
-                    <th style="min-width:180px;">
-                        Booked At
-                    </th>
-
+                    <th scope="col">Booking</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Show</th>
+                    <th scope="col">Location &amp; show time</th>
+                    <th scope="col">Tickets &amp; seats</th>
+                    <th scope="col">Amount breakdown</th>
+                    <th scope="col">Payment</th>
+                    <th scope="col">Transaction</th>
+                    <th scope="col">Booking status</th>
+                    <th scope="col">Lifecycle (IST)</th>
                 </tr>
-
             </thead>
-
             <tbody>
-
                 @if (!Model.Any())
                 {
                     <tr>
-
-                        <td colspan="6"
-                            class="empty-state">
-                            No bookings found
-                        </td>
-
+                        <td colspan="10" class="empty-state">No bookings found</td>
                     </tr>
                 }
                 else
                 {
                     @foreach (var item in Model)
                     {
-                        <tr>
-
-                            <!-- BOOKING -->
-
+                        var status = item.BookingStatus?.Trim().ToUpperInvariant() ?? "";
+                        var statusClass = item.IsError == 1 || status is "FAILED" or "CANCELLED"
+                            ? "danger"
+                            : status is "CONFIRMED" or "SUCCESS" or "COMPLETED" ? "success" : "pending";
+                        <tr data-filter-status="@($"{item.BookingStatus}|{item.PaymentStatus}|{item.TransactionStatus}")"
+                            data-filter-method="@item.ShowType"
+                            data-sort-time="@ShowTimeFormatter.SortTicks(item.BookedAt)">
                             <td>
-
-                                <div class="primary-text">
-                                    @(string.IsNullOrWhiteSpace(item.BookingRef)
-                                        ? "NA"
-                                        : item.BookingRef)
-                                </div>
-
-                                <div class="sub-text">
-                                    Seats:
-                                    @(string.IsNullOrWhiteSpace(item.SeatNumbers)
-                                        ? "NA"
-                                        : item.SeatNumbers)
-                                </div>
-
+                                <div class="primary-text">@DisplayText(item.BookingRef)</div>
+                                <div class="sub-text">Booking ID: @item.BookingId</div>
                             </td>
-
-                            <!-- USER -->
-
                             <td>
-
-                                <div class="primary-text">
-                                    @(string.IsNullOrWhiteSpace(item.UserName)
-                                        ? "NA"
-                                        : item.UserName)
-                                </div>
-
-                                <div class="sub-text email-cell">
-                                    @(string.IsNullOrWhiteSpace(item.UserEmail)
-                                        ? "NA"
-                                        : item.UserEmail)
-                                </div>
-
+                                <div class="primary-text">@DisplayText(item.UserName)</div>
+                                <div class="sub-text email-cell">@DisplayText(item.UserEmail)</div>
+                                <div class="sub-text">User ID: @item.UserId</div>
                             </td>
-
-                            <!-- SHOW -->
-
                             <td>
-
-                                <div class="primary-text">
-                                    @(string.IsNullOrWhiteSpace(item.ShowTitle)
-                                        ? "NA"
-                                        : item.ShowTitle)
-                                </div>
-
-                                <div class="sub-text">
-                                    @(string.IsNullOrWhiteSpace(item.ShowType)
-                                        ? "NA"
-                                        : item.ShowType)
-                                </div>
-
+                                <div class="primary-text">@DisplayText(item.ShowTitle)</div>
+                                <div class="sub-text">@DisplayText(item.ShowType)</div>
                             </td>
-
-                            <!-- AMOUNT -->
-
                             <td>
-
-                                <div class="amount-text">
-                                   @CurrencyFormatter.FormatRupees(item.TotalAmount)
-                                </div>
-
+                                <div class="primary-text">@DisplayText(item.LocationName)</div>
+                                <div class="sub-text">@ShowTimeFormatter.Format(item.StartTime, "dd MMM yyyy, hh:mm tt") IST</div>
                             </td>
-
-                            <!-- STATUS -->
-
                             <td>
-
-                                @if (item.IsError == 1)
-                                {
-                                    <span class="badge danger">
-                                        @(string.IsNullOrWhiteSpace(item.BookingStatus)
-                                            ? "FAILED"
-                                            : item.BookingStatus)
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge success">
-                                        @(string.IsNullOrWhiteSpace(item.BookingStatus)
-                                            ? "SUCCESS"
-                                            : item.BookingStatus)
-                                    </span>
-                                }
-
-                                <div class="sub-text">
-                                    Payment:
-                                    @(string.IsNullOrWhiteSpace(item.PaymentStatus)
-                                        ? "NA"
-                                        : item.PaymentStatus)
-                                </div>
-
+                                <div class="primary-text">@item.TotalTickets ticket(s)</div>
+                                <div class="sub-text">Seats: @DisplayText(item.SeatNumbers)</div>
                             </td>
-
-                            <!-- BOOKED AT -->
-
                             <td>
-
-                                <div class="created-date">
-                                    @item.BookedAt
-                                        .ToString("dd MMM yyyy")
-                                </div>
-
-                                <div class="sub-text">
-                                    @item.BookedAt
-                                        .ToString("hh:mm tt")
-                                </div>
-
+                                <div class="amount-text">Total: @CurrencyFormatter.FormatRupees(item.TotalAmount)</div>
+                                <div class="sub-text">Tax: @DisplayAmount(item.TaxAmount)</div>
+                                <div class="sub-text">Discount: @DisplayAmount(item.DiscountAmount)</div>
+                                <div class="sub-text">Wallet used: @DisplayAmount(walletAmounts.TryGetValue(item.BookingId, out var walletUsed) ? walletUsed : (decimal?)null)</div>
+                                <div class="primary-text">Payable: @DisplayAmount(item.PayableAmount)</div>
                             </td>
-
+                            <td>
+                                <div class="primary-text">@DisplayText(item.PaymentStatus)</div>
+                                <div class="sub-text">Method: @DisplayText(item.PaymentMethod)</div>
+                                <div class="sub-text">Gateway: @DisplayText(item.GatewayName)</div>
+                            </td>
+                            <td>
+                                <div class="primary-text">@DisplayText(item.TransactionRef)</div>
+                                <div class="sub-text">Status: @DisplayText(item.TransactionStatus)</div>
+                            </td>
+                            <td>
+                                <span class="badge @statusClass">@DisplayText(item.BookingStatus)</span>
+                            </td>
+                            <td>
+                                <div class="created-date">Booked: @ShowTimeFormatter.Format(item.BookedAt, "dd MMM yyyy, hh:mm tt")</div>
+                                <div class="sub-text">Created: @ShowTimeFormatter.Format(item.CreatedAt, "dd MMM yyyy, hh:mm tt")</div>
+                                <div class="sub-text">Confirmed: @ShowTimeFormatter.Format(item.ConfirmedAt, "dd MMM yyyy, hh:mm tt", "—")</div>
+                                <div class="sub-text">Cancelled: @ShowTimeFormatter.Format(item.CancelledAt, "dd MMM yyyy, hh:mm tt", "—")</div>
+                            </td>
                         </tr>
                     }
                 }
-
             </tbody>
 
         </table>
 
     </div>
 
-    <!-- ===================================================== -->
-    <!-- PAGINATION -->
-    <!-- ===================================================== -->
 
-    <div class="pagination-area">
-
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            <a href="/Admin/Bookings?page=@i"
-               class="page-btn @(i == currentPage ? "active" : "")">
-                @i
-            </a>
-        }
-
-    </div>
+    @await Html.PartialAsync("_AdminPagination", new AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+    {
+        CurrentPage = currentPage,
+        TotalPages = totalPages,
+        ActionUrl = "/Admin/Bookings"
+    })
 
 </section>
 
-<!-- ===================================================== -->
-<!-- PAGE CSS -->
-<!-- ===================================================== -->
 
 <style>
 
     .booking-table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: auto !important;
+        min-width: 2000px !important;
+    }
+
+    .booking-table th:first-child,
+    .booking-table td:first-child {
+        width: auto !important;
+        min-width: 220px !important;
+    }
+
+    .booking-table th:last-child,
+    .booking-table td:last-child {
+        width: auto !important;
+        min-width: 190px !important;
+    }
+
+    .booking-table td {
+        min-width: 170px;
     }
 
     .booking-table th {
@@ -389,6 +304,7 @@
     .created-date {
         font-weight: 500;
         color: #111827;
+        white-space: nowrap;
     }
 
     .badge {
@@ -404,41 +320,14 @@
         color: #166534;
     }
 
+    .badge.pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
     .badge.danger {
         background: #fee2e2;
         color: #991b1b;
-    }
-
-    .pagination-area {
-        margin-top: 24px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .page-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        background: white;
-        color: #111827;
-        border: 1px solid #d1d5db;
-        transition: 0.2s;
-    }
-
-    .page-btn:hover {
-        background: #111827;
-        color: white;
-    }
-
-    .page-btn.active {
-        background: #111827;
-        color: white;
-        border-color: #111827;
     }
 
     .empty-state {
@@ -455,7 +344,11 @@
         }
 
         .booking-table td,
-        .booking-table th {
+        .booking-table td {
+        min-width: 170px;
+    }
+
+    .booking-table th {
             font-size: 13px;
             padding: 10px;
         }
@@ -463,3 +356,11 @@
     }
 
 </style>
+
+@functions {
+    private static string DisplayText(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "—" : value;
+
+    private static string DisplayAmount(decimal? value) =>
+        value.HasValue ? CurrencyFormatter.FormatRupees(value.Value) : "—";
+}

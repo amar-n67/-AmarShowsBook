@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-
 namespace AmarShowsBook.Models.ViewModels
 {
     public class AdminUserDetailsViewModel
     {
-        // =====================================================
-        // HUMAN COMMENT:
-        // BASIC USER DETAILS
-        // =====================================================
 
         public long UserId { get; set; }
         public List<string> UserAccess { get; set; } = new();
@@ -35,10 +28,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public string? ProfileImagePath { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // USER ACCOUNT STATUS
-        // =====================================================
 
         public bool IsActive { get; set; }
 
@@ -48,12 +37,15 @@ namespace AmarShowsBook.Models.ViewModels
 
         public DateTime? LastLoginAt { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // WALLET & PAYMENT SUMMARY
-        // =====================================================
 
         public decimal WalletBalance { get; set; }
+        public decimal BlockedBalance { get; set; }
+        public decimal WalletCredits { get; set; }
+        public decimal WalletDebits { get; set; }
+        public long LoyaltyPoints { get; set; }
+        public string? WalletStatus { get; set; }
+        public long TotalWalletTransactions { get; set; }
+        public DateTime? LastWalletTransactionAt { get; set; }
 
         public int TotalTransactions { get; set; }
 
@@ -65,10 +57,6 @@ namespace AmarShowsBook.Models.ViewModels
 
         public decimal TotalSpent { get; set; }
 
-        // =====================================================
-        // HUMAN COMMENT:
-        // LAST TRANSACTION DETAILS
-        // =====================================================
 
         public string? LastTransactionRef { get; set; }
 
@@ -80,6 +68,9 @@ public List<VwBookingTransactionSummary>
             LastTransactions { get; set; }
 
                 = new();
+
+        public List<VwBookingCompleteDetails> Bookings { get; set; }
+            = new();
 
         public List<string>
 

@@ -22,5 +22,8 @@ namespace AmarShowsBook.Models.ViewModels
 
         public bool IsLocked
         {get;set;}
+
+        public DateTime? LockExpiresAt
+        {get;set;}
     }
 }

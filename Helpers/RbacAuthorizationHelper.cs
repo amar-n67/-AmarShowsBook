@@ -4,7 +4,6 @@ namespace AmarShowsBook.Helpers
 {
     public static class RbacAuthorizationHelper
     {
-        // Central permission validation helper
         public static bool CanAccess(
             HttpContext context,
             RbacService rbacService,
@@ -24,6 +23,17 @@ namespace AmarShowsBook.Helpers
                 moduleCode,
                 actionType
             );
+        }
+
+        public static bool CanUsePrintTools(
+            HttpContext context,
+            RbacService rbacService)
+        {
+            var userIdText =
+                context.Session.GetString("UserId");
+
+            return int.TryParse(userIdText, out int userId) &&
+                rbacService.CanUsePrintTools(userId);
         }
     }
 }

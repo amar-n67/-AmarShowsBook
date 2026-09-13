@@ -1,0 +1,65 @@
+@model AmarShowsBook.Models.ViewModels.AdminPaginationViewModel
+
+@{
+    int currentPage = Math.Max(1, Model.CurrentPage);
+    int totalPages = Math.Max(1, Model.TotalPages);
+    int previousPage = Math.Max(1, currentPage - 1);
+    int nextPage = Math.Min(totalPages, currentPage + 1);
+}
+
+<div class="admin-pagination-panel" aria-label="Page navigation">
+    <div class="admin-page-status">
+        <span>Page</span>
+        <strong>@currentPage</strong>
+        <span>of @totalPages</span>
+    </div>
+
+    <div class="admin-pagination-controls">
+        @if (currentPage > 1)
+        {
+            <a href="@Model.ActionUrl?page=@previousPage"
+               class="admin-page-nav-btn">
+                Previous
+            </a>
+        }
+        else
+        {
+            <span class="admin-page-nav-btn disabled"
+                  aria-disabled="true">
+                Previous
+            </span>
+        }
+
+        <form method="get"
+              action="@Model.ActionUrl"
+              class="admin-page-search-form">
+            <input name="page"
+                   type="number"
+                   min="1"
+                   max="@totalPages"
+                   aria-label="Search page number"
+                   placeholder="Page no"
+                   value="@currentPage"
+                   inputmode="numeric" />
+
+            <button type="submit">
+                Go
+            </button>
+        </form>
+
+        @if (currentPage < totalPages)
+        {
+            <a href="@Model.ActionUrl?page=@nextPage"
+               class="admin-page-nav-btn">
+                Next
+            </a>
+        }
+        else
+        {
+            <span class="admin-page-nav-btn disabled"
+                  aria-disabled="true">
+                Next
+            </span>
+        }
+    </div>
+</div>
