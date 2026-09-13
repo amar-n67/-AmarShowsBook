@@ -70,7 +70,7 @@ connectionString
 // Build creates the WebApplication object after all services and filters have been registered.
 var app=
 builder.Build();
-
+app.UseDeveloperExceptionPage(); // added temporary for deplying
 // Before the app starts accepting requests, baseline old databases and apply EF migrations.
 using (var scope = app.Services.CreateScope())
 {
