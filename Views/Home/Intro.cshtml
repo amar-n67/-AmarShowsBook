@@ -1,6 +1,16 @@
 @model AmarShowsBook.Models.ViewModels.DeveloperVM
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
 @{
     Layout = null;
+    var introUrl = Url.Action("Intro", "Home", null, Context.Request.Scheme)!;
+    using var introQrGenerator = new QRCoder.QRCodeGenerator();
+    using var introQrData = introQrGenerator.CreateQrCode(introUrl, QRCoder.QRCodeGenerator.ECCLevel.H);
+    using var introQr = new QRCoder.SvgQRCode(introQrData);
+    var introQrLogoBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(WebHostEnvironment.WebRootPath, "images", "brand", "showtime-qr-logo.png"));
+    var introQrSvg = introQr.GetGraphic(6, "#111827", "#ffffff", true,
+        QRCoder.SvgQRCode.SizingMode.WidthHeightAttribute,
+        new QRCoder.SvgQRCode.SvgLogo(introQrLogoBytes, 18, true));
+    var introQrImage = "data:image/svg+xml;base64," + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(introQrSvg));
     var developerName = string.IsNullOrWhiteSpace(Model?.FullName) ? "Amar ChaudharY" : Model.FullName.Trim();
     var developerEmail = string.IsNullOrWhiteSpace(Model?.DeveloperEmail) ? "example@gmail.com" : Model.DeveloperEmail.Trim();
     var developerPhone = string.IsNullOrWhiteSpace(Model?.Phone) ? "+91 9651698863" : Model.Phone.Trim();
@@ -456,6 +466,44 @@
             gap: 12px;
             width: min(100%, 430px);
             margin-top: 30px;
+        }
+
+        .intro-qr-card {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 18px;
+            max-width: 480px;
+            margin-top: 24px;
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        .intro-qr-card img {
+            display: block;
+            width: 168px;
+            height: 168px;
+            background: #fff;
+        }
+
+        .intro-qr-copy {
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+
+        .intro-qr-copy h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--ink);
+        }
+
+        .intro-qr-copy p {
+            margin: 8px 0;
+            color: var(--muted);
+            line-height: 1.5;
         }
 
         .ad-strip {
@@ -1947,6 +1995,14 @@
                     <a class="btn btn-soft" href="/Auth/Login?returnUrl=%2FHome%2FShowTime">Login To Book</a>
                     <a class="btn btn-soft" href="#developerProfiles">Developer Profile</a>
                 </div>
+
+                <section class="intro-qr-card" aria-labelledby="introQrTitle" data-no-theme-double-tap>
+                    <img src="@introQrImage" width="168" height="168" alt="Scan to open the showTime intro page" />
+                    <div class="intro-qr-copy">
+                        <h2 id="introQrTitle">Take showTime with you</h2>
+                        <p>Scan with your phone or tablet camera to open this app on your other device.</p>
+                    </div>
+                </section>
 
                 <div class="ad-strip" aria-label="showTime highlights">
                     <span>Fast seat booking</span>
