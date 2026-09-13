@@ -80,9 +80,9 @@
 
     <div class="booking-refund-rule no-print">
         <strong>Cancellation refund rule</strong>
-        <span>2 hours or more before show time: full refund.</span>
-        <span>45 minutes to 2 hours before show time: 50% refund.</span>
-        <span>Inside 45 minutes: cancellation closed, no refund.</span>
+        <span>2h+ before show: Full refund</span>
+        <span>45m-2h before show: 50% refund</span>
+        <span>Inside 45m: Cancellation closed</span>
     </div>
 
     @if (!Model.Any())
@@ -433,7 +433,7 @@
 
 .booking-refund-rule {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 8px;
     margin: 0 0 18px;
@@ -443,13 +443,18 @@
     background: var(--app-card);
     color: var(--app-card-text);
     box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
 }
 
 .booking-refund-rule strong,
 .booking-refund-rule span {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     min-height: 28px;
+    white-space: nowrap;
 }
 
 .booking-refund-rule strong {
@@ -949,8 +954,8 @@
     }
 
     .booking-refund-rule {
-        align-items: stretch;
-        flex-direction: column;
+        align-items: center;
+        flex-direction: row;
     }
 
     .booking-qr-frame img {
