@@ -1,9 +1,137 @@
 showTime page and file map
-Updated: 2026-08-24
+Updated: 2026-09-13
 
 Purpose
 This file tells you where each important page lives in the code.
 Use it when you want to change a page design, fix a button, update text, or find the controller action behind a URL.
+
+Application startup and calling sequence
+- Launch profile file: Properties/launchSettings.json
+  Profile name: showTime
+  Application URL: http://localhost:9090
+  Environment: Development
+  Browser auto-launch in launchSettings is false, but Program.cs opens the browser in development after the server starts.
+
+- Project file: AmarShowsBook.csproj
+  Purpose: Declares this as an ASP.NET Core web project, targets net10.0, and lists packages such as EF Core, Npgsql, ClosedXML, QRCoder, BCrypt, SendGrid, and Razor runtime compilation.
+
+- Starter file: Program.cs
+  This is the first application code file loaded by dotnet run.
+  Main startup object: WebApplication.CreateBuilder(args)
+  Server port: 9090
+  Kestrel URL: http://0.0.0.0:9090
+
+- Startup service registration order in Program.cs:
+  1. Create builder with WebApplication.CreateBuilder(args).
+  2. Register filters:
+     SessionAuthorizeFilter
+     BookingStepValidationFilter
+     ActivityLoggingFilter
+  3. Register MVC controllers and views with AddControllersWithViews.
+  4. Register shared services:
+     OtpDeliveryService
+     RbacService
+     IActivityLogger -> ActivityLogger
+     IHttpContextAccessor
+     Session
+  5. Resolve database connection through Helpers/DatabaseConnectionStringResolver.cs.
+  6. Register ApplicationDbContext with PostgreSQL/Npgsql.
+  7. Build the app with builder.Build().
+
+- Database startup sequence in Program.cs:
+  1. BaselineExistingDatabase(app, db)
+     Marks an already-existing old database as having the first migration when needed.
+  2. db.Database.Migrate()
+     Applies EF Core migrations from the Migrations folder.
+  3. EnsureApplicationVersionTable(app)
+     Creates application_versions for /Admin/Versions and footer/version display.
+  4. EnsureDeveloperProfileStore(app)
+     Creates developer_profiles and vwDeveloperProfile for /Developer/Profile and /Home/Intro.
+  5. EnsureAmaroChatStore(app)
+     Creates Amaro chat tables.
+  6. EnsureRbacStore(app)
+     Creates roles, permissions, role mappings, menus, and default role triggers.
+  7. EnsureNewsStore(app)
+     Creates news channel and broadcast slot tables.
+  8. EnsureAccountDeletionArchiveStore(app)
+     Creates deleted-account archive and recovery functions.
+  9. ApplicationStarted callback
+     Seeds dummy cards and demo data through Data/DbSeeder.cs.
+
+- Middleware request order in Program.cs:
+  1. UseExceptionHandler("/Home/Error")
+     Sends unhandled errors to HomeController.Error.
+  2. UseForwardedHeaders()
+     Reads forwarded host/protocol headers for deployed environments.
+  3. UseStaticFiles()
+     Serves files from wwwroot.
+  4. UseRouting()
+     Matches the URL to a controller/action pattern.
+  5. UseSession()
+     Loads session values such as UserId, UserEmail, and UserName.
+  6. Dashboard-only admin middleware
+     Restricts DUM_ADMIN to allowed pages.
+  7. MapControllerRoute()
+     Default route pattern: {controller=Home}/{action=Intro}/{id?}
+  8. app.Run()
+     Starts the web server loop.
+
+- Default startup page:
+  URL: http://localhost:9090
+  Route: controller=Home, action=Intro
+  Controller method: HomeController.Intro()
+  View file: Views/Home/Intro.cshtml
+
+- Normal page request sequence:
+  1. Browser requests a URL.
+  2. Program.cs middleware runs.
+  3. MVC routing chooses a controller action.
+  4. SessionAuthorizeFilter checks login, public access, RBAC roles, and permissions.
+  5. BookingStepValidationFilter checks booking/payment draft ownership for Booking routes.
+  6. Controller action runs.
+  7. ActivityLoggingFilter writes the final request/activity result.
+  8. Controller returns a View, Redirect, JSON, File, or StatusCode result.
+  9. View renders with Views/Shared/_Layout.cshtml or Views/Shared/_AdminLayout.cshtml.
+
+- Normal login call sequence:
+  1. Browser opens /Auth/Login.
+  2. AuthController.Login GET returns Views/Auth/Login.cshtml.
+  3. User submits the form.
+  4. AuthController.Login POST validates email/password.
+  5. Session values are saved when login succeeds.
+  6. User is redirected to returnUrl, Admin/Dashboard, or Home/ShowTime depending on role and context.
+
+- Normal show browsing sequence:
+  1. Browser opens /Home/ShowTime.
+  2. HomeController.ShowTime() loads active future schedules.
+  3. Data comes from public.vw_home_show_listing and related schedule/venue tables.
+  4. View model: Models/ViewModels/HomeViewModel.cs and HomeShowViewModel.cs.
+  5. View: Views/Home/Index.cshtml.
+
+- Normal booking sequence:
+  1. User starts from /Home/ShowTime.
+  2. User opens /Booking/Seats/{scheduleId}.
+  3. BookingController.Seats() loads seat map and locks selected seats.
+  4. Booking draft is created in booking_drafts.
+  5. User opens /Booking/Details then /Booking/Payment.
+  6. BookingStepValidationFilter verifies the draft belongs to the logged-in user.
+  7. Payment/QR/wallet/coupon actions update the draft and payment session.
+  8. Successful payment creates confirmed booking/ticket records.
+  9. Confirmation renders Views/Booking/Confirmation.cshtml.
+
+- Normal admin page sequence:
+  1. User opens /Admin/Dashboard or another admin URL.
+  2. SessionAuthorizeFilter checks dashboard/admin role access.
+  3. AdminController.OnActionExecutionAsync checks page-level RBAC permission.
+  4. Admin action loads data from ApplicationDbContext, services, or SQL views.
+  5. View renders inside Views/Shared/_AdminLayout.cshtml.
+
+- Activity logging sequence:
+  1. ActivityLoggingFilter logs MVC page, JSON, export, and error results.
+  2. ActivityController.ClientEvent logs logged-in browser clicks/changes from shared layouts.
+  3. Services/ActivityLogger.cs writes rows into activity_logs.
+  4. Filters and controllers also write business events such as RBAC denial, login, refund, booking, and profile actions.
+  5. /Admin/ActivityLogs displays the combined audit trail from vw_enterprise_activity_logs.
 
 How the project is arranged
 - Controllers decide what happens when a URL is opened.

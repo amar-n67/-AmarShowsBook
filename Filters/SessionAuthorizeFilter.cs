@@ -27,6 +27,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         IActivityLogger activityLogger,
         RbacService rbacService)
     {
+        // Keep logging and RBAC checks in this filter so every protected route follows the same gate.
         _activityLogger = activityLogger;
         _rbacService = rbacService;
     }
@@ -39,6 +40,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         var action = context.RouteData.Values["action"]?.ToString() ?? "";
         var http = context.HttpContext;
 
+        // Public pages must stay open so guests can browse shows, login, recover accounts, and use Amaro show help.
         if (IsPublicEndpoint(controller, action))
         {
             await next();
@@ -47,6 +49,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
 
         var userEmail = http.Session.GetString("UserEmail");
 
+        // A session email means the user passed login; UserId is still checked because RBAC needs the numeric id.
         if (!string.IsNullOrWhiteSpace(userEmail))
         {
             var userId =
@@ -54,6 +57,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
 
             if (userId == null)
             {
+                // Broken sessions are sent back through login instead of letting the route run without a user id.
                 context.Result = new RedirectToActionResult(
                     "Login",
                     "Auth",
@@ -64,6 +68,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             if (RequiresRoleAccess(controller, action, userId.Value, out var roleDeniedMessage) &&
                 roleDeniedMessage != null)
             {
+                // Role-level denials are logged before the user is redirected or receives API JSON.
                 await _activityLogger.LogAsync(
                     userId: userId,
                     action: "RBAC_ROLE_ACCESS_DENIED",
@@ -81,6 +86,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
 
                 if (IsAjaxOrApi(http.Request))
                 {
+                    // JavaScript/API callers need a 403 payload; browser page requests use a friendly redirect.
                     context.Result = new ObjectResult(new
                     {
                         success = false,
@@ -103,6 +109,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             if (RequiresPermission(controller, action, out var moduleCode, out var actionType) &&
                 !_rbacService.HasPermission(userId.Value, moduleCode, actionType))
             {
+                // Permission denials include module/action details so Admin Activity Logs explain the block clearly.
                 await _activityLogger.LogAsync(
                     userId: userId,
                     action: "RBAC_ACCESS_DENIED",
@@ -144,6 +151,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             return;
         }
 
+        // No login session exists, so record the direct access attempt before any redirect happens.
         await _activityLogger.LogAsync(
             userId: null,
             action: "UNAUTHORIZED_DIRECT_ACCESS",
@@ -162,6 +170,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
 
         if (IsAjaxOrApi(http.Request))
         {
+            // API callers cannot follow a normal login redirect cleanly, so they get a 401 JSON response.
             context.Result = new UnauthorizedObjectResult(new
             {
                 success = false,
@@ -176,6 +185,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             new { returnUrl = http.Request.Path + http.Request.QueryString });
     }
 
+    // Lists routes that are intentionally available before login.
     private static bool IsPublicEndpoint(string controller, string action)
     {
         if (controller.Equals("Auth", StringComparison.OrdinalIgnoreCase))
@@ -216,6 +226,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         return controller.Equals("Amaro", StringComparison.OrdinalIgnoreCase);
     }
 
+    // Maps controller actions to the module/action permission used by RBAC.
     private static bool RequiresPermission(
         string controller,
         string action,
@@ -266,6 +277,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         return true;
     }
 
+    // Checks coarse role rules before fine-grained permission rules.
     private bool RequiresRoleAccess(
         string controller,
         string action,
@@ -312,6 +324,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
         return false;
     }
 
+    // Super-admin pages can change roles, permissions, and managed show setup.
     private static bool IsSuperAdminAreaAction(string action)
     {
         return action.Equals("Roles", StringComparison.OrdinalIgnoreCase) ||
@@ -326,11 +339,13 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
                action.Equals("DeleteManagedShow", StringComparison.OrdinalIgnoreCase);
     }
 
+    // Export actions are treated as sensitive because they can reveal large data sets.
     private static bool IsExportAction(string action)
     {
         return action.StartsWith("Export", StringComparison.OrdinalIgnoreCase);
     }
 
+    // Session values are strings, so this helper safely converts UserId for RBAC.
     private static int? TryGetUserId(string? value)
     {
         return int.TryParse(value, out var userId)
@@ -338,6 +353,7 @@ public class SessionAuthorizeFilter : IAsyncActionFilter
             : null;
     }
 
+    // AJAX/API requests should receive JSON status responses instead of HTML redirects.
     private static bool IsAjaxOrApi(HttpRequest request)
     {
         return request.Headers["X-Requested-With"] == "XMLHttpRequest" ||

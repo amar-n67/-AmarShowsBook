@@ -2083,42 +2083,75 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script>
 (function () {
+    // Admin layout logs browser-side clicks and changes after login.
     const isLoggedIn = @(!string.IsNullOrWhiteSpace(Context.Session.GetString("UserId"))).ToString().ToLowerInvariant();
 
     if (!isLoggedIn || !navigator.sendBeacon) {
+        // Admin actions still have MVC request logging even when browser-side logging is unavailable.
         return;
     }
 
     function textOf(element) {
+        const tag = (element.tagName || "").toLowerCase();
+        const type = (element.getAttribute("type") || "").toLowerCase();
+
+        if ((tag === "input" && !["button", "submit", "reset", "checkbox", "radio"].includes(type)) ||
+            tag === "textarea" ||
+            tag === "select") {
+            // Do not store typed admin form values; field name/placeholder is enough to know what changed.
+            return (element.getAttribute("aria-label") || element.getAttribute("placeholder") || element.name || element.id || tag)
+                .replace(/\s+/g, " ")
+                .trim()
+                .slice(0, 250);
+        }
+
         return (element.innerText || element.value || element.getAttribute("aria-label") || element.title || "")
             .replace(/\s+/g, " ")
             .trim()
             .slice(0, 250);
     }
 
+    function classText(element) {
+        // Some icon/SVG nodes expose non-string class values, so normalize safely.
+        return typeof element.className === "string" ? element.className : "";
+    }
+
     // Admin pages have many JavaScript-driven buttons, so log the click before page code handles it.
     function sendActivity(element, eventType) {
+        // Keep the payload compact because route/session metadata is added by the server.
         const payload = {
             eventType,
             elementType: element.tagName,
+            inputType: element.type || "",
             text: textOf(element),
             href: element.href || element.getAttribute("href"),
             path: window.location.pathname,
             id: element.id || "",
             name: element.name || "",
-            cssClass: element.className || ""
+            cssClass: classText(element)
         };
 
+        // sendBeacon is used so the event survives redirects, button posts, and page navigation.
         navigator.sendBeacon("/Activity/ClientEvent", new Blob([JSON.stringify(payload)], {
             type: "application/json"
         }));
     }
 
     document.addEventListener("click", function (event) {
+        // Log links, buttons, toggles, selects, and any custom element marked for activity logging.
         const target = event.target.closest("a,button,input[type='button'],input[type='submit'],input[type='checkbox'],input[type='radio'],select,[data-log-click]");
 
         if (target) {
             sendActivity(target, "click");
+        }
+    }, true);
+
+    document.addEventListener("change", function (event) {
+        // Log filter and form changes without exposing the actual typed values.
+        const target = event.target.closest("input,select,textarea,[data-log-change]");
+
+        if (target) {
+            sendActivity(target, "change");
         }
     }, true);
 })();

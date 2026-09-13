@@ -54,32 +54,40 @@
                     <p>Use your registered email and password to continue.</p>
                 </div>
 
+                @* Login form posts credentials after the local browser validation passes. *@
                 <form method="post" novalidate onsubmit="return validateLoginForm()">
+                    @* Return URL brings users back to the protected page they originally requested. *@
                     <input type="hidden" name="returnUrl" value="@returnUrl" />
 
+                    @* Email field is restricted by JavaScript to Gmail or Outlook before submit. *@
                     <div class="auth-field">
                         <label for="loginEmail">Email</label>
                         <input id="loginEmail" name="email" type="email" class="form-control" placeholder="artist@gmail.com" required />
                     </div>
 
+                    @* Password field keeps the cat-eye toggle next to the secure password input. *@
                     <div class="auth-field">
                         <label for="loginPassword">Password</label>
                         <div class="input-group">
                             <input id="loginPassword" name="password" type="password" class="form-control" minlength="8"
                                    pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$" required />
+                            @* Password toggle is wired globally from the shared layout. *@
                             <button type="button" class="btn password-toggle" data-password-toggle="loginPassword" title="Show password" onclick="togglePassword('loginPassword', this)"></button>
                         </div>
                     </div>
 
+                    @* Primary login button submits the account access form. *@
                     <button class="btn auth-main-btn w-100">Enter showTime</button>
                 </form>
 
+                @* Secondary login links stay lightweight so they look like links instead of action cards. *@
                 <div class="auth-login-links" aria-label="Login links">
                     <a href="/Auth/Signup">Create account</a>
                     <a href="/Auth/ForgotPassword">Recover access</a>
                     <a href="/Home/Intro">Back to Intro</a>
                 </div>
 
+                @* Local development convenience button asks the server to stop the app. *@
                 <button type="button" class="btn auth-close-btn" onclick="closeApplication()">
                     Close Application
                 </button>
@@ -89,6 +97,7 @@
 
     @if (ViewBag.RecoverArchiveId != null)
     {
+        @* Recovery modal appears only when login finds a deleted account still inside the recovery window. *@
         <div class="recovery-modal">
             <div class="recovery-dialog motion-surface" role="dialog" aria-modal="true" aria-labelledby="recoverAccountTitle">
                 <span class="recovery-kicker">Deleted Account</span>
@@ -101,13 +110,16 @@
                     <span>@ViewBag.RecoverEmail</span>
                     <strong>Available until @ViewBag.RecoverUntil</strong>
                 </div>
+                @* Recover form restores the archived account instead of creating a new one. *@
                 <form method="post" action="/Auth/RecoverDeletedAccount">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="archiveId" value="@ViewBag.RecoverArchiveId" />
                     <input type="hidden" name="recoveryChoice" value="recover" />
                     <input type="hidden" name="returnUrl" value="@returnUrl" />
                     <div class="recovery-actions">
+                        @* Cancel returns to a normal login screen without changing the deleted account. *@
                         <a href="/Auth/Login" class="btn btn-secondary btn-sm">Cancel</a>
+                        @* Recover submits the restore request for the archived account. *@
                         <button type="submit" class="btn btn-success btn-sm">Recover Account</button>
                     </div>
                 </form>
@@ -1103,11 +1115,14 @@ html[data-theme="dark"] .auth-card {
 
 @section Scripts {
     <script>
+        // Login page animation and popup setup runs after the markup is ready.
         document.addEventListener("DOMContentLoaded", function () {
+            // Fill any version placeholders from the global version value if it exists.
             document.querySelectorAll("[data-current-version]").forEach(function (item) {
                 item.textContent = window.currentAppVersion || "1.0.0";
             });
 
+            // Rotate document title text like a small product-ad intro.
             const titleFrames = [
                 "showTime - Login",
                 "Book Shows Faster",
@@ -1117,14 +1132,17 @@ html[data-theme="dark"] .auth-card {
             let titleIndex = 0;
 
             setInterval(function () {
+                // Keep the browser tab alive with short showTime messages.
                 document.title = titleFrames[titleIndex % titleFrames.length];
                 titleIndex += 1;
             }, 1500);
 
+            // Add cursor glow and pointer tilt to important login surfaces and buttons.
             document
                 .querySelectorAll(".motion-surface, .auth-main-btn, .auth-close-btn")
                 .forEach(function (surface) {
                     if (!surface.querySelector(".cursor-glow")) {
+                        // The glow element is visual only, so screen readers ignore it.
                         const glow = document.createElement("span");
                         glow.className = "cursor-glow";
                         glow.setAttribute("aria-hidden", "true");
@@ -1132,6 +1150,7 @@ html[data-theme="dark"] .auth-card {
                     }
 
                     surface.addEventListener("pointermove", function (event) {
+                        // Convert pointer position into CSS variables and a small 3D tilt.
                         const rect = surface.getBoundingClientRect();
                         const x = ((event.clientX - rect.left) / rect.width) * 100;
                         const y = ((event.clientY - rect.top) / rect.height) * 100;
@@ -1144,6 +1163,7 @@ html[data-theme="dark"] .auth-card {
                     });
 
                     surface.addEventListener("pointerleave", function () {
+                        // Reset tilt when the cursor leaves the animated area.
                         surface.style.transform = "";
                     });
                 });
@@ -1151,6 +1171,7 @@ html[data-theme="dark"] .auth-card {
             const tiltPanel = document.querySelector("[data-auth-tilt]");
 
             if (tiltPanel && window.matchMedia("(pointer: fine)").matches) {
+                // Desktop pointers get a wider card tilt; touch devices keep the layout steady.
                 tiltPanel.addEventListener("mousemove", function (event) {
                     const rect = tiltPanel.getBoundingClientRect();
                     const x = (event.clientX - rect.left) / rect.width - 0.5;
@@ -1159,27 +1180,33 @@ html[data-theme="dark"] .auth-card {
                 });
 
                 tiltPanel.addEventListener("mouseleave", function () {
+                    // Clear the transform so repeated hover does not accumulate visual state.
                     tiltPanel.style.transform = "";
                 });
             }
 
+            // Server messages are rendered as JSON strings so quotes cannot break the script.
             const error = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Error ?? ""));
             const success = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"] ?? ""));
 
             if (success) {
+                // Success messages use the shared cinema popup instead of browser alerts.
                 showCinemaPopup(success, "success");
             }
             if (error) {
+                // Login errors also use the shared popup for consistent styling.
                 showCinemaPopup(error, "error");
             }
         });
 
+        // Close button confirms first, then asks the server to stop the local app.
         function closeApplication() {
             showCinemaPopup("This will stop the local application and try to close this tab.", "confirm", {
                 title: "Pack Up?",
                 okText: "Close App",
                 cancelText: "Stay",
                 onOk: function () {
+                    // The request may shut down the server; finally still updates the page if the browser remains open.
                     fetch("/Auth/CloseApplication", { method: "POST" })
                         .finally(function () {
                             window.open("", "_self");
@@ -1190,6 +1217,7 @@ html[data-theme="dark"] .auth-card {
             });
         }
 
+        // Browser-side validation gives fast feedback before the login POST reaches AuthController.
         function validateLoginForm() {
             const email = document.querySelector('input[name="email"]').value.trim();
             const password = document.getElementById("loginPassword").value;
@@ -1198,15 +1226,18 @@ html[data-theme="dark"] .auth-card {
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
 
             if (!emailRegex.test(email)) {
+                // Account policy allows only Gmail or Outlook addresses.
                 showCinemaPopup("Only Gmail or Outlook email is allowed.", "error");
                 return false;
             }
 
             if (!passwordRegex.test(password)) {
+                // Match the server-side password rule before the form submits.
                 showCinemaPopup("Password must be at least 8 characters and include uppercase, lowercase, and special character.", "error");
                 return false;
             }
 
+            // Returning true lets the browser submit the form normally.
             return true;
         }
     </script>

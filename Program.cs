@@ -9,11 +9,14 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
+// Program.cs is the application starter file. dotnet run loads this file first for the ASP.NET Core app.
 var builder = WebApplication.CreateBuilder(args);
 
+// Local development and IDE launch settings use port 9090 for the showTime web application.
 const string ApplicationPort =
 "9090";
 
+// Kestrel listens on all local network interfaces, while browser links normally use localhost:9090.
 builder.WebHost.UseUrls(
 $"http://0.0.0.0:{ApplicationPort}"
 );
@@ -64,8 +67,11 @@ connectionString
     warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
 );
 
+// Build creates the WebApplication object after all services and filters have been registered.
 var app=
 builder.Build();
+
+// Before the app starts accepting requests, baseline old databases and apply EF migrations.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -99,12 +105,16 @@ else
 app.UseForwardedHeaders(
 forwardedHeadersOptions);
 
+// Static files serve CSS, JavaScript, images, uploads, and brand assets from wwwroot.
 app.UseStaticFiles();
 
+// Routing matches incoming URLs to controller/action names.
 app.UseRouting();
 
+// Session must run before custom access checks because filters and RBAC read UserId/UserEmail from session.
 app.UseSession();
 
+// Dashboard-only admins are forced back to their allowed pages before controller actions run.
 app.Use(
 async (context, next) =>
 {
@@ -117,6 +127,7 @@ async (context, next) =>
     await next();
 });
 
+// Default route: opening "/" calls HomeController.Intro and renders Views/Home/Intro.cshtml.
 app.MapControllerRoute(
 name:"default",
 pattern:
@@ -124,6 +135,7 @@ pattern:
 );
 
 // Startup keeps old databases usable by creating the small tables and views that newer pages depend on.
+// These helpers are idempotent: running them again should not erase existing data.
 EnsureApplicationVersionTable(app);
 EnsureDeveloperProfileStore(app);
 EnsureAmaroChatStore(app);
@@ -131,6 +143,7 @@ EnsureRbacStore(app);
 EnsureNewsStore(app);
 EnsureAccountDeletionArchiveStore(app);
 
+// After Kestrel starts, seed demo/support data and optionally open the browser in development.
 app.Lifetime.ApplicationStarted.Register(
 ()=>
 {
@@ -277,8 +290,10 @@ ex,
 
 });
 
+// app.Run starts the web server loop. Code below this point is helper methods only.
 app.Run();
 
+// Keeps the restricted dum_Admin role inside its allowed admin/profile pages.
 static bool ShouldRedirectDashboardOnlyAdmin(HttpContext context)
 {
     if (IsDashboardOnlyAdminAllowedPath(context.Request.Path))
@@ -301,6 +316,7 @@ static bool ShouldRedirectDashboardOnlyAdmin(HttpContext context)
             "AMAR_DEVELOPER");
 }
 
+// Lists the routes that the dashboard-only admin role can open.
 static bool IsDashboardOnlyAdminAllowedPath(PathString path)
 {
     var value = path.Value ?? "/";
@@ -332,6 +348,7 @@ static bool IsDashboardOnlyAdminAllowedPath(PathString path)
         value.Equals("/favicon.ico", StringComparison.OrdinalIgnoreCase);
 }
 
+// Marks the existing database as migrated when it already has the original schema tables.
 static void BaselineExistingDatabase(WebApplication app, ApplicationDbContext context)
 {
     try
@@ -376,6 +393,7 @@ AND NOT EXISTS
     }
 }
 
+// Ensures the application version page has a backing table and one default row.
 static void EnsureApplicationVersionTable(WebApplication app)
 {
     using var scope =
@@ -435,6 +453,7 @@ WHERE NOT EXISTS
     }
 }
 
+// Ensures the developer profile/support contact table and view exist for Intro and Developer/Profile.
 static void EnsureDeveloperProfileStore(WebApplication app)
 {
     using var scope =
@@ -666,6 +685,7 @@ FROM public.developer_profiles;
     }
 }
 
+// Ensures public news channels and broadcast slots exist for the Home/News flow.
 static void EnsureNewsStore(WebApplication app)
 {
     using var scope =
@@ -737,6 +757,7 @@ ALTER TABLE public.news_channels ADD COLUMN IF NOT EXISTS city varchar(120) NOT 
     }
 }
 
+// Ensures Amaro assistant chat history tables exist before the widget starts saving conversations.
 static void EnsureAmaroChatStore(WebApplication app)
 {
     using var scope =
@@ -782,6 +803,7 @@ ON public.amaro_chat_messages(user_id, created_at DESC);
     }
 }
 
+// Ensures deleted-account archive and recovery functions exist for account recovery.
 static void EnsureAccountDeletionArchiveStore(WebApplication app)
 {
     using var scope =
@@ -1704,6 +1726,7 @@ SELECT public.fn_purge_expired_user_account_archives();
     }
 }
 
+// Ensures roles, permissions, menus, and default role assignment exist for the RBAC system.
 static void EnsureRbacStore(WebApplication app)
 {
     using var scope =
