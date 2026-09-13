@@ -2017,20 +2017,30 @@ DO UPDATE SET
             var query =
                 _context.VwBookingCompleteDetails
                     .AsNoTracking()
-                    .OrderByDescending(x => x.BookedAt);
+                    .OrderByDescending(x => x.BookedAt)
+                    .ThenByDescending(x => x.BookingId);
 
-            var totalCount = query.Count();
+            var totalCount = await query.CountAsync();
+            var totalBookingValue = await query.SumAsync(x => (decimal?)x.TotalAmount) ?? 0m;
             var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
             page = Math.Min(page, totalPages);
 
-            var bookings = query
+            var bookings = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToList();
+                .ToListAsync();
 
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalCount;
+            ViewBag.TotalBookingValue = totalBookingValue;
+
+            var bookingIds = bookings.Select(x => x.BookingId).ToList();
+            ViewBag.BookingWalletAmounts = await _context.Bookings
+                .AsNoTracking()
+                .Where(x => bookingIds.Contains(x.Id))
+                .Select(x => new { x.Id, Amount = x.WalletAmountUsed ?? 0m })
+                .ToDictionaryAsync(x => x.Id, x => x.Amount);
 
             return View(bookings);
         }
