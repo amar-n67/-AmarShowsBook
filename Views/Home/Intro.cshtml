@@ -804,14 +804,22 @@
         .developer-card {
             display: grid;
             grid-template-columns: auto minmax(0, 1fr);
-            gap: 18px;
+            grid-template-areas:
+                "logo name"
+                "copy copy";
+            gap: 14px 18px;
             align-items: center;
             position: relative;
         }
 
+        .developer-card-copy {
+            display: contents;
+        }
+
         .developer-card img {
-            width: clamp(86px, 14vw, 126px);
-            height: clamp(86px, 14vw, 126px);
+            grid-area: logo;
+            width: clamp(78px, 11vw, 104px);
+            height: clamp(78px, 11vw, 104px);
             object-fit: contain;
             padding: 10px;
             border: 1px solid rgba(23, 32, 51, 0.10);
@@ -821,26 +829,36 @@
         }
 
         .developer-card h3 {
-            margin: 0 0 6px;
+            grid-area: name;
+            min-width: 0;
+            margin: 0;
             font-size: clamp(1.4rem, 4vw, 2.2rem);
+        }
+
+        .developer-card .developer-profile-name {
+            flex-wrap: nowrap;
+            max-width: 100%;
+            font-size: clamp(1.35rem, 3.25vw, 2.55rem);
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .developer-card .developer-profile-name span {
+            min-width: auto;
         }
 
         .developer-name {
             display: inline-flex;
             flex-wrap: wrap;
             gap: 0.02em;
-            color: transparent;
-            background: linear-gradient(90deg, #20364a, var(--teal), var(--coral), var(--blue), #20364a);
-            background-size: 260% auto;
-            -webkit-background-clip: text;
-            background-clip: text;
+            color: var(--ink);
             filter: drop-shadow(0 10px 18px rgba(23, 32, 51, 0.16));
-            animation: nameGradient 4.4s linear infinite;
         }
 
         .developer-name span {
             display: inline-block;
             min-width: 0.28em;
+            color: inherit;
             animation: nameLetter 2.2s ease-in-out infinite;
             animation-delay: calc(var(--letter-index, 0) * 0.045s);
         }
@@ -850,7 +868,8 @@
         }
 
         .developer-card p {
-            margin: 0;
+            grid-area: copy;
+            margin: 2px 0 0;
             color: var(--muted);
             line-height: 1.6;
         }
@@ -1724,7 +1743,19 @@
             }
 
             .developer-card {
-                grid-template-columns: 1fr;
+                grid-template-columns: auto minmax(0, 1fr);
+                gap: 12px;
+            }
+
+            .developer-card img {
+                width: 64px;
+                height: 64px;
+                border-radius: 18px;
+                padding: 6px;
+            }
+
+            .developer-card .developer-profile-name {
+                font-size: clamp(1.16rem, 5.2vw, 1.62rem);
             }
 
             .contact-card {
@@ -1846,6 +1877,20 @@
                 padding: 22px 16px;
             }
 
+            .developer-card {
+                gap: 9px;
+            }
+
+            .developer-card img {
+                width: 52px;
+                height: 52px;
+                border-radius: 16px;
+            }
+
+            .developer-card .developer-profile-name {
+                font-size: clamp(0.98rem, 5.25vw, 1.24rem);
+            }
+
             .final-actions .btn {
                 min-height: 36px;
                 padding-inline: 7px;
@@ -1898,7 +1943,6 @@
                     A clean ticket booking experience for movies, standup, events, news viewing, secure payments,
                     refunds, wallet history, Amaro assistance, quick theme switching, admin controls, and role-based management.
                 </p>
-
                 <div class="hero-actions">
                     <a class="btn btn-soft" href="/Auth/Login?returnUrl=%2FHome%2FShowTime">Login To Book</a>
                     <a class="btn btn-soft" href="#developerProfiles">Developer Profile</a>
@@ -1996,8 +2040,8 @@
                 <article class="profile-panel">
                     <div class="developer-card">
                         <img src="/images/brand/showtime-login-logo-tight.png" alt="@developerName profile mark" />
-                        <div>
-                            <h3><span class="developer-name" data-animated-name>@developerName</span></h3>
+                        <div class="developer-card-copy">
+                            <h3><span class="developer-name developer-profile-name" data-animated-name>@developerName</span></h3>
                             <p>
                                 Full stack application development focused on booking workflows, admin controls,
                                 clean UI behavior, device compatibility, and practical support paths.
